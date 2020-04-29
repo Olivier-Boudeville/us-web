@@ -1,5 +1,5 @@
 # us-web
-This is the repository of the **Universal Webserver** itself, which is a multi-domain, multi-virtual host webserver integrating various services:
+This is the repository of the **Universal Webserver**, which is a multi-domain, multi-virtualhost webserver integrating various services:
  * log generation and rotation, and, if enabled, log analysis, then made available through a "meta" website
  * TLS certificate use and renewal (soon)
  

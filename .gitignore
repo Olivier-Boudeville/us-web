@@ -8,6 +8,7 @@ declared-types-in-*.txt
 .eunit
 erl_crash.dump
 *~
+ebin/*.app
 
 # Added in relation to rebar3:
 .rebar

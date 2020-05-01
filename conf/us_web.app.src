@@ -1,0 +1,56 @@
+% Description of the US-web OTP active application, typically used by rebar3.
+%
+% The real source of this file is conf/us_web.app.src, from which
+% _build/lib/us_web/ebin/us_web.app is generated and copied to ebin/us_web.app;
+% finally src/us_web.app.src is a mere symlink to this last file, so we have:
+%
+% ./conf/us_web.app.src [only real source]
+% ./_build/lib/us_web/ebin.us_web.app
+% ./ebin/us_web.app
+% ./src/us_web.app.src -> ../ebin/us_web.app
+%
+% For more information see the Myriad 'rebar3-create-app-file' make target and
+% its associated comments.
+
+% See also:
+% - http://erlang.org/doc/man/app.html
+% - https://learnyousomeerlang.com/building-otp-applications
+
+
+{application, us_web,
+ [{description, "US-web, the OTP active application offering web services in the context of the Universal Server framework (see http://us.esperide.org)"},
+  {vsn, "VERSION_FOR_REBAR3"},
+  {registered, [us_web]},
+
+ % Active application:
+  %
+  % (no specific relevant startup argument to specify here)
+  %
+  {mod, {us_web_app, []}},
+
+  % Regarding:
+  %  - US-common, see http://us.esperide.org/us.html#otp
+  %  - Traces, see http://traces.esperide.org/traces.html#otp
+  %  - WOOPER, see http://wooper.esperide.org/wooper.html#otp
+  %  - Myriad, see http://myriad.esperide.org/myriad.html#otp
+  %
+
+  % myriad is a dependency of wooper, which is itself a dependency of traces,
+  % dependency of us_common (dependency of this us_web); as such they may not be
+  % listed here, however we stay conservative;
+  %
+  {applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common]},
+  {env,[]},
+
+  % Flat hierarchy in ebin here:
+  {modules, [MODULES_FOR_REBAR3]},
+
+  {licenses, ["US-Web is licensed by its author (Olivier Boudeville) under the GNU Affero General Public License (AGPL), version 3.0 or later"]},
+
+
+  {links, [ {"Official website", "http://us.esperide.org" },
+			{"Github", "https://github.com/Olivier-Boudeville/us-web"} ]}
+
+  %{exclude_files, []}
+
+ ]}.

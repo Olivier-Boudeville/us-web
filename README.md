@@ -8,7 +8,7 @@ This is the repository of the **Universal Webserver**, which is a multi-domain, 
  
 The Universal Webserver is a part of the [Universal Server](https://github.com/Olivier-Boudeville/Universal-Server) project.
 
-Please refer to the [Universal Webserver official documentation](http://us-web.esperide.org), otherwise to its [mirror](http://olivier-boudeville.github.io/us-web/).
+Please refer to the [Universal Webserver official documentation](http://us-web.esperide.org) for further information, otherwise to its [mirror](http://olivier-boudeville.github.io/us-web/).
 
 The US Webserver depends on [us-common](https://github.com/Olivier-Boudeville/us-common/), [Cowboy](https://github.com/ninenines/cowboy) and possibly [Awstats](http://www.awstats.org/), and may be used with or without the Universal Server itself (defined in [us-main](https://github.com/Olivier-Boudeville/us-main/)).
 

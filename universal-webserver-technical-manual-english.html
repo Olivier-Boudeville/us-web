@@ -16,7 +16,7 @@
 
 
 <span class="target" id="top"></span><p><span class="raw-html"><a name="universal-webserver_top"></a></span></p>
-<p><span class="raw-html"><div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://universal-webserver.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#universal-webserver_top">go to top</a> <a href="#universal-webserver_bottom">go to bottom</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div></span></p>
+<p><span class="raw-html"><div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://us-web.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#universal-webserver_top">go to top</a> <a href="#universal-webserver_bottom">go to bottom</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div></span></p>
 <p><span class="raw-html"><center><img src="us-web-title.png" width="70%"></img></center></span>
 </p>
 <div class="section" id="technical-manual-of-the-universal-webserver">
@@ -25,23 +25,31 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Organisation:</th><td class="field-body">Copyright (C) 2019-2020 Olivier Boudeville</td>
+<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2020 Olivier Boudeville</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Contact:</th><td class="field-body">about (dash) universal-webserver (at) esperide (dot) com</td>
+<tr class="field"><th class="field-name">Contact:</th><td class="field-body"><p class="first">about (dash) universal-webserver (at) esperide (dot) com</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Creation date:</th><td class="field-body">Saturday, May 2, 2020</td>
+<tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body">Saturday, May 2, 2020</td>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, May 3, 2020</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Status:</th><td class="field-body">Work in progress</td>
+<tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Work in progress</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body">0.0.1</td>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.1</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Dedication:</th><td class="field-body">Users and maintainers of the <tt class="docutils literal">Universal Webserver</tt>.</td>
+<tr class="field"><th class="field-name">Dedication:</th><td class="field-body"><p class="first">Users and maintainers of the <tt class="docutils literal">Universal Webserver</tt>.</p>
+</td>
 </tr>
-<tr class="field"><th class="field-name">Abstract:</th><td class="field-body">The <a class="reference external" href="http://us-web.esperide.org/">Universal Webserver</a>, part of the <a class="reference external" href="https://github.com/Olivier-Boudeville/Universal-Server">Universal Server</a> project, provides a multi-domain, multi-virtualhost webserver integrating various web-related services.
-We present here a short overview of these services, to introduce them to newcomers.
-The next level of information is to read the corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">source files</a>, which are intensely commented and generally straightforward.</td>
+<tr class="field"><th class="field-name">Abstract:</th><td class="field-body"><p class="first">The <a class="reference external" href="http://us-web.esperide.org/">Universal Webserver</a>, part of the <a class="reference external" href="https://github.com/Olivier-Boudeville/Universal-Server">Universal Server</a> umbrella project, provides a multi-domain, multi-virtualhost webserver integrating various web-related services.</p>
+<p>We present here a short overview of these services, to introduce them to newcomers.</p>
+<p class="last">The next level of information is to read the corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">source files</a>, which are intensely commented and generally straightforward.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -68,7 +76,7 @@ The next level of information is to read the corresponding <a class="reference e
 <p></p>
 <div class="section" id="overview">
 <h2><a class="toc-backref" href="#id14">Overview</a></h2>
-<p>We present here a short overview of these services, to introduce them to newcomers.</p>
+<p>We present here a short overview of the services offered by the <em>Universal Webserver</em>, to introduce them to newcomers.</p>
 <p>The next level of information is to read the corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">source files</a>, which are intensely commented and generally straightforward.</p>
 </div>
 <div class="section" id="layer-stack">
@@ -76,7 +84,7 @@ The next level of information is to read the corresponding <a class="reference e
 <p>From the highest level to the lowest, as summarised <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">here</a>, a software stack involving the Universal Webserver usually is like:</p>
 <ul class="simple">
 <li>the <em>Universal Webserver</em> services themselves (i.e. this <a class="reference external" href="http://us-web.esperide.org/">us-web</a> layer)</li>
-<li>the <a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a> (for a small, fast and modern web framework)</li>
+<li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a> (for a small, fast and modern web framework)</li>
 <li>[optional] <a class="reference external" href="http://www.awstats.org/">Awstats</a> (for the analysis of access log files)</li>
 <li><a class="reference external" href="http://us-common.esperide.org/">US-Common</a> (for US base facilities)</li>
 <li><a class="reference external" href="http://traces.esperide.org">Ceylan-Traces</a> (for advanced runtime traces)</li>
@@ -96,7 +104,7 @@ The next level of information is to read the corresponding <a class="reference e
 </div>
 <div class="section" id="current-stable-version-download">
 <h2><a class="toc-backref" href="#id17">Current Stable Version &amp; Download</a></h2>
-<p>As mentioned, the single, direct prerequisites of <a class="reference external" href="https://github.com/Olivier-Boudeville/UniversalWebserver">Universal Webserver</a> are:</p>
+<p>As mentioned, the single, direct prerequisites of the <a class="reference external" href="https://github.com/Olivier-Boudeville/UniversalWebserver">Universal Webserver</a> are:</p>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a></li>
 <li><a class="reference external" href="http://www.awstats.org/">Awstats</a> (as an optional, runtime-only dependency)</li>
@@ -109,8 +117,8 @@ The next level of information is to read the corresponding <a class="reference e
 <tr><td class="label"><a class="fn-backref" href="#id10">[1]</a></td><td>Note that, in the Ceylan-Myriad repository, we have a script to streamline the installation of Erlang, see <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Myriad/blob/master/conf/install-erlang.sh">install-erlang.sh</a>; use <tt class="docutils literal"><span class="pre">install-erlang.sh</span> <span class="pre">--help</span></tt> for guidance.</td></tr>
 </tbody>
 </table>
-<p>We recommend securing Erlang thanks to a manual installation, Awstats thanks to our distribution (ex: <tt class="docutils literal">pacman <span class="pre">-S</span> awstats</tt>) and for all Erlang-related software to rely on rebar3.</p>
-<p>One wanting to be able to operate on the source code of these dependencies may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root of <tt class="docutils literal"><span class="pre">us-web</span></tt>, these links pointing to relevant GIT clones.</p>
+<p>We recommend obtaining Erlang thanks to a manual installation, Awstats thanks to your distribution of choice (ex: <tt class="docutils literal">pacman <span class="pre">-S</span> awstats</tt>) and, for all Erlang-related software, to rely on rebar3.</p>
+<p>One wanting to be able to operate on the source code of these dependencies may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root one's <tt class="docutils literal"><span class="pre">us-web</span></tt> clone, these links pointing to relevant GIT repositories.</p>
 <div class="section" id="using-cutting-edge-git">
 <h3><a class="toc-backref" href="#id18">Using Cutting-Edge GIT</a></h3>
 <p>This is the installation method that we use and recommend; the Universal Webserver <tt class="docutils literal">master</tt> branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.</p>
@@ -125,8 +133,8 @@ $ <span class="nb">cd</span> wooper <span class="o">&amp;&amp;</span> make all <
 $ git clone https://github.com/Olivier-Boudeville/Ceylan-Traces traces
 $ <span class="nb">cd</span> traces <span class="o">&amp;&amp;</span> make all <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ..
 
-$ git clone https://github.com/Olivier-Boudeville/universal-webserver
-$ <span class="nb">cd</span> universal-webserver <span class="o">&amp;&amp;</span> make all
+$ git clone https://github.com/Olivier-Boudeville/us-common
+$ <span class="nb">cd</span> us-common <span class="o">&amp;&amp;</span> make all
 
 $ git clone https://github.com/Olivier-Boudeville/us-web
 $ <span class="nb">cd</span> us-web <span class="o">&amp;&amp;</span> make all
@@ -139,14 +147,10 @@ $ make debug
 </div>
 <div class="section" id="using-otp-related-build-runtime-conventions">
 <span id="otp-build"></span><h3><a class="toc-backref" href="#id19">Using OTP-Related Build/Runtime Conventions</a></h3>
-<p>As discussed in these sections of <a class="reference external" href="http://myriad.esperide.org/myriad.html#otp">Myriad</a>, <a class="reference external" href="http://wooper.esperide.org/index.html#otp">WOOPER</a>, <a class="reference external" href="http://traces.esperide.org/index.html#otp">Traces</a> and <a class="reference external" href="http://universal-webserver.esperide.org/index.html#otp">Universal-Webserver</a>, we added the (optional) possibility of generating a Universal Webserver <em>OTP application</em> out of the build tree, ready to result directly in an <em>(OTP) release</em>. For that we rely on <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, <a class="reference external" href="https://github.com/erlware/relx">relx</a> and <a class="reference external" href="https://hex.pm/">hex</a>.</p>
+<p>As discussed in these sections of <a class="reference external" href="http://myriad.esperide.org/myriad.html#otp">Myriad</a>, <a class="reference external" href="http://wooper.esperide.org/index.html#otp">WOOPER</a>, <a class="reference external" href="http://traces.esperide.org/index.html#otp">Traces</a> and <a class="reference external" href="http://us-common.esperide.org/index.html#otp">US-Common</a>, we added the (optional) possibility of generating a Universal Webserver <em>OTP application</em> out of the build tree, ready to result directly in an <em>(OTP) release</em>. For that we rely on <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, <a class="reference external" href="https://github.com/erlware/relx">relx</a> and <a class="reference external" href="https://hex.pm/">hex</a>.</p>
 <p>Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on any number of domains as needed.</p>
-<p>As for Myriad, WOOPER, Traces and Universal-Webserver, most versions of Universal Webserver are also published as <a class="reference external" href="https://hex.pm/packages/us_web">Hex packages</a>.</p>
-<p>For more details, one may have a look at:</p>
-<ul class="simple">
-<li><a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar.config.template">rebar.config.template</a>, the general rebar configuration file used when generating the Universal Webserver OTP application and release (implying the automatic management of Myriad and WOOPER)</li>
-<li><a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar-for-hex.config.template">rebar-for-hex.config.template</a>, to generate a corresponding Hex package for Universal Webserver (whose structure and conventions is quite different from the previous OTP elements)</li>
-</ul>
+<p>As for Myriad, WOOPER, Traces and US-Common, most versions of the Universal Webserver are also published as <a class="reference external" href="https://hex.pm/packages/us_web">Hex packages</a>.</p>
+<p>For more details, one may have a look at <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar.config.template">rebar.config.template</a>, the general rebar configuration file used when generating the Universal Webserver OTP application and release (implying the automatic management of all its dependencies).</p>
 </div>
 </div>
 <div class="section" id="support">
@@ -161,7 +165,7 @@ $ make debug
 <h2><a class="toc-backref" href="#id22">Ending Word</a></h2>
 <p>Have fun with the Universal Webserver!</p>
 <div class="figure align-center">
-<img alt="Universal Webserver logo" src="us-web-title.png" style="width: 100%;" />
+<img alt="Universal Webserver logo" src="us-web-title.png" style="width: 75%;" />
 </div>
 <p><span class="raw-html"><a name="us-web_bottom"></a></span></p>
 </div>

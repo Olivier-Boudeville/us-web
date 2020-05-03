@@ -50,6 +50,8 @@ full-doc: $(DOC_BASE_NAME).pdf $(DOC_BASE_NAME).html
 
 html: clean-doc $(HTML_TARGET)
 
+pdf: clean-doc $(DOC_PDF_NAME)
+
 
 # Creates a separate repository for the GitHub pages branch:
 # (please then remove all initial content of that branch)

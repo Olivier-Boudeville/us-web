@@ -65,7 +65,7 @@ export-doc: clean-doc full-doc export-to-official export-to-mirror
 
 export-to-official: $(DOC_GENERATED_FILES)
 	@echo "   Exporting us-web documentation to official website ($(WEB_SRV))"
-	@/bin/scp $(SP) $(WEB_CONTENT) $(WEB_SRV):$(WEB_ROOT)/Universal-Webserver
+	@/bin/scp $(SP) $(WEB_CONTENT) $(WEB_SRV):$(WEB_ROOT)/US-Web
 
 
 export-to-mirror: $(DOC_GENERATED_FILES)

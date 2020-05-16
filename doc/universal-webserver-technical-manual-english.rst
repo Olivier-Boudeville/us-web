@@ -37,7 +37,7 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, May 3, 2020
+:Lastly updated: Friday, May 15, 2020
 :Status: Work in progress
 :Version: 0.0.1
 :Dedication: Users and maintainers of the ``Universal Webserver``.
@@ -117,11 +117,11 @@ As mentioned, the single, direct prerequisites of the `Universal Webserver <http
 - `Awstats <http://www.awstats.org/>`_ (as an optional, runtime-only dependency)
 - `US-Common <http://us-common.esperide.org/>`_
 
-The latter relies on `Ceylan-Traces <https://github.com/Olivier-Boudeville/Ceylan-Traces>`_, which implies in turn `Ceylan-WOOPER <https://github.com/Olivier-Boudeville/Ceylan-WOOPER>`_, then `Ceylan-Myriad <https://github.com/Olivier-Boudeville/Ceylan-Myriad>`_ and `Erlang <http://erlang.org>`_, version 22.1 or more recent [#]_.
+The latter relies on `Ceylan-Traces <https://github.com/Olivier-Boudeville/Ceylan-Traces>`_, which implies in turn `Ceylan-WOOPER <https://github.com/Olivier-Boudeville/Ceylan-WOOPER>`_, then `Ceylan-Myriad <https://github.com/Olivier-Boudeville/Ceylan-Myriad>`_ and `Erlang <http://erlang.org>`_.
 
-.. [#] Note that, in the Ceylan-Myriad repository, we have a script to streamline the installation of Erlang, see `install-erlang.sh <https://github.com/Olivier-Boudeville/Ceylan-Myriad/blob/master/conf/install-erlang.sh>`_; use ``install-erlang.sh --help`` for guidance.
+We prefer using GNU/Linux, sticking to the latest stable release of Erlang, and building it from sources, thanks to GNU ``make``.
 
-We recommend obtaining Erlang thanks to a manual installation, Awstats thanks to your distribution of choice (ex: ``pacman -S awstats``) and, for all Erlang-related software, to rely on rebar3.
+We recommend indeed obtaining Erlang thanks to a manual installation (refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines), Awstats thanks to your distribution of choice (ex: ``pacman -S awstats``) and, for all Erlang-related software, to rely on rebar3.
 
 One wanting to be able to operate on the source code of these dependencies may define appropriate symbolic links in a ``_checkouts`` directory created at the root one's ``us-web`` clone, these links pointing to relevant GIT repositories.
 
@@ -211,7 +211,7 @@ Have fun with the Universal Webserver!
 
 .. figure:: us-web-title.png
    :alt: Universal Webserver logo
-   :width: 75 %
+   :width: 50%
    :align: center
 
 :raw-html:`<a name="us-web_bottom"></a>`

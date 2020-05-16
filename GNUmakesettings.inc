@@ -1,4 +1,4 @@
-# This is the single file that all us-web GNUmakefiles, and only them, should
+# This is the single file that all US-Web GNUmakefiles, and only them, should
 # include.
 
 # Prerequisite: US_WEB_TOP must be set.

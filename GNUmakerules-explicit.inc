@@ -1,4 +1,4 @@
-# Here are gathered explicit (immediate, static) rules for US-web.
+# Here are gathered explicit (immediate, static) rules for US-Web.
 #
 # See GNUmakerules-automatic.inc for their automatic (generic, pattern-based)
 # counterparts.

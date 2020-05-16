@@ -6,7 +6,7 @@ US_WEB_TOP = .
 		all compile                                                            \
 		ensure-dev-release ensure-prod-release                                 \
 		release release-dev release-prod                                       \
-		export-release just-export-release                                     \
+		export-release just-export-release upgrade-us-common                   \
 		start debug status stop log cat-log tail-log                           \
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive                                       \
@@ -117,7 +117,7 @@ stats:
 
 compile: rebar3-create-app-file
 	@echo "  Compiling us_web from $$(pwd)"
-	@$(REBAR3) compile
+	@$(REBAR3_EXEC) compile
 
 
 # Ensures a relevant development release is available.
@@ -139,13 +139,13 @@ ensure-prod-release:
 release: release-prod
 
 
-# Probably that '@$(REBAR3) tar' exceeds what is needed:
+# Probably that '@$(REBAR3_EXEC) tar' exceeds what is needed:
 #
 # ('compile' is not needed either: same happens because of 'release')
 #
 release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #update-release
 	@echo "  Generating OTP us_web release in development mode"
-	@$(REBAR3) release
+	@$(REBAR3_EXEC) release
 	@cd $(US_WEB_DEFAULT_REL_DIR)/releases && /bin/ln -sf $(US_WEB_VERSION) latest-release
 
 
@@ -154,7 +154,7 @@ release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #
 #
 release-prod: clean-otp-build-tree rebar3-create-app-file rebar.config  #update-release
 	@echo "  Generating OTP us_web release in production mode"
-	@$(REBAR3) as prod tar
+	@$(REBAR3_EXEC) as prod tar
 
 
 # Rebuilding the "normal" version thereof (not the testing or Hex one):
@@ -162,10 +162,10 @@ rebar.config: conf/rebar.config.template
 	$(MAKE) -s set-rebar-conf
 
 
-# Just rebuilding US-web:
+# Just rebuilding us-web:
 release-prod-light: compile
 	@echo "  Generating OTP us_web release in production mode (with lightest rebuild)"
-	@$(REBAR3) as prod tar
+	@$(REBAR3_EXEC) as prod tar
 
 
 export-release: release-prod-light just-export-release
@@ -174,6 +174,15 @@ export-release: release-prod-light just-export-release
 just-export-release:
 	@echo "  Exporting production release $(RELEASE_NAME) to $(EXPORT_TARGET)"
 	@scp $(SP) $(RELEASE_PATH) $(EXPORT_TARGET)
+
+
+# So that any change in US-Common repository can be used here:
+#
+# (note: for actual US development, prefer using a _checkouts directory for all
+# relevant dependencies)
+#
+upgrade-us-common:
+	@$(REBAR3_EXEC) upgrade us_common
 
 
 # Not used anymore, as the simple_bridge configuration file does not seem to be
@@ -275,7 +284,7 @@ shell: test-interactive
 # in following shell:
 #
 test-interactive: compile
-	@$(REBAR3) shell
+	@$(REBAR3_EXEC) shell
 
 
 # Creates the symbolic links that allow the make system to find its Ceylan
@@ -290,7 +299,7 @@ test-interactive: compile
 
 clean-local: clean-log
 	@echo "  Cleaning from $$(pwd)"
-	@$(REBAR3) clean
+	@$(REBAR3_EXEC) clean
 
 
 # Web-related logs already removed by the recursive 'clean' target:
@@ -312,7 +321,6 @@ info: info-local
 
 
 info-local:
-	@echo "REBAR3 = $(REBAR3)"
 	@echo "US_WEB_DEFAULT_REL_DIR = $(US_WEB_DEFAULT_REL_DIR)"
 	@echo "US_DEFAULT_REL_EXEC = $(US_DEFAULT_REL_EXEC)"
 	@echo "VM_LOG_FILES = $(VM_LOG_FILES)"

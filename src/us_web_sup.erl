@@ -20,7 +20,7 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% Supervisor of the us_web application.
+% Root supervisor of the us_web application.
 %
 % Directly created by us_web_app.
 %
@@ -43,6 +43,9 @@ start_link() ->
 init( _Args=[] ) ->
 
 	trace_utils:trace( "Starting us_web supervisor..." ),
+
+	% The logic below shall better be in a (single) supervised child, for a
+	% better logic separation.
 
 	% The overall US (not us-web) configuration server will be either found or
 	% created by the us-web configuration one:

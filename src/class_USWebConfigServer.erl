@@ -1636,7 +1636,9 @@ manage_registrations( ConfigTable, State ) ->
 
 	end,
 
-	SchedPid = class_USScheduler:new_link( "USWebScheduler", SchedRegName ),
+	% Relatively private to this node:
+	SchedPid = class_USScheduler:new_link( "USWebScheduler", SchedRegName,
+										   _SchedRegScope=local_only ),
 
 	?info_fmt( "This US-web configuration server was registered as '~s', while "
 	   "its scheduler (~w) was registered as '~s' (scope in all cases: ~s).",

@@ -20,7 +20,7 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% The main entry point of the us-web layer.
+% The main entry point of the us-web application.
 -module(us_web_app).
 
 -behaviour(application).
@@ -64,6 +64,7 @@ start( StartType, StartArgs ) ->
 	%basic_utils:display( "Prerequisites started; loaded applications:~n~p~n",
 	%		   [ application:loaded_applications() ] ),
 
+	% See http://erlang.org/doc/design_principles/applications.html:
 	us_web_sup:start_link().
 
 

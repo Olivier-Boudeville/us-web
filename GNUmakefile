@@ -198,9 +198,11 @@ update-release:
 # (CTRL-C twice in the console will not be sufficient to kill this instance, use
 # 'make kill' instead)
 #
+# (apparently 'start' was replaced with 'foreground' or 'daemon')
+#
 start: kill clean-logs compile
 	@echo "Starting the us_web release (EPMD port: $(EPMD_PORT)):"
-	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web start || echo "Start failed"
+	export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web foreground || echo "Start failed"
 	@sleep 1 ; $(MAKE) -s log
 
 
@@ -329,6 +331,7 @@ info-local:
 	@echo "TRACES_TOP = $(TRACES_TOP)"
 	@echo "WOOPER_TOP = $(WOOPER_TOP)"
 	@echo "MYRIAD_TOP = $(MYRIAD_TOP)"
+	@echo "REBAR_INCS = $(REBAR_INCS)"
 
 
 include $(US_WEB_TOP)/GNUmakesettings.inc

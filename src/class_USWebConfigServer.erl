@@ -1704,11 +1704,11 @@ manage_os_user( ConfigTable, State ) ->
 									   wooper:state().
 manage_app_base_directories( ConfigTable, State ) ->
 
-	% As opposed to, say, start/stop scripts, it may not be strictly necessary,
-	% depending on the context (the US framework being also launchable thanks
-	% to, for example, 'make debug'), for this Erlang part to know the
-	% application base directory (see app_base_directory); so lacking it is not
-	% a blocking error, even if it would be better to know it.
+	% As opposed to, say, start/stop script, the Erlang code does not care so
+	% much about these directories, so warnings, not errors, were issued if
+	% not found (the US framework being also launchable thanks to, for example,
+	% 'make debug'). We finally opted for a stricter policy, as errors could be
+	% induced afterwards.
 
 	RawBaseDir = case table:lookup_entry( ?us_web_app_base_dir_key,
 										  ConfigTable ) of
@@ -1774,22 +1774,23 @@ manage_app_base_directories( ConfigTable, State ) ->
 					text_utils:string_to_binary( BaseDir );
 
 				_Other ->
-					?warning_fmt( "The US-web application base directory '~s' "
-						"does not seem legit (it should end with 'us_web'), "
-						"thus considering knowing none.", [ BaseDir ] ),
-					%throw( { incorrect_us_web_app_base_directory, BaseDir,
-					%		 ?us_web_app_base_dir_key } )
-					undefined
+					%?warning_fmt( "The US-web application base directory '~s' "
+					%	"does not seem legit (it should end with 'us_web'), "
+					%	"thus considering knowing none.", [ BaseDir ] ),
+					%undefined
+					throw( { incorrect_us_web_app_base_directory, BaseDir,
+							 ?us_web_app_base_dir_key } )
 
 			end;
 
 		false ->
-			?warning_fmt( "The US-web application base directory '~s' does not "
-						  "exist, thus considering knowing none.",
-						  [ BaseDir ] ),
-			%throw( { non_existing_us_web_app_base_directory, BaseDir,
-			%		 ?us_web_app_base_dir_key } )
-			undefined
+			%?warning_fmt( "The US-web application base directory '~s' does not "
+			%			  "exist, thus considering knowing none.",
+			%			  [ BaseDir ] ),
+			%undefined
+			throw( { non_existing_us_web_app_base_directory, BaseDir,
+					 ?us_web_app_base_dir_key } )
+
 
 	end,
 

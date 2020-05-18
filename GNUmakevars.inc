@@ -71,7 +71,7 @@ endif
 
 
 ifndef US_CONFIG_FILE
-	US_CONFIG_FILE = $(US_TOP)/conf/us.config
+	US_CONFIG_FILE := $(US_TOP)/conf/us.config
 endif
 
 
@@ -96,4 +96,4 @@ endif
 # (it may be a symbolic link pointing to the actual US-Common package to be
 # used)
 #
-US_COMMON_TOP = $(US_WEB_TOP)/../us-common
+US_COMMON_TOP = $(US_WEB_TOP)/../us_common

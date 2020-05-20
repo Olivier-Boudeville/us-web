@@ -130,9 +130,9 @@ exec() ->
 init_from_command_line() ->
 
 	% To force options for testing:
-	%ArgTable = executable_utils:generate_argument_table( "--help" ),
+	%ArgTable = shell_utils:generate_argument_table( "--help" ),
 
-	ArgTable = executable_utils:get_argument_table(),
+	ArgTable = shell_utils:get_argument_table(),
 
 	%trace_utils:debug_fmt( "Argument table: ~s",
 	%					   [ list_table:to_string( ArgTable ) ] ),

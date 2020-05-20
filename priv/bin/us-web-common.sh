@@ -5,7 +5,32 @@
 # Used for example by start-us-web.sh and stop-us-web.sh.
 
 
-# us_common_root expected to be already set.
+# Determining us_common_root:
+
+us_web_script_root=$(dirname $0)
+echo "US-Web script root: ${us_web_script_root}"
+
+us_common_root_in_checkouts="${us_web_script_root}/../../_checkouts/us_common"
+us_common_root_in_build="${us_web_script_root}/../../_build/default/lib/us_common"
+
+if [ -d "${us_common_root_in_checkouts}" ] ; then
+
+	us_common_root="${us_common_root_in_checkouts}"
+
+else
+
+	if [ -d "${us_common_root_in_build}" ] ; then
+
+		us_common_root="${us_common_root_in_build}"
+
+	else
+
+			echo "  Error, no us-common root found (neither ${us_common_root_in_checkouts} nor ${us_common_root_in_build}) found." 1>&2
+			exit 95
+
+	fi
+
+fi
 
 # As depends on it:
 us_common_script="${us_common_root}/priv/bin/us-common.sh"
@@ -231,7 +256,7 @@ read_us_web_config_file()
 
 	fi
 
-	echo "us-web (web-level) logs to be written in the '${us_web_log_dir}' directory."
+	echo "us-web (web-level) logs expected in the '${us_web_log_dir}' directory."
 
 }
 

@@ -1881,9 +1881,7 @@ manage_data_directory( ConfigTable, State ) ->
 	% Enforce security in all cases ("chmod 700"); if it fails here, the
 	% combined path/user configuration must be incorrect; however we might not
 	% be the owner of that directory (ex: if the us-web user is different from
-	% the us one)
-	%
-	% So:
+	% the us one). So:
 	%
 	CurrentUserId = system_utils:get_user_id(),
 

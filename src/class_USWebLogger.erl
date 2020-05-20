@@ -260,7 +260,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 	{ BinAccessLogFilename, BinErrorLogFilename } =
 		get_log_paths( BinHostId, DomainId ),
 
-	FilePair = { BinAccessLogFilePath, BinErrorLogFilePath } =
+	{ BinAccessLogFilePath, BinErrorLogFilePath } =
 		{ file_utils:join( BinLogDir, BinAccessLogFilename ),
 		  file_utils:join( BinLogDir, BinErrorLogFilename ) },
 
@@ -329,8 +329,34 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		{ web_analysis_info, MaybeWebAnalysisInfo },
 		{ log_analysis_command, MaybeLogAnalysisCmd } ] ),
 
-	[ AccessFile, ErrorFile ] =
-		[ create_log_file( F, ToolState ) || F <- tuple_to_list( FilePair ) ],
+
+	case file_utils:is_existing_file_or_link( BinAccessLogFilePath ) of
+
+		true ->
+			% Processes it and then removes it:
+			rotate_access_log_file( ToolState );
+
+		false ->
+			ok
+
+	end,
+
+	AccessFile = create_log_file( BinAccessLogFilePath, ToolState ),
+
+
+	case file_utils:is_existing_file_or_link( BinErrorLogFilePath ) of
+
+		true ->
+			% Processes it and then removes it:
+			rotate_basic_log_file( BinErrorLogFilePath, ToolState );
+
+		false ->
+			ok
+
+	end,
+
+	ErrorFile = create_log_file( BinErrorLogFilePath, ToolState ),
+
 
 	MaybeLogTaskId = case MaybeSchedulerPid of
 
@@ -501,10 +527,11 @@ create_log_files( State ) ->
 -spec create_log_file( bin_file_path(), wooper:state() ) -> file().
 create_log_file( BinLogFilePath, State ) ->
 
+	% Not supposed to be still there in nominal conditions:
 	case file_utils:is_existing_file_or_link( BinLogFilePath ) of
 
 		true ->
-			% Better than rotating an unknown/unexpected file:
+			% Used to be deemed better than rotating an unknown/unexpected file:
 			%
 			% (would deserve a warning, yet almost always happens at start-up)
 			%

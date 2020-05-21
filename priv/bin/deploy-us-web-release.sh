@@ -1,7 +1,6 @@
 #!/bin/sh
 
-
-usage="Usage: $(basename $0): deploys (installs and runs) locally a us-web release."
+usage="Usage: $(basename $0): deploys (installs and runs) locally a US-Web release."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -32,7 +31,7 @@ rel_archive=$(/bin/ls -1 ${archive_dir}/us_web-*.tar.gz | tail -1 2>/dev/null)
 
 if [ -z "${rel_archive}" ]; then
 
-	echo "  Error, no us-web release archive found in '${archive_dir}'." 1>&2
+	echo "  Error, no US-Web release archive found in '${archive_dir}'." 1>&2
 	exit 10
 
 fi
@@ -40,7 +39,7 @@ fi
 
 archive_version=$(echo ${rel_archive} |sed "s|^${archive_dir}/us_web-||1" | sed 's|.tar.gz$||1')
 
-echo " Detected us-web version: '${archive_version}'."
+echo " Detected US-Web version: '${archive_version}'."
 
 archive_name="us_web-${archive_version}.tar.gz"
 
@@ -49,7 +48,7 @@ archive_path="${archive_dir}/${archive_name}"
 
 if [ ! -f "${archive_path}" ]; then
 
-	echo "  Error, us-web release archive '${archive_path}' is not a file." 1>&2
+	echo "  Error, US-Web release archive '${archive_path}' is not a file." 1>&2
 	exit 15
 
 fi
@@ -105,7 +104,7 @@ cd "${rel_dir}"
 # Now we let the archive at its original place:
 #/bin/mv -f "${archive_path}" .
 
-if ! tar xzf "${archive_path}" ; then
+if ! tar xzf "${archive_path}"; then
 
 	echo " Error, the archive '${archive_name}' could not be decompressed in '$(pwd)'." 1>&2
 
@@ -130,7 +129,7 @@ rel_exec="${rel_root}/bin/us_web"
 
 if [ -x "${rel_exec}" ]; then
 
-	echo " us-web release ready in '${rel_exec}'."
+	echo " US-Web release ready in '${rel_exec}'."
 
 else
 
@@ -138,6 +137,7 @@ else
 	exit 25
 
 fi
+
 
 priv_dir="${rel_root}/lib/${rel_dir}/priv"
 
@@ -150,7 +150,7 @@ if [ ! -x "${start_script}" ]; then
 
 fi
 
-# Not wanting the files of that us-web install to remain owned by root, so
+# Not wanting the files of that US-Web install to remain owned by root, so
 # trying to apply a more proper user/group; for that we have to determine them
 # from the configuration files:
 #
@@ -163,6 +163,13 @@ if [ ! -f "${us_web_common_script}" ]; then
 	exit 35
 
 fi
+
+
+# We are in ${rel_root} now, so that the us-common.sh script (and thus the
+# us_common base first) can be found with relative links from us-web-common.sh:
+#
+# (so we will be typically in /opt/universal-server/us_web-x.y.z from now on)
+cd "${rel_root}"
 
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" 1>/dev/null
@@ -200,7 +207,7 @@ do_launch=1
 
 if [ $do_launch -eq 0 ]; then
 
-	echo "### Launching us-web release now"
+	echo "### Launching US-Web release now"
 
 	${start_script}
 
@@ -215,7 +222,7 @@ if [ $do_launch -eq 0 ]; then
 	#
 	# The goal here is only to select the latest-produced of these rotated log files:
 	#
-	us_web_vm_log_file=$(/bin/ls -t ${log_dir}/erlang.log.* | head -n 1)
+	us_web_vm_log_file=$(/bin/ls -t ${log_dir}/erlang.log.* 2>/dev/null | head -n 1)
 
 	if [ -f "${us_web_vm_log_file}" ]; then
 

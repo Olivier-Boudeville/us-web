@@ -13,13 +13,13 @@ echo "US-Web script root: ${us_web_script_root}"
 us_common_root_in_checkouts="${us_web_script_root}/../../_checkouts/us_common"
 us_common_root_in_build="${us_web_script_root}/../../_build/default/lib/us_common"
 
-if [ -d "${us_common_root_in_checkouts}" ] ; then
+if [ -d "${us_common_root_in_checkouts}" ]; then
 
 	us_common_root="${us_common_root_in_checkouts}"
 
 else
 
-	if [ -d "${us_common_root_in_build}" ] ; then
+	if [ -d "${us_common_root_in_build}" ]; then
 
 		us_common_root="${us_common_root_in_build}"
 
@@ -35,7 +35,7 @@ fi
 # As depends on it:
 us_common_script="${us_common_root}/priv/bin/us-common.sh"
 
-if [ -f "${us_common_script}" ] ; then
+if [ -f "${us_common_script}" ]; then
 
 	. "${us_common_script}"
 
@@ -60,7 +60,7 @@ read_us_web_config_file()
 
 	us_web_default_config_filename="us-web.config"
 
-	if [ -z "${us_web_config_filename}" ] ; then
+	if [ -z "${us_web_config_filename}" ]; then
 
 		us_web_config_filename="${us_web_default_config_filename}"
 
@@ -76,7 +76,7 @@ read_us_web_config_file()
 
 	echo "Looking up '${us_web_config_file}'..."
 
-	if [ ! -f "${us_web_config_file}" ] ; then
+	if [ ! -f "${us_web_config_file}" ]; then
 
 		echo "  Error, us-web configuration filename '${us_web_config_filename}' not found." 1>&2
 		exit 110
@@ -93,11 +93,11 @@ read_us_web_config_file()
 
 	us_web_username=$(echo "${us_web_base_content}" | grep us_web_username | sed 's|^{[[:space:]]*us_web_username,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
-	if [ -z "${us_web_username}" ] ; then
+	if [ -z "${us_web_username}" ]; then
 
 		us_web_username="${USER}"
 
-		if [ -z "${us_web_username}" ] ; then
+		if [ -z "${us_web_username}" ]; then
 
 			echo " Error, no USER environment variable set, whereas not username specified in configuration file." 1>&2
 			exit 120
@@ -117,10 +117,10 @@ read_us_web_config_file()
 
 	us_web_app_base_dir=$(echo "${us_web_base_content}" | grep us_web_app_base_dir | sed 's|^{[[:space:]]*us_web_app_base_dir,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
-	if [ -z "${us_web_app_base_dir}" ] ; then
+	if [ -z "${us_web_app_base_dir}" ]; then
 
 		# Environment variable as last-resort:
-		if [ -z "${US_WEB_APP_BASE_DIR}" ] ; then
+		if [ -z "${US_WEB_APP_BASE_DIR}" ]; then
 
 			# Wild guess:
 			us_web_app_base_dir=$(/bin/ls -d ${us_app_base_dir}/../../*/us_web 2>/dev/null | xargs realpath)
@@ -141,7 +141,7 @@ read_us_web_config_file()
 
 	fi
 
-	if [ ! -d "${us_web_app_base_dir}" ] ; then
+	if [ ! -d "${us_web_app_base_dir}" ]; then
 
 		echo "  Error, the base directory determined for the us-web application, '${us_web_app_base_dir}', is not an existing directory." 1>&2
 		exit 130
@@ -159,14 +159,14 @@ read_us_web_config_file()
 	#
 	us_web_vm_log_dir="${us_web_app_base_dir}/log"
 
-	if [ ! -d "${us_web_vm_log_dir}" ] ; then
+	if [ ! -d "${us_web_vm_log_dir}" ]; then
 
 		saved_log_dir="${us_web_vm_log_dir}"
 
 		# Maybe in development mode then (i.e. as a rebar3 build tree):
 		us_web_vm_log_dir="${us_web_app_base_dir}/_build/default/rel/us_web/log"
 
-		if [ ! -d "${us_web_vm_log_dir}" ] ; then
+		if [ ! -d "${us_web_vm_log_dir}" ]; then
 
 			# Not an error per se, may happen for example when running a new
 			# release:
@@ -187,7 +187,13 @@ read_us_web_config_file()
 
 	fi
 
-	us_web_vm_log_file="${us_web_vm_log_dir}/erlang.log.1"
+
+	# See https://erlang.org/doc/embedded/embedded_solaris.html to understand
+	# the naming logic of erlang.log.* files.
+	#
+	# The goal here is only to select the latest-produced of these rotated log files:
+	#
+	us_web_vm_log_file=$(/bin/ls -t ${us_web_vm_log_dir}/erlang.log.* | head -n 1)
 
 
 	# Supposing first the path of a real release having been specified; for
@@ -197,7 +203,7 @@ read_us_web_config_file()
 
 	us_web_exec="${us_web_app_base_dir}/bin/us_web"
 
-	if [ ! -x "${us_web_exec}" ] ; then
+	if [ ! -x "${us_web_exec}" ]; then
 
 		saved_exec="${us_web_exec}"
 
@@ -206,7 +212,7 @@ read_us_web_config_file()
 
 		us_web_exec="${us_web_rel_dir}/bin/us_web"
 
-		if [ ! -x "${us_web_exec}" ] ; then
+		if [ ! -x "${us_web_exec}" ]; then
 
 			echo "  Error, the specified us-web application base directory ('${us_web_app_base_dir}') does not seem to be a legit one: no '${saved_exec}' (not a standard release) nor '${us_web_exec}' (not a rebar3 build tree)." 1>&2
 			exit 150
@@ -225,7 +231,7 @@ read_us_web_config_file()
 
 	us_web_log_dir=$(echo "${us_web_base_content}" | grep us_web_log_dir | sed 's|^{[[:space:]]*us_web_log_dir,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
-	if [ -z "${us_web_log_dir}" ] ; then
+	if [ -z "${us_web_log_dir}" ]; then
 
 		us_web_log_dir="/var/log"
 		echo "No base directory specified for web logs (no 'us_web_log_dir' entry in the us-web configuration file '${us_web_config_file}'), trying default log directory '${us_web_log_dir}'."
@@ -233,7 +239,7 @@ read_us_web_config_file()
 	else
 
 		# Checks whether absolute:
-		if [[ "${us_web_log_dir:0:1}" == / || "${us_web_log_dir:0:2}" == ~[/a-z] ]] ; then
+		if [[ "${us_web_log_dir:0:1}" == / || "${us_web_log_dir:0:2}" == ~[/a-z] ]]; then
 
 			echo "Using directly specified directory for web logs, '${us_web_log_dir}'."
 
@@ -249,7 +255,7 @@ read_us_web_config_file()
 
 	fi
 
-	if [ ! -d "${us_web_log_dir}" ] ; then
+	if [ ! -d "${us_web_log_dir}" ]; then
 
 		echo "  Error, no us-web log directory (for web-level logs) found ('${us_web_log_dir}')." 1>&2
 		exit 160
@@ -273,7 +279,7 @@ read_us_web_config_file()
 update_us_web_config_cookie()
 {
 
-	if [ -n "${vm_cookie}" ] ; then
+	if [ -n "${vm_cookie}" ]; then
 
 		# Let's auto-generate on the fly a vm.args with the right runtime cookie
 		# (as it was changed at startup):
@@ -304,7 +310,7 @@ update_us_web_config_cookie()
 		# Do not overwrite original information (ex: if update was run twice
 		# with no restore in-between):
 		#
-		if [ ! -f "${original_vm_args_file}" ] ; then
+		if [ ! -f "${original_vm_args_file}" ]; then
 
 			/bin/mv -f "${vm_args_file}" "${original_vm_args_file}"
 
@@ -351,9 +357,9 @@ restore_us_web_config_cookie()
 
 	# Depends on whether a specific cookie had been defined:
 
-	if [ -n "${vm_cookie}" ] ; then
+	if [ -n "${vm_cookie}" ]; then
 
-		if [ -z "${original_vm_args_file}" ] ; then
+		if [ -z "${original_vm_args_file}" ]; then
 
 			# No prior update_us_web_config_cookie call?
 			echo "  Error, filename of original VM args not set (abnormal)." 1>&2
@@ -362,7 +368,7 @@ restore_us_web_config_cookie()
 
 		else
 
-			if [ -f "${original_vm_args_file}" ] ; then
+			if [ -f "${original_vm_args_file}" ]; then
 
 				/bin/mv -f "${original_vm_args_file}" "${vm_args_file}"
 
@@ -420,12 +426,12 @@ inspect_us_web_log()
 
 
 	# Waits a bit if necessary while any writing takes place:
-	if [ ! -f "${us_web_vm_log_file}" ] ; then
+	if [ ! -f "${us_web_vm_log_file}" ]; then
 		sleep 1
 	fi
 
 	echo
-	if [ -f "${us_web_vm_log_file}" ] ; then
+	if [ -f "${us_web_vm_log_file}" ]; then
 
 		echo "EPMD names output:"
 		epmd -port ${erl_epmd_port} -names

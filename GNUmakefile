@@ -56,6 +56,7 @@ RELEASE_NAME = us_web-$(US_WEB_VERSION).tar.gz
 
 RELEASE_PATH = $(US_WEB_PROD_REL_DIR)/$(RELEASE_NAME)
 
+RELEASE_DEPLOY_SCRIPT = $(US_WEB_TOP)/priv/bin/deploy-us-web-release.sh
 
 
 EXPORT_TARGET := $(WEB_SRV):/tmp
@@ -174,7 +175,7 @@ export-release: release-prod-light just-export-release
 
 just-export-release:
 	@echo "  Exporting production release $(RELEASE_NAME) to $(EXPORT_TARGET)"
-	@scp $(SP) $(RELEASE_PATH) $(EXPORT_TARGET)
+	@scp $(SP) $(RELEASE_PATH) $(RELEASE_DEPLOY_SCRIPT) $(EXPORT_TARGET)
 
 
 # So that any change in US-Common repository can be used here:

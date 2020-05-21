@@ -9,7 +9,7 @@
 
 usage="Usage: $(basename $0): returns the status of a supposedly locally-running us-web release."
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 	echo "${usage}"
 
@@ -22,7 +22,7 @@ fi
 us_web_common_script_name="us-web-common.sh"
 us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
 
-if [ ! -f "${us_web_common_script}" ] ; then
+if [ ! -f "${us_web_common_script}" ]; then
 
 	echo "Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
 	exit 35
@@ -72,7 +72,7 @@ echo
 echo
 echo " -- EPMD listed names:"
 
-if [ -n "${erl_epmd_port}" ] ; then
+if [ -n "${erl_epmd_port}" ]; then
 
 	epmd_port_opt="-port ${erl_epmd_port}"
 
@@ -83,9 +83,16 @@ echo
 
 journalctl -xe --unit us-web.service --no-pager --lines=20
 
+# As it is a local script and hopefully such a default vhost exists:
+echo
+echo "Checking web access:"
+wget http://localhost:8080 -O - | head
+
 # If not finding a us-web log file, might be the sign that us-web is actually
 # not running:
 #
 inspect_us_web_log
+
+
 
 exit 0

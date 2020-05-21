@@ -7,7 +7,8 @@ US_WEB_TOP = .
 		ensure-dev-release ensure-prod-release                                 \
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
-		start debug status stop log cat-log tail-log                           \
+		start debug start-as-release status stop stop-as-release               \
+		log cat-log tail-log check-web-availability                            \
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive                                       \
 		clean clean-logs real-clean info info-local
@@ -133,8 +134,8 @@ ensure-prod-release:
 
 
 
-# Before generating a release, the 'clean-otp-build-tree' target shall be run,
-# as otherwise past elements (ex: in link with .app files) will be re-used.
+# The 'clean-otp-build-tree' target is run before generating a release, as
+# otherwise past elements (ex: in link with .app files) will be re-used.
 
 release: release-prod
 
@@ -198,17 +199,29 @@ update-release:
 # (CTRL-C twice in the console will not be sufficient to kill this instance, use
 # 'make kill' instead)
 #
-# (apparently 'start' was replaced with 'foreground' or 'daemon')
+# (apparently 'start' was replaced with 'foreground' or 'daemon'; we use rather
+# the former as we prefer using the same, relevant inquiry scripts in all
+# contexts)
+#
+# Note also that the daemon option will not return (yet would still run if
+# exiting with CTRL-C); launching it in the background is thus preferable.
 #
 start: kill clean-logs compile
 	@echo "Starting the us_web release (EPMD port: $(EPMD_PORT)):"
-	export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web foreground || echo "Start failed"
+	export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
 	@sleep 1 ; $(MAKE) -s log
 
 
 debug: ensure-dev-release
 	@echo " Running us_web for debug (EPMD port: $(EPMD_PORT))"
 	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) log
+
+
+# Not tested yet, as we use releases in production mode, through systemd.
+start-as-release:
+	@echo "Starting a us_web release (EPMD port: $(EPMD_PORT)):"
+	@$(US_WEB_TOP)/priv/bin/start-us-web.sh
+
 
 
 # A rule such as the following would be bound to fail because of a non-matching
@@ -220,12 +233,26 @@ status:
 	@$(US_WEB_TOP)/priv/bin/get-us-web-status.sh
 
 
+# Note: will probably not work due to the VM cookie having been changed; use
+# 'stop-brutal' instead, if run with 'start' or 'debug':
+#
+stop:
+	@echo "Stopping us_web release (EPMD port: $(EPMD_PORT)):"
+	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || $(MAKE) -s log
+
+
+# Useful typically if the runtime cookie was changed:
+stop-brutal: kill
+
+
+# Note: only applies when the target instance has been started as a release.
+#
 # A rule such as the following would be bound to fail because of a non-matching
 # cookie:
 #
 #  @export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || ( echo "Stop failed" ; $(MAKE) -s log )
 #
-stop:
+stop-as-release:
 	@echo "Stopping the us_web release (EPMD port: $(EPMD_PORT)):"
 	@$(US_WEB_TOP)/priv/bin/stop-us-web.sh
 
@@ -246,6 +273,11 @@ cat-log:
 # When more stable; preferred to more:
 tail-log:
 	@tail --lines=20 -f $(VM_LOG_FILES)
+
+
+# Settings supposed in line with a local, debug US-Web configuration file:
+check-web-availability:
+	@wget http://localhost:8080 -O -
 
 
 # run_erl here, not beam.smp:

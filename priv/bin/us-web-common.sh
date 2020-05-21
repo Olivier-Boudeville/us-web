@@ -8,7 +8,7 @@
 # Determining us_common_root:
 
 us_web_script_root=$(dirname $0)
-echo "US-Web script root: ${us_web_script_root}"
+#echo "US-Web script root: ${us_web_script_root}"
 
 us_common_root_in_checkouts="${us_web_script_root}/../../_checkouts/us_common"
 us_common_root_in_build="${us_web_script_root}/../../_build/default/lib/us_common"
@@ -37,7 +37,7 @@ us_common_script="${us_common_root}/priv/bin/us-common.sh"
 
 if [ -f "${us_common_script}" ]; then
 
-	. "${us_common_script}"
+	. "${us_common_script}" 1>/dev/null
 
 else
 

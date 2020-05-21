@@ -3,7 +3,7 @@
 
 usage="Usage: $(basename $0): deploys (installs and runs) locally a us-web release."
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 	echo "${usage}"
 
@@ -16,7 +16,7 @@ fi
 cd /
 
 
-if [ ! $(id -u ) -eq 0 ] ; then
+if [ ! $(id -u ) -eq 0 ]; then
 
 	echo "  Error, this script must be run as root." 1>&2
 	exit 5
@@ -30,7 +30,7 @@ archive_dir="/tmp"
 #
 rel_archive=$(/bin/ls -1 ${archive_dir}/us_web-*.tar.gz | tail -1 2>/dev/null)
 
-if [ -z "${rel_archive}" ] ; then
+if [ -z "${rel_archive}" ]; then
 
 	echo "  Error, no us-web release archive found in '${archive_dir}'." 1>&2
 	exit 10
@@ -47,7 +47,7 @@ archive_name="us_web-${archive_version}.tar.gz"
 archive_path="${archive_dir}/${archive_name}"
 
 
-if [ ! -f "${archive_path}" ] ; then
+if [ ! -f "${archive_path}" ]; then
 
 	echo "  Error, us-web release archive '${archive_path}' is not a file." 1>&2
 	exit 15
@@ -59,7 +59,7 @@ base_rel_dir="/opt/universal-server"
 
 base_rel_dir_created=1
 
-if [ ! -d "${base_rel_dir}" ] ; then
+if [ ! -d "${base_rel_dir}" ]; then
 
 	echo " Creating base directory '{base_rel_dir}'."
 	/bin/mkdir "${base_rel_dir}"
@@ -75,7 +75,7 @@ for d in $(/bin/ls -d us_web-*.*.* 2>/dev/null) ; do
 
 	#echo "Testing for ${exec}..."
 
-	if [ -x "${exec}" ] ; then
+	if [ -x "${exec}" ]; then
 		echo " Trying to stop gracefully any prior release in ${d}."
 		${exec} stop 1>/dev/null 2>&1
 	fi
@@ -86,7 +86,7 @@ done
 rel_dir="us_web-${archive_version}"
 
 # Not wanting to inherit from remaining elements:
-if [ -d "${rel_dir}" ] ; then
+if [ -d "${rel_dir}" ]; then
 
 	echo " Removing already-existing ${rel_dir}."
 	/bin/rm -rf ${rel_dir}
@@ -128,7 +128,7 @@ cd "${rel_root}/releases"
 # Just a check:
 rel_exec="${rel_root}/bin/us_web"
 
-if [ -x "${rel_exec}" ] ; then
+if [ -x "${rel_exec}" ]; then
 
 	echo " us-web release ready in '${rel_exec}'."
 
@@ -143,7 +143,7 @@ priv_dir="${rel_root}/lib/${rel_dir}/priv"
 
 start_script="${priv_dir}/bin/start-us-web.sh"
 
-if [ ! -x "${start_script}" ] ; then
+if [ ! -x "${start_script}" ]; then
 
 	echo "Error, no start script found (no '${start_script}' found)." 1>&2
 	exit 30
@@ -157,7 +157,7 @@ fi
 # (will source in turn us-common.sh)
 us_web_common_script="${priv_dir}/bin/us-web-common.sh"
 
-if [ ! -f "${us_web_common_script}" ] ; then
+if [ ! -f "${us_web_common_script}" ]; then
 
 	echo "Error, unable to find us-web-common.sh script (not found in '${us_web_common_script}')." 1>&2
 	exit 35
@@ -183,7 +183,7 @@ if ! chown --recursive ${us_web_username}:${us_groupname} ${rel_root}; then
 fi
 
 
-if [ ${base_rel_dir_created} -eq 0 ] ; then
+if [ ${base_rel_dir_created} -eq 0 ]; then
 
 	if ! chown ${us_web_username}:${us_groupname} ${base_rel_dir}; then
 
@@ -198,7 +198,7 @@ fi
 # By default, no auto-launch:
 do_launch=1
 
-if [ $do_launch -eq 0 ] ; then
+if [ $do_launch -eq 0 ]; then
 
 	echo "### Launching us-web release now"
 
@@ -210,7 +210,22 @@ if [ $do_launch -eq 0 ] ; then
 
 	log_dir="${rel_root}/log"
 
-	tail -f "${log_dir}/erlang.log.1"
+	# See https://erlang.org/doc/embedded/embedded_solaris.html to understand
+	# the naming logic of erlang.log.* files.
+	#
+	# The goal here is only to select the latest-produced of these rotated log files:
+	#
+	us_web_vm_log_file=$(/bin/ls -t ${log_dir}/erlang.log.* | head -n 1)
+
+	if [ -f "${us_web_vm_log_file}" ]; then
+
+		tail -f "${us_web_vm_log_file}"
+
+	else
+
+		echo "(no VM log file found, tried '${us_web_vm_log_file}')"
+
+	fi
 
 else
 

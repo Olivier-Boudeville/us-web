@@ -24,7 +24,7 @@
 
 
 -define( class_description,
-		 "Server in charge of the logging for the US-web framework." ).
+		 "Server in charge of the logging for the US-Web framework." ).
 
 
 % Determines what are the direct mother classes of this class (if any):
@@ -32,7 +32,7 @@
 
 
 
-% Logging service for the US-web activities.
+% Logging service for the US-Web activities.
 %
 % This includes:
 % - access logging, typically for web analyzer tools such as awstats
@@ -115,7 +115,7 @@
 
 	% Currently not strictly needed:
 	{ conf_dir, bin_directory_path(),
-	  "the US-web configuration directory, where notably the per-host "
+	  "the US-Web configuration directory, where notably the per-host "
 	  "configuration files for log analysis tools are defined" },
 
 	% Not used anymore, as having to rely on Awstats lookup scheme:
@@ -216,6 +216,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   UserPeriodicity, MaybeWebAnalysisInfo, _IsSingleton=true ) ->
 
+	% Relies first on the next, main constructor:
 	InitState = construct( State, BinHostId, DomainId, BinLogDir,
 		   MaybeSchedulerPid, UserPeriodicity, MaybeWebAnalysisInfo, false ),
 
@@ -254,9 +255,6 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 	TraceState = class_USServer:construct( State,
 										   ?trace_categorize(ServerName) ),
 
-	%FilePair = { BinAccessLogFilename, BinErrorLogFilename } =
-	%	get_log_paths( BinHostId, DomainId, BinLogDir ),
-
 	{ BinAccessLogFilename, BinErrorLogFilename } =
 		get_log_paths( BinHostId, DomainId ),
 
@@ -286,7 +284,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 				false ->
 					% Expected to have been generated beforehand (typically by
-					% the US-web configuration server):
+					% the US-Web configuration server):
 					%
 					throw( { log_analysis_conf_file_not_found, ConfPath,
 							 ToolName } )
@@ -311,9 +309,9 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			% real interest, thus not wanted)
 			%
 			text_utils:format( "nice -n ~B ~s -update -config=~s -dir=~s "
-							   "-awstatsprog=~s 1>/dev/null",
-							   [ Niceness, BinToolPath, HostCfgDesc,
-									 BinWbContDir, BinHelperPath ] )
+				"-awstatsprog=~s 1>/dev/null",
+				[ Niceness, BinToolPath, HostCfgDesc, BinWbContDir,
+				  BinHelperPath ] )
 
 	end,
 
@@ -329,7 +327,11 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		{ web_analysis_info, MaybeWebAnalysisInfo },
 		{ log_analysis_command, MaybeLogAnalysisCmd } ] ),
 
-
+	% Now taking into account any past, not yet rotated log file, even though it
+	% may create a delay and a resource spike at start-up (as web loggers are
+	% created mostly in parallel, as asynchronously - spawning them
+	% synchronously would result in too long start-up delays).
+	%
 	case file_utils:is_existing_file_or_link( BinAccessLogFilePath ) of
 
 		true ->
@@ -535,8 +537,7 @@ create_log_file( BinLogFilePath, State ) ->
 			%
 			% (would deserve a warning, yet almost always happens at start-up)
 			%
-			?info_fmt( "Removing a prior '~s' log file.",
-					   [ BinLogFilePath ] ),
+			?info_fmt( "Removing a prior '~s' log file.", [ BinLogFilePath ] ),
 			file_utils:remove_file( BinLogFilePath );
 
 		false ->

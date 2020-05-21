@@ -20,7 +20,7 @@
 
 {application, us_web,
  [{description, "US-Web, the OTP active application offering web services in the context of the Universal Server framework (see http://us-web.esperide.org)"},
-  {vsn, "VERSION_FOR_REBAR3"},
+  {vsn, "0.0.2"},
   {registered, [us_web]},
 
  % Active application:
@@ -44,7 +44,7 @@
   {env,[]},
 
   % Flat hierarchy in ebin here:
-  {modules, [MODULES_FOR_REBAR3]},
+  {modules, [class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_handler, us_web_meta, us_web_monitor_app, us_web_static, us_web_sup]},
 
   {licenses, ["US-Web is licensed by its author (Olivier Boudeville) under the GNU Affero General Public License (AGPL), version 3.0 or later"]},
 

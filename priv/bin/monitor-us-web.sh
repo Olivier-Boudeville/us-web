@@ -4,7 +4,7 @@ us_monitor_config_filename="us-monitor.config"
 
 usage="$(basename $0) [US_MONITOR_CONFIG_FILE]: monitors the traces emitted by a us-web instance possibly running on a remote host based, unless specified otherwise, on a '${us_monitor_config_filename}' configuration file, found in a US configuration directory specified on the command-line, otherwise found through the default US search paths."
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 	echo "${usage}"
 
@@ -13,7 +13,7 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
 fi
 
 
-if [ -n "$1" ] ; then
+if [ -n "$1" ]; then
 
 	us_monitor_config_filename="$1"
 	shift
@@ -25,7 +25,7 @@ fi
 us_web_common_script_name="us-web-common.sh"
 us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
 
-if [ ! -f "${us_web_common_script}" ] ; then
+if [ ! -f "${us_web_common_script}" ]; then
 
 	echo "Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
 	exit 35
@@ -40,8 +40,8 @@ fi
 read_us_config_file $1 1>/dev/null
 
 
-# No specific update/check needs regarding vm.args: runtime cookie updated on
-# the fly.
+# No specific update/check needs regarding vm.args, as the runtime cookie is
+# updated on the fly.
 
 
 #echo "us_config_dir = ${us_config_dir}"
@@ -49,7 +49,7 @@ read_us_config_file $1 1>/dev/null
 
 us_monitor_config_file="${us_config_dir}/${us_monitor_config_filename}"
 
-if [ ! -f "${us_monitor_config_file}" ] ; then
+if [ ! -f "${us_monitor_config_file}" ]; then
 
 	echo " Error, no us-monitor configuration file found (no '${us_monitor_config_file}')." 1>&2
 
@@ -68,7 +68,7 @@ us_monitor_base_content=$(/bin/cat "${us_monitor_config_file}" | sed 's|^[[:spac
 
 us_web_hostname=$(echo "${us_monitor_base_content}" | grep us_web_hostname | sed 's|^[[:space:]]*{[[:space:]]*us_web_hostname,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
-if [ -z "${us_web_hostname}" ] ; then
+if [ -z "${us_web_hostname}" ]; then
 
 	echo " Error, not remote us-web hostname specified (no us_web_hostname defined)." 1>&2
 	exit 10
@@ -89,9 +89,9 @@ fi
 remote_vm_cookie=$(echo "${us_monitor_base_content}" | grep remote_vm_cookie | sed 's|^[[:space:]]*{[[:space:]]remote_vm_cookie,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
 
 
-if [ -z "${remote_vm_cookie}" ] ; then
+if [ -z "${remote_vm_cookie}" ]; then
 
-	if [ -z "${vm_cookie}" ] ; then
+	if [ -z "${vm_cookie}" ]; then
 
 		echo " Error, no cookie defined for the remote us-web host (remote_vm_cookie) nor for the base cookie (vm_cookie)." 1>&2
 
@@ -110,7 +110,7 @@ fi
 
 
 # Needing from the start of the upcoming VM:
-if [ -z "${erl_epmd_port}" ] ; then
+if [ -z "${erl_epmd_port}" ]; then
 
 	echo "No Erlang EPMD port specified, not interfering with context defaults."
 	epmd_opt=""
@@ -132,4 +132,4 @@ cd ${app_dir}
 # Any argument(s) specified to this script shall be interpreted as a plain,
 # extra one:
 #
-make -s us_monitor_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --config-file ${us_monitor_config_file} --target-cookie ${remote_vm_cookie}"
+make -s us_web_monitor_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --config-file ${us_monitor_config_file} --target-cookie ${remote_vm_cookie}"

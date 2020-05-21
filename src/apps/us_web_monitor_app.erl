@@ -145,7 +145,7 @@ init_from_command_line() ->
 		false ->
 			throw( no_configuration_file_set );
 
-		{ [ CfgPath ], CfgShrunkTable } ->
+		{ [ [ CfgPath ] ], CfgShrunkTable } ->
 			case file_utils:is_existing_file_or_link( CfgPath ) of
 
 				true ->
@@ -172,7 +172,7 @@ init_from_command_line() ->
 		false ->
 			throw( no_target_cookie_set );
 
-		{ [ Cookie ], CookShrunkTable } ->
+		{ [ [ Cookie ] ], CookShrunkTable } ->
 			{ text_utils:string_to_atom( Cookie ), CookShrunkTable };
 
 		{ OtherCookieArg, _CookTable } ->
@@ -226,7 +226,7 @@ get_target_node_name( Cfg ) ->
 get_tcp_port_range( Cfg ) ->
 
 	MaybePortRange = list_table:get_value_with_defaults( _K=tcp_port_range,
-											 _Default=undefined, Cfg ),
+												 _Default=undefined, Cfg ),
 
 	%trace_utils:trace_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
 

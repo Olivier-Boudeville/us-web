@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Stops a US-Web instance, supposedly already running as an OTP release.
+
 # Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
 # - run from systemctl, as root, as: 'systemctl stop us-web.service'
@@ -7,7 +9,7 @@
 # (hence to be triggered by /etc/systemd/system/us-web.service)
 
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: stops a us-web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
+usage="Usage: $(basename $0) [US_CONF_DIR]: stops a US-Web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
 
 
 # Note: all outputs of this script (standard and error ones) are automatically
@@ -20,7 +22,7 @@ usage="Usage: $(basename $0) [US_CONF_DIR]: stops a us-web server based on a US 
 #  - start-us-web.sh
 #  - stop-universal-server.sh
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 	echo "${usage}"
 
@@ -29,26 +31,25 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
 fi
 
 
-#echo "Stopping us-web as following user: $(id)"
+#echo "Stopping US-Web as following user: $(id)"
 
 
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
 us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
 
-if [ ! -f "${us_web_common_script}" ] ; then
+if [ ! -f "${us_web_common_script}" ]; then
 
 	echo "Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
 	exit 35
 
 fi
 
+
 #echo "Sourcing '${us_web_common_script}'."
-. "${us_web_common_script}" 1>/dev/null
+. "${us_web_common_script}" #1>/dev/null
 
-
-
-read_us_config_file $1
+read_us_config_file $1 #1>/dev/null
 
 read_us_web_config_file
 
@@ -78,7 +79,7 @@ restore_us_web_config_cookie
 
 
 # Not so reliable unfortunately:
-if [ $res -eq 0 ] ; then
+if [ $res -eq 0 ]; then
 
 	echo "  (authbind success reported)"
 	echo

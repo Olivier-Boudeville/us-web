@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Starts a US-Web instance, to be run as an OTP release.
+
 # Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
 # - run from systemctl, as root, as: 'systemctl start us-web.service'
@@ -7,7 +9,7 @@
 # (hence to be triggered by /etc/systemd/system/us-web.service)
 
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a us-web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
+usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
 
 
 # Note: all outputs of this script (standard and error ones) are automatically
@@ -20,7 +22,7 @@ usage="Usage: $(basename $0) [US_CONF_DIR]: starts a us-web server based on a US
 #  - stop-us-web.sh
 #  - start-universal-server.sh
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 	echo "${usage}"
 
@@ -29,14 +31,14 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ] ; then
 fi
 
 
-#echo "Starting us-web as following user: $(id)"
+#echo "Starting US-Web as following user: $(id)"
 
 
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
 us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
 
-if [ ! -f "${us_web_common_script}" ] ; then
+if [ ! -f "${us_web_common_script}" ]; then
 
 	echo "Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
 	exit 35
@@ -44,11 +46,9 @@ if [ ! -f "${us_web_common_script}" ] ; then
 fi
 
 #echo "Sourcing '${us_web_common_script}'."
-. "${us_web_common_script}" 1>/dev/null
+. "${us_web_common_script}" #1>/dev/null
 
-
-
-read_us_config_file $1
+read_us_config_file $1 #1>/dev/null
 
 read_us_web_config_file
 
@@ -69,7 +69,7 @@ echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: $
 res=$?
 
 
-if [ $res -eq 0 ] ; then
+if [ $res -eq 0 ]; then
 
 	# Unfortunately may still be a failure (ex: if a VM with the same name was
 	# already running, start failed, not to be reported as a success)
@@ -88,7 +88,7 @@ if [ $res -eq 0 ] ; then
 	#
 	sleep 4
 
-	if [ -f "${trace_file}" ] ; then
+	if [ -f "${trace_file}" ]; then
 
 		echo "  (success assumed, as '${trace_file}' found)"
 		exit 0

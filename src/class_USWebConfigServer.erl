@@ -25,7 +25,7 @@
 
 -define( class_description,
 		 "Singleton server holding the configuration information of the "
-		 "US-web framework." ).
+		 "US-Web framework." ).
 
 
 % Determines what are the direct mother classes of this class (if any):
@@ -67,11 +67,11 @@
 -define( default_us_web_cfg_filename, <<"us-web.config">> ).
 
 
-% The default registration name of the US-web server:
+% The default registration name of the US-Web server:
 -define( us_web_config_server_registration_name_key,
 		 us_web_config_server_registration_name ).
 
-% The default registration name of the US-web scheduler:
+% The default registration name of the US-Web scheduler:
 -define( us_web_scheduler_registration_name_key,
 		 us_web_scheduler_registration_name ).
 
@@ -86,7 +86,7 @@
 
 
 
-% All known, licit keys for the US-web configuration file:
+% All known, licit keys for the US-Web configuration file:
 -define( known_config_keys, [ ?us_web_config_server_registration_name_key,
 			?us_web_scheduler_registration_name_key,
 			?us_web_username_key, ?us_web_app_base_dir_key,
@@ -115,7 +115,7 @@
 
 % Design notes:
 %
-% This US-web configuration server will ensure that an overall US configuration
+% This US-Web configuration server will ensure that an overall US configuration
 % is running, either by fetching its PID if already existing, otherwise by
 % launching it accordingly.
 %
@@ -131,7 +131,7 @@
 % internally.
 
 % A task scheduler will be created, at least in order to rotate logs. For
-% framework isolation, it will be dedicated to US-web, and by default not be
+% framework isolation, it will be dedicated to US-Web, and by default not be
 % shared with the Universal Server, so that they can operate independently.
 
 % Note that we chose that the analysis of log web access logs (typically based
@@ -140,9 +140,14 @@
 
 % We used to define web logger instances that were autonomous with regard to
 % their scheduling for log rotation (and thus possibly log analysis
-% processing). However at least some tools (ex: Awstats) may not be "reentrant",
-% i.e. may not support concurrent accesses that could derive from unsynchronised
-% loggers.
+% processing). However it may result in too large spikes of resource uses (as by
+% default all web loggers are created roughly at the same time and thus would
+% stay mostly in sync all through their periodical scheduling), and moreover at
+% least some tools (ex: Awstats) may not be "reentrant", i.e. may not support
+% concurrent accesses that could derive from unsynchronised loggers (however the
+% Awstate state files, typically in /var/local/us-web/data, such as
+% awstats052020.baz.foo.bar.org.txt suggest a per-vhost state file, hence
+% possibly no problem).
 %
 % As a result, now these web loggers all belong to the same task ring, in charge
 % of pacing them uniformly and of ensuring they cannot overlap.
@@ -155,7 +160,7 @@
 % any log analysis tool are finely interleaved, as defining a route requires its
 % logger PID, which requires the corresponding configuration file.
 %
-% The US-web configuration server creates a scheduler, for its own use (ex: for
+% The US-Web configuration server creates a scheduler, for its own use (ex: for
 % certificate renewal and the task ring regarding web loggers), and possibly for
 % other related services.
 
@@ -197,7 +202,7 @@
 -type dispatch_rules() :: cowboy_router:dispatch_rules().
 
 
-% A table holding US-web configuration information:
+% A table holding US-Web configuration information:
 -type us_web_config_table() :: table( atom(), term() ).
 
 
@@ -265,7 +270,7 @@
 	  "the PID of the overall US configuration server" },
 
 	{ us_web_scheduler_pid, scheduler_pid(),
-	  "the PID of the US-web dedicated scheduler (at least for certificate
+	  "the PID of the US-Web dedicated scheduler (at least for certificate
 	  renewal, for task ring or possibly directly for web loggers)" },
 
 	{ logger_task_ring, class_USTaskRing:ring_pid(),
@@ -275,28 +280,28 @@
 	  "the user (if any) who shall launch the US web application" },
 
 	{ us_web_supervisor_pid, otp_utils:supervisor_pid(),
-	  "the PID of the OTP supervisor of US-web, as defined in us_web_sup" },
+	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
 
 	{ dispatch_rules, dispatch_rules(),
 	  "the Cowboy dispatch rules corresponding to the configuration" },
 
 	{ config_base_directory, bin_directory_path(),
 	  "the base directory where all US configuration is to be found "
-	   "(not the us_web/priv/conf internal directory)"},
+	  "(not the us_web/priv/conf internal directory)"},
 
 	{ app_base_directory, bin_directory_path(),
-	  "the base directory of the US-web application (the root from whence "
+	  "the base directory of the US-Web application (the root from whence "
 	  "src, priv, ebin, etc. can be found" },
 
 	{ conf_directory, bin_directory_path(),
-	  "the US-web internal configuration directory, 'us_web/priv/conf'" },
+	  "the US-Web internal configuration directory, 'us_web/priv/conf'" },
 
 	{ data_directory, bin_directory_path(),
 	  "the directory where working data (ex: the database state of a log tool) "
 	  "is to be stored" },
 
 	{ log_directory, bin_directory_path(),
-	  "the directory where (basic, technical) US-web logs shall be written, "
+	  "the directory where (basic, technical) US-Web logs shall be written, "
 	  "notably access and error logs for websites" },
 
 	{ scheduler_registration_name, naming_utils:registration_name(),
@@ -334,7 +339,7 @@
 
 
 
-% Constructs the US-web configuration server.
+% Constructs the US-Web configuration server.
 -spec construct( wooper:state(), otp_utils:supervisor_pid() ) -> wooper:state().
 construct( State, SupervisorPid ) ->
 
@@ -344,7 +349,7 @@ construct( State, SupervisorPid ) ->
 	TraceState = class_USServer:construct( State,
 										   ?trace_categorize("USWebServer") ),
 
-	?send_info( TraceState, "Creating a US-web configuration server." ),
+	?send_info( TraceState, "Creating a US-Web configuration server." ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
@@ -490,25 +495,24 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 				not_registered ->
 					?info_fmt( "There is no ~s registration of '~s'; creating "
-							   "thus a new overall US configuration server.",
-							   [ USCfgRegScope, USCfgRegName ] ),
+						"thus a new overall US configuration server.",
+						[ USCfgRegScope, USCfgRegName ] ),
 					% Not linked to have an uniform semantics:
 					class_USConfigServer:new();
 
 				DelayedCfgPid ->
 					?info_fmt( "Found (after some delay) an already running "
-							   "overall US configuration server, using it: "
-							   "~s registration look-up for '~s' returned ~w.",
-							   [ USCfgRegScope, USCfgRegName, DelayedCfgPid ] ),
+						"overall US configuration server, using it: "
+						"~s registration look-up for '~s' returned ~w.",
+						[ USCfgRegScope, USCfgRegName, DelayedCfgPid ] ),
 					DelayedCfgPid
 
 				end;
 
 		CfgPid ->
 			?info_fmt( "Found an already running overall US configuration "
-					   "server, using it: ~s registration look-up for '~s' "
-					   "returned ~w.",
-					   [ USCfgRegScope, USCfgRegName, CfgPid ] ),
+			  "server, using it: ~s registration look-up for '~s' returned ~w.",
+			  [ USCfgRegScope, USCfgRegName, CfgPid ] ),
 			CfgPid
 
 	end,
@@ -534,9 +538,9 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 					ok;
 
 				_ ->
-					?error_fmt( "Mismatching US configuration directories: "
-								"had '~s', yet received from US configuration "
-								"server: '~s'.", [ BinCfgDir, RecvBinCfgDir ] ),
+					?error_fmt( "Mismatching US configuration directories: had "
+					  "'~s', yet received from US configuration server: '~s'.",
+					  [ BinCfgDir, RecvBinCfgDir ] ),
 
 					throw( { us_config_dir_mismatch,
 							 {  BinCfgDir, RecvBinCfgDir } } )
@@ -565,8 +569,8 @@ load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
 	DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
 
 	?info_fmt( "No configuration filename known of the overall US configuration"
-			   " server (i.e. none defined in its own configuration file), "
-			   "hence defaulting to '~s'.", [ DefaultBinWebCfgFilename ] ),
+		" server (i.e. none defined in its own configuration file), "
+		"hence defaulting to '~s'.", [ DefaultBinWebCfgFilename ] ),
 
 	load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, State );
 
@@ -585,8 +589,8 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 		false ->
 			% Possibly user/group permission issue:
 			?error_fmt( "No web configuration file found or accessible "
-						"(ex: symbolic link to an inaccessible file); "
-						"tried '~s'.", [ WebCfgFilePath ] ),
+				"(ex: symbolic link to an inaccessible file); tried '~s'.",
+				[ WebCfgFilePath ] ),
 			throw( { us_web_config_file_not_found,
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
 
@@ -628,9 +632,8 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 		UnexpectedKeys ->
 			?error_fmt( "Unknown key(s) in '~s': ~s~nLicit keys: ~s",
-						[ WebCfgFilePath,
-						  text_utils:terms_to_string( UnexpectedKeys ),
-						  text_utils:terms_to_string( LicitKeys ) ] ),
+				[ WebCfgFilePath, text_utils:terms_to_string( UnexpectedKeys ),
+				  text_utils:terms_to_string( LicitKeys ) ] ),
 			throw( { invalid_configuration_keys, UnexpectedKeys,
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
 
@@ -715,8 +718,8 @@ unregister_domain_task( DomainId, VHostCfgTable, SchedulerPid, State ) ->
 					UnexpectedPairs = [ P || P={ _Id, Outcome } <- Pairs,
 											 Outcome =/= task_unregistered ],
 					?error_fmt( "For domain '~s', following tasks could not be "
-								"unregistered for following reasons: ~p",
-								[ DomainId, UnexpectedPairs ] ),
+						"unregistered for following reasons: ~p",
+						[ DomainId, UnexpectedPairs ] ),
 					NewVHostCfgTable
 
 			end
@@ -911,9 +914,8 @@ prepare_web_analysis(
 
 		_AnyClass:Exception ->
 			?error_fmt( "The attempt to create the '~s' directory (and "
-						"possibly its parents) as user '~s' failed: ~p.",
-						[ GenAwCfgDir, system_utils:get_user_name_safe(),
-						  Exception ] )
+				"possibly its parents) as user '~s' failed: ~p.",
+				[ GenAwCfgDir, system_utils:get_user_name_safe(), Exception ] )
 
 	end,
 
@@ -1109,10 +1111,9 @@ build_vhost_table( DomainId,
 
 		undefined ->
 			?error_fmt( "A meta website (vhost '~s' for domain '~s') was "
-						"requested, yet no web analysis information is "
-						"available. No 'log_analysis' entry defined in "
-						"US-web configuration file?",
-						[ VHost, DomainId ] ),
+				"requested, yet no web analysis information is available. "
+				"No 'log_analysis' entry defined in US-Web configuration file?",
+				[ VHost, DomainId ] ),
 			throw( { no_web_analysis_info, VHost, DomainId } );
 
 		#web_analysis_info{ web_content_dir=BinWebContentDir } ->
@@ -1579,7 +1580,7 @@ check_kind( WebKind, VHost, DomainId, State ) ->
 
 
 % Manages any user-configured registration names for this instance, for the
-% US-web server and their related services, which may be created here.
+% US-Web server and their related services, which may be created here.
 %
 -spec manage_registrations( us_web_config_table(), wooper:state() ) ->
 									  wooper:state().
@@ -1592,19 +1593,19 @@ manage_registrations( ConfigTable, State ) ->
 
 		key_not_found ->
 			DefCfgRegName = ?default_us_web_config_server_registration_name,
-			?info_fmt( "No user-configured registration name for the US-web "
+			?info_fmt( "No user-configured registration name for the US-Web "
 					   "configuration server, defaulting to '~s'.",
 					   [ DefCfgRegName ] ),
 			DefCfgRegName;
 
 		{ value, CfgRegName } when is_atom( CfgRegName ) ->
 			?info_fmt( "Using user-configured registration name for the "
-					   "US-web configuration server, '~s'.", [CfgRegName  ] ),
+					   "US-Web configuration server, '~s'.", [CfgRegName  ] ),
 			CfgRegName;
 
 		{ value, InvalidCfgRegName } ->
 			?error_fmt( "Invalid user-specified registration name for the "
-						"US-web configuration server: '~p'.",
+						"US-Web configuration server: '~p'.",
 						[ InvalidCfgRegName ] ),
 			throw( { invalid_web_config_registration_name, InvalidCfgRegName,
 					 ?us_web_config_server_registration_name_key } )
@@ -1619,18 +1620,18 @@ manage_registrations( ConfigTable, State ) ->
 
 		key_not_found ->
 			DefScRegName = ?default_us_web_scheduler_registration_name,
-			?info_fmt( "No user-configured registration name for the US-web "
+			?info_fmt( "No user-configured registration name for the US-Web "
 					   "scheduler, defaulting to '~s'.", [ DefScRegName ] ),
 			DefScRegName;
 
 		{ value, ScRegName } when is_atom( ScRegName ) ->
 			?info_fmt( "Using user-configured registration name for the "
-					   "US-web scheduler, '~s'.", [ ScRegName ] ),
+					   "US-Web scheduler, '~s'.", [ ScRegName ] ),
 			ScRegName;
 
 		{ value, InvalidScRegName } ->
 			?error_fmt( "Invalid user-specified registration name for the "
-						"US-web scheduler: '~p'.", [ InvalidScRegName ] ),
+						"US-Web scheduler: '~p'.", [ InvalidScRegName ] ),
 			throw( { invalid_web_scheduler_registration_name, InvalidScRegName,
 					 ?us_web_config_server_registration_name_key } )
 
@@ -1640,7 +1641,7 @@ manage_registrations( ConfigTable, State ) ->
 	SchedPid = class_USScheduler:new_link( "USWebScheduler", SchedRegName,
 										   _SchedRegScope=local_only ),
 
-	?info_fmt( "This US-web configuration server was registered as '~s', while "
+	?info_fmt( "This US-Web configuration server was registered as '~s', while "
 	   "its scheduler (~w) was registered as '~s' (scope in all cases: ~s).",
 	   [ WebCfgSrvRegName, SchedPid, SchedRegName, Scope ] ),
 
@@ -1666,7 +1667,7 @@ manage_os_user( ConfigTable, State ) ->
 
 		key_not_found ->
 			ActualUsername = system_utils:get_user_name(),
-			?info_fmt( "No user-configured US-web operating-system username "
+			?info_fmt( "No user-configured US-Web operating-system username "
 					   "set for this server; runtime-detected: '~s'.",
 					   [ ActualUsername ] ),
 			ActualUsername;
@@ -1675,13 +1676,13 @@ manage_os_user( ConfigTable, State ) ->
 			case system_utils:get_user_name() of
 
 				Username ->
-					?info_fmt( "Using user-configured US-web operating-system "
+					?info_fmt( "Using user-configured US-Web operating-system "
 							   "username '~s' for this server, which matches "
 							   "the current runtime user.", [ Username ] ),
 					Username;
 
 				OtherUsername ->
-					?error_fmt( "The user-configured US-web operating-system "
+					?error_fmt( "The user-configured US-Web operating-system "
 								"username '~s' for this server does not match "
 								"the current runtime user, '~s'.",
 								[ Username, OtherUsername ] ),
@@ -1727,18 +1728,19 @@ manage_app_base_directories( ConfigTable, State ) ->
 						file_utils:get_current_directory(), "..", "..", "..",
 						".." ] ) ),
 
-					?warning_fmt( "No user-configured US-web application "
-								  "base directory set (neither in-file nor "
-								  "through the '~s' environment variable), "
-								  "hence trying to guess it as '~s'.",
-								  [ ?us_web_app_env_variable, GuessedDir ] ),
+					% Was a warning:
+					?info_fmt( "No user-configured US-Web application base "
+						"directory set (neither in configuration file nor "
+						"through the '~s' environment variable), hence trying "
+						"to guess it as '~s'.",
+						[ ?us_web_app_env_variable, GuessedDir ] ),
 					GuessedDir;
 
 				EnvDir ->
-					?info_fmt( "No user-configured US-web application base "
-							   "directory set in configuration file, using "
-							   "the value of the '~s' environment variable: "
-							   "'~s'.", [ ?us_web_app_env_variable, EnvDir ] ),
+					?info_fmt( "No user-configured US-Web application base "
+						"directory set in configuration file, using the value "
+						"of the '~s' environment variable: '~s'.",
+						[ ?us_web_app_env_variable, EnvDir ] ),
 					EnvDir
 
 			end;
@@ -1750,7 +1752,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 			file_utils:binary_to_string( D );
 
 		{ value, InvalidDir }  ->
-			?error_fmt( "Read invalid user-configured US-web application base "
+			?error_fmt( "Read invalid user-configured US-Web application base "
 						"directory: '~p'.", [ InvalidDir ] ),
 			throw( { invalid_us_web_app_base_directory, InvalidDir,
 					 ?us_web_app_base_dir_key } )
@@ -1769,12 +1771,12 @@ manage_app_base_directories( ConfigTable, State ) ->
 			case filename:basename( BaseDir ) of
 
 				"us_web" ++ _ ->
-					?info_fmt( "US-web application base directory set to '~s'.",
+					?info_fmt( "US-Web application base directory set to '~s'.",
 							   [ BaseDir ] ),
 					text_utils:string_to_binary( BaseDir );
 
 				_Other ->
-					%?warning_fmt( "The US-web application base directory '~s' "
+					%?warning_fmt( "The US-Web application base directory '~s' "
 					%	"does not seem legit (it should end with 'us_web'), "
 					%	"thus considering knowing none.", [ BaseDir ] ),
 					%undefined
@@ -1784,7 +1786,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 			end;
 
 		false ->
-			%?warning_fmt( "The US-web application base directory '~s' does not "
+			%?warning_fmt( "The US-Web application base directory '~s' does not "
 			%			  "exist, thus considering knowing none.",
 			%			  [ BaseDir ] ),
 			%undefined
@@ -1794,7 +1796,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 	end,
 
-	% The internal US-web directory (see conf_directory) used to be derived from
+	% The internal US-Web directory (see conf_directory) used to be derived from
 	% the app base one (as a 'conf' subdirectory thereof), yet because of that
 	% it was not included in releases. So instead this 'conf' directory is a
 	% subdirectory of 'priv':
@@ -2298,7 +2300,7 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US-web configuration ~s, using for the http "
+	text_utils:format( "US-Web configuration ~s, using for the http "
 		"scheme the TCP port #~B, ~s, running in the ~s execution context, "
 		"knowing: ~s, US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "

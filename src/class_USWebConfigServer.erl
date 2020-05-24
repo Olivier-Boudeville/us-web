@@ -330,12 +330,18 @@
 % For unused functions:
 -export([ unregister_domain_tasks/2 ]).
 
+% Exported helpers:
+-export([ get_execution_target/0 ]).
+
 
 % Allows to define WOOPER base variables and methods for that class:
 -include_lib("wooper/include/wooper.hrl").
 
 % Allows to use macros for trace sending:
 -include_lib("traces/include/class_TraceEmitter.hrl").
+
+% To define get_execution_target/0:
+-include_lib("myriad/include/utils/basic_utils.hrl").
 
 
 

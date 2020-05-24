@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Friday, May 15, 2020
+:Lastly updated: Sunday, May 24, 2020
 :Status: Work in progress
-:Version: 0.0.1
+:Version: 0.0.2
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -68,16 +68,22 @@ Overview
 
 We present here a short overview of the services offered by the *Universal Webserver*, to introduce them to newcomers.
 
-The next level of information is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
+The goal is to provide an integrated framework in order:
+
+- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involved reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, etc.
+- to link to the `Universal Server <https://github.com/Olivier-Boudeville/us-main>`_ optionally (i.e. if available, knowing both should be able to run in the absence of the other), in order to offer a web front-end for it
+
+
+The next level of information about US-Web is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
 
 
 -----------
 Layer Stack
 -----------
 
-From the highest level to the lowest, as summarised `here <https://github.com/Olivier-Boudeville/us-web>`_, a software stack involving the Universal Webserver usually is like:
+From the highest level to the lowest, as summarised `here <https://github.com/Olivier-Boudeville/us-web>`_, a software stack involving the Universal Webserver usually comprises:
 
-- the *Universal Webserver* services themselves (i.e. this `us-web <http://us-web.esperide.org/>`_ layer)
+- the *Universal Webserver* services themselves (i.e. this `US-Web <http://us-web.esperide.org/>`_ layer)
 - `Cowboy <https://github.com/ninenines/cowboy>`_ (for a small, fast and modern web framework)
 - [optional] `Awstats <http://www.awstats.org/>`_ (for the analysis of access log files)
 - `US-Common <http://us-common.esperide.org/>`_ (for US base facilities)
@@ -90,6 +96,34 @@ From the highest level to the lowest, as summarised `here <https://github.com/Ol
 The shorthand for ``Universal Webserver`` is ``uw``.
 
 :raw-latex:`\pagebreak`
+
+
+
+---------------
+Recommendations
+---------------
+
+In terms of security, we would advise:
+
+- to stick to the **latest stable version** of all software involved (including US-Web and all its stack, Erlang, and the operating system itself)
+
+- to ensure that a **firewall** blocks everything from the Internet by default, including the EPMD port(s) (i.e. both the default Erlang one and any non-standard one specified through the ``epmd_port`` key defined in US-Common's `us.config <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_); one may get inspiration from our `iptables.rules-Gateway.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh>`_ script for that
+- still in ``us.config``, to set:
+
+  - a strong-enough Erlang **cookie**: set the ``vm_cookie`` key to a well-chosen value, possibly a random one deriving from an output of ``uuidgen``
+  - possibly a **limited TCP port range** (see the ``tcp_port_range`` key)
+  - the **execution context** to ``production`` (see the ``execution_context`` key)
+
+- to rely on dedicated, **low-privileged users and groups** (US-Web relies on ``authbind``; refer to our `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh>`_ script for that)
+
+- to apply a streamlined, reproducible **deployment process**, preferably based on our `deploy-us-web-release.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh>`_ script
+
+- to use also the counterpart `stop-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web.sh>`_ script and to have them triggered through ``systemd``; we provide a corresponding `us-web.service <https://github.com/Olivier-Boudeville/us-web/blob/master/conf/us-web.service>`_ **unit file** for that, typically to be placed in ``/etc/systemd/system`` and whose ``ExecStart/ExecStop`` paths shall preferably be symlinks pointing to the latest deployed US-Web release (ex: ``/opt/universal-server/us_web-latest``)
+
+- to **monitor regularly** both:
+
+  - the US-Web server itself (see our `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script for that, relying on the trace supervisor provided by the `Ceylan-Traces <http://traces.esperide.org>`_ layer)
+  - the remote accesses made to the websites (typically by enabling the US-Web "meta" feature, generating and updating automatically a dedicated website displaying in one page all hosted websites and linking to their web analysis report; refer to the ``log_analysis`` key of the US-Web configuration file (ex: see `us-web-for-tests.config <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_ as an example thereof)
 
 
 .. _`free software`:
@@ -121,7 +155,7 @@ The latter relies on `Ceylan-Traces <https://github.com/Olivier-Boudeville/Ceyla
 
 We prefer using GNU/Linux, sticking to the latest stable release of Erlang, and building it from sources, thanks to GNU ``make``.
 
-We recommend indeed obtaining Erlang thanks to a manual installation (refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines), Awstats thanks to your distribution of choice (ex: ``pacman -S awstats``) and, for all Erlang-related software, to rely on rebar3.
+We recommend indeed obtaining Erlang thanks to a manual installation (refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines), Awstats thanks to your distribution of choice (ex for Arch Linux: ``pacman -S awstats``) and, for all Erlang-related software, to rely on `rebar3 <https://www.rebar3.org/>`_.
 
 One wanting to be able to operate on the source code of these dependencies may define appropriate symbolic links in a ``_checkouts`` directory created at the root one's ``us-web`` clone, these links pointing to relevant GIT repositories.
 
@@ -133,39 +167,40 @@ Using Cutting-Edge GIT
 
 This is the installation method that we use and recommend; the Universal Webserver ``master`` branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.
 
-Once Erlang, Cowboy and possibly Awstats are available, it should be just a matter of executing:
+Once Erlang and possibly Awstats are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information.
+
+For example:
 
 .. code:: bash
 
- $ git clone https://github.com/Olivier-Boudeville/Ceylan-Myriad myriad
- $ cd myriad && make all && cd ..
+  $ cd /tmp
+  $ wget https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh
+  $ sh ./get-us-web-from-sources.sh --checkout
+  Switching to checkout mode.
 
- $ git clone https://github.com/Olivier-Boudeville/Ceylan-WOOPER wooper
- $ cd wooper && make all && cd ..
+   Installing US-Web in /tmp...
 
- $ git clone https://github.com/Olivier-Boudeville/Ceylan-Traces traces
- $ cd traces && make all && cd ..
+   Cloning into 'us_web'...
+   [...]
+   ===> Compiling us_web
+   Starting the us_web release (EPMD port: 4506):
+   [...]
+   US-Web launched, please point a browser to http://localhost:8080 to check test sites.
 
- $ git clone https://github.com/Olivier-Boudeville/us-common
- $ cd us-common && make all
-
- $ git clone https://github.com/Olivier-Boudeville/us-web
- $ cd us-web && make all
-
-
-
-Running a corresponding test just then boils down to:
-
-.. code:: bash
-
- $ make debug
+  $ firefox http://localhost:8080 &
 
 
-.. Should LogMX be installed and available in the PATH, the test may simply become:
+One shall then see a text-only page such as::
 
-.. .. code:: bash
+ This is static website D. This is the one you should see if pointing
+ to the default virtual host corresponding to the local host. This
+ shows that the US-Web server is up and running.
 
-..  $ make class_USScheduler_run
+
+Understanding the role of the `main US configuration file <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and of the corresponding `US-Web configuration file <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_ for this test should be fairly straightforward.
+
+Based on that, devising one's version of them should allow to have one's US-Web server running at the cost of very little efforts.
+
 
 
 :raw-html:`<a name="otp"></a>`
@@ -175,7 +210,7 @@ Running a corresponding test just then boils down to:
 Using OTP-Related Build/Runtime Conventions
 ===========================================
 
-As discussed in these sections of `Myriad <http://myriad.esperide.org/myriad.html#otp>`_, `WOOPER <http://wooper.esperide.org/index.html#otp>`_, `Traces <http://traces.esperide.org/index.html#otp>`_ and `US-Common <http://us-common.esperide.org/index.html#otp>`_, we added the (optional) possibility of generating a Universal Webserver *OTP application* out of the build tree, ready to result directly in an *(OTP) release*. For that we rely on `rebar3 <https://www.rebar3.org/>`_, `relx <https://github.com/erlware/relx>`_ and `hex <https://hex.pm/>`_.
+As discussed in these sections of `Myriad <http://myriad.esperide.org/myriad.html#otp>`_, `WOOPER <http://wooper.esperide.org/index.html#otp>`_, `Traces <http://traces.esperide.org/index.html#otp>`_ and `US-Common <http://us-common.esperide.org/index.html#otp>`_, we added the (optional) possibility of generating a Universal Webserver *OTP application* out of the build tree, ready to result directly in an *(OTP) release*. For that we rely on `rebar3 <https://www.rebar3.org/>`_, `relx <https://github.com/erlware/relx>`_ and (possibly) `hex <https://hex.pm/>`_.
 
 Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on any number of domains as needed.
 

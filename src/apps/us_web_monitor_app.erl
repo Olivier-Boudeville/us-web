@@ -21,22 +21,22 @@
 
 
 
-% Actual us-web monitoring logic.
+% Actual US-Web monitoring logic.
 %
 % Typically called through the us_web/priv/bin/monitor-us-web.sh script.
 %
 -module(us_web_monitor_app).
 
 % For exec/0 export:
--include("app_facilities.hrl").
+-include_lib("myriad/include/app_facilities.hrl").
 
 % For update_code_path_for_myriad/0 and all:
--include("myriad_script_include.hrl").
+-include_lib("myriad/include/myriad_script_include.hrl").
 
 
 
 % For trace_aggregator_name:
--include("class_TraceAggregator.hrl").
+-include_lib("traces/include/class_TraceAggregator.hrl").
 
 
 

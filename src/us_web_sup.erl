@@ -88,9 +88,9 @@ init( _Args=[] ) ->
 	% https://ninenines.eu/docs/en/cowboy/2.7/guide/listeners/#_secure_tls_listener
 	% for https.
 
-	SupervisorFlags = #{ strategy => one_for_one,
-						 intensity => 0,
-						 period => 1 },
+	SupSettings = otp_utils:get_supervisor_settings(
+					_RestartStrategy=one_for_one,
+					class_USWebConfigServer:get_execution_target() ),
 
 	%% WebManagerSpec = #{ id => us_web_manager,
 	%%					start => { us_web, start_link, [] },
@@ -107,4 +107,4 @@ init( _Args=[] ) ->
 	trace_utils:info_fmt( "One may test this server running at "
 						  "http://localhost:~p", [ HttpTCPPort ] ),
 
-	{ ok, { SupervisorFlags, ChildSpecs } }.
+	{ ok, { SupSettings, ChildSpecs } }.

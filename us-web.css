@@ -21,7 +21,7 @@ pre.code {
 
 /* For command printouts: */
 .literal-block {
-  background: #4490ff;
+  background: #ddddee;
 }
 
 
@@ -211,7 +211,7 @@ ul {
 
 
 ol {
-  color: #353535;
+  /*color: #353535;*/
   margin-top: 1%;
   margin-left: 1%;
   text-align: left;
@@ -221,7 +221,7 @@ ol {
 
 
 ul li {
-  color: #333333;
+  /*color: #333333;*/
   margin-top: 1%;
   margin-bottom: 1%;
   margin-left: 0%;
@@ -359,7 +359,7 @@ a:link {
 
 
 a:visited {
-  color: #6666FF;
+  color: #4444FF;
   background: transparent;
   font-weight: bold;
   text-decoration: none;

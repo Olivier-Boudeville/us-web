@@ -66,6 +66,10 @@ init( _Args=[] ) ->
 
 	ProtoOpts = #{ env => #{ dispatch => DispatchRules } },
 
+	% At least currently, the cowboy application is considered to be an external
+	% dependency, and as such we rely on its using of its vanilla supervision
+	% tree, not linked to the US-Web one, so this is not a child of this supervisor:
+	%
 	case cowboy:start_clear( http, [ { port, HttpTCPPort } ], ProtoOpts ) of
 
 		{ ok, _RanchListenerPid } ->

@@ -161,7 +161,7 @@ release-prod: clean-otp-build-tree rebar3-create-app-file rebar.config  #update-
 
 # Rebuilding the "normal" version thereof (not the testing or Hex one):
 rebar.config: conf/rebar.config.template
-	$(MAKE) -s set-rebar-conf
+	@$(MAKE) -s set-rebar-conf
 
 
 # Just rebuilding us-web:

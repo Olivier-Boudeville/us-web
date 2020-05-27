@@ -93,26 +93,30 @@ list_required_applications() ->
 
 start_prerequisites() ->
 
-	PreReqs = list_required_applications(),
+	case list_required_applications() of
 
-	io:format( "Starting prerequisites ~p...~n", [ PreReqs ] ),
+		[] ->
+			ok;
 
-	[ start_application( App ) || App <- PreReqs ].
+		PreReqs ->
+			trace_utils:info_fmt( "Starting prerequisites ~p...", [ PreReqs ] ),
+			[ start_application( App ) || App <- PreReqs ]
 
+	end.
 
 
 % Startings required applications:
 start_application( simple_bridge ) ->
 
-	io:format( "- starting 'simple_bridge'~n" ),
+	trace_utils:info_fmt( "Starting 'simple_bridge'..." ),
 
 	case simple_bridge:start( _Backend=cowboy, _Handler=us_web ) of
 
 		ok ->
-			io:format( "(simple_bridge started)~n" );
+			trace_utils:debug_fmt( "(simple_bridge started)" );
 
 		Other ->
-			io:format( "simple_bridge failed to start :~n~p~n", [ Other ] ),
+			trace_utils:error_fmt( "simple_bridge failed to start :~n~p", [ Other ] ),
 			throw( { app_start_failed, simple_bridge, Other } )
 
 	end;
@@ -120,22 +124,22 @@ start_application( simple_bridge ) ->
 
 start_application( App ) ->
 
-	io:format( "- starting application '~s'~n", [ App ] ),
+	trace_utils:info_fmt( "Starting application '~s'.", [ App ] ),
 
 	case application:start( App ) of
 
 		ok ->
-			io:format( "(application '~s' started)~n", [ App ] );
+			trace_utils:debug_fmt( "(application '~s' started)", [ App ] );
 
 		{ error, { already_started, myriad } } ->
-			io:format( "Error, application '~s' was already started.~n",
-					   [ App ] ),
+			trace_utils:error_fmt(
+			  "Error, application '~s' was already started.",  [ App ] ),
 			throw( { app_already_started, App } );
 
 
 		Other ->
-			io:format( "Application '~s' failed to start :~n~p~n",
-					   [ App, Other ] ),
+			trace_utils:error_fmt( "Application '~s' failed to start :~n~p",
+								   [ App, Other ] ),
 			throw( { app_start_failed, App, Other } )
 
 	end.

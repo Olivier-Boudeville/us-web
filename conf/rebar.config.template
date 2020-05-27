@@ -14,10 +14,14 @@
 
 
 % Depends on the following applications (Erlang implied):
+%
+% (note: if changing any information there, run from the root the 'real-clean'
+%  make target, at least to force an update of rebar.lock)
+%
 {deps, [
 
 	{cowboy,        {git, "git://github.com/ninenines/cowboy",
-					{tag, "2.7.0"}}},
+					{tag, "2.8.0"}}},
 	%{simple_bridge, {git, "git://github.com/nitrogen/simple_bridge",
 	%				{branch, "master"}}},
 	%{qdate,         {git, "git://github.com/choptastic/qdate",

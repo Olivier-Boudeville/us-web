@@ -20,7 +20,7 @@
 <p><span class="raw-html"><center><img src="us-web-title.png" width="70%"></img></center></span>
 </p>
 <div class="section" id="technical-manual-of-the-universal-webserver">
-<h1><a class="toc-backref" href="#id14">Technical Manual of the <tt class="docutils literal">Universal Webserver</tt></a></h1>
+<h1><a class="toc-backref" href="#id23">Technical Manual of the <tt class="docutils literal">Universal Webserver</tt></a></h1>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -34,7 +34,7 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, May 24, 2020</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Wednesday, May 27, 2020</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Work in progress</p>
@@ -57,36 +57,42 @@
 <div class="contents topic" id="table-of-contents">
 <p class="topic-title">Table of Contents</p>
 <ul class="simple">
-<li><a class="reference internal" href="#technical-manual-of-the-universal-webserver" id="id14">Technical Manual of the <tt class="docutils literal">Universal Webserver</tt></a><ul>
-<li><a class="reference internal" href="#overview" id="id15">Overview</a></li>
-<li><a class="reference internal" href="#layer-stack" id="id16">Layer Stack</a></li>
-<li><a class="reference internal" href="#recommendations" id="id17">Recommendations</a></li>
-<li><a class="reference internal" href="#licence" id="id18">Licence</a></li>
-<li><a class="reference internal" href="#current-stable-version-download" id="id19">Current Stable Version &amp; Download</a><ul>
-<li><a class="reference internal" href="#using-cutting-edge-git" id="id20">Using Cutting-Edge GIT</a></li>
-<li><a class="reference internal" href="#using-otp-related-build-runtime-conventions" id="id21">Using OTP-Related Build/Runtime Conventions</a></li>
+<li><a class="reference internal" href="#technical-manual-of-the-universal-webserver" id="id23">Technical Manual of the <tt class="docutils literal">Universal Webserver</tt></a><ul>
+<li><a class="reference internal" href="#overview" id="id24">Overview</a></li>
+<li><a class="reference internal" href="#layer-stack" id="id25">Layer Stack</a></li>
+<li><a class="reference internal" href="#server-deployment" id="id26">Server Deployment</a></li>
+<li><a class="reference internal" href="#configuring-the-universal-webserver" id="id27">Configuring the Universal-Webserver</a><ul>
+<li><a class="reference internal" href="#in-a-development-setting" id="id28">In a Development Setting</a></li>
+<li><a class="reference internal" href="#in-a-production-setting" id="id29">In a Production Setting</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#support" id="id22">Support</a></li>
-<li><a class="reference internal" href="#please-react" id="id23">Please React!</a></li>
-<li><a class="reference internal" href="#ending-word" id="id24">Ending Word</a></li>
+<li><a class="reference internal" href="#usage-recommendations" id="id30">Usage Recommendations</a></li>
+<li><a class="reference internal" href="#licence" id="id31">Licence</a></li>
+<li><a class="reference internal" href="#current-stable-version-download" id="id32">Current Stable Version &amp; Download</a><ul>
+<li><a class="reference internal" href="#using-cutting-edge-git" id="id33">Using Cutting-Edge GIT</a></li>
+<li><a class="reference internal" href="#otp-considerations" id="id34">OTP Considerations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#support" id="id35">Support</a></li>
+<li><a class="reference internal" href="#please-react" id="id36">Please React!</a></li>
+<li><a class="reference internal" href="#ending-word" id="id37">Ending Word</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <p></p>
 <div class="section" id="overview">
-<h2><a class="toc-backref" href="#id15">Overview</a></h2>
+<h2><a class="toc-backref" href="#id24">Overview</a></h2>
 <p>We present here a short overview of the services offered by the <em>Universal Webserver</em>, to introduce them to newcomers.</p>
-<p>The goal is to provide an integrated framework in order:</p>
+<p>The goal of <strong>US-Web</strong> is to provide an integrated web framework in order:</p>
 <ul class="simple">
-<li>to better operate websites based on <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_hosting">virtual hosting</a>, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involved reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, etc.</li>
+<li>to better operate websites based on <a class="reference external" href="https://en.wikipedia.org/wiki/Virtual_hosting">virtual hosting</a>, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, etc.</li>
 <li>to link to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-main">Universal Server</a> optionally (i.e. if available, knowing both should be able to run in the absence of the other), in order to offer a web front-end for it</li>
 </ul>
-<p>The next level of information about US-Web is to read the corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">source files</a>, which are intensely commented and generally straightforward.</p>
+<p>Beyond this document, the next level of information about US-Web is to read the corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">source files</a>, which are intensely commented and generally straightforward.</p>
 </div>
 <div class="section" id="layer-stack">
-<h2><a class="toc-backref" href="#id16">Layer Stack</a></h2>
+<h2><a class="toc-backref" href="#id25">Layer Stack</a></h2>
 <p>From the highest level to the lowest, as summarised <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">here</a>, a software stack involving the Universal Webserver usually comprises:</p>
 <ul class="simple">
 <li>the <em>Universal Webserver</em> services themselves (i.e. this <a class="reference external" href="http://us-web.esperide.org/">US-Web</a> layer)</li>
@@ -102,48 +108,156 @@
 <p>The shorthand for <tt class="docutils literal">Universal Webserver</tt> is <tt class="docutils literal">uw</tt>.</p>
 <p></p>
 </div>
-<div class="section" id="recommendations">
-<h2><a class="toc-backref" href="#id17">Recommendations</a></h2>
+<div class="section" id="server-deployment">
+<h2><a class="toc-backref" href="#id26">Server Deployment</a></h2>
+<p>For that the <tt class="docutils literal">prod</tt> profile defined in the context of rebar3 shall be used.</p>
+<p>Currently we prefer re-using the (supposedly already installed) local Erlang environment on the server (to be shared across multiple services), so by default ERTS is not included in a US-Web release.</p>
+<p>Sources are not included either, as we prefer re-rolling a release to editing and compiling code directly on a server.</p>
+<p>To generate from scratch such a (mostly) standalone release, one may use:</p>
+<pre class="literal-block">
+$ make release-prod
+</pre>
+<p>It should generate a tarball such as <tt class="docutils literal"><span class="pre">us_web-x.y.z.tar.gz</span></tt></p>
+<p>The <tt class="docutils literal"><span class="pre">export-release</span></tt> allows in the same movement to lightly update a pre-existing release and also to transfer it to any target server, designated by setting the <tt class="docutils literal">WEB_SRV</tt> to the FQDN of this server.</p>
+<p>So we recommend running:</p>
+<pre class="literal-block">
+$ make export-release
+ Generating rebar3 us_web.app file
+ Compiling us_web from XXX/us_web
+ ===&gt; Verifying dependencies...
+ ===&gt; Compiling myriad
+ Hiding unsupported sources
+ Populating the include symlinks
+ [...]
+</pre>
+<p>We recommend installing a release in <tt class="docutils literal"><span class="pre">REL_BASE_ROOT=/opt/universal-server</span></tt>:</p>
+<pre class="literal-block">
+$ mv /tmp/us_web-x.y.z.tar.gz ${REL_BASE_ROOT}
+$ cd ${REL_BASE_ROOT}
+$ tar xvf us_web-x.y.z.tar.gz
+</pre>
+<p>Then various steps are necessary in order to have a functional release.</p>
+<p>We automated the full deployment process for that: once the release has been transferred to the server (possibly thanks to the aforementioned <tt class="docutils literal"><span class="pre">export-release</span></tt> target), one may rely on our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh">deploy-us-web-release.sh</a> script. One may take inspiration from it in order to devise one's deployment scheme.</p>
+<p>Some related information are specified below.</p>
+</div>
+<div class="section" id="configuring-the-universal-webserver">
+<h2><a class="toc-backref" href="#id27">Configuring the Universal-Webserver</a></h2>
+<p>As explained in <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh">start-us-web.sh</a> and in <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl">class_USWebConfigServer.erl</a>, the US configuration files will be searched through various locations.</p>
+<p>Let's name <tt class="docutils literal">US_CFG_ROOT</tt> the actual directory in which they lie; it is typically either <tt class="docutils literal"><span class="pre">~/.config/universal-server/</span></tt> (in development mode), or <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server/</span></tt> (in production mode).</p>
+<p>Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected.</p>
+<p>Let's say that the UNIX name chosen for the US user is <tt class="docutils literal"><span class="pre">us-user</span></tt>, the one of the US-web user is <tt class="docutils literal"><span class="pre">us-web-user</span></tt> and the US group (containing both users, and possibly only them) is <tt class="docutils literal"><span class="pre">us-group</span></tt>.</p>
+<p>Then we should have in terms of permissions, supposing the <tt class="docutils literal">us.config</tt> designates, in its <tt class="docutils literal">us_web_config_filename</tt> entry, <tt class="docutils literal"><span class="pre">foobar-us-web-for-production.config</span></tt> as the name of the US-Web configuration file <a class="footnote-reference" href="#id4" id="id3">[1]</a>, <tt class="docutils literal">640</tt>:</p>
+<pre class="literal-block">
+-rw-r----- 1 us-user     us-group [...] us.config
+-rw-r----- 1 us-web-user us-group [...] foobar-us-web-for-production.config
+</pre>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[1]</a></td><td>They shall be in the same <tt class="docutils literal">US_CFG_ROOT</tt> directory (discussed below), and may be symbolic links.</td></tr>
+</tbody>
+</table>
+<div class="section" id="in-a-development-setting">
+<h3><a class="toc-backref" href="#id28">In a Development Setting</a></h3>
+<p>The US main configuration file, <tt class="docutils literal">us.config</tt>, is in a directory (<tt class="docutils literal">US_CFG_ROOT</tt>) that is <tt class="docutils literal"><span class="pre">~/.config/universal-server/</span></tt> here. This US-level configuration file will reference a US-Web counterpart configuration file, probably in the same directory.</p>
+<p>The US-Web configuration file may define a <tt class="docutils literal">us_web_app_base_dir</tt> entry. If not, this application directory will then be found thanks to the <tt class="docutils literal">US_WEB_APP_BASE_DIR</tt> environment variable (if defined, typically through <tt class="docutils literal"><span class="pre">~/.bashrc</span></tt>); otherwise, as a last resort, an attempt to guess it will be done.</p>
+<p>The US webserver may be then run thanks to <tt class="docutils literal">make debug</tt>, from the relevant <tt class="docutils literal">us_web</tt> directory (typically the root of a GIT clone located in the user's directory).</p>
+<p>In such a development context, in <tt class="docutils literal">us_web/conf/sys.config</tt>, we recommend to let the batch mode disabled (just let the default <tt class="docutils literal">{is_batch,false}</tt>), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see <a class="reference external" href="http://traces.esperide.org/#trace-supervision-browsing">Traces</a> for that).</p>
+</div>
+<div class="section" id="in-a-production-setting">
+<h3><a class="toc-backref" href="#id29">In a Production Setting</a></h3>
+<p>The start/stop management scripts will be run initially as root and must access the <tt class="docutils literal">us.config</tt> file. Then, once run, <tt class="docutils literal">us_web</tt> will most probably switch to a dedicated user (see the <tt class="docutils literal">us_web_username</tt> entry in the US-Web configuration file), who will need in turn to be able to read the <tt class="docutils literal">us.config</tt> file and any related one (ex: for US-Web, here supposed to be named <tt class="docutils literal"><span class="pre">foobar-us-web-for-production.config</span></tt>).</p>
+<p>As a result, a relevant configuration directory (denoted <tt class="docutils literal">US_CFG_ROOT</tt> in this document), in that shared setting, is the standard <tt class="docutils literal">/etc/xdg</tt> one, resulting in the <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt> directory to be used.</p>
+<p>As mentioned, care must be taken so that <tt class="docutils literal">root</tt> and also the US and US-Web users can read the content of that directory - at least the US and US-Web configuration files in it - and that the other users cannot.</p>
+<p>For that, a dedicated <tt class="docutils literal"><span class="pre">us-group</span></tt> group can be created, and any web user (ex: <tt class="docutils literal"><span class="pre">us-web-user</span></tt>) shall belong to that group. For example:</p>
+<pre class="literal-block">
+$ id us-web-user
+uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),1007(us-group)
+</pre>
+<p>Then, in <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt>, for the US and US-Web configuration files:</p>
+<pre class="literal-block">
+$ chown us-user us.config
+$ chown us-web-user foobar-us-web-for-production.config
+
+$ us_files=&quot;us.config foobar-us-web-for-production.config&quot;
+$ chgrp us-group ${us_files}
+$ chmod 640 ${us_files}
+
+$ chgrp us-group /etc/xdg/universal-server
+$ chmod 700 /etc/xdg/universal-server
+</pre>
+<p>We recommend directly setting the <tt class="docutils literal">us_web_app_base_dir</tt> entry to the relevant, absolute path.</p>
+<p>Let's name here <tt class="docutils literal">US_WEB_REL_ROOT</tt> the root of the US-Web release of interest (ex: corresponding to <tt class="docutils literal"><span class="pre">${REL_BASE_ROOT}/us_web-latest/</span></tt>) and <tt class="docutils literal">US_WEB_APP_ROOT</tt> the root of the corresponding US-Web application (ex: corresponding to <tt class="docutils literal"><span class="pre">${US_WEB_REL_ROOT}/lib/us_web-latest/</span></tt>).</p>
+<p>A <tt class="docutils literal">systemd</tt> service shall be declared for US-Web, in <tt class="docutils literal">/etc/systemd/system</tt>; creating there, as root, a symbolic link to <tt class="docutils literal"><span class="pre">${US_WEB_APP_ROOT}/priv/conf/us-web.service</span></tt> will suffice.</p>
+<p>This service requires <tt class="docutils literal"><span class="pre">start-us-web.sh</span></tt> and <tt class="docutils literal"><span class="pre">stop-us-web.sh</span></tt>. Adding for user convenience <tt class="docutils literal"><span class="pre">get-us-web-status.sh</span></tt>, they should all be symlinked that way, still as root:</p>
+<pre class="literal-block">
+$ cd /usr/local/bin
+$ for f in start-us-web.sh stop-us-web.sh get-us-web-status.sh; \
+  do ln -s ${US_WEB_APP_ROOT}/priv/bin/$f ; done
+</pre>
+<p>The log base directory (see the <tt class="docutils literal">log_base_directory</tt> entry) shall be created and writable; for example:</p>
+<pre class="literal-block">
+$ LOG_DIR=/var/log/universal-server
+$ mkdir -p ${LOG_DIR}
+$ chown us-user ${LOG_DIR}
+$ chgrp us-group ${LOG_DIR}
+$ chmod 770 ${LOG_DIR}
+</pre>
+<p>In such a production context, in <tt class="docutils literal">sys.config</tt> (typically located in <tt class="docutils literal"><span class="pre">${US_WEB_REL_ROOT}/releases/latest-release</span></tt>), we recommend to enable batch mode (just set <tt class="docutils literal">{is_batch,true}</tt>), so that by default no direct, graphical trace supervision is triggered (a server usually does not have a X server anyway).</p>
+<p>The traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see <a class="reference external" href="http://traces.esperide.org/#trace-supervision-browsing">Traces</a> for that), by running the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh">monitor-us-web.sh</a> script.</p>
+<p>For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a <tt class="docutils literal"><span class="pre">us-monitor.config</span></tt> file that is typically located in <tt class="docutils literal"><span class="pre">~/.config/universal-server/</span></tt>.</p>
+</div>
+</div>
+<div class="section" id="usage-recommendations">
+<h2><a class="toc-backref" href="#id30">Usage Recommendations</a></h2>
 <p>In terms of security, we would advise:</p>
 <ul class="simple">
 <li>to stick to the <strong>latest stable version</strong> of all software involved (including US-Web and all its stack, Erlang, and the operating system itself)</li>
-<li>to ensure that a <strong>firewall</strong> blocks everything from the Internet by default, including the EPMD port(s) (i.e. both the default Erlang one and any non-standard one specified through the <tt class="docutils literal">epmd_port</tt> key defined in US-Common's <a class="reference external" href="https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config">us.config</a>); one may get inspiration from our <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh">iptables.rules-Gateway.sh</a> script for that</li>
+<li>to apply a streamlined, reproducible <strong>deployment process</strong>, preferably based on our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh">deploy-us-web-release.sh</a> script</li>
+<li>to rely on dedicated, <strong>different, low-privileged users and groups</strong> for US and US-Web, which both rely on <tt class="docutils literal">authbind</tt>; refer to our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh">start-us-web.sh</a> script for that; see also the <tt class="docutils literal">us_username</tt> key of US-Common's <a class="reference external" href="https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config">us.config</a>, and the <tt class="docutils literal">us_web_username</tt> key of the US-Web configuration file it refers to</li>
 <li>still in <tt class="docutils literal">us.config</tt>, to set:<ul>
 <li>a strong-enough Erlang <strong>cookie</strong>: set the <tt class="docutils literal">vm_cookie</tt> key to a well-chosen value, possibly a random one deriving from an output of <tt class="docutils literal">uuidgen</tt></li>
 <li>possibly a <strong>limited TCP port range</strong> (see the <tt class="docutils literal">tcp_port_range</tt> key)</li>
 <li>the <strong>execution context</strong> to <tt class="docutils literal">production</tt> (see the <tt class="docutils literal">execution_context</tt> key)</li>
 </ul>
 </li>
-<li>to rely on dedicated, <strong>low-privileged users and groups</strong> (US-Web relies on <tt class="docutils literal">authbind</tt>; refer to our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh">start-us-web.sh</a> script for that)</li>
-<li>to apply a streamlined, reproducible <strong>deployment process</strong>, preferably based on our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh">deploy-us-web-release.sh</a> script</li>
-<li>to use also the counterpart <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web.sh">stop-us-web.sh</a> script and to have them triggered through <tt class="docutils literal">systemd</tt>; we provide a corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/us-web.service">us-web.service</a> <strong>unit file</strong> for that, typically to be placed in <tt class="docutils literal">/etc/systemd/system</tt> and whose <tt class="docutils literal">ExecStart/ExecStop</tt> paths shall preferably be symlinks pointing to the latest deployed US-Web release (ex: <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-latest</span></tt>)</li>
+<li>to use also the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web.sh">stop-us-web.sh</a> counterpart script, and to have them triggered through <tt class="docutils literal">systemd</tt>; we provide a corresponding <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/us-web.service">us-web.service</a> <strong>unit file</strong> for that, typically to be placed in <tt class="docutils literal">/etc/systemd/system</tt> and whose <tt class="docutils literal">ExecStart/ExecStop</tt> paths shall preferably be symlinks pointing to the latest deployed US-Web release (ex: <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-latest</span></tt>)</li>
+<li>to ensure that a <strong>firewall</strong> blocks everything from the Internet by default, including the EPMD port(s) (i.e. both the default Erlang one and any non-standard one specified through the <tt class="docutils literal">epmd_port</tt> key defined in <tt class="docutils literal">us.config</tt>); one may get inspiration from our <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh">iptables.rules-Gateway.sh</a> script for that</li>
 <li>to <strong>monitor regularly</strong> both:<ul>
 <li>the US-Web server itself (see our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh">monitor-us-web.sh</a> script for that, relying on the trace supervisor provided by the <a class="reference external" href="http://traces.esperide.org">Ceylan-Traces</a> layer)</li>
-<li>the remote accesses made to the websites (typically by enabling the US-Web &quot;meta&quot; feature, generating and updating automatically a dedicated website displaying in one page all hosted websites and linking to their web analysis report; refer to the <tt class="docutils literal">log_analysis</tt> key of the US-Web configuration file (ex: see <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config">us-web-for-tests.config</a> as an example thereof)</li>
+<li>the remote, browser-based, accesses made to the hosted websites, typically by enabling the US-Web &quot;meta&quot; feature, generating and updating automatically a dedicated website displaying in one page all hosted websites and linking to their web analysis report; refer to the <tt class="docutils literal">log_analysis</tt> key of the US-Web configuration file (ex: see <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config">us-web-for-tests.config</a> as an example thereof)</li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="licence">
-<span id="free-software"></span><h2><a class="toc-backref" href="#id18">Licence</a></h2>
+<span id="free-software"></span><h2><a class="toc-backref" href="#id31">Licence</a></h2>
 <p>The <tt class="docutils literal">Universal Webserver</tt> is licensed by its author (Olivier Boudeville) under the <a class="reference external" href="https://www.gnu.org/licenses/agpl-3.0.en.html">GNU Affero General Public License</a> as published by the Free Software Foundation, either version 3 of this license, or (at your option) any later version.</p>
 <p>This allows the use of the Universal Webserver code in a wide a variety of software projects, while still maintaining copyleft on this code, ensuring improvements are shared.</p>
 <p>We hope indeed that enhancements will be back-contributed (ex: thanks to merge requests), so that everyone will be able to benefit from them.</p>
 </div>
 <div class="section" id="current-stable-version-download">
-<h2><a class="toc-backref" href="#id19">Current Stable Version &amp; Download</a></h2>
+<h2><a class="toc-backref" href="#id32">Current Stable Version &amp; Download</a></h2>
 <p>As mentioned, the single, direct prerequisites of the <a class="reference external" href="https://github.com/Olivier-Boudeville/UniversalWebserver">Universal Webserver</a> are:</p>
 <ul class="simple">
-<li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a></li>
-<li><a class="reference external" href="http://www.awstats.org/">Awstats</a> (as an optional, runtime-only dependency)</li>
+<li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a> (version 2.8 or above)</li>
+<li><a class="reference external" href="http://www.awstats.org/">Awstats</a> as an optional, runtime-only dependency (version 7.8 or above)</li>
 <li><a class="reference external" href="http://us-common.esperide.org/">US-Common</a></li>
 </ul>
 <p>The latter relies on <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Traces">Ceylan-Traces</a>, which implies in turn <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-WOOPER">Ceylan-WOOPER</a>, then <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Myriad">Ceylan-Myriad</a> and <a class="reference external" href="http://erlang.org">Erlang</a>.</p>
 <p>We prefer using GNU/Linux, sticking to the latest stable release of Erlang, and building it from sources, thanks to GNU <tt class="docutils literal">make</tt>.</p>
-<p>We recommend indeed obtaining Erlang thanks to a manual installation (refer to the corresponding <a class="reference external" href="http://myriad.esperide.org#prerequisites">Myriad prerequisite section</a>  for more precise guidelines), Awstats thanks to your distribution of choice (ex for Arch Linux: <tt class="docutils literal">pacman <span class="pre">-S</span> awstats</tt>) and, for all Erlang-related software, to rely on <a class="reference external" href="https://www.rebar3.org/">rebar3</a>.</p>
-<p>One wanting to be able to operate on the source code of these dependencies may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root one's <tt class="docutils literal"><span class="pre">us-web</span></tt> clone, these links pointing to relevant GIT repositories.</p>
+<p>We recommend indeed obtaining Erlang thanks to a manual installation; refer to the corresponding <a class="reference external" href="http://myriad.esperide.org#prerequisites">Myriad prerequisite section</a>  for more precise guidelines.</p>
+<p>The build of the US-Web server is driven by <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, which can be obtained by following our <a class="reference external" href="http://myriad.esperide.org/#getting-rebar3">guidelines</a>.</p>
+<p>If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (ex for Arch Linux: <tt class="docutils literal">pacman <span class="pre">-S</span> awstats</tt> <a class="footnote-reference" href="#id19" id="id18">[2]</a>) .</p>
+<table class="docutils footnote" frame="void" id="id19" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id18">[2]</a></td><td>To avoid a future reading access error: <tt class="docutils literal">chmod <span class="pre">-R</span> +r /usr/share/webapps/awstats/icon</tt>.</td></tr>
+</tbody>
+</table>
+<p>If wanting to be able to operate on the source code of the <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan">Ceylan</a> and/or <a class="reference external" href="https://github.com/Olivier-Boudeville/Universal-Server">US</a> dependencies, you may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root one's <tt class="docutils literal"><span class="pre">US-Web</span></tt> clone, these links pointing to relevant GIT repositories (see the <tt class="docutils literal"><span class="pre">create-us-web-checkout</span></tt> make target for that).</p>
 <div class="section" id="using-cutting-edge-git">
-<h3><a class="toc-backref" href="#id20">Using Cutting-Edge GIT</a></h3>
+<h3><a class="toc-backref" href="#id33">Using Cutting-Edge GIT</a></h3>
 <p>This is the installation method that we use and recommend; the Universal Webserver <tt class="docutils literal">master</tt> branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.</p>
 <p>Once Erlang and possibly Awstats are available, it should be just a matter of executing our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh">get-us-web-from-sources.sh</a> script for downloading and building all dependencies at once, and run a test server (use its <tt class="docutils literal"><span class="pre">--help</span></tt> option for more information.</p>
 <p>For example:</p>
@@ -174,24 +288,24 @@ shows that the US-Web server is up and running.
 <p>Based on that, devising one's version of them should allow to have one's US-Web server running at the cost of very little efforts.</p>
 <p><span class="raw-html"><a name="otp"></a></span></p>
 </div>
-<div class="section" id="using-otp-related-build-runtime-conventions">
-<span id="otp-build"></span><h3><a class="toc-backref" href="#id21">Using OTP-Related Build/Runtime Conventions</a></h3>
-<p>As discussed in these sections of <a class="reference external" href="http://myriad.esperide.org/myriad.html#otp">Myriad</a>, <a class="reference external" href="http://wooper.esperide.org/index.html#otp">WOOPER</a>, <a class="reference external" href="http://traces.esperide.org/index.html#otp">Traces</a> and <a class="reference external" href="http://us-common.esperide.org/index.html#otp">US-Common</a>, we added the (optional) possibility of generating a Universal Webserver <em>OTP application</em> out of the build tree, ready to result directly in an <em>(OTP) release</em>. For that we rely on <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, <a class="reference external" href="https://github.com/erlware/relx">relx</a> and (possibly) <a class="reference external" href="https://hex.pm/">hex</a>.</p>
+<div class="section" id="otp-considerations">
+<span id="otp-build"></span><h3><a class="toc-backref" href="#id34">OTP Considerations</a></h3>
+<p>As discussed in these sections of <a class="reference external" href="http://myriad.esperide.org/myriad.html#otp">Myriad</a>, <a class="reference external" href="http://wooper.esperide.org/index.html#otp">WOOPER</a>, <a class="reference external" href="http://traces.esperide.org/index.html#otp">Traces</a> and <a class="reference external" href="http://us-common.esperide.org/index.html#otp">US-Common</a>, the Universal Webserver <em>OTP application</em> is generated out of the build tree, ready to result directly in an <em>(OTP) release</em>. For that we rely on <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, <a class="reference external" href="https://github.com/erlware/relx">relx</a> and (possibly) <a class="reference external" href="https://hex.pm/">hex</a>.</p>
 <p>Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on any number of domains as needed.</p>
-<p>As for Myriad, WOOPER, Traces and US-Common, most versions of the Universal Webserver are also published as <a class="reference external" href="https://hex.pm/packages/us_web">Hex packages</a>.</p>
+<p>As for Myriad, WOOPER, Traces and US-Common, most versions of the Universal Webserver will be also published as <a class="reference external" href="https://hex.pm/packages/us_web">Hex packages</a>.</p>
 <p>For more details, one may have a look at <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar.config.template">rebar.config.template</a>, the general rebar configuration file used when generating the Universal Webserver OTP application and release (implying the automatic management of all its dependencies).</p>
 </div>
 </div>
 <div class="section" id="support">
-<h2><a class="toc-backref" href="#id22">Support</a></h2>
+<h2><a class="toc-backref" href="#id35">Support</a></h2>
 <p>Bugs, questions, remarks, patches, requests for enhancements, etc. are to be reported to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">project interface</a> (typically <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/issues">issues</a>) or directly at the email address mentioned at the beginning of this document.</p>
 </div>
 <div class="section" id="please-react">
-<h2><a class="toc-backref" href="#id23">Please React!</a></h2>
+<h2><a class="toc-backref" href="#id36">Please React!</a></h2>
 <p>If you have information more detailed or more recent than those presented in this document, if you noticed errors, neglects or points insufficiently discussed, drop us a line! (for that, follow the <a class="reference internal" href="#support">Support</a> guidelines).</p>
 </div>
 <div class="section" id="ending-word">
-<h2><a class="toc-backref" href="#id24">Ending Word</a></h2>
+<h2><a class="toc-backref" href="#id37">Ending Word</a></h2>
 <p>Have fun with the Universal Webserver!</p>
 <div class="figure align-center">
 <img alt="Universal Webserver logo" src="us-web-title.png" style="width: 50%;" />

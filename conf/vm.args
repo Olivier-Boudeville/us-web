@@ -1,4 +1,4 @@
-# Custom us-web VM arguments.
+# Custom US-Web VM arguments.
 
 ## Name of the node (long name wanted, not short):
 -name us_web

@@ -23,9 +23,9 @@ clean-local: clean-rebar clean-web-log-conf
 	-@/bin/rm -f $(REBAR_CONF_FILES)
 
 
+# Removed: -@/bin/rm -rf priv/
 clean-rebar:
 	-@/bin/rm -f rebar.config
-	-@/bin/rm -rf priv/
 
 
 clean-web-log-conf:

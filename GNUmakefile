@@ -111,7 +111,7 @@ stats:
 	@$(MAKE_CODE_STATS) $(US_WEB_TOP)
 
 
-# The 'compile' target just by itself would not recompile a US-web source file
+# The 'compile' target just by itself would not recompile a US-Web source file
 # that would have been changed:
 #
 #all: compile
@@ -215,7 +215,7 @@ start: kill clean-logs compile
 
 debug: ensure-dev-release
 	@echo " Running us_web for debug (EPMD port: $(EPMD_PORT))"
-	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) log
+	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s foreground || $(MAKE) -s log
 
 
 # Not tested yet, as we use releases in production mode, through systemd.
@@ -234,6 +234,11 @@ status:
 	@$(US_WEB_TOP)/priv/bin/get-us-web-status.sh
 
 
+# A rule such as the following would be bound to fail because of a non-matching
+# cookie:
+#
+#  @export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || ( echo "Stop failed" ; $(MAKE) -s log )
+#
 # Note: will probably not work due to the VM cookie having been changed; use
 # 'stop-brutal' instead, if run with 'start' or 'debug':
 #
@@ -246,6 +251,11 @@ stop:
 stop-brutal: kill
 
 
+# A rule such as the following would be bound to fail because of a non-matching
+# cookie:
+#
+#	-@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop
+#
 # Note: only applies when the target instance has been started as a release.
 #
 # A rule such as the following would be bound to fail because of a non-matching
@@ -288,15 +298,15 @@ inspect:
 	@$(MAKE) -s log
 
 
-# Monitors a webserver that (already) runs in development mode, from specified
-# US config:
+# Monitors a US-Web server that (already) runs in development mode, from
+# specified US config:
 #
 monitor-development:
 	@$(MONITOR_SCRIPT) us-monitor-for-development.config
 
 
-# Monitors a webserver that (already) runs in production mode, from specified
-# US config:
+# Monitors a US-Web that (already) runs in production mode, from specified US
+# config:
 #
 monitor-production:
 	@$(MONITOR_SCRIPT) us-monitor-for-production.config
@@ -364,6 +374,7 @@ info-local:
 	@echo "TRACES_TOP = $(TRACES_TOP)"
 	@echo "WOOPER_TOP = $(WOOPER_TOP)"
 	@echo "MYRIAD_TOP = $(MYRIAD_TOP)"
+	@echo "REBAR3_EXEC = $(REBAR3_EXEC)"
 	@echo "REBAR_INCS = $(REBAR_INCS)"
 
 

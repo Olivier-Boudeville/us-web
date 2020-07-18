@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Tuesday, July 14, 2020
+:Lastly updated: Saturday, July 18, 2020
 :Status: Work in progress
-:Version: 0.0.4
+:Version: 0.0.5
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -159,7 +159,8 @@ Using that script boils down to running, as root::
  Trying to stop gracefully any prior release in us_web-x.y.z.
  Removing already-existing us_web-x.y.z.
  US-Web release ready in '/opt/universal-server/us_web-x.y.z/bin/us_web'.
- Changing, from '/opt/universal-server/us_web-x.y.z', the owner of release files to 'us-web-user' and their group to 'us-group'.
+ Changing, from '/opt/universal-server/us_web-x.y.z', the owner of release
+ files to 'us-web-user' and their group to 'us-group'.
  (no auto-launch enabled)
 
 Note that the goal of that deployment phase is to start from a clean state, and as such it will try to stop any already running US-Web instance (for all possible versions thereof).
@@ -218,7 +219,8 @@ As mentioned, care must be taken so that ``root`` and also the US and US-Web use
 For that, a dedicated ``us-group`` group can be created, and any web user (ex: ``us-web-user``) shall belong to that group. For example::
 
  $ id us-web-user
- uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),1007(us-group)
+ uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),
+  1007(us-group)
 
 
 Then, in ``/etc/xdg/universal-server``, for the US and US-Web configuration files::
@@ -334,7 +336,7 @@ If requested, at server start-up, a "meta" website - i.e. a website sharing info
 
 For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (ex: ``foobar.org``)::
 
- { "mymeta", "My-meta-generated", meta }
+ {"mymeta", "My-meta-generated", meta}
 
 
 This will generate a suitable website in the ``My-meta-generated`` subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as ``mymeta.foobar.org`` (of course both ``mymeta`` and ``My-meta-generated`` are examples; these names can be freely chosen).
@@ -493,7 +495,8 @@ For example:
    ===> Compiling us_web
    Starting the us_web release (EPMD port: 4526):
    [...]
-   US-Web launched, please point a browser to http://localhost:8080 to check test sites.
+   US-Web launched, please point a browser to http://localhost:8080 to
+    check test sites.
 
   $ firefox http://localhost:8080 &
 
@@ -596,7 +599,7 @@ It deals with the configuration of the ``Traces`` application, so it comes very 
 Location of Applications
 ------------------------
 
-The location of the US-Web application is bound to differ depending on the context of use (development/production deployments, host-wise, etc.), whereas it is needed at the very least by its start/stop scripts.
+The location of the US-Web application is bound to differ depending on the context of use (development/production deployments, host-wise, etc.), whereas it is needed to be known at the very least by its start/stop scripts.
 
 So its path must be specified (most preferably as an absolute directory) in the US-Web configuration file. However, at least for test configuration files, relying on an absolute directory would not be satisfactory, as the user may install the US-Web framework at any place and testing should not require a manual configuration update.
 
@@ -689,8 +692,8 @@ This launcher created the main, central, ``us_web`` (UNIX) process, parent of al
 ``pstree -u`` (or ``ps -e --forest``) tells us about the underlying process hierarchy::
 
  [...]
-   ├─run_erl(us-web-user)───beam.smp─┬─erl_child_setup───inet_gethost───inet_gethost
-   │                             └─158*[{beam.smp}]
+   |-run_erl(us-web-user)---beam.smp---erl_child_setup---inet_gethost---inet_gethost
+   |                             |-158*[{beam.smp}]
  [...]
 
 
@@ -699,20 +702,20 @@ The 158 threads must correspond to:
 - 128 async ones (``-A 128``)
 - 30 "normal" threads (on a computer having a single CPU with 8 cores with Hyperthreading, hence 16 logical cores)
 
-Using ``htop``, one can see that the ``run_erl`` process spawned a ``us_web`` one (namely ``/opt/universal-server/us_web-US_WEB_VERSION/bin/us_web``) that is far larger in (VIRT) memory (ex: 5214MB, instead of 5832MB for the former).
+Using ``htop``, one can see that the ``run_erl`` process spawned a ``us_web`` one (namely ``/opt/universal-server/us_web-US_WEB_VERSION/bin/us_web``) that is far larger in (VIRT) memory (ex: 5214MB, instead of 5832KB for the former).
 
 ``us_web`` in turn created the numerous threads.
 
-``RSS/RSZ`` (*Resident Set Size*) is a far better metric than ``VIRT/VSZ`` (*Virtual Memory Size*); ``VIRT = RSS + SWP``:
+``RSS/RSZ`` (*Resident Set Size*) is a far better metric than ``VIRT/VSZ`` (*Virtual Memory Size*); indeed ``VIRT = RSS + SWP`` and:
 
  - ``RSS`` shows how much memory is allocated to that process and is in RAM; it does not include memory that is swapped out; it includes memory from shared libraries (as long as the pages from those libraries are actually in memory), and all stack and heap memory used
  - ``VIRT`` includes all memory that the process can access, including memory that is swapped out, memory that is allocated but not used, and memory that is from shared libraries
 
-Knowing that with ``ps`` one may add ``-L`` to display thread information and ``-f`` to have full-format listing , a base command to monitor the US-Web processes is: ``ps -eww -o rss,pid,args | grep us_web``, with:
+Knowing that with ``ps`` one may add ``-L`` to display thread information and ``-f`` to have full-format listing, a base command to monitor the US-Web processes is: ``ps -eww -o rss,pid,args | grep us_web``, with:
 
  - ``-e``: select all processes
  - ``-w`` (once or twice): request wide output
- - ``-o args,rss``: display full command line and RSS memory used (in kilobytes)
+ - ``-o rss,pid,args``: display RSS memory used (in kilobytes), PID and full command line
 
 
 (apparently there is no direct way of displaying human-readable sizes)
@@ -742,7 +745,7 @@ Indeed, in terms of RSS use (for a few domains, each with a few low-traffic webs
 Trace Monitoring
 ----------------
 
-Use the ``us_web/priv/bin/monitor-us-web.sh`` script in order to monitor the traces of an already running US-Web instance;.
+Use the ``us_web/priv/bin/monitor-us-web.sh`` script in order to monitor the traces of an already running, possibly remote, US-Web instance.
 
 Note that the monitored US-Web instance will be by default the one specified in any ``us-monitor.config`` file located in the US configuration directory.
 
@@ -750,7 +753,10 @@ One may specify on the command-line another configuration file if needed, such a
 
 
 .. include:: us-web-access-logging.rst
-.. include:: us-geolocation.rst
+
+..
+  Not relevant here:
+  .. include:: us-geolocation.rst
 
 
 .. Not ready yet: include us-certificates.rst
@@ -761,7 +767,7 @@ One may specify on the command-line another configuration file if needed, such a
 Planned Enhancements
 --------------------
 
-- **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to the US Scheduler)
+- **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to the embedded scheduler)
 - **Nitrogen** and/or **Zotonic** support, in addition to static websites
 
 
@@ -769,9 +775,7 @@ Planned Enhancements
 About Nitrogen (future) Support
 -------------------------------
 
-- *It is strongly recommended to catch static files with the static_paths
-setting. simple_bridge does not serve large static files in an optimal way (it
-loads the files into memory completely before sending)*
+- "*It is strongly recommended to catch static files with the static_paths setting. simple_bridge does not serve large static files in an optimal way (it loads the files into memory completely before sending)*"
 - `How Nitrogen processes requests <https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/>`_
 - `How to add Nitrogen and Cowboy as dependency libs to your erlang application <https://rshestakov.wordpress.com/2013/03/03/how-to-add-nitrogen-and-cowboy-as-dependecy-libs-to-your-erlang-application/>`_
 

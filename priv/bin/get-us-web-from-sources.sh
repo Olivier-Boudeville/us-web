@@ -160,7 +160,7 @@ git clone ${github_base}/Ceylan-Traces traces #&& cd traces && make all
 res=$?
 if [ ! $res -eq 0 ] ; then
 
-	echo " Error, unable to obtain WOOPER." 1>&2
+	echo " Error, unable to obtain Traces." 1>&2
 	exit 30
 
 fi

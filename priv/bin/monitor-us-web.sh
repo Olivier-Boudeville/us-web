@@ -2,7 +2,7 @@
 
 us_monitor_config_filename="us-monitor.config"
 
-usage="$(basename $0) [US_MONITOR_CONFIG_FILE]: monitors the traces emitted by a us-web instance possibly running on a remote host based, unless specified otherwise, on a '${us_monitor_config_filename}' configuration file, found in a US configuration directory specified on the command-line, otherwise found through the default US search paths."
+usage="$(basename $0) [US_MONITOR_CONFIG_FILE]: monitors the traces emitted by a US-Web instance possibly running on a remote host based, unless specified otherwise, on a '${us_monitor_config_filename}' configuration file, found in a US configuration directory specified on the command-line, otherwise found through the default US search paths."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -27,7 +27,7 @@ us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
-	echo "Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
+	echo "  Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
 	exit 35
 
 fi
@@ -51,7 +51,7 @@ us_monitor_config_file="${us_config_dir}/${us_monitor_config_filename}"
 
 if [ ! -f "${us_monitor_config_file}" ]; then
 
-	echo " Error, no us-monitor configuration file found (no '${us_monitor_config_file}')." 1>&2
+	echo "  Error, no us-monitor configuration file found (no '${us_monitor_config_file}')." 1>&2
 
 	exit 5
 
@@ -70,20 +70,20 @@ us_web_hostname=$(echo "${us_monitor_base_content}" | grep us_web_hostname | sed
 
 if [ -z "${us_web_hostname}" ]; then
 
-	echo " Error, not remote us-web hostname specified (no us_web_hostname defined)." 1>&2
+	echo "  Error, not remote US-Web hostname specified (no us_web_hostname defined)." 1>&2
 	exit 10
 
 fi
 
 if ! ping -c 1 ${us_web_hostname} 1>/dev/null 2>&1 ; then
 
-	echo " Error, unable to ping the '${us_web_hostname}' remote us-web hostname." 1>&2
+	echo "  Error, unable to ping the '${us_web_hostname}' remote US-Web hostname." 1>&2
 
 	exit 15
 
 fi
 
-#echo "Using '${us_web_hostname}' as remote us-web hostname."
+#echo "Using '${us_web_hostname}' as remote US-Web hostname."
 
 # Could have been done in the Erlang part:
 remote_vm_cookie=$(echo "${us_monitor_base_content}" | grep remote_vm_cookie | sed 's|^[[:space:]]*{[[:space:]]remote_vm_cookie,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
@@ -93,17 +93,18 @@ if [ -z "${remote_vm_cookie}" ]; then
 
 	if [ -z "${vm_cookie}" ]; then
 
-		echo " Error, no cookie defined for the remote us-web host (remote_vm_cookie) nor for the base cookie (vm_cookie)." 1>&2
+		echo " Error, no cookie defined for the remote US-Web host (remote_vm_cookie) nor for the base cookie (vm_cookie)." 1>&2
 
 	else
-		echo "No cookie defined for the remote us-web host, using the base one (defined in us.config's vm_cookie): ${vm_cookie}."
+
+		echo "No cookie defined for the remote US-Web host, using the base one (defined in us.config's vm_cookie): ${vm_cookie}."
 		remote_vm_cookie="${vm_cookie}"
 
 	fi
 
 else
 
-	#echo "Using cookie defined for the remote us-web host (remote_vm_cookie): ${remote_vm_cookie}."
+	#echo "Using cookie defined for the remote US-Web host (remote_vm_cookie): ${remote_vm_cookie}."
 	:
 
 fi

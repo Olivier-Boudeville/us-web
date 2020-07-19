@@ -20,12 +20,8 @@
 % Creation date: Sunday, January 19, 2020.
 
 
-% Common us_web defines.
+% Common US-Web defines.
 
 
-% Same from the upper US level:
+% Same from the upper US-Common level:
 -include_lib("us_common/include/us_defines.hrl").
-
-
-% us_web-level, for which the web-srv:web-srv ownership shall be enforced:
--define( us_web_user, "web-srv" ).

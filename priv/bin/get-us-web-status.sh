@@ -7,7 +7,7 @@
 
 # See also start-us-web.sh and stop-us-web.sh.
 
-usage="Usage: $(basename $0): returns the status of a supposedly locally-running us-web release."
+usage="Usage: $(basename $0): returns the status of a supposedly locally-running US-Web release."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 

@@ -37,7 +37,7 @@ else
 
 		else
 
-			echo "   Error, no US-Common root found: searched in '${us_common_root_in_checkouts}', '${us_common_root_in_build}' and '${us_common_in_deployed_release}' (from $(pwd))." 1>&2
+			echo "  Error, no US-Common root found: searched in '${us_common_root_in_checkouts}', '${us_common_root_in_build}' and '${us_common_in_deployed_release}' (from $(pwd))." 1>&2
 			exit 95
 
 		fi
@@ -113,7 +113,7 @@ read_us_web_config_file()
 
 		if [ -z "${us_web_username}" ]; then
 
-			echo " Error, no USER environment variable set, whereas not username specified in configuration file." 1>&2
+			echo "  Error, no USER environment variable set, whereas not username specified in configuration file." 1>&2
 			exit 120
 
 		fi
@@ -356,7 +356,7 @@ update_us_web_config_cookie()
 # Restores the original VM args file, after it has been updated, to avoid
 # leaking the actual runtime cookie in any future command-line.
 #
-# (reciprocal fucntion of update_us_web_config_cookie)
+# (reciprocal function of update_us_web_config_cookie)
 #
 restore_us_web_config_cookie()
 {
@@ -462,7 +462,7 @@ inspect_us_web_log()
 
 	else
 
-		echo " Error, no US-Web VM log file found (no '${us_web_vm_log_file}', searched in '${us_web_vm_log_dir}')." 1>&2
+		echo "  Error, no US-Web VM log file found (no '${us_web_vm_log_file}', searched in '${us_web_vm_log_dir}')." 1>&2
 		exit 200
 
 	fi

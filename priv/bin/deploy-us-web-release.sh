@@ -150,6 +150,14 @@ if [ ! -x "${start_script}" ]; then
 
 fi
 
+
+# We are in ${rel_root} now, so that the us-common.sh script (and thus the
+# us_common base first) can be found with relative links from us-web-common.sh:
+#
+# (so we will be typically in /opt/universal-server/us_web-x.y.z from now on)
+cd "${rel_root}"
+
+
 # Not wanting the files of that US-Web install to remain owned by root, so
 # trying to apply a more proper user/group; for that we have to determine them
 # from the configuration files:
@@ -164,16 +172,8 @@ if [ ! -f "${us_web_common_script}" ]; then
 
 fi
 
-
-# We are in ${rel_root} now, so that the us-common.sh script (and thus the
-# us_common base first) can be found with relative links from us-web-common.sh:
-#
-# (so we will be typically in /opt/universal-server/us_web-x.y.z from now on)
-cd "${rel_root}"
-
-#echo "Sourcing '${us_web_common_script}'."
+#echo "Sourcing '${us_web_common_script}' from $(pwd)."
 . "${us_web_common_script}" 1>/dev/null
-
 
 read_us_config_file 1>/dev/null
 

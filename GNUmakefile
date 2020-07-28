@@ -209,13 +209,13 @@ update-release:
 #
 start: kill clean-logs compile
 	@echo "Starting the us_web release (EPMD port: $(EPMD_PORT)):"
-	export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
+	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
 	@sleep 1 ; $(MAKE) -s log
 
 
 debug: ensure-dev-release
 	@echo " Running us_web for debug (EPMD port: $(EPMD_PORT))"
-	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s foreground || $(MAKE) -s log
+	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) -s log
 
 
 # Not tested yet, as we use releases in production mode, through systemd.

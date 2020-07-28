@@ -12,8 +12,8 @@
 usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
 
 
-# Note: all outputs of this script (standard and error ones) are automatically
-# redirected by systemd to its journal.
+# Note: if run through systemd, all outputs of this script (standard and error
+# ones) are automatically redirected by systemd to its journal.
 #
 # To consult them, use:
 #   $ journalctl --pager-end --unit=us-web.service

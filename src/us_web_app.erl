@@ -20,7 +20,12 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% The main entry point of the us-web application.
+% The main entry point of the US-Web application.
+%
+% Typically triggered:
+%  - through OTP, by ebin/us_web.app (as obtained from conf/us_web.app.src)
+%  - through Myriad BDR (Build/Deploy/Run) System
+%
 -module(us_web_app).
 
 -behaviour(application).
@@ -49,8 +54,7 @@ start() ->
 start( StartType, StartArgs ) ->
 
 	io:format( "Starting us_web application "
-			   "(start type: ~p, arguments: ~p)...~n",
-			   [ StartType, StartArgs ] ),
+		"(start type: ~p, arguments: ~p)...~n", [ StartType, StartArgs ] ),
 
 	% To debug any dependency-related 'undef' problem, or to ensure
 	% concurrently-emitted messages can be seen (otherwise many outputs may be

@@ -34,13 +34,13 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Saturday, July 18, 2020</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, August 2, 2020</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Work in progress</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.5</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.6</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Dedication:</th><td class="field-body"><p class="first">Users and maintainers of the <tt class="docutils literal">Universal Webserver</tt>.</p>
@@ -86,26 +86,27 @@
 <li><a class="reference internal" href="#otp-considerations" id="id60">OTP Considerations</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#hints" id="id61">Hints</a><ul>
-<li><a class="reference internal" href="#development-vs-production-mode" id="id62">Development vs Production Mode</a></li>
-<li><a class="reference internal" href="#development-hints" id="id63">Development Hints</a></li>
-<li><a class="reference internal" href="#configuration-hints" id="id64">Configuration Hints</a></li>
-<li><a class="reference internal" href="#execution-hints" id="id65">Execution Hints</a></li>
-<li><a class="reference internal" href="#monitoring-hints" id="id66">Monitoring Hints</a></li>
+<li><a class="reference internal" href="#troubleshooting" id="id61">Troubleshooting</a></li>
+<li><a class="reference internal" href="#hints" id="id62">Hints</a><ul>
+<li><a class="reference internal" href="#development-vs-production-mode" id="id63">Development vs Production Mode</a></li>
+<li><a class="reference internal" href="#development-hints" id="id64">Development Hints</a></li>
+<li><a class="reference internal" href="#configuration-hints" id="id65">Configuration Hints</a></li>
+<li><a class="reference internal" href="#execution-hints" id="id66">Execution Hints</a></li>
+<li><a class="reference internal" href="#monitoring-hints" id="id67">Monitoring Hints</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#standard-log-generation-analysis" id="id67">Standard Log Generation &amp; Analysis</a><ul>
-<li><a class="reference internal" href="#web-analytics-software-choice-of-tool" id="id68">Web Analytics Software: Choice of Tool</a></li>
-<li><a class="reference internal" href="#log-format" id="id69">Log Format</a></li>
-<li><a class="reference internal" href="#awstats-management" id="id70">Awstats Management</a></li>
-<li><a class="reference internal" href="#geolocation-with-awstats" id="id71">Geolocation with Awstats</a></li>
+<li><a class="reference internal" href="#standard-log-generation-analysis" id="id68">Standard Log Generation &amp; Analysis</a><ul>
+<li><a class="reference internal" href="#web-analytics-software-choice-of-tool" id="id69">Web Analytics Software: Choice of Tool</a></li>
+<li><a class="reference internal" href="#log-format" id="id70">Log Format</a></li>
+<li><a class="reference internal" href="#awstats-management" id="id71">Awstats Management</a></li>
+<li><a class="reference internal" href="#geolocation-with-awstats" id="id72">Geolocation with Awstats</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#planned-enhancements" id="id72">Planned Enhancements</a></li>
-<li><a class="reference internal" href="#about-nitrogen-future-support" id="id73">About Nitrogen (future) Support</a></li>
-<li><a class="reference internal" href="#support" id="id74">Support</a></li>
-<li><a class="reference internal" href="#please-react" id="id75">Please React!</a></li>
-<li><a class="reference internal" href="#ending-word" id="id76">Ending Word</a></li>
+<li><a class="reference internal" href="#planned-enhancements" id="id73">Planned Enhancements</a></li>
+<li><a class="reference internal" href="#about-nitrogen-future-support" id="id74">About Nitrogen (future) Support</a></li>
+<li><a class="reference internal" href="#support" id="id75">Support</a></li>
+<li><a class="reference internal" href="#please-react" id="id76">Please React!</a></li>
+<li><a class="reference internal" href="#ending-word" id="id77">Ending Word</a></li>
 </ul>
 </li>
 </ul>
@@ -435,18 +436,41 @@ shows that the US-Web server is up and running.
 <p>For more details, one may have a look at <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar.config.template">rebar.config.template</a>, the general rebar configuration file used when generating the Universal Webserver OTP application and release (implying the automatic management of all its dependencies).</p>
 </div>
 </div>
+<div class="section" id="troubleshooting">
+<h2><a class="toc-backref" href="#id61">Troubleshooting</a></h2>
+<p>If having deployed a release (typically by running <tt class="docutils literal"><span class="pre">deploy-us-web-release.sh</span></tt>) and <tt class="docutils literal">systemctl restart <span class="pre">us-web.service</span></tt> failed, start by executing:</p>
+<pre class="literal-block">
+$ systemctl status us-web.service
+</pre>
+<p>It should return some appropriate information.</p>
+<p>Most common sources of failures are:</p>
+<ul class="simple">
+<li>there is <strong>already a program listening at the target TCP port</strong> (typically port 80) designated for US-Web; one may check for example with <tt class="docutils literal">lsof <span class="pre">-i:80</span></tt>, otherwise with <tt class="docutils literal">netstat <span class="pre">--tcp</span> <span class="pre">--all</span> <span class="pre">--program</span> | grep ':80'</tt></li>
+<li>there may be a <strong>prior, lingering US-Web</strong> installation that is still running in the background; one may check for example with <tt class="docutils literal">ps <span class="pre">-edf</span> |grep us_web</tt></li>
+<li>the <strong>EPMD daemon</strong> of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: <tt class="docutils literal">killall epmd</tt></li>
+</ul>
+<p>If the problem remains, time to inspect the logs (see also <a class="reference internal" href="#log-related-hints">Log-related hints</a>): first the general, technical ones, then, if needed, the applicative ones.</p>
+<p>In both cases, first the relevant <tt class="docutils literal">us.config</tt> shall be found.</p>
+<p>If in development mode, one should look typically in <tt class="docutils literal"><span class="pre">~/.config/universal-server/</span></tt> while, in production mode, it is likely located in <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server/</span></tt>.</p>
+<p>The <em>general logs</em> regroup the VM-level ones and the Traces ones, which are created in the same directory that can be obtained from the <tt class="docutils literal">us_web_app_base_dir</tt> key of the US-Web configuration file. So this last file must be determined first, based on the <tt class="docutils literal">us_web_config_filename</tt> key of <tt class="docutils literal">us.config</tt> file. As an example, let's suppose that the value associated to this key is <tt class="docutils literal"><span class="pre">us-web.config</span></tt>.</p>
+<p>Now the general logs can be located based on the <tt class="docutils literal">us_web_app_base_dir</tt> key of that file (ex: <tt class="docutils literal"><span class="pre">us-web.config</span></tt>). Let's suppose that the associated value is <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-latest</span></tt>. The general logs will be created in its <tt class="docutils literal">log</tt> subdirectory.</p>
+<p>us_web_config_filename,
+/opt/universal-server/us_web-latest/lib/us_web-latest/priv/for-testing/log/us_web.traces</p>
+<p>For the <em>applicative logs</em> (ex: for a virtual host VH, <tt class="docutils literal"><span class="pre">access-for-VH.log</span></tt> and <tt class="docutils literal"><span class="pre">error-for-VH.log</span></tt>),</p>
+<p>In the found <tt class="docutils literal">us.config</tt>, get the value associated to the <tt class="docutils literal">us_log_dir</tt> entry. In production mode, it will be typically an absolute directory such as <tt class="docutils literal"><span class="pre">/var/log/universal-server</span></tt>.</p>
+</div>
 <div class="section" id="hints">
-<h2><a class="toc-backref" href="#id61">Hints</a></h2>
+<h2><a class="toc-backref" href="#id62">Hints</a></h2>
 <p>Various keys (ex: <tt class="docutils literal">us_app_base_dir</tt>) may be defined in the US configuration files (ex: in a <tt class="docutils literal">{us_app_base_dir, &quot;/opt/some_dir&quot;}</tt> entry), from which other elements may derive (ex: paths). To denote the value associated to a key, we surround in this documentation the key with <tt class="docutils literal">&#64;</tt> characters.</p>
 <p>For example <tt class="docutils literal"><span class="pre">&#64;us_app_base_dir&#64;/hello.txt</span></tt> would correspond here to <tt class="docutils literal">/opt/some_dir/hello.txt</tt>.</p>
 <div class="section" id="development-vs-production-mode">
-<h3><a class="toc-backref" href="#id62">Development vs Production Mode</a></h3>
+<h3><a class="toc-backref" href="#id63">Development vs Production Mode</a></h3>
 <p>Should a mismatch be detected between the compile-time execution target and the runtime, user-configured, execution context, a warning will be issued in the traces.</p>
 <p>When building a fresh release thanks to <tt class="docutils literal">make <span class="pre">release-dev</span></tt>, the corresponding action (<tt class="docutils literal">rebar3 release</tt>) will build that release with the base settings, hence in development mode (so not &quot;as prod&quot; - i.e. not with the <tt class="docutils literal">prod</tt> profile, hence not selecting our <tt class="docutils literal">production</tt> execution target).</p>
 <p>Note that all dependencies (thus of course including Myriad, WOOPER and Traces) are built by rebar3 with their <tt class="docutils literal">prod</tt> settings. As a result, relying on <tt class="docutils literal">basic_utils:get_execution_target/0</tt> will only tell us about <tt class="docutils literal">Myriad</tt> (thus always built in production mode), not any other layer (including <tt class="docutils literal"><span class="pre">US-Web</span></tt>). A US-Web trace allows to check all relevant modes, notably that, in production, the production settings apply indeed.</p>
 </div>
 <div class="section" id="development-hints">
-<h3><a class="toc-backref" href="#id63">Development Hints</a></h3>
+<h3><a class="toc-backref" href="#id64">Development Hints</a></h3>
 <div class="section" id="operating-directly-from-within-the-rebar-build-tree">
 <h4>Operating directly from within the rebar build tree</h4>
 <p>(not recommended in a development phase)</p>
@@ -463,7 +487,7 @@ $ make rebar3-copy-beams REBAR_BUILD_DIR=../../
 </div>
 </div>
 <div class="section" id="configuration-hints">
-<h3><a class="toc-backref" href="#id64">Configuration Hints</a></h3>
+<h3><a class="toc-backref" href="#id65">Configuration Hints</a></h3>
 <div class="section" id="batch-mode">
 <h4>Batch Mode</h4>
 <p>One can update <tt class="docutils literal">us_web/conf/sys.config</tt> in order to toggle batch mode (ex: to enable/disable a graphical trace supervision) after build time.</p>
@@ -505,8 +529,10 @@ $ make rebar3-copy-beams REBAR_BUILD_DIR=../../
 </div>
 </div>
 <div class="section" id="execution-hints">
-<h3><a class="toc-backref" href="#id65">Execution Hints</a></h3>
+<h3><a class="toc-backref" href="#id66">Execution Hints</a></h3>
 <ul>
+<li><p class="first">the current working directory of a US-Web instance deployed thanks to <tt class="docutils literal"><span class="pre">deploy-us-web-release.sh</span></tt> is <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-x.y.z</span></tt></p>
+</li>
 <li><p class="first">if unable to connect, the firewall (ex: <tt class="docutils literal">iptables <span class="pre">-L</span></tt>) might be the culprit! Note that the whole US framework tends to rely on a specific TCP range (ex: <tt class="docutils literal"><span class="pre">50000-55000</span></tt>) for inter-VM communications</p>
 </li>
 <li><p class="first">to debug (once batch mode has been enabled/disabled), one may use the <tt class="docutils literal">debug</tt> make target, from the tree root</p>
@@ -530,7 +556,7 @@ $ make rebar3-copy-beams REBAR_BUILD_DIR=../../
 </ul>
 </div>
 <div class="section" id="monitoring-hints">
-<h3><a class="toc-backref" href="#id66">Monitoring Hints</a></h3>
+<h3><a class="toc-backref" href="#id67">Monitoring Hints</a></h3>
 <div class="section" id="in-terms-of-unix-processes">
 <h4>In terms of (UNIX) Processes</h4>
 <p>A running US-Web server will not be found by looking up <tt class="docutils literal">beam</tt> or <tt class="docutils literal">beam.smp</tt> through <tt class="docutils literal">ps</tt>; as an OTP release, it relies first on the <tt class="docutils literal">run_erl</tt> launcher, like shown, based on <tt class="docutils literal">ps <span class="pre">-edf</span></tt>, in:</p>
@@ -609,7 +635,7 @@ $ list-processes-by-size.sh
 </div>
 </div>
 <div class="section" id="standard-log-generation-analysis">
-<h2><a class="toc-backref" href="#id67">Standard Log Generation &amp; Analysis</a></h2>
+<h2><a class="toc-backref" href="#id68">Standard Log Generation &amp; Analysis</a></h2>
 <p>The objective is to have US-Web generate access logs like the standard webservers do, so that standard tools able to produce log analyses can be used afterwards. They may generate HTML pages, which can in turn be appropriately hosted directly by the US-Web framework itself.</p>
 <p>US-Web (rather than a <tt class="docutils literal">crontab</tt>) takes control of log writing, for full control onto the start, stop and rotate behaviours.
 For write efficiency, It is done by an (Erlang) process specific to a given virtual host (see <tt class="docutils literal">class_USWebLogger</tt>), and a task ring is used for synchronicity and load balancing with regard to log report generation.</p>
@@ -622,7 +648,7 @@ For write efficiency, It is done by an (Erlang) process specific to a given virt
 <p>At the Cowboy level, logging could be done as a <a class="reference external" href="https://ninenines.eu/docs/en/cowboy/2.7/guide/middlewares/">middleware</a>, yet we preferred to perform it directly in the handler (typically the static one, <tt class="docutils literal">us_web_static</tt>), presumably for a better control.</p>
 <p>Once access logs are produced, a specific tool is to generate reports out of them, as discussed in the next section.</p>
 <div class="section" id="web-analytics-software-choice-of-tool">
-<h3><a class="toc-backref" href="#id68">Web Analytics Software: Choice of Tool</a></h3>
+<h3><a class="toc-backref" href="#id69">Web Analytics Software: Choice of Tool</a></h3>
 <p>The desired properties for such a tool are mainly: available as free software, trustable, standard, actively and well-maintained, running locally (as opposed to remote services such as Google Analytics), standalone, not resource-demanding, controllable, generating a local analysis (static) website, based only on basic webserver logs (not on a dedicated database, not on markers to be added to all webpages such as 1-pixel images), virtual-host compliant.</p>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/List_of_web_analytics_software">Various tools</a> can be considered, including (best spotted candidates, by increasing level of interest):</p>
 <ul class="simple">
@@ -635,7 +661,7 @@ For write efficiency, It is done by an (Erlang) process specific to a given virt
 <p>So we finally retained <a class="reference external" href="https://awstats.sourceforge.io/">AWStats</a>.</p>
 </div>
 <div class="section" id="log-format">
-<h3><a class="toc-backref" href="#id69">Log Format</a></h3>
+<h3><a class="toc-backref" href="#id70">Log Format</a></h3>
 <p>The most suitable log format that we spotted (see <a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_faq.html#PERSONALIZEDLOG">[1]</a> and <a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_config.html#LogFormat">[2]</a> for more information) is named &quot;<em>NCSA combined with several virtualhostname sharing same log file</em>&quot;.</p>
 <p>Its correct definition is exactly:</p>
 <pre class="literal-block">
@@ -660,7 +686,7 @@ LogFormat=&quot;%host %other %logname %time1 %methodurl %code %bytesd %refererqu
 <p>In all these cases, the log separator is a single space (hence <tt class="docutils literal">LogSeparator=&quot; &quot;</tt>).</p>
 </div>
 <div class="section" id="awstats-management">
-<h3><a class="toc-backref" href="#id70">Awstats Management</a></h3>
+<h3><a class="toc-backref" href="#id71">Awstats Management</a></h3>
 <div class="section" id="awstats-installation">
 <h4>Awstats Installation</h4>
 <p>On Arch Linux, one should follow <a class="reference external" href="https://wiki.archlinux.org/index.php/AWStats">these guidelines</a> (example for version 7.8):</p>
@@ -727,21 +753,21 @@ $ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
 </div>
 </div>
 <div class="section" id="geolocation-with-awstats">
-<h3><a class="toc-backref" href="#id71">Geolocation with Awstats</a></h3>
+<h3><a class="toc-backref" href="#id72">Geolocation with Awstats</a></h3>
 <p><a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_contrib.html">Multiple plugins</a> exist for that.</p>
 <p><a class="reference external" href="https://github.com/eldy/awstats/issues/86">Apparently</a>, none is able to load the new GeoIP2 format (see also <a class="reference external" href="https://github.com/eldy/awstats/issues/114">this</a>).</p>
 <p>As a consequence: topic dropped for the moment.</p>
 </div>
 </div>
 <div class="section" id="planned-enhancements">
-<h2><a class="toc-backref" href="#id72">Planned Enhancements</a></h2>
+<h2><a class="toc-backref" href="#id73">Planned Enhancements</a></h2>
 <ul class="simple">
 <li><strong>https support</strong>: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to the embedded scheduler)</li>
 <li><strong>Nitrogen</strong> and/or <strong>Zotonic</strong> support, in addition to static websites</li>
 </ul>
 </div>
 <div class="section" id="about-nitrogen-future-support">
-<h2><a class="toc-backref" href="#id73">About Nitrogen (future) Support</a></h2>
+<h2><a class="toc-backref" href="#id74">About Nitrogen (future) Support</a></h2>
 <ul class="simple">
 <li>&quot;<em>It is strongly recommended to catch static files with the static_paths setting. simple_bridge does not serve large static files in an optimal way (it loads the files into memory completely before sending)</em>&quot;</li>
 <li><a class="reference external" href="https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/">How Nitrogen processes requests</a></li>
@@ -749,15 +775,15 @@ $ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
 </ul>
 </div>
 <div class="section" id="support">
-<h2><a class="toc-backref" href="#id74">Support</a></h2>
+<h2><a class="toc-backref" href="#id75">Support</a></h2>
 <p>Bugs, questions, remarks, patches, requests for enhancements, etc. are to be reported to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">project interface</a> (typically <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/issues">issues</a>) or directly at the email address mentioned at the beginning of this document.</p>
 </div>
 <div class="section" id="please-react">
-<h2><a class="toc-backref" href="#id75">Please React!</a></h2>
+<h2><a class="toc-backref" href="#id76">Please React!</a></h2>
 <p>If you have information more detailed or more recent than those presented in this document, if you noticed errors, neglects or points insufficiently discussed, drop us a line! (for that, follow the <a class="reference internal" href="#support">Support</a> guidelines).</p>
 </div>
 <div class="section" id="ending-word">
-<h2><a class="toc-backref" href="#id76">Ending Word</a></h2>
+<h2><a class="toc-backref" href="#id77">Ending Word</a></h2>
 <p>Have fun with the Universal Webserver!</p>
 <div class="figure align-center">
 <img alt="Universal Webserver logo" src="us-web-title.png" style="width: 50%;" />

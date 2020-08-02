@@ -103,9 +103,10 @@ From the highest level to the lowest, as summarised `here <https://github.com/Ol
 - `Erlang <http://erlang.org>`_ (for the compiler and runtime)
 - `GNU/Linux <https://en.wikipedia.org/wiki/Linux>`_
 
-The shorthand for ``Universal Webserver`` is ``uw``.
+The shorthand for ``Universal Webserver`` (a.k.a. ``US-Web``) is ``uw``.
 
 :raw-latex:`\pagebreak`
+
 
 
 
@@ -179,7 +180,7 @@ As explained in `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/b
 
 The main, overall US configuration file (``us.config``) is found based on a series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* US configuration directory.
 
-The other US-related configuration files (ex: any ``us-web.config``) are specified directly in the main one (``us.config``); they may be either absolute, or relative to the US configuration directory
+The other US-related configuration files (ex: any ``us-web.config``) are specified directly in the main one (``us.config``), through specific keys (ex: ``us_web_config_filename``); they may be either absolutely defined, or relatively to the US configuration directory.
 
 Let's name ``US_CFG_ROOT`` the actual directory in which they all lie; it is typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
 
@@ -261,7 +262,7 @@ In such a production context, in ``sys.config`` (typically located in ``${US_WEB
 
 Instead the traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see `Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that), by running the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
 
-For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a ``us-monitor.config`` file that is typically located in ``~/.config/universal-server/``.
+For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a ``us-monitor.config`` file that is typically located in the ``~/.config/universal-server`` directory.
 
 
 
@@ -309,28 +310,75 @@ In development mode, from the root of US-Web, one may use ``make debug``, while,
  $ systemctl start us-web.service
 
 
+
+----------------------------
 Monitoring the US-Web Server
-===========================
-
-The ``get-us-web-status.sh`` script (still in ``priv/bin``, as all US-Web shell scripts) may then be used to investigate any problem. Alternate (yet often less convenient) solutions are to run ``systemctl status us-web.service`` or, often with better results, ``journalctl -xe --unit us-web.service --no-pager`` to investigate.
-
-
-The traces may also be monitored remotely thanks to the ``monitor-us-web.sh`` script.
-
-The traces can be found in the ``us_web.traces`` file:
-
-- from a test: in ``priv/for-testing/log``
-- from a deployed release: as defined in ``us_web_log_dir`` configuration entry, often in ``/var/log/universal-server``
+----------------------------
 
 
 
+Local Monitoring
+================
+
+Here operations will be done directly on the server.
+
+
+Overall Local Inquiry
+---------------------
+
+The ``get-us-web-status.sh`` script (still in ``priv/bin``, as all US-Web shell scripts) may then be used to investigate any problem in a streamlined, integrated way.
+
+Alternate (yet often less convenient) solutions are to run ``systemctl status us-web.service`` or, often with better results, ``journalctl -xe --unit us-web.service --no-pager`` to get some insights.
+
+
+General Logs
+------------
+
+A deeper level of detail can be obtained by inspecting the *general* logs (as opposed to the *webserver* ones, discussed in next section), which regroup the VM-level, technical ones and/or the applicative ones.
+
+**VM logs** are written in the ``${REL_BASE_ROOT}/log`` directory (ex: ``/opt/universal-server/us_web-latest/log``), which is created when the release is started first. Generally, ``run_erl.log`` (if launched as a daemon) will not help much, whereas the latest Erlang log file (``ls -lrt erlang.log.*``) is likely to contain relevant information.
+
+As for our higher-level, **applicative traces**, they are stored in the the ``us_web.traces`` file, in the directory defined in the ``us_web_log_dir`` entry of the US-Web configuration file. This last file is specified in turn in the relevant ``us.config`` configuration file (see the ``us_web_config_filename`` key for that), which, in development mode, is itself typically found in ``~/.config/universal-server`` while, in production mode, is likely located in ``/etc/xdg/universal-server``.
+
+In practice, this trace file is generally found:
+
+- in development mode, in ``priv/for-testing/log``, relatively to the base directory specified in ``us_app_base_dir``
+- in production mode, generally in ``/var/log/universal-server``
+
+
+
+Webserver Logs
+--------------
+
+These logs, which are maybe less useful for troubleshooting, designate access and error logs, per virtual host (ex: for a virtual host ``VH``, ``access-for-VH.log`` and ``error-for-VH.log``). Their previous versions are archived in timestamped, compressed files (ex: ``error-for-VH.Y-M-D-at-H-M-S.xz``).
+
+These files will be written in the directory designated by the ``us_web_log_dir`` entry of the US-Web configuration file. Refer to the previous section to locate this file.
+
+
+
+Remote Monitoring
+=================
+
+Here the state of a US-Web instance remotely, with no shell connection to its server.
+
+First of all, is this US-Web instance available? Check with::
+
+ $ wget http://baz.foobar.org -O -
+
+As for the applicative traces, they may be monitored remotely as well, thanks to the ``monitor-us-web.sh`` script.
+
+
+
+
+
+--------------
 Extra Features
-==============
+--------------
 
 
----------------------------
+
 Auto-generated Meta Website
----------------------------
+===========================
 
 If requested, at server start-up, a "meta" website - i.e. a website sharing information about the other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
 
@@ -344,9 +392,9 @@ This will generate a suitable website in the ``My-meta-generated`` subdirectory 
 Currently no specific access control is enforced for this website (thus by default anyone knowing or able to guess its virtual hostname can access this website).
 
 
--------------------------
+
 Icon (favicon) Management
--------------------------
+=========================
 
 This designates the little image that is displayed by browsers on the tab of the website being visited.
 
@@ -358,9 +406,8 @@ In the context of the (default) US-Web static web handler, if such a ``common/de
 
 
 
---------------
 CSS Management
---------------
+==============
 
 A default CSS file can be defined, notably in order to generate better-looking 404 pages.
 
@@ -370,9 +417,8 @@ In the context of the (default) US-Web static web handler, if such a ``common/de
 
 
 
---------------------
 Error 404 Management
---------------------
+====================
 
 Should some requested web page not be found:
 
@@ -385,9 +431,8 @@ In the context of the (default) US-Web static web handler, if such a ``images/40
 
 
 
-------------------
 Site Customisation
-------------------
+==================
 
 As mentioned in the sections above, if there is a file (regular or symbolic link), from the content root of a hosted static website, in:
 
@@ -462,6 +507,8 @@ We recommend indeed obtaining Erlang thanks to a manual installation; refer to t
 
 The build of the US-Web server is driven by `rebar3 <https://www.rebar3.org/>`_, which can be obtained by following our `guidelines <http://myriad.esperide.org/#getting-rebar3>`_.
 
+.. _getting-awstats:
+
 If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (ex for Arch Linux: ``pacman -S awstats`` [#]_) .
 
 .. [#] To avoid a future reading access error, execute after installation: ``chmod -R +r /usr/share/webapps/awstats/icon``.
@@ -477,7 +524,7 @@ Using Cutting-Edge GIT
 
 This is the installation method that we use and recommend; the Universal Webserver ``master`` branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.
 
-Once Erlang and possibly Awstats are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information.
+Once Erlang (see `here <http://myriad.esperide.org/index.html#getting-erlang>`_), rebar3 (see `here <http://myriad.esperide.org/index.html#getting-rebar3>`_) and possibly Awstats (see `here <#getting-awstats>`_) are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information.
 
 For example:
 
@@ -547,33 +594,7 @@ Most common sources of failures are:
 - there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf |grep us_web``
 - the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd``
 
-
-
-If the problem remains, time to inspect the logs (see also `Log-related hints`_): first the general, technical ones, then, if needed, the applicative ones.
-
-In both cases, first the relevant ``us.config`` shall be found.
-
-If in development mode, one should look typically in ``~/.config/universal-server/`` while, in production mode, it is likely located in ``/etc/xdg/universal-server/``.
-
-
-The *general logs* regroup the VM-level ones and the Traces ones, which are created in the same directory that can be obtained from the ``us_web_app_base_dir`` key of the US-Web configuration file. So this last file must be determined first, based on the ``us_web_config_filename`` key of ``us.config`` file. As an example, let's suppose that the value associated to this key is ``us-web.config``.
-
-Now the general logs can be located based on the ``us_web_app_base_dir`` key of that file (ex: ``us-web.config``). Let's suppose that the associated value is ``/opt/universal-server/us_web-latest``. The general logs will be created in its ``log`` subdirectory.
-
-.. directory where the ``us_web`` executable is run,
-
-
-
-us_web_config_filename,
-/opt/universal-server/us_web-latest/lib/us_web-latest/priv/for-testing/log/us_web.traces
-
-
-
-
-For the *applicative logs* (ex: for a virtual host VH, ``access-for-VH.log`` and ``error-for-VH.log``),
-
-In the found ``us.config``, get the value associated to the ``us_log_dir`` entry. In production mode, it will be typically an absolute directory such as ``/var/log/universal-server``.
-
+If the problem remains, time to perform some investigation, refer to the `Local Monitoring`_ section.
 
 
 
@@ -648,22 +669,6 @@ The location of the US-Web application is bound to differ depending on the conte
 So its path must be specified (most preferably as an absolute directory) in the US-Web configuration file. However, at least for test configuration files, relying on an absolute directory would not be satisfactory, as the user may install the US-Web framework at any place and testing should not require a manual configuration update.
 
 As a result, should an application location (ex: US-Web) not be specified in the configuration, it will be looked-up in the shell environment (using the ``US_WEB_APP_BASE_DIR`` variable) for that and, should this variable not be set, as a last-resort an attempt to guess that location will be done.
-
-
-Log-related hints
------------------
-
-There are at least 3 kinds of logs:
-
-- the OTP, **VM-level** logs (ex: ``erlang.1.log``, ``run_erl.log``); they are stored in ``@us_app_base_dir@/log`` for the Universal Server, and ``@us_web_app_base_dir@/log`` for US-Web, possibly pointing to the same directory
-.. comment (note that these are pseudo- ???
-- the **Traces**-based, higher-level (applicative) traces (a single file; ex: ``us-web.traces``); they are stored in the same directory as above
-- the service-specific logs (i.e. here the per-virtual host access and error files) are placed in the ``@us_log_dir@`` directory if specified (otherwise the default, ``/var/log``, applies):
-
- - if ``@us_log_dir@`` is an absolute directory, it will be used as is; we recommend for clarity to have it end with ``universal-server``
- - otherwise it will be considered to be relative to ``@us_app_base_dir@``
-
-Note that defining a log directory that is specific to at least these services (i.e. on the last, third case above) is recommended also because these US services will attempt to set specific, relevant permissions for that directory.
 
 
 
@@ -796,6 +801,24 @@ Use the ``us_web/priv/bin/monitor-us-web.sh`` script in order to monitor the tra
 Note that the monitored US-Web instance will be by default the one specified in any ``us-monitor.config`` file located in the US configuration directory.
 
 One may specify on the command-line another configuration file if needed, such as ``us-monitor-for-development.config``.
+
+
+
+Node Test & Connection
+----------------------
+
+If desperate enough, one may also run, possibly from another host, and based on the settings to be found in the configuration files::
+
+ $ ERL_EPMD_PORT=XXXX erl -name tester -setcookie CCCC -kernel inet_dist_listen_min MIN inet_dist_listen_max MAX
+
+ 1> net_adm:ping('us_web@foobar.org').
+ pong
+
+Then one may switch to the *Job control mode* (JCL) by pressing ``Ctrl-G`` then ``r`` to start a remote job on the US-Web node.
+
+
+
+
 
 
 .. include:: us-web-access-logging.rst

@@ -188,7 +188,17 @@ read_us_web_config_file()
 			#echo "  Error, no US-Web VM log directory found: neither '${saved_log_dir}' (as a standard release) nor '${us_web_vm_log_dir}' (as a rebar3 build tree). Possibly a release not even started?" 1>&2
 			#exit 140
 
-			echo "No US-Web VM log directory found, neither '${saved_log_dir}' (as a standard release) nor '${us_web_vm_log_dir}' (as a rebar3 build tree)."
+			#echo "Warning: no US-Web VM log directory found, neither '${saved_log_dir}' (as a standard release) nor '${us_web_vm_log_dir}' (as a rebar3 build tree)."
+
+			# Not finding this directory is normal, as in the context of a newly
+			# deployed release, it would be created only when starting that
+			# release; not creating it from here, as already done later, in
+			# prepare_us_web_launch.
+			#
+			#us_web_vm_log_dir="LACKING_US_WEB_VM_LOG_DIR"
+			us_web_vm_log_dir="${saved_log_dir}"
+
+			echo "Will use, for US-Web VM log directory, '${us_web_vm_log_dir}' (not created yet), in the context of a standard OTP release."
 
 		else
 
@@ -197,7 +207,7 @@ read_us_web_config_file()
 
 	else
 
-		echo "Standard OTP release detected, US-Web VM log directory found as '${us_web_vm_log_dir}'."
+		echo "Standard OTP release detected (most probably already launched at least once), US-Web VM log directory found as '${us_web_vm_log_dir}'."
 
 	fi
 
@@ -443,6 +453,9 @@ inspect_us_web_log()
 		sleep 1
 	fi
 
+	# Re-evaluate then:
+	us_web_vm_log_file=$(/bin/ls -t ${us_web_vm_log_dir}/erlang.log.* 2>/dev/null | head -n 1)
+
 	echo
 	if [ -f "${us_web_vm_log_file}" ]; then
 
@@ -462,7 +475,10 @@ inspect_us_web_log()
 
 	else
 
-		echo "  Error, no US-Web VM log file found (no '${us_web_vm_log_file}', searched in '${us_web_vm_log_dir}')." 1>&2
+		echo "  Error, no US-Web VM log file found (no erlang.log.* found, even after some delay, while searching in '${us_web_vm_log_dir}')." 1>&2
+
+		# Extra information might be gathered from /opt/universal-server/us_web-latest/traces_via_otp.traces and/or
+
 		exit 200
 
 	fi

@@ -39,7 +39,7 @@ us_web_rel_root=$(/bin/ls -d -t /opt/universal-server/us_web-* 2>/dev/null | hea
 
 if [ ! -d "${us_web_rel_root}" ]; then
 
-	echo "Error, unable to locate the root of the target US-Web release (tried '${us_web_rel_root}' from '$(pwd)')." 1>&2
+	echo "  Error, unable to locate the root of the target US-Web release (tried, from '$(pwd)', '${us_web_rel_root}')." 1>&2
 
 	exit 30
 
@@ -54,7 +54,7 @@ us_web_common_script="lib/us_web-latest/priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
-	echo "Error, unable to find ${us_web_common_script_name} script (not found as '${us_web_common_script}', while being in '$(pwd)')." 1>&2
+	echo "  Error, unable to find ${us_web_common_script_name} script (not found as '${us_web_common_script}', while being in '$(pwd)')." 1>&2
 	exit 35
 
 fi

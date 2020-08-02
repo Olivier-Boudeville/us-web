@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Saturday, July 18, 2020
+:Lastly updated: Sunday, August 2, 2020
 :Status: Work in progress
-:Version: 0.0.5
+:Version: 0.0.6
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -496,7 +496,7 @@ For example:
    Starting the us_web release (EPMD port: 4526):
    [...]
    US-Web launched, please point a browser to http://localhost:8080 to
-    check test sites.
+	check test sites.
 
   $ firefox http://localhost:8080 &
 
@@ -531,6 +531,51 @@ For more details, one may have a look at `rebar.config.template <https://github.
 
 
 
+---------------
+Troubleshooting
+---------------
+
+If having deployed a release (typically by running ``deploy-us-web-release.sh``) and ``systemctl restart us-web.service`` failed, start by executing::
+
+ $ systemctl status us-web.service
+
+It should return some appropriate information.
+
+Most common sources of failures are:
+
+- there is **already a program listening at the target TCP port** (typically port 80) designated for US-Web; one may check for example with ``lsof -i:80``, otherwise with ``netstat --tcp --all --program | grep ':80'``
+- there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf |grep us_web``
+- the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd``
+
+
+
+If the problem remains, time to inspect the logs (see also `Log-related hints`_): first the general, technical ones, then, if needed, the applicative ones.
+
+In both cases, first the relevant ``us.config`` shall be found.
+
+If in development mode, one should look typically in ``~/.config/universal-server/`` while, in production mode, it is likely located in ``/etc/xdg/universal-server/``.
+
+
+The *general logs* regroup the VM-level ones and the Traces ones, which are created in the same directory that can be obtained from the ``us_web_app_base_dir`` key of the US-Web configuration file. So this last file must be determined first, based on the ``us_web_config_filename`` key of ``us.config`` file. As an example, let's suppose that the value associated to this key is ``us-web.config``.
+
+Now the general logs can be located based on the ``us_web_app_base_dir`` key of that file (ex: ``us-web.config``). Let's suppose that the associated value is ``/opt/universal-server/us_web-latest``. The general logs will be created in its ``log`` subdirectory.
+
+.. directory where the ``us_web`` executable is run,
+
+
+
+us_web_config_filename,
+/opt/universal-server/us_web-latest/lib/us_web-latest/priv/for-testing/log/us_web.traces
+
+
+
+
+For the *applicative logs* (ex: for a virtual host VH, ``access-for-VH.log`` and ``error-for-VH.log``),
+
+In the found ``us.config``, get the value associated to the ``us_log_dir`` entry. In production mode, it will be typically an absolute directory such as ``/var/log/universal-server``.
+
+
+
 
 -----
 Hints
@@ -556,7 +601,6 @@ Note that all dependencies (thus of course including Myriad, WOOPER and Traces) 
 
 Development Hints
 =================
-
 
 
 Operating directly from within the rebar build tree
@@ -644,6 +688,8 @@ Web-related hints
 
 Execution Hints
 ===============
+
+- the current working directory of a US-Web instance deployed thanks to ``deploy-us-web-release.sh`` is ``/opt/universal-server/us_web-x.y.z``
 
 - if unable to connect, the firewall (ex: ``iptables -L``) might be the culprit! Note that the whole US framework tends to rely on a specific TCP range (ex: ``50000-55000``) for inter-VM communications
 

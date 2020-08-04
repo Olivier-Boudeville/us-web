@@ -20,28 +20,33 @@
 %
 {deps, [
 
-	{cowboy,        {git, "git://github.com/ninenines/cowboy",
-					{tag, "2.8.0"}}},
-	%{simple_bridge, {git, "git://github.com/nitrogen/simple_bridge",
-	%				{branch, "master"}}},
-	%{qdate,         {git, "git://github.com/choptastic/qdate",
-	%				{branch, "master"}}},
-	%{nprocreg,      {git, "git://github.com/nitrogen/nprocreg",
-	%				{branch, "master"}}},
-	%{nitrogen_core, {git, "git://github.com/nitrogen/nitrogen_core",
-	%				{branch, "master"}}},
-	%{sync,          {git, "git://github.com/rustyio/sync",
-	%				{branch, "master"}}},
-	%{simple_cache,  {git, "git://github.com/nitrogen/simple_cache",
-	%				{branch, "master"}}},
-	{myriad,    {git, "git://github.com/Olivier-Boudeville/Ceylan-Myriad",
-				{branch, "master"}}},
-	{wooper,    {git, "git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
-				{branch, "master"}}},
-	{traces,    {git, "git://github.com/Olivier-Boudeville/Ceylan-Traces",
-				{branch, "master"}}},
-	{us_common, {git, "git://github.com/Olivier-Boudeville/us-common",
-				{branch, "master"}}}
+	{cowboy,             {git, "git://github.com/ninenines/cowboy",
+						   {tag, "2.8.0"}}},
+
+	%{letsencrypt,        {git, "git://github.com/Olivier-Boudeville/letsencrypt-erlang",
+	%					   {branch, "master"}}},
+
+	%{simple_bridge,     {git, "git://github.com/nitrogen/simple_bridge",
+	%					   {branch, "master"}}},
+	%{qdate,             {git, "git://github.com/choptastic/qdate",
+	%					   {branch, "master"}}},
+	%{nprocreg,          {git, "git://github.com/nitrogen/nprocreg",
+	%					   {branch, "master"}}},
+	%{nitrogen_core,     {git, "git://github.com/nitrogen/nitrogen_core",
+	%					   {branch, "master"}}},
+	%{sync,              {git, "git://github.com/rustyio/sync",
+	%					   {branch, "master"}}},
+	%{simple_cache,      {git, "git://github.com/nitrogen/simple_cache",
+	%					   {branch, "master"}}},
+
+	{myriad,             {git, "git://github.com/Olivier-Boudeville/Ceylan-Myriad",
+						   {branch, "master"}}},
+	{wooper,             {git, "git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
+						   {branch, "master"}}},
+	{traces,             {git, "git://github.com/Olivier-Boudeville/Ceylan-Traces",
+						   {branch, "master"}}},
+	{us_common,          {git, "git://github.com/Olivier-Boudeville/us-common",
+						   {branch, "master"}}}
 ]}.
 
 
@@ -73,6 +78,7 @@
 	% in the code path:
 	%
 	%[ crypto, ranch, simple_cache, qdate, nitrogen_core, cowboy, us_web ] },
+	%[ crypto, ranch, cowboy, letsencrypt, us_common, us_web ] },
 	[ crypto, ranch, cowboy, us_common, us_web ] },
 
 	{sys_config, "conf/sys.config"},

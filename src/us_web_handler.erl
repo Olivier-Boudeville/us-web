@@ -261,19 +261,20 @@ get_http_headers( Body ) ->
 
 % Test handler possibly called through routing.
 
-% Typically called because a dispath rules mentioned that module as a (debug)
+
+% Typically called because a dispatch rules mentioned that module as a (debug)
 % handler:
 %
 -spec init( cowboy_req:req(), handler_state() ) -> handler_return().
-init( Req, HState ) ->
+init( Req, HandlerState ) ->
 
-	us_web_utils:debug_fmt( "Request ~p to be handled, while handler state "
-							"is ~p...", [ Req, HState ] ),
+	trace_utils:debug_fmt( "Request ~p to be handled, while handler state "
+						   "is ~p...", [ Req, HandlerState ] ),
 
 	Reply = cowboy_req:reply( 200, #{ <<"content-type">> => <<"text/plain">> },
 							  <<"Hello from Universal web server!">>, Req ),
 
-	{ ok, Reply, HState }.
+	{ ok, Reply, HandlerState }.
 
 
 

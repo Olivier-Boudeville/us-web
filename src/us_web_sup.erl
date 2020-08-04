@@ -47,8 +47,8 @@ init( _Args=[] ) ->
 	% The logic below shall better be in a (single) supervised child, for a
 	% better logic separation.
 
-	% The overall US (not us-web) configuration server will be either found or
-	% created by the us-web configuration one:
+	% The overall US (not US-Web) configuration server will be either found or
+	% created by the US-Web configuration one:
 	%
 	USWebCfgServerPid = class_USWebConfigServer:new_link( self() ),
 
@@ -77,15 +77,18 @@ init( _Args=[] ) ->
 
 		{ error, Error } ->
 			trace_utils:error_fmt( "Unable to start a cowboy http listener at "
-								   "TCP port #~B, error being: ~p.~n"
-								   "(protocol options were ~p).",
-								   [ HttpTCPPort, Error, ProtoOpts ] ),
+				"TCP port #~B, error being: ~p.~n"
+				"(protocol options were ~p).",
+				[ HttpTCPPort, Error, ProtoOpts ] ),
 			throw( { webserver_launch_failed, http_scheme, HttpTCPPort } )
 
 	end,
 
+	% Useful for example to trigger the Let's Encrypt support:
+	USWebCfgServerPid ! onStarted,
+
 	% See
-	% https://ninenines.eu/docs/en/cowboy/2.7/guide/listeners/#_secure_tls_listener
+	% https://ninenines.eu/docs/en/cowboy/2.8/guide/listeners/#_secure_tls_listener
 	% for https.
 
 	SupSettings = otp_utils:get_supervisor_settings(

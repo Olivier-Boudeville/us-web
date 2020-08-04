@@ -11,7 +11,8 @@ US_WEB_TOP = .
 		log cat-log tail-log check-web-availability                            \
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive                                       \
-		clean clean-logs real-clean info info-local
+		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
+		info info-local
 
 
 MODULES_DIRS = src doc conf priv test
@@ -352,7 +353,7 @@ clean-logs:
 	-@/bin/rm -f $(VM_LOG_FILES)
 
 
-real-clean: clean clean-otp-build-tree
+real-clean: clean clean-otp-build-tree clean-rebar-cache
 	@echo "  Real cleaning from $$(pwd)"
 	-@/bin/rm -f rebar.lock
 
@@ -360,6 +361,10 @@ real-clean: clean clean-otp-build-tree
 clean-otp-build-tree:
 	@echo "  Cleaning OTP build tree"
 	-@/bin/rm -rf _build
+
+
+clean-rebar-cache:
+	-@/bin/rm -rf $(HOME)/.cache/rebar3
 
 
 info: info-local

@@ -82,6 +82,7 @@
 -define( http_tcp_port_key, http_tcp_port ).
 -define( default_web_root_key, default_web_root ).
 -define( log_analysis_key, log_analysis ).
+-define( certificate_management_key, certificate_management ).
 -define( routes_key, routes ).
 
 
@@ -92,7 +93,7 @@
 			?us_web_username_key, ?us_web_app_base_dir_key,
 			?us_web_data_dir_key, ?us_web_log_dir_key,
 			?http_tcp_port_key, ?default_web_root_key, ?log_analysis_key,
-			?routes_key ] ).
+			?certificate_management_key, ?routes_key ] ).
 
 
 % The last-resort environment variable:
@@ -194,11 +195,16 @@
 			   vhost_config_entry/0, meta_web_settings/0 ]).
 
 
+-type path_match() :: text_utils:any_string().
+
 % Not exported:
 %-type route_rule() :: cowboy_router:route_rule().
 -type route_rule() :: term().
 
 -type dispatch_routes() :: cowboy_router:dispatch_routes().
+
+
+% See https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/:
 -type dispatch_rules() :: cowboy_router:dispatch_rules().
 
 
@@ -303,6 +309,10 @@
 	{ log_directory, bin_directory_path(),
 	  "the directory where (basic, technical) US-Web logs shall be written, "
 	  "notably access and error logs for websites" },
+
+	{ cert_enabled, boolean(),
+	  "tells whether the management (generation, use and renewal) of X.509 "
+	  "certificates is enabled" },
 
 	{ scheduler_registration_name, naming_utils:registration_name(),
 	  "the name under which the dedicated scheduler is registered" },
@@ -415,6 +425,36 @@ getWebConfigSettings( State ) ->
 	wooper:const_return_result( { ?getAttr(dispatch_rules),
 								  ?getAttr(http_tcp_port) } ).
 
+
+
+% Notifies this server that the webserver has been started (typically once the
+% listening socket(s) have been properly initialized.
+%
+-spec onStarted( wooper:state() ) -> oneway_return().
+onStarted( State ) ->
+
+	?trace( "Webserver started." ),
+
+	case ?getAttr(cert_enabled) of
+
+		true ->
+
+			% For testing, with fake certificates:
+			Mode = staging,
+
+			% For real:
+			Mode = 
+
+			% Slave, as we control the webserver for the challenge.
+			letsencrypt:start([{mode,slave}, staging, {cert_path,"/path/to/certs"}]),
+			letsencrypt:make_cert(<<"mydomain.tld">>, #{callback => fun on_complete/1});
+
+		false ->
+			ok
+
+	end,
+
+	wooper:return_state( State ).
 
 
 
@@ -625,7 +665,9 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	PreMetaState = manage_pre_meta( WebCfgTable, RootState ),
 
-	RouteState = manage_routes( WebCfgTable, PreMetaState ),
+	CertState = manage_certificates( WebCfgTable, PreMetaState ),
+
+	RouteState = manage_routes( WebCfgTable, CertState ),
 
 	PostMetaState = manage_post_meta( RouteState ),
 
@@ -791,11 +833,12 @@ renewCertificate( State, DomainId, VHostId ) ->
 % domain information list, and a possibly updated state.
 %
 -spec process_domain_info( [ { domain_name(), [ term() ] } ],
-		bin_directory_path(), maybe( bin_directory_path() ),
-		maybe( web_analysis_info() ), scheduler_pid(), wooper:state() ) ->
-			{ domain_config_table(), dispatch_routes(), wooper:state() }.
+	bin_directory_path(), maybe( bin_directory_path() ),
+	maybe( web_analysis_info() ), boolean(), scheduler_pid(),
+	wooper:state() ) ->
+		{ domain_config_table(), dispatch_routes(), wooper:state() }.
 process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
-					 MaybeLogAnalysisSettings, SchedulerPid, State ) ->
+		MaybeLogAnalysisSettings, CertEnabled, SchedulerPid, State ) ->
 
 	%trace_utils:debug_fmt( "Domain list: ~p", [ UserRoutes ] ),
 
@@ -805,7 +848,7 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 	% Any host catch-all must come last:
 	process_domain_routes( lists:reverse( UserRoutes ), BinLogDir,
 		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVTable=table:new(),
-		_AccRoutes=[], SchedulerPid, State ).
+		_AccRoutes=[], CertEnabled, SchedulerPid, State ).
 
 
 
@@ -867,8 +910,8 @@ prepare_web_analysis(
 	% "awstats.pl" and no helper was used, now building all report pages in one
 	% go with (using the former as its helper):
 
-	ToolPath = file_utils:join( [ BinAnalysisToolRoot,
-								  "awstats_buildstaticpages.pl" ] ),
+	ToolPath = file_utils:join(
+		[ BinAnalysisToolRoot, "awstats_buildstaticpages.pl" ] ),
 
 	BinToolPath = case file_utils:is_executable( ToolPath ) of
 
@@ -985,7 +1028,8 @@ determine_meta_web_root_for( _VHostInfos=[ _ | T ], DomainId,
 
 % (helper)
 process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
-		_MaybeWebAnalysisInfo, AccVTable, AccRoutes, _SchedulerPid, State ) ->
+		_MaybeWebAnalysisInfo, AccVTable, AccRoutes, _CertEnabled,
+		_SchedulerPid, State ) ->
 	%trace_utils:debug_fmt( "Resulting routes:~n~p", [ AccRoutes ] ),
 	{ AccVTable, AccRoutes, State };
 
@@ -993,34 +1037,36 @@ process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
 % Explicit domain:
 process_domain_routes( _UserRoutes=[ { DomainName, VHostInfo } | T ], BinLogDir,
 		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		SchedulerPid, State ) when is_list( DomainName ) ->
+		CertEnabled, SchedulerPid, State ) when is_list( DomainName ) ->
 
 	BinDomainName = text_utils:string_to_binary( DomainName ),
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
 		VHostInfo, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
-		_AccVtable=table:new(), _AccRoutes=[], SchedulerPid, State ),
+		_AccVtable=table:new(), _AccRoutes=[], CertEnabled, SchedulerPid,
+		State ),
 
 	NewAccVTable = table:add_new_entry( _K=BinDomainName, _V=VHostTable,
-									   AccVTable ),
+										AccVTable ),
 
 	% Order matters:
 	NewAccRoutes = VHostRoutes ++ AccRoutes,
 
 	process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, SchedulerPid,
-		BuildState );
+		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertEnabled,
+		SchedulerPid, BuildState );
 
 
 % Domain catch-all:
 process_domain_routes(
   _UserRoutes=[ { DomainId=default_domain_catch_all, VHostInfo } | T ],
   BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-  AccRoutes, SchedulerPid, State ) ->
+  AccRoutes, CertEnabled, SchedulerPid, State ) ->
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( DomainId,
 		VHostInfo, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
-		_AccVtable=table:new(), _AccRoutes=[], SchedulerPid, State ),
+		_AccVtable=table:new(), _AccRoutes=[], CertEnabled, SchedulerPid,
+		State ),
 
 	NewAccVTable = table:add_new_entry( _K=DomainId, _V=VHostTable, AccVTable ),
 
@@ -1028,13 +1074,13 @@ process_domain_routes(
 	NewAccRoutes = VHostRoutes ++ AccRoutes,
 
 	process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, SchedulerPid,
-		BuildState );
+		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertEnabled,
+		SchedulerPid, BuildState );
 
 
 process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes,
-		_SchedulerPid, State ) ->
+		_CertEnabled, _SchedulerPid, State ) ->
 
 	?error_fmt( "Invalid entry in virtual host configuration:~n~p",
 				[ InvalidEntry ] ),
@@ -1050,12 +1096,12 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 %
 % (helper)
 -spec build_vhost_table( domain_id(), [ term() ], bin_directory_path(),
-			maybe( bin_directory_path() ), maybe( web_analysis_info() ),
-			list(), dispatch_routes(), scheduler_pid(), wooper:state() ) ->
+	maybe( bin_directory_path() ), maybe( web_analysis_info() ),
+	list(), dispatch_routes(), boolean(), scheduler_pid(), wooper:state() ) ->
 		  { vhost_config_table(), dispatch_routes(), wooper:state() }.
 build_vhost_table( _DomainId, _VHostInfos=[], _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		_SchedulerPid, State ) ->
+		_CertEnabled, _SchedulerPid, State ) ->
 	% Restores user-defined order (ex: default route to come last):
 	{ AccVTable, lists:reverse( AccRoutes ), State };
 
@@ -1063,18 +1109,18 @@ build_vhost_table( _DomainId, _VHostInfos=[], _BinLogDir,
 % No kind specified, upgrading to static:
 build_vhost_table( DomainId, _VHostInfos=[ { VHostId, ContentRoot } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, SchedulerPid, State ) ->
+		AccRoutes, CertEnabled, SchedulerPid, State ) ->
 	build_vhost_table( DomainId,
 		_FullVHostInfos=[ { VHostId, ContentRoot, _DefaultKind=static } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, SchedulerPid, State );
+		AccRoutes, CertEnabled, SchedulerPid, State );
 
 
 % Static - actual or catch-all - vhost specified here:
 build_vhost_table( DomainId,
 		_VHostInfos=[ { VHostId, ContentRoot, WebKind=static } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, SchedulerPid, State ) ->
+		AccRoutes, CertEnabled, SchedulerPid, State ) ->
 
 	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
 									   VHostId, DomainId, State ),
@@ -1092,20 +1138,21 @@ build_vhost_table( DomainId,
 	end,
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
-		DomainId, BinVHostId, BinLogDir, SchedulerPid, MaybeWebAnalysisInfo ),
+		DomainId, BinVHostId, BinLogDir, CertEnabled, SchedulerPid,
+		MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
 
 	build_vhost_table( DomainId, T, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, NewAccVTable, [ VHostRoute | AccRoutes ],
-		SchedulerPid, State );
+		CertEnabled, SchedulerPid, State );
 
 
 % Meta kind here:
 build_vhost_table( DomainId,
 	   _VHostInfos=[ { VHost, _ContentRoot, WebKind=meta } | T ],
 	   BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-	   AccRoutes, SchedulerPid, State ) ->
+	   AccRoutes, CertEnabled, SchedulerPid, State ) ->
 
 	% Quite similar to 'static', even if a logger and a web analysis
 	% organisation are not that useful:
@@ -1135,20 +1182,22 @@ build_vhost_table( DomainId,
 					  { DomainId, BinVHost, BinMetaContentRoot } ),
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
-			DomainId, BinVHost, BinLogDir, SchedulerPid, MaybeWebAnalysisInfo ),
+			DomainId, BinVHost, BinLogDir, CertEnabled, SchedulerPid,
+			MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHost, VHostEntry, AccVTable ),
 
+	% Certificate setting used here as well:
 	build_vhost_table( DomainId, T, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, NewAccVTable, [ VHostRoute | AccRoutes ],
-		SchedulerPid, SetState );
+		CertEnabled, SchedulerPid, SetState );
 
 
 % Nitrogen kind here:
 build_vhost_table( _DomainId,
 	   _VHostInfos=[ { _VHost, _ContentRoot, _WebKind=nitrogen } | _T ],
 		_BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
-		_AccRoutes, _SchedulerPid, _State ) ->
+		_AccRoutes, _CertEnabled, _SchedulerPid, _State ) ->
 	throw( not_implemented_yet );
 
 
@@ -1156,12 +1205,12 @@ build_vhost_table( _DomainId,
 build_vhost_table( _DomainId,
 	   _VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
 	   _BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
-	   _AccRoutes, _SchedulerPid, _State ) ->
+	   _AccRoutes, _CertEnabled, _SchedulerPid, _State ) ->
 	throw( { unknown_web_kind, UnknownWebKind } );
 
 build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 	   _BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
-	   _AccRoutes, _SchedulerPid, _State ) ->
+	   _AccRoutes, _CertEnabled, _SchedulerPid, _State ) ->
 	throw( { invalid_virtual_host_config, InvalidVHostConfig, DomainId } ).
 
 
@@ -1173,7 +1222,7 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 %
 % Here no web analysis is requested (yet log rotation is still useful):
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
-			  SchedulerPid, _MaybeWebAnalysisInfo=undefined ) ->
+			  CertEnabled, SchedulerPid, _MaybeWebAnalysisInfo=undefined ) ->
 
 	% Go for maximum interleaving:
 
@@ -1195,8 +1244,8 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 									  content_root=BinContentRoot,
 									  logger_pid=LoggerPid },
 
-	VHostRoute =
-		get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid ),
+	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
+										  LoggerPid, CertEnabled ),
 
 	% In answer to the call to the registerTask/6 request:
 	receive
@@ -1209,7 +1258,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 
 % Here web analysis is requested:
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
-		SchedulerPid,
+		CertEnabled, SchedulerPid,
 		WebAnalysisInfo=#web_analysis_info{ tool=LogAnalysisTool,
 											template_content=TemplateContent,
 											conf_dir=BinConfDir } ) ->
@@ -1293,7 +1342,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 					_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
 	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-										  LoggerPid ),
+										  LoggerPid, CertEnabled ),
 
 	% In answer to the call to the registerTask/6 request:
 	CertTaskId = receive
@@ -1446,13 +1495,14 @@ describe_host( VHostId, BinDomainName ) ->
 % See https://ninenines.eu/docs/en/cowboy/2.7/guide/routing/ for more details.
 %
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
-							   logger_pid() ) -> route_rule().
-get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid ) ->
+							   logger_pid(), boolean() ) -> route_rule().
+get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
+						 CertEnabled ) ->
 
 	% We prepare, once for all, all settings for a given (virtual) host.
 
-	% Refer to https://ninenines.eu/docs/en/cowboy/2.7/manual/cowboy_static/ and
-	% https://ninenines.eu/docs/en/cowboy/2.7/guide/static_files/:
+	% Refer to https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/ and
+	% https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/:
 
 	% Plain string wanted, if not wildcard:
 	HostMatch = case DomainId of
@@ -1547,21 +1597,44 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid ) ->
 	BinIndex = text_utils:string_to_binary(
 				 text_utils:format( "~s/index.html", [ BinContentRoot ] ) ),
 
-	{ HostMatch, [
+	% Allows to expand a requested 'http://foobar.org' into
+	% 'http://foobar.org/index.html':
+	%
+	NoPagePathMatch = { "/", us_web_static, InitialState#{ type => file,
+														   path => BinIndex } },
 
-	  % Allows to expand a requested 'http://foobar.org' into
-	  % 'http://foobar.org/index.html':
-	  %
-	  { "/", us_web_static, InitialState#{ type => file,
-										   path => BinIndex } },
+	% Allows to serve all files (ex: HTML, images, CSS, etc.) from the
+	% specified tree:
+	%
+	OtherPathsMatch ={ "/[...]", us_web_static,
+					   InitialState#{ type => directory,
+									  path => BinContentRoot } },
 
-	  % Allows to serve all files (ex: HTML, images, CSS, etc.) from the
-	  % specified tree:
-	  %
-	  { "/[...]", us_web_static, InitialState#{ type => directory,
-												path => BinContentRoot } }
+	PathMatches = case CertEnabled of
 
-	] }.
+		true ->
+			% Be able to answer Let's Encrypt ACME challenges:
+			ChallengePathMatch = get_challenge_path_match(),
+			[ NoPagePathMatch, ChallengePathMatch, OtherPathsMatch ];
+
+		false ->
+			[ NoPagePathMatch, OtherPathsMatch ]
+
+	end,
+
+	{ HostMatch, PathMatches }.
+
+
+
+% Returns the path match that shall be used in order to answer ACME challenges
+% from Let's Encrypt.
+%
+% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#slave
+%
+-spec get_challenge_path_match() -> path_match().
+get_challenge_path_match() ->
+	{ <<"/.well-known/acme-challenge/:token">>, us_web_letsencrypt_handler,
+	  _InitialState=[] }.
 
 
 
@@ -2127,6 +2200,37 @@ set_log_tool_settings( Unexpected, State ) ->
 
 
 
+% Manages how X.509 certificates shall be handled.
+-spec manage_certificates( us_web_config_table(), wooper:state() ) ->
+								 wooper:state().
+manage_certificates( ConfigTable, State ) ->
+
+	CertEnabled = case
+			table:lookup_entry( ?certificate_management_key, ConfigTable ) of
+
+		key_not_found ->
+			?info( "No certificate management specified, defaulting to none." ),
+			false;
+
+		{ value, enabled } ->
+			?info( "Certificate management enabled." ),
+			true;
+
+		{ value, disabled } ->
+			?info( "Certificate management disabled." ),
+			false;
+
+		{ value, Other } ->
+			?error_fmt( "Invalid certificate management setting: '~p'.",
+						[ Other ] ),
+			throw( { invalid_certificate_management_setting, Other } )
+
+	end,
+
+	setAttribute( State, cert_enabled, CertEnabled ).
+
+
+
 % Manages user-configured web dispatch routes.
 -spec manage_routes( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_routes( ConfigTable, State ) ->
@@ -2159,7 +2263,8 @@ manage_routes( ConfigTable, State ) ->
 	%
 	{ DomainTable, DispatchRoutes, ProcessState } = process_domain_info(
 		UserRoutes, BinLogDir, ?getAttr(default_web_root),
-		?getAttr(log_analysis_settings), SchedulerPid, State ),
+		?getAttr(log_analysis_settings), ?getAttr(cert_enabled), SchedulerPid,
+		State ),
 
 	% Now that all loggers are created, we gather their PID so that they are
 	% managed by a task ring, in order to synchronise them properly:
@@ -2264,7 +2369,9 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 % Returns a textual description of this domain table.
 -spec domain_table_to_string( domain_config_table() ) -> text_utils:ustring().
 domain_table_to_string( DomainTable ) ->
-	"domain configuration " ++ table:to_string( DomainTable ).
+	% No ellipsing wanted:
+	"domain configuration "
+		++ table:to_string( DomainTable, _DescriptionType=full ).
 
 
 % Returns a list of all the PIDs of the webloggers.
@@ -2310,7 +2417,7 @@ to_string( State ) ->
 		"scheme the TCP port #~B, ~s, running in the ~s execution context, "
 		"knowing: ~s, US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "
-		"on the '~s' log directory.~n~nUsing ~s~n~n"
+		"on the '~s' log directory.~n~nIn terms of routes, using ~s~n~n"
 		"Corresponding dispatch rules:~n~p",
 		[ class_USServer:to_string( State ), ?getAttr(http_tcp_port),
 		  WebRootString, ?getAttr(execution_context), SrvString,

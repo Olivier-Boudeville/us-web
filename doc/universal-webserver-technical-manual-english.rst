@@ -820,15 +820,13 @@ Then one may switch to the *Job control mode* (JCL) by pressing ``Ctrl-G`` then 
 
 
 
-
 .. include:: us-web-access-logging.rst
 
-..
-  Not relevant here:
-  .. include:: us-geolocation.rst
+.. include:: us-certificates.rst
+
+.. Not relevant here:  .. include:: us-geolocation.rst
 
 
-.. Not ready yet: include us-certificates.rst
 
 
 

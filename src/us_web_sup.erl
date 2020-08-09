@@ -54,35 +54,81 @@ init( _Args=[] ) ->
 
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
 
-	{ DispatchRules, HttpTCPPort } = receive
+	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort } = receive
 
 		{ wooper_result, WebSettings } ->
 			WebSettings
 
 	end,
 
-	trace_utils:debug_fmt( "Starting Cowboy webserver, listening for the HTTP "
-						   "scheme at port #~B", [ HttpTCPPort ] ),
+	trace_utils:debug( "Starting Cowboy webserver..." ),
+
 
 	ProtoOpts = #{ env => #{ dispatch => DispatchRules } },
 
-	% At least currently, the cowboy application is considered to be an external
-	% dependency, and as such we rely on its using of its vanilla supervision
-	% tree, not linked to the US-Web one, so this is not a child of this supervisor:
-	%
-	case cowboy:start_clear( http, [ { port, HttpTCPPort } ], ProtoOpts ) of
+	case MaybeHttpTCPPort of
 
-		{ ok, _RanchListenerPid } ->
-			ok;
+		undefined ->
+			trace_utils:trace( "No HTTP listening enabled." );
 
-		{ error, Error } ->
-			trace_utils:error_fmt( "Unable to start a cowboy http listener at "
-				"TCP port #~B, error being: ~p.~n"
-				"(protocol options were ~p).",
-				[ HttpTCPPort, Error, ProtoOpts ] ),
-			throw( { webserver_launch_failed, http_scheme, HttpTCPPort } )
+		HttpTCPPort ->
+			trace_utils:debug_fmt( "Listening for the HTTP scheme "
+								   "at port #~B.", [ HttpTCPPort ] ),
+
+			% At least currently, the cowboy application is considered to be an
+			% external dependency, and as such we rely on its using of its
+			% vanilla supervision tree, not linked to the US-Web one, so this is
+			% not a child of this supervisor:
+			%
+			case cowboy:start_clear( http, [ { port, HttpTCPPort } ],
+									 ProtoOpts ) of
+
+				{ ok, _HttpRanchListenerPid } ->
+					ok;
+
+				{ error, HttpError } ->
+
+					trace_utils:error_fmt( "Unable to start a cowboy HTTP "
+						"listener at TCP port #~B, error being: ~p.~n"
+						"(protocol options were ~p).",
+						[ HttpTCPPort, HttpError, ProtoOpts ] ),
+
+					throw( { webserver_launch_failed, http_scheme,
+							 HttpTCPPort } )
+
+			end
 
 	end,
+
+	case MaybeHttpsTCPPort of
+
+		undefined ->
+			trace_utils:trace( "No HTTPS listening enabled." );
+
+		HttpsTCPPort ->
+			trace_utils:debug_fmt( "Listening for the HTTPS scheme "
+								   "at port #~B.", [ HttpsTCPPort ] ),
+
+			case cowboy:start_tls( https, [ { port, HttpsTCPPort } ],
+								   ProtoOpts ) of
+
+				{ ok, _HttpsRanchListenerPid } ->
+					ok;
+
+				{ error, HttpsError } ->
+
+					trace_utils:error_fmt( "Unable to start a cowboy HTTPS"
+						"listener at TCP port #~B, error being: ~p.~n"
+						"(protocol options were ~p).",
+						[ HttpsTCPPort, HttpsError, ProtoOpts ] ),
+
+					throw( { webserver_launch_failed, https_scheme,
+							 HttpsTCPPort } )
+
+			end
+
+	end,
+
 
 	% Useful for example to trigger the Let's Encrypt support:
 	USWebCfgServerPid ! onStarted,
@@ -107,7 +153,27 @@ init( _Args=[] ) ->
 	% Currently no worker or lower-level supervisor to supervise:
 	ChildSpecs = [],
 
-	trace_utils:info_fmt( "One may test this server running at "
-						  "http://localhost:~p", [ HttpTCPPort ] ),
+	case MaybeHttpTCPPort of
+
+		undefined ->
+			ok;
+
+		SomeHttpTCPPort ->
+			trace_utils:info_fmt( "One may test this server running at "
+								  "http://localhost:~p", [ SomeHttpTCPPort ] )
+
+	end,
+
+	case MaybeHttpsTCPPort of
+
+		undefined ->
+			ok;
+
+		SomeHttpsTCPPort ->
+			trace_utils:info_fmt( "One may test this server running at "
+								  "https://localhost:~p", [ SomeHttpsTCPPort ] )
+
+	end,
+
 
 	{ ok, { SupSettings, ChildSpecs } }.

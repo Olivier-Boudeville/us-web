@@ -20,7 +20,7 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% Cowboy-compliant handler for us_web:
+% Cowboy-compliant handler for US-Web:
 %
 % - provides static dispatches so that the websites corresponding to the virtual
 % hosts can be appropriately served; see conf/us_web_vhosts.config, which holds

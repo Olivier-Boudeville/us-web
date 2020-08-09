@@ -91,7 +91,7 @@
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 %-type task_id() :: c2149lass_USScheduler:task_id().
--type user_periodicity() :: class_USScheduler:user_periodicity().
+-type user_period() :: class_USScheduler:user_period().
 
 -type log_analysis_tool() :: class_USWebConfigServer:log_analysis_tool().
 
@@ -168,14 +168,14 @@
 
 
 
-% The default DHMS periodicity at which log rotation will be requested by a
+% The default DHMS period at which log rotation will be requested by a
 % given logger instance.
 
 % Every 4 minutes (for testing):
-%-define( default_dhms_log_rotation_periodicity, { 0, 0, 4, 0 } ).
+%-define( default_dhms_log_rotation_period, { 0, 0, 4, 0 } ).
 
 % Every 2 days:
--define( default_dhms_log_rotation_periodicity, { 2, 0, 0, 0 } ).
+-define( default_dhms_log_rotation_period, { 2, 0, 0, 0 } ).
 
 
 
@@ -198,27 +198,27 @@
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   MaybeWebAnalysisInfo ) ->
 	construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
-			   ?default_dhms_log_rotation_periodicity, MaybeWebAnalysisInfo,
+			   ?default_dhms_log_rotation_period, MaybeWebAnalysisInfo,
 			   _IsSingleton=false ).
 
 
 
 % Constructs the US web logger (possibly a singleton) for the specified host in
 % the specified domain, using specified directory to write access and error log,
-% and any specified scheduler and periodicity for log rotation.
+% and any specified scheduler and period for log rotation.
 %
 % A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
 % (i.e. not set to 'undefined').
 %
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
-				 maybe( scheduler_pid() ), user_periodicity(),
+				 maybe( scheduler_pid() ), user_period(),
 				 maybe( web_analysis_info() ), boolean() ) -> wooper:state().
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
-		   UserPeriodicity, MaybeWebAnalysisInfo, _IsSingleton=true ) ->
+		   UserPeriod, MaybeWebAnalysisInfo, _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor:
 	InitState = construct( State, BinHostId, DomainId, BinLogDir,
-		   MaybeSchedulerPid, UserPeriodicity, MaybeWebAnalysisInfo, false ),
+		   MaybeSchedulerPid, UserPeriod, MaybeWebAnalysisInfo, false ),
 
 	% Then self-registering:
 	RegName = ?registration_name,
@@ -231,7 +231,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
-		   UserPeriodicity, MaybeWebAnalysisInfo, _IsSingleton=false ) ->
+		   UserPeriod, MaybeWebAnalysisInfo, _IsSingleton=false ) ->
 
 	% Auto-registering if a scheduler has been specified (otherwise a task ring
 	% is expected to declare a registration); go for maximum interleaving:
@@ -243,7 +243,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 		SchedPid ->
 			 SchedPid ! { registerTask, [ _TaskCmd=rotateLogs,
-				_StartTime=flexible, UserPeriodicity, _Count=unlimited,
+				_StartTime=flexible, UserPeriod, _Count=unlimited,
 				_ActPid=self() ], self() }
 
 	end,
@@ -632,11 +632,11 @@ get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
 % Static section.
 
 
-% Returns the default periodicity of log rotation.
--spec get_default_log_rotation_periodicity() ->
+% Returns the default period of log rotation.
+-spec get_default_log_rotation_period() ->
 							 static_return( time_utils:dhms_duration() ).
-get_default_log_rotation_periodicity() ->
-	wooper:return_static( ?default_dhms_log_rotation_periodicity ).
+get_default_log_rotation_period() ->
+	wooper:return_static( ?default_dhms_log_rotation_period ).
 
 
 

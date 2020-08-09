@@ -201,16 +201,17 @@ update-release:
 # (CTRL-C twice in the console will not be sufficient to kill this instance, use
 # 'make kill' instead)
 #
-# (apparently 'start' was replaced with 'foreground' or 'daemon'; we use rather
-# the former as we prefer using the same, relevant inquiry scripts in all
-# contexts)
+# (apparently 'start' was replaced with 'foreground' or 'daemon', when using a
+# prebuilt version of rebar3; we use rather the former as we prefer using the
+# same, relevant inquiry scripts in all contexts)
 #
 # Note also that the daemon option will not return (yet would still run if
 # exiting with CTRL-C); launching it in the background is thus preferable.
 #
 start: kill clean-logs compile
 	@echo "Starting the us_web release (EPMD port: $(EPMD_PORT)):"
-	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
+	@#export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
+	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web start &
 	@sleep 1 ; $(MAKE) -s log
 
 

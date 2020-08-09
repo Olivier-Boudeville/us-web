@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, August 2, 2020
+:Lastly updated: Friday, August 7, 2020
 :Status: Work in progress
-:Version: 0.0.6
+:Version: 0.0.7
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -696,7 +696,7 @@ Execution Hints
 
 - the current working directory of a US-Web instance deployed thanks to ``deploy-us-web-release.sh`` is ``/opt/universal-server/us_web-x.y.z``
 
-- if unable to connect, the firewall (ex: ``iptables -L``) might be the culprit! Note that the whole US framework tends to rely on a specific TCP range (ex: ``50000-55000``) for inter-VM communications
+- if unable to connect, the firewall (ex: ``iptables -L``) might be the culprit! Note that the whole US framework tends to rely on a specific TCP range (ex: ``50000-55000``) for inter-VM communications; for HTTP, TCP port 80 is expected to be opened, and this is TCP port 443 for HTTPS (see also our `iptables.rules-Gateway.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh>`_ script)
 
 - to debug (once batch mode has been enabled/disabled), one may use the ``debug`` make target, from the tree root
 

@@ -34,18 +34,17 @@
 	% The kind of virtual host (ex: 'static'):
 	kind :: class_USWebConfigServer:web_kind(),
 
-	% The content (absolute) directory (as a binary) associated to this virtual
-	% host:
+	% The content (absolute) directory (as a binary) associated to :
 	%
 	content_root :: file_utils:bin_directory_path(),
 
 	% The PID of the web logger in charge of this virtual host:
 	logger_pid :: class_USWebLogger:server_pid(),
 
-	% The identifier of task for certificate renewal (if any), as assigned by
-	% the scheduler:
+	% The PID of the certificate manager (if any) for this virtual
+	% host, in charge of certificate generation and renewal:
 	%
-	cert_task_id :: maybe( class_USScheduler:task_id() ) } ).
+	cert_manager_pid :: maybe( class_USCertificateManager:manager_pid() ) } ).
 
 
 

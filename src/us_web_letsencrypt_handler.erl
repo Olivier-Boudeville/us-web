@@ -47,7 +47,15 @@ init( Req, HandlerState ) ->
 	% Corresponds to "/.well-known/acme-challenge/:token":
 	% (returns undefined is token not set in URI)
 	%
-	Token = cowboy_req:binding( _Name=token, Req ),
+	Token = case cowboy_req:binding( _Name=token, Req ) of
+
+		undefined ->
+			throw( { no_token_defined, Req } );
+
+		Tk ->
+			Tk
+
+	end,
 
 	% Returns 'error' if token+thumbprint are not available:
 	Thumbprints = letsencrypt:get_challenge(),
@@ -73,11 +81,11 @@ init( Req, HandlerState ) ->
 
 
 handle( Req, HandlerState ) ->
-	trace_utils:trace_fmt( "Handle called for request ~p", [ Req ] ),
+	trace_utils:trace_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
 
 
 terminate( Reason, Req, _HandlerState ) ->
-	trace_utils:trace_fmt( "Terminate called for request ~p; reason; ~p",
+	trace_utils:trace_fmt( "Terminate called for request ~p; reason: ~p.",
 						   [ Req, Reason ] ),
 	ok.

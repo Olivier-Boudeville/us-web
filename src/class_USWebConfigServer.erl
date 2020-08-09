@@ -80,9 +80,11 @@
 -define( us_web_data_dir_key, us_web_data_dir ).
 -define( us_web_log_dir_key, us_web_log_dir ).
 -define( http_tcp_port_key, http_tcp_port ).
+-define( https_tcp_port_key, https_tcp_port ).
 -define( default_web_root_key, default_web_root ).
 -define( log_analysis_key, log_analysis ).
--define( certificate_management_key, certificate_management ).
+-define( certificate_support_key, certificate_support ).
+-define( certificate_mode_key, certificate_mode ).
 -define( routes_key, routes ).
 
 
@@ -92,26 +94,20 @@
 			?us_web_scheduler_registration_name_key,
 			?us_web_username_key, ?us_web_app_base_dir_key,
 			?us_web_data_dir_key, ?us_web_log_dir_key,
-			?http_tcp_port_key, ?default_web_root_key, ?log_analysis_key,
-			?certificate_management_key, ?routes_key ] ).
+			?http_tcp_port_key, ?https_tcp_port_key,
+			?default_web_root_key, ?log_analysis_key,
+			?certificate_support_key, ?certificate_mode_key, ?routes_key ] ).
 
 
 % The last-resort environment variable:
 -define( us_web_app_env_variable, "US_WEB_APP_BASE_DIR" ).
 
 
--define( default_data_base_dir, "/var/local/us-web/data" ).
+% Preferring a default local directory to an absolute one requiring privileges:
+%-define( default_data_base_dir, "/var/local/us-web/data" ).
+-define( default_data_base_dir, "us-web-data" ).
+
 -define( default_log_base_dir, "/var/log" ).
-
-
-% The DHMS periodicity at which TLS certificate renewal will be requested for
-% each actual domain.
-%
-% Let’s Encrypt certificate lifetime is 90 days (cf. duration
-% https://letsencrypt.org/docs/faq/), we trigger a renewal with some margin:
-%
--define( default_dhms_certificate_renewal_periodicity, { 75, 0, 0, 0 } ).
-
 
 
 % Design notes:
@@ -177,8 +173,6 @@
 %
 -type domain_config_table() :: table( domain_id(), vhost_config_table() ).
 
--type domain_pair() :: { domain_id(), vhost_config_table() }.
-
 
 % A table, associating, to each virtual host identifier, its settings:
 -type vhost_config_table() :: table( vhost_id(), vhost_config_entry() ).
@@ -222,8 +216,25 @@
 								   maybe( file_utils:bin_directory_path() ) }.
 
 
+
+% Certificate information about a FQDN:
+-type cert_info() :: cert_manager_pid().
+
+-type cert_table() :: table( bin_domain_name(), cert_info() ).
+
+
+% Tells whether certificates shall be used, and how:
+-type cert_support() :: 'no_certificates' % Hence no https
+					  | 'use_existing_certificates' % Hence use but no renewal
+					  | 'renew_certificates'. % Hence use, generate and renew
+
+
+% Tells whether certificate generation is in testing/staging mode or not:
+-type cert_mode() :: 'development' | 'production'.
+
+
 % To silence attribute-only types:
--export_type([ log_analysis_settings/0 ]).
+-export_type([ log_analysis_settings/0, cert_support/0, cert_mode/0 ]).
 
 
 % Shorthands:
@@ -235,6 +246,8 @@
 
 -type domain_name() :: net_utils:domain_name().
 -type bin_domain_name() :: net_utils:bin_domain_name().
+-type bin_fqdn() :: net_utils:bin_fqdn().
+
 
 %-type bin_subdomain() :: net_utils:bin_subdomain().
 
@@ -243,10 +256,9 @@
 %-type server_pid() :: class_UniversalServer:server_pid().
 
 -type logger_pid() :: class_USWebLogger:logger_pid().
+-type cert_manager_pid() :: class_USCertificateManager:manager_pid().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
--type task_id() :: class_USScheduler:task_id().
-
 
 
 % The class-specific attributes:
@@ -266,8 +278,13 @@
 	  "the domain, virtual host identifiers and web root of the auto-generated "
 	  "meta website (if any)" },
 
-	{ http_tcp_port, net_utils:tcp_port(),
-	  "the TCP port at which the webserver is to listen for the http scheme" },
+	{ http_tcp_port, maybe( net_utils:tcp_port() ),
+	  "the TCP port (if any) at which the webserver is to listen for the http "
+	  "scheme" },
+
+	{ https_tcp_port, maybe( net_utils:tcp_port() ),
+	  "the TCP port (if any) at which the webserver is to listen for the https "
+	  "scheme" },
 
 	{ us_server_pid, maybe( server_pid() ),
 	  "the PID of the associated US server (if any)" },
@@ -310,9 +327,22 @@
 	  "the directory where (basic, technical) US-Web logs shall be written, "
 	  "notably access and error logs for websites" },
 
-	{ cert_enabled, boolean(),
-	  "tells whether the management (generation, use and renewal) of X.509 "
-	  "certificates is enabled" },
+	{ cert_support, cert_support(),
+	  "tells whether the use and possibly generation/renewal of X.509 "
+	  "certificates is requested" },
+
+	{ cert_mode, maybe( cert_mode() ),
+	  "tells whether certificates (if any) are in production mode or not" },
+
+	{ cert_table, cert_table(),
+	  "a table associating to a (binary) virtual hostname its certificate "
+	  "information (manager-wise)" },
+
+	{ cert_service_pid, maybe( pid() ),
+	  "the PID of the Let's Encrypt gen_server (if any)" },
+
+	{ cert_directory, maybe( bin_directory_path() ),
+	  "the directory where the certificate information will be written" },
 
 	{ scheduler_registration_name, naming_utils:registration_name(),
 	  "the name under which the dedicated scheduler is registered" },
@@ -336,9 +366,6 @@
 
 -define( app_subdir, us-web ).
 
-
-% For unused functions:
--export([ unregister_domain_tasks/2 ]).
 
 % Exported helpers:
 -export([ get_execution_target/0 ]).
@@ -389,9 +416,13 @@ construct( State, SupervisorPid ) ->
 
 	end,
 
+	% Other attributes set by the next function:
 	SupState = setAttributes( TraceState, [
 					{ us_web_supervisor_pid, SupervisorPid },
-					{ start_timestamp, StartTimestamp } ] ),
+					{ start_timestamp, StartTimestamp },
+					{ cert_table, table:new() },
+					{ cert_service_pid, undefined },
+					{ cert_directory, undefined } ] ),
 
 	CfgState = load_and_apply_configuration( BinCfgDir, SupState ),
 
@@ -415,15 +446,68 @@ construct( State, SupervisorPid ) ->
 
 
 
+% Overridden destructor.
+-spec destruct( wooper:state() ) -> wooper:state().
+destruct( State ) ->
+
+	?trace( "Deletion initiated." ),
+
+	% Now web loggers are not registered directly to the scheduler, so we just
+	% have to take care of the task ring:
+
+	% {DomainId, VHostCfgTable} pairs:
+	%DomPairs = table:enumerate( ?getAttr(domain_config_table) ),
+
+	% Result not kept here:.
+	%unregister_domain_tasks( DomPairs, State ),
+
+	% No synchronicity needed:
+	?getAttr(logger_task_ring) ! delete,
+
+	[ LPid ! delete || LPid <- get_all_logger_pids( State ) ],
+
+	% Unregisters regarding certificate renewal:
+	case ?getAttr(cert_support) of
+
+		renew_certificates ->
+			stop_certificate_generation_support( State );
+
+		_ ->
+			ok
+
+	end,
+
+	?info( "Deleted." ),
+	State.
+
+
+
+
 % Method section.
 
 
-% Returns the web configuration settings (typically for the us_web supervisor).
+% Returns the basic web configuration settings (typically for the us_web
+% supervisor).
+%
 -spec getWebConfigSettings( wooper:state() ) ->
-		   const_request_return( { dispatch_rules(), net_utils:tcp_port() } ).
+	const_request_return( { dispatch_rules(), maybe( net_utils:tcp_port() ),
+							maybe( net_utils:tcp_port() ) } ).
 getWebConfigSettings( State ) ->
+
+	% HTTPS Port only returned if https enabled:
+	MaybeHTTPSTCPPort = case ?getAttr(cert_support) of
+
+		no_certificates ->
+			undefined;
+
+		_ ->
+			% Maybe still undefined:
+			?getAttr(https_tcp_port)
+
+	end,
+
 	wooper:const_return_result( { ?getAttr(dispatch_rules),
-								  ?getAttr(http_tcp_port) } ).
+		?getAttr(http_tcp_port), MaybeHTTPSTCPPort } ).
 
 
 
@@ -435,26 +519,19 @@ onStarted( State ) ->
 
 	?trace( "Webserver started." ),
 
-	case ?getAttr(cert_enabled) of
+	CertState = case ?getAttr(cert_support) of
 
-		true ->
+		renew_certificates ->
+			start_certificate_generation_support( State );
 
-			% For testing, with fake certificates:
-			Mode = staging,
-
-			% For real:
-			Mode = 
-
-			% Slave, as we control the webserver for the challenge.
-			letsencrypt:start([{mode,slave}, staging, {cert_path,"/path/to/certs"}]),
-			letsencrypt:make_cert(<<"mydomain.tld">>, #{callback => fun on_complete/1});
-
-		false ->
-			ok
+		_ ->
+			?debug( "No certificate generation enabled." ),
+			State
 
 	end,
 
-	wooper:return_state( State ).
+	wooper:return_state( CertState ).
+
 
 
 
@@ -529,8 +606,8 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 	% Now we are able to look it up; either the overall US configuration server
 	% already exists, or it shall be created:
 	%
-	CfgServerPid = case naming_utils:is_registered( USCfgRegName,
-													USCfgRegScope ) of
+	CfgServerPid =
+			case naming_utils:is_registered( USCfgRegName, USCfgRegScope ) of
 
 		not_registered ->
 
@@ -659,7 +736,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	LogState = manage_log_directory( WebCfgTable,DataState  ),
 
-	PortState = manage_port( WebCfgTable, LogState ),
+	PortState = manage_ports( WebCfgTable, LogState ),
 
 	RootState = manage_web_root( WebCfgTable, PortState ),
 
@@ -689,125 +766,172 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% Overridden destructor.
--spec destruct( wooper:state() ) -> wooper:state().
-destruct( State ) ->
+% Starts the support for X.509 certificates.
+-spec start_certificate_generation_support(  wooper:state() ) -> wooper:state().
+start_certificate_generation_support( State ) ->
 
-	% Now web loggers are not registered directly to the scheduler, so we just
-	% have to take care of the task ring:
+	?trace( "Starting certificate generation support." ),
 
-	% {DomainId,VHostCfgTable} pairs:
-	%DomPairs = table:enumerate( ?getAttr(domain_config_table) ),
+	% Starts once for all Let's Encrypt:
 
-	% Result not kept here:.
-	%unregister_domain_tasks( DomPairs, State ),
+	CertDirPath = file_utils:join( ?getAttr(data_directory), "certificates" ),
 
-	% No synchronicity needed:
-	?getAttr(logger_task_ring) ! delete,
+	file_utils:create_directory_if_not_existing( CertDirPath,
+				_ParentCreation=create_parents ),
 
-	[ LPid ! delete || LPid <- get_all_logger_pids( State ) ],
+	HttpQueryTimeoutMs = 30000,
 
-	% Unregisters regarding certificate renewal:
+	CertMode = ?getAttr(cert_mode),
+
+	LEExecMode = case CertMode of
+
+		development ->
+			% For testing only, with fake certificates:
+			staging;
+
+		production ->
+			prod
+
+	end,
+
+	% Slave, as we control the webserver for the challenge:
+	% (CertDirPath must be writable by this process)
+	%
+	LEOpts = [ LEExecMode, { mode, slave }, { cert_path, CertDirPath },
+			   { http_timeout, HttpQueryTimeoutMs } ],
+
+	LEServicePid = case letsencrypt:start( LEOpts ) of
+
+		{ ok, LEPid } ->
+			?trace_fmt( "Certicate generation support enabled, based on "
+				"Let's Encrypt (service PID: ~w); certificates will be "
+				"stored in the '~s' directory.", [ LEPid, CertDirPath ] );
+
+		{ error, Error } ->
+			throw( { letsencrypt_start_failed, Error, LEOpts } )
+
+	end,
+
+	FQDNsToCertify = get_fqdns_to_certify( State ),
+
+	% Most probably empty:
+	CertTable = ?getAttr(cert_table),
+
+	NewCertTable = create_certificate_managers( FQDNsToCertify, CertMode,
+		CertTable, CertDirPath, ?getAttr(us_web_scheduler_pid), State ),
+
+	setAttributes( State, [ { cert_table, NewCertTable },
+							{ cert_service_pid, LEServicePid },
+							{ cert_directory, CertDirPath } ] ).
 
 
-	?getAttr(us_web_scheduler_pid) ! delete,
 
-	?info( "Deleted." ),
-	State.
+% Returns a list of the FQDNs for which certificates shall be issued.
+-spec get_fqdns_to_certify( wooper:state() ) -> [ bin_fqdn() ].
+get_fqdns_to_certify( State ) ->
 
+	AllFQDNs = get_fqdns_helper(
+		table:values( ?getAttr(domain_config_table) ), _Acc=[], State ),
 
+	% FQDNs that shall not have a certificate generated:
+	% (meta auto-generated websites shall remain unadvertised)
+	%
+	NoCertBinFQDNs = case ?getAttr(meta_web_settings) of
 
-% Unregisters the scheduling tasks associated to each vhost of each specified
-% domain, returning updated domain pairs (State only used for traces).
-%
--spec unregister_domain_tasks( [ domain_pair() ], wooper:state() ) ->
-									[ domain_pair() ].
-unregister_domain_tasks( DomPairs, State ) ->
-	unregister_domain_tasks( DomPairs, ?getAttr(us_web_scheduler_pid), State,
-							 _Acc=[] ).
+		undefined ->
+			[];
+
+		% Catchalls not managed:
+		{ BinDomainName, BinHostname, _BinDirPath } ->
+			[ text_utils:bin_format( "~s.~s",
+				[ BinHostname, BinDomainName ] ) ]
+
+	end,
+
+	CertFQDNs = list_utils:difference( AllFQDNs, NoCertBinFQDNs ),
+
+	?debug_fmt( "After having removed FQDNs ~p from all the known ones (~p), "
+		"a certificate will be generated for following FQDNs: ~p.",
+		[ NoCertBinFQDNs, AllFQDNs, CertFQDNs ] ),
+
+	CertFQDNs.
+
 
 
 % (helper)
-unregister_domain_tasks( _DomPairs=[], _SchedulerPid, _State, Acc ) ->
+get_fqdns_helper( _VHostCfgTables=[], Acc, _State ) ->
 	Acc;
 
-unregister_domain_tasks( _DomPairs=[ { DomainId, VHostCfgTable } | T ],
-						 SchedulerPid, State, Acc ) ->
-
-	NewVHostCfgTable = unregister_domain_task( DomainId, VHostCfgTable,
-											   SchedulerPid, State ),
-
-	unregister_domain_tasks( T, SchedulerPid, State,
-							 [ { DomainId, NewVHostCfgTable } | Acc ] ).
-
-
-
-% Unregisters the scheduling tasks associated to specified domain.
-unregister_domain_task( DomainId, VHostCfgTable, SchedulerPid, State ) ->
-
-	{ AllTaskIds, NewVHostCfgTable } = extract_all_task_ids( VHostCfgTable ),
-
-	SchedulerPid ! { unregisterTasks, [ AllTaskIds ], self() },
-
-	receive
-
-		{ wooper_result, Outcomes } ->
-			% All tasks are unlimited, hence none shall be done;
-			case lists_utils:delete_all_in( _Elem=task_unregistered,
-											Outcomes ) of
-
-				[] ->
-					?debug_fmt( "For domain '~s', all ~B tasks successfully "
-						"unregistered.", [ DomainId, length( Outcomes ) ] ),
-					NewVHostCfgTable;
-
-				_ ->
-					Pairs = lists:zip( AllTaskIds, Outcomes ),
-					UnexpectedPairs = [ P || P={ _Id, Outcome } <- Pairs,
-											 Outcome =/= task_unregistered ],
-					?error_fmt( "For domain '~s', following tasks could not be "
-						"unregistered for following reasons: ~p",
-						[ DomainId, UnexpectedPairs ] ),
-					NewVHostCfgTable
-
-			end
-
-	end.
-
-
-
-% Extracts all task identifiers from specified vhost table, returns them and the
-% table obtained once they have been set to undefined.
-%
--spec extract_all_task_ids( vhost_config_table() ) ->
-								  { [ task_id() ], vhost_config_table() }.
-extract_all_task_ids( VHostCfgTable ) ->
-	VhostPairs = table:enumerate( VHostCfgTable ),
-	extract_task_ids_from( VhostPairs, _AccIds=[], _AccPairs=[] ).
-
+get_fqdns_helper( [ VHostCfgTable | T ], Acc, State ) ->
+	VHostCfgEntries = table:values( VHostCfgTable ),
+	AddFQDNs = get_vhosts_for_domain( VHostCfgEntries, _VAcc=[] ),
+	get_fqdns_helper( T, AddFQDNs ++ Acc, State ).
 
 
 % (helper)
-extract_task_ids_from( _VhostPairs=[], AccIds, AccPairs ) ->
-	{ AccIds, table:new( AccPairs ) };
+get_vhosts_for_domain( _VHostCfgEntries=[], VAcc ) ->
+	VAcc;
 
-extract_task_ids_from( _VhostPairs=[ { VHostId, VHostEntry } | T ],
-					   AccIds, AccPairs ) ->
-	{ NewIds, NewVHostEntry } = extract_task_ids_from_entry( VHostEntry ),
-	extract_task_ids_from( T, NewIds ++ AccIds,
-						   [ { VHostId, NewVHostEntry } | AccPairs ] ).
+get_vhosts_for_domain( [ #vhost_config_entry{
+						  virtual_host=BinVHost,
+						  parent_host=BinParentHost } | T ], VAcc ) ->
+	BinFQDN = text_utils:bin_format( "~s.~s", [ BinVHost, BinParentHost ] ),
+	get_vhosts_for_domain( T, [ BinFQDN | VAcc ] ).
 
 
 
-% At least currently, only up to one:
-extract_task_ids_from_entry(
-  VCE=#vhost_config_entry{ cert_task_id=undefined } ) ->
-	 { _NewIds=[], VCE };
 
-extract_task_ids_from_entry(
-  VCE=#vhost_config_entry{ cert_task_id=CertTaskId } ) ->
-	 { _NewIds=[ CertTaskId ],
-	   VCE#vhost_config_entry{ cert_task_id=undefined } }.
+% Creates if relevant a certificate manager for specified virtual host.
+-spec handle_certificate_manager_for( vhost_id(), domain_id(),
+		cert_support(), cert_mode(), bin_directory_path(), scheduler_pid() ) ->
+											cert_manager_pid().
+handle_certificate_manager_for( VHostId, DomainId,
+		_CertSupport=renew_certificates, CertMode, BinCertDir, SchedulerPid ) ->
+
+	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
+
+	class_USCertificateManager:new_link( BinFQDN, CertMode,
+					BinCertDir, SchedulerPid, _IsSingleton=false );
+
+handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
+								_CertMode, _BinCertDir,	_SchedulerPid ) ->
+	undefined.
+
+
+
+% Creates a certificate for each of the specified FQDNs.
+-spec create_certificate_managers( [ bin_fqdn() ], cert_mode(), cert_table(),
+	bin_directory_path(), scheduler_pid(), wooper:state() ) -> wooper:state().
+create_certificate_managers( _AllFQDNs=[], _CertMode, CertTable, _BinCertDir,
+							 _SchedulerPid, _State ) ->
+	CertTable;
+
+create_certificate_managers( _AllFQDNs=[ BinFQDN | T ], CertMode, CertTable,
+							 BinCertDir, SchedulerPid, State ) ->
+
+	NewCertManagerPid = class_USCertificateManager:new_link( BinFQDN, CertMode,
+								BinCertDir, SchedulerPid, _IsSingleton=false ),
+
+	NewCertTable = table:add_new_entry( BinFQDN, NewCertManagerPid, CertTable ),
+
+	create_certificate_managers( T, CertMode, NewCertTable, BinCertDir,
+								 SchedulerPid, State ).
+
+
+
+
+
+% Stops the support for X.509 certificates.
+-spec stop_certificate_generation_support( wooper:state() ) -> wooper:state().
+stop_certificate_generation_support( State ) ->
+
+	?trace( "Stopping certificate generation support." ),
+
+	CertManagerPids = table:values( ?getAttr(cert_table) ),
+
+	[ Pid ! delete || Pid <- CertManagerPids ],
+
+	letsencrypt:stop().
 
 
 
@@ -834,11 +958,12 @@ renewCertificate( State, DomainId, VHostId ) ->
 %
 -spec process_domain_info( [ { domain_name(), [ term() ] } ],
 	bin_directory_path(), maybe( bin_directory_path() ),
-	maybe( web_analysis_info() ), boolean(), scheduler_pid(),
-	wooper:state() ) ->
+	maybe( web_analysis_info() ), cert_support(), cert_mode(),
+	bin_directory_path(), scheduler_pid(), wooper:state() ) ->
 		{ domain_config_table(), dispatch_routes(), wooper:state() }.
 process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeLogAnalysisSettings, CertEnabled, SchedulerPid, State ) ->
+		MaybeLogAnalysisSettings, CertSupport, CertMode, BinCertDir,
+		SchedulerPid, State ) ->
 
 	%trace_utils:debug_fmt( "Domain list: ~p", [ UserRoutes ] ),
 
@@ -848,7 +973,7 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 	% Any host catch-all must come last:
 	process_domain_routes( lists:reverse( UserRoutes ), BinLogDir,
 		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVTable=table:new(),
-		_AccRoutes=[], CertEnabled, SchedulerPid, State ).
+		_AccRoutes=[], CertSupport, CertMode, BinCertDir, SchedulerPid, State ).
 
 
 
@@ -1028,8 +1153,8 @@ determine_meta_web_root_for( _VHostInfos=[ _ | T ], DomainId,
 
 % (helper)
 process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
-		_MaybeWebAnalysisInfo, AccVTable, AccRoutes, _CertEnabled,
-		_SchedulerPid, State ) ->
+		_MaybeWebAnalysisInfo, AccVTable, AccRoutes, _CertSupport, _CertMode,
+		_BinCertDir, _SchedulerPid, State ) ->
 	%trace_utils:debug_fmt( "Resulting routes:~n~p", [ AccRoutes ] ),
 	{ AccVTable, AccRoutes, State };
 
@@ -1037,14 +1162,15 @@ process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
 % Explicit domain:
 process_domain_routes( _UserRoutes=[ { DomainName, VHostInfo } | T ], BinLogDir,
 		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		CertEnabled, SchedulerPid, State ) when is_list( DomainName ) ->
+		CertSupport, CertMode, BinCertDir, SchedulerPid, State )
+  when is_list( DomainName ) ->
 
 	BinDomainName = text_utils:string_to_binary( DomainName ),
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
 		VHostInfo, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
-		_AccVtable=table:new(), _AccRoutes=[], CertEnabled, SchedulerPid,
-		State ),
+		_AccVtable=table:new(), _AccRoutes=[], CertSupport, CertMode,
+		BinCertDir, SchedulerPid, State ),
 
 	NewAccVTable = table:add_new_entry( _K=BinDomainName, _V=VHostTable,
 										AccVTable ),
@@ -1053,20 +1179,20 @@ process_domain_routes( _UserRoutes=[ { DomainName, VHostInfo } | T ], BinLogDir,
 	NewAccRoutes = VHostRoutes ++ AccRoutes,
 
 	process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertEnabled,
-		SchedulerPid, BuildState );
+		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertSupport,
+		CertMode, BinCertDir, SchedulerPid, BuildState );
 
 
 % Domain catch-all:
 process_domain_routes(
   _UserRoutes=[ { DomainId=default_domain_catch_all, VHostInfo } | T ],
   BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-  AccRoutes, CertEnabled, SchedulerPid, State ) ->
+  AccRoutes, CertSupport, CertMode, BinCertDir, SchedulerPid, State ) ->
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( DomainId,
 		VHostInfo, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
-		_AccVtable=table:new(), _AccRoutes=[], CertEnabled, SchedulerPid,
-		State ),
+		_AccVtable=table:new(), _AccRoutes=[], CertSupport, CertMode,
+		BinCertDir, SchedulerPid, State ),
 
 	NewAccVTable = table:add_new_entry( _K=DomainId, _V=VHostTable, AccVTable ),
 
@@ -1074,13 +1200,13 @@ process_domain_routes(
 	NewAccRoutes = VHostRoutes ++ AccRoutes,
 
 	process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertEnabled,
-		SchedulerPid, BuildState );
+		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertSupport,
+		CertMode, BinCertDir, SchedulerPid, BuildState );
 
 
 process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes,
-		_CertEnabled, _SchedulerPid, State ) ->
+		_CertSupport, _CertMode, _BinCertDir, _SchedulerPid, State ) ->
 
 	?error_fmt( "Invalid entry in virtual host configuration:~n~p",
 				[ InvalidEntry ] ),
@@ -1097,11 +1223,12 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 % (helper)
 -spec build_vhost_table( domain_id(), [ term() ], bin_directory_path(),
 	maybe( bin_directory_path() ), maybe( web_analysis_info() ),
-	list(), dispatch_routes(), boolean(), scheduler_pid(), wooper:state() ) ->
+	list(), dispatch_routes(), cert_support(), cert_mode(),
+	bin_directory_path(), scheduler_pid(), wooper:state() ) ->
 		  { vhost_config_table(), dispatch_routes(), wooper:state() }.
 build_vhost_table( _DomainId, _VHostInfos=[], _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		_CertEnabled, _SchedulerPid, State ) ->
+		_CertSupport, _CertMode, _BinCertDir, _SchedulerPid, State ) ->
 	% Restores user-defined order (ex: default route to come last):
 	{ AccVTable, lists:reverse( AccRoutes ), State };
 
@@ -1109,18 +1236,18 @@ build_vhost_table( _DomainId, _VHostInfos=[], _BinLogDir,
 % No kind specified, upgrading to static:
 build_vhost_table( DomainId, _VHostInfos=[ { VHostId, ContentRoot } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, CertEnabled, SchedulerPid, State ) ->
+		AccRoutes, CertSupport, CertMode, BinCertDir, SchedulerPid, State ) ->
 	build_vhost_table( DomainId,
 		_FullVHostInfos=[ { VHostId, ContentRoot, _DefaultKind=static } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, CertEnabled, SchedulerPid, State );
+		AccRoutes, CertSupport, CertMode, BinCertDir, SchedulerPid, State );
 
 
 % Static - actual or catch-all - vhost specified here:
 build_vhost_table( DomainId,
 		_VHostInfos=[ { VHostId, ContentRoot, WebKind=static } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, CertEnabled, SchedulerPid, State ) ->
+		AccRoutes, CertSupport, CertMode, BinCertDir, SchedulerPid, State ) ->
 
 	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
 									   VHostId, DomainId, State ),
@@ -1138,21 +1265,21 @@ build_vhost_table( DomainId,
 	end,
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
-		DomainId, BinVHostId, BinLogDir, CertEnabled, SchedulerPid,
-		MaybeWebAnalysisInfo ),
+		DomainId, BinVHostId, BinLogDir, CertSupport, CertMode, BinCertDir,
+		SchedulerPid, MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
 
 	build_vhost_table( DomainId, T, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, NewAccVTable, [ VHostRoute | AccRoutes ],
-		CertEnabled, SchedulerPid, State );
+		CertSupport, CertMode, BinCertDir, SchedulerPid, State );
 
 
 % Meta kind here:
 build_vhost_table( DomainId,
 	   _VHostInfos=[ { VHost, _ContentRoot, WebKind=meta } | T ],
 	   BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-	   AccRoutes, CertEnabled, SchedulerPid, State ) ->
+	   AccRoutes, CertSupport, CertMode, BinCertDir, SchedulerPid, State ) ->
 
 	% Quite similar to 'static', even if a logger and a web analysis
 	% organisation are not that useful:
@@ -1182,35 +1309,38 @@ build_vhost_table( DomainId,
 					  { DomainId, BinVHost, BinMetaContentRoot } ),
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
-			DomainId, BinVHost, BinLogDir, CertEnabled, SchedulerPid,
-			MaybeWebAnalysisInfo ),
+			DomainId, BinVHost, BinLogDir, CertSupport, CertMode, BinCertDir,
+			SchedulerPid, MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHost, VHostEntry, AccVTable ),
 
 	% Certificate setting used here as well:
 	build_vhost_table( DomainId, T, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, NewAccVTable, [ VHostRoute | AccRoutes ],
-		CertEnabled, SchedulerPid, SetState );
+		CertSupport, CertMode, BinCertDir, SchedulerPid, SetState );
 
 
 % Nitrogen kind here:
 build_vhost_table( _DomainId,
 	   _VHostInfos=[ { _VHost, _ContentRoot, _WebKind=nitrogen } | _T ],
 		_BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
-		_AccRoutes, _CertEnabled, _SchedulerPid, _State ) ->
+		_AccRoutes, _CertSupport, _CertMode, _BinCertDir, _SchedulerPid,
+		_State ) ->
 	throw( not_implemented_yet );
 
 
 % Unknown kind:
 build_vhost_table( _DomainId,
-	   _VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
-	   _BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
-	   _AccRoutes, _CertEnabled, _SchedulerPid, _State ) ->
+		_VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
+		_BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
+		_AccRoutes, _CertSupport, _CertMode, _BinCertDir,_SchedulerPid,
+		_State ) ->
 	throw( { unknown_web_kind, UnknownWebKind } );
 
 build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 	   _BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
-	   _AccRoutes, _CertEnabled, _SchedulerPid, _State ) ->
+	   _AccRoutes, _CertSupport, _CertMode, _BinCertDir, _SchedulerPid,
+	   _State ) ->
 	throw( { invalid_virtual_host_config, InvalidVHostConfig, DomainId } ).
 
 
@@ -1222,15 +1352,8 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 %
 % Here no web analysis is requested (yet log rotation is still useful):
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
-			  CertEnabled, SchedulerPid, _MaybeWebAnalysisInfo=undefined ) ->
-
-	% Go for maximum interleaving:
-
-	TaskCmd = { renewCertificate, [ DomainId, VHostId ] },
-
-	SchedulerPid ! { registerTask, [ TaskCmd, _StartTime=flexible,
-					   ?default_dhms_certificate_renewal_periodicity,
-					   _Count=unlimited, _ActPid=self() ], self() },
+			  CertSupport, CertMode, BinCertDir, SchedulerPid,
+			  _MaybeWebAnalysisInfo=undefined ) ->
 
 	% Now, we do not use anymore a scheduler for web looging, we prefer a task
 	% ring in order to avoid any possible concurrent runs of any analysis tool:
@@ -1238,36 +1361,28 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinLogDir,
 			_MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
 
+	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
+							CertSupport, CertMode, BinCertDir, SchedulerPid ),
+
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
 									  kind=ActualKind,
 									  content_root=BinContentRoot,
-									  logger_pid=LoggerPid },
+									  logger_pid=LoggerPid,
+									  cert_manager_pid=MaybeCertManagerPid },
 
 	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-										  LoggerPid, CertEnabled ),
+										  LoggerPid, CertSupport ),
 
-	% In answer to the call to the registerTask/6 request:
-	receive
-
-		{ wooper_result, { task_registered, TaskId } } ->
-			{ VHostEntry#vhost_config_entry{ cert_task_id=TaskId }, VHostRoute }
-
-	end;
+	{ VHostEntry, VHostRoute };
 
 
 % Here web analysis is requested:
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
-		CertEnabled, SchedulerPid,
+		CertSupport, CertMode, BinCertDir, SchedulerPid,
 		WebAnalysisInfo=#web_analysis_info{ tool=LogAnalysisTool,
 											template_content=TemplateContent,
 											conf_dir=BinConfDir } ) ->
-
-	TaskCmd = { renewCertificate, [ DomainId, VHostId ] },
-
-	SchedulerPid ! { registerTask, [ TaskCmd, _StartTime=flexible,
-					   ?default_dhms_certificate_renewal_periodicity,
-					   _Count=unlimited, _ActPid=self() ], self() },
 
 	% Preparing for the requested web analysis: before spawning a corresponding
 	% logger, generating its related configuration file.
@@ -1341,23 +1456,18 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinLogDir,
 					_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
-	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-										  LoggerPid, CertEnabled ),
-
-	% In answer to the call to the registerTask/6 request:
-	CertTaskId = receive
-
-		{ wooper_result, { task_registered, TId } } ->
-			TId
-
-	end,
+	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
+							CertSupport, CertMode, BinCertDir, SchedulerPid ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
 									  kind=ActualKind,
 									  content_root=BinContentRoot,
 									  logger_pid=LoggerPid,
-									  cert_task_id=CertTaskId },
+									  cert_manager_pid=MaybeCertManagerPid },
+
+	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
+										  LoggerPid, CertSupport ),
 
 	{ VHostEntry, VHostRoute }.
 
@@ -1495,9 +1605,9 @@ describe_host( VHostId, BinDomainName ) ->
 % See https://ninenines.eu/docs/en/cowboy/2.7/guide/routing/ for more details.
 %
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
-							   logger_pid(), boolean() ) -> route_rule().
+							   logger_pid(), cert_support() ) -> route_rule().
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
-						 CertEnabled ) ->
+						 CertSupport ) ->
 
 	% We prepare, once for all, all settings for a given (virtual) host.
 
@@ -1610,14 +1720,13 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 					   InitialState#{ type => directory,
 									  path => BinContentRoot } },
 
-	PathMatches = case CertEnabled of
+	PathMatches = case CertSupport of
 
-		true ->
+		renew_certificates ->
 			% Be able to answer Let's Encrypt ACME challenges:
-			ChallengePathMatch = get_challenge_path_match(),
-			[ NoPagePathMatch, ChallengePathMatch, OtherPathsMatch ];
+			[ NoPagePathMatch, get_challenge_path_match(), OtherPathsMatch ];
 
-		false ->
+		_ ->
 			[ NoPagePathMatch, OtherPathsMatch ]
 
 	end,
@@ -1865,8 +1974,8 @@ manage_app_base_directories( ConfigTable, State ) ->
 			end;
 
 		false ->
-			%?warning_fmt( "The US-Web application base directory '~s' does not "
-			%			  "exist, thus considering knowing none.",
+			%?warning_fmt( "The US-Web application base directory '~s' does "
+			%			  "not exist, thus considering knowing none.",
 			%			  [ BaseDir ] ),
 			%undefined
 			throw( { non_existing_us_web_app_base_directory, BaseDir,
@@ -1888,7 +1997,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 	TargetMod = us_web_sup,
 
 	ConfBinDir = text_utils:string_to_binary( file_utils:join(
-					 otp_utils:get_priv_root( TargetMod, _BeSilent=true ), "conf" ) ),
+		otp_utils:get_priv_root( TargetMod, _BeSilent=true ), "conf" ) ),
 
 	% Set in all cases:
 	setAttributes( State, [ { app_base_directory, MaybeBaseBinDir },
@@ -1906,7 +2015,8 @@ manage_data_directory( ConfigTable, State ) ->
 	BaseDir = case table:lookup_entry( ?us_web_data_dir_key, ConfigTable ) of
 
 		key_not_found ->
-			?default_data_base_dir;
+			file_utils:ensure_path_is_absolute( ?default_data_base_dir,
+									?getAttr(app_base_directory) );
 
 		{ value, D } when is_list( D ) ->
 			file_utils:ensure_path_is_absolute( D,
@@ -2067,8 +2177,10 @@ manage_web_root( ConfigTable, State ) ->
 			undefined;
 
 		{ value, DefWebRoot } ->
-			AbsDefaultWebRoot =
-					file_utils:ensure_path_is_absolute( DefWebRoot ),
+
+			AbsDefaultWebRoot =	file_utils:ensure_path_is_absolute(
+				DefWebRoot,
+				otp_utils:get_priv_root( ?MODULE, _BeSilent=true ) ),
 
 			case file_utils:is_existing_directory( AbsDefaultWebRoot ) of
 
@@ -2080,12 +2192,12 @@ manage_web_root( ConfigTable, State ) ->
 
 				false ->
 					?error_fmt( "The user-specified default web root "
-								"(obtained from the 'default_web_root' key), "
-								"'~s', is not an existing directory.",
-								[ AbsDefaultWebRoot ] ),
+						"(obtained from the 'default_web_root' key), "
+						"'~s', is not an existing directory.",
+						[ AbsDefaultWebRoot ] ),
 
 					throw( { non_existing_default_web_root,
-							 AbsDefaultWebRoot, default_web_root } )
+							 AbsDefaultWebRoot } )
 
 			end
 
@@ -2096,11 +2208,11 @@ manage_web_root( ConfigTable, State ) ->
 
 
 
-% Manages any user-configured TCP port.
--spec manage_port( us_web_config_table(), wooper:state() ) -> wooper:state().
-manage_port( ConfigTable, State ) ->
+% Manages any user-configured TCP ports.
+-spec manage_ports( us_web_config_table(), wooper:state() ) -> wooper:state().
+manage_ports( ConfigTable, State ) ->
 
-	TCPPort = case table:lookup_entry( ?http_tcp_port_key, ConfigTable ) of
+	HttpPort = case table:lookup_entry( ?http_tcp_port_key, ConfigTable ) of
 
 		key_not_found ->
 			DefaultHttpPort = 80,
@@ -2108,19 +2220,49 @@ manage_port( ConfigTable, State ) ->
 					   [ DefaultHttpPort ] ),
 			DefaultHttpPort;
 
-		{ value, Port } when is_integer( Port ) ->
+		{ value, ClearPort } when is_integer( ClearPort ) ->
 			?info_fmt( "The user-specified HTTP TCP port is #~B.",
-					   [ Port ] ),
-			Port;
+					   [ ClearPort ] ),
+			ClearPort;
 
-		{ value, InvalidPort } ->
+		{ value, undefined } ->
+			?info( "Use of any HTTP TCP port explicitly disabled "
+				   "by the user." ),
+			undefined;
+
+		{ value, InvalidClearPort } ->
 			?error_fmt( "Invalid user-specified HTTP TCP port: '~p'.",
-						[ InvalidPort ] ),
-			throw( { invalid_http_port, InvalidPort, http_tcp_port } )
+						[ InvalidClearPort ] ),
+			throw( { invalid_http_port, InvalidClearPort, http_tcp_port } )
 
 	end,
 
-	setAttribute( State, http_tcp_port, TCPPort ).
+	HttpsPort = case table:lookup_entry( ?https_tcp_port_key, ConfigTable ) of
+
+		key_not_found ->
+			DefaultHttpsPort = 443,
+			?info_fmt( "No user-specified HTTPS TCP port, defaulting to #~B.",
+					   [ DefaultHttpsPort ] ),
+			DefaultHttpsPort;
+
+		{ value, TLSPort } when is_integer( TLSPort ) ->
+			?info_fmt( "The user-specified HTTPS TCP port is #~B.", [  ] ),
+			TLSPort;
+
+		{ value, undefined } ->
+			?info( "Use of any HTTPS TCP port explicitly disabled "
+				   "by the user." ),
+			undefined;
+
+		{ value, InvalidTLSPort } ->
+			?error_fmt( "Invalid user-specified HTTPS TCP port: '~p'.",
+						[ InvalidTLSPort ] ),
+			throw( { invalid_https_port, InvalidTLSPort, https_tcp_port } )
+
+	end,
+
+	setAttributes( State, [ { http_tcp_port, HttpPort },
+							{ https_tcp_port, HttpsPort } ] ).
 
 
 
@@ -2176,8 +2318,8 @@ set_log_tool_settings( { ToolName, AnalysisToolRoot, AnalysisHelperRoot },
 
 	end,
 
-	BinAnHelperRoot =
-			case file_utils:is_existing_directory_or_link( AnalysisHelperRoot ) of
+	BinAnHelperRoot = case file_utils:is_existing_directory_or_link(
+							 AnalysisHelperRoot ) of
 
 		true ->
 			text_utils:string_to_binary( AnalysisHelperRoot );
@@ -2185,7 +2327,8 @@ set_log_tool_settings( { ToolName, AnalysisToolRoot, AnalysisHelperRoot },
 		false ->
 			?error_fmt( "Root directory '~s' for web log analysis helper "
 				"('~s') not found.", [ AnalysisHelperRoot, ToolName ] ),
-			throw( { root_of_log_helper_not_found, ToolName, AnalysisHelperRoot } )
+			throw( { root_of_log_helper_not_found, ToolName,
+					 AnalysisHelperRoot } )
 
 	end,
 
@@ -2205,29 +2348,62 @@ set_log_tool_settings( Unexpected, State ) ->
 								 wooper:state().
 manage_certificates( ConfigTable, State ) ->
 
-	CertEnabled = case
-			table:lookup_entry( ?certificate_management_key, ConfigTable ) of
+	CertSupport =
+			case table:lookup_entry( ?certificate_support_key, ConfigTable ) of
 
 		key_not_found ->
-			?info( "No certificate management specified, defaulting to none." ),
-			false;
+			?info( "No certificate support specified, defaulting to none." ),
+			no_certificates;
 
-		{ value, enabled } ->
-			?info( "Certificate management enabled." ),
-			true;
+		{ value, no_certificates } ->
+			?info( "Certificate support disabled." ),
+			no_certificates;
 
-		{ value, disabled } ->
-			?info( "Certificate management disabled." ),
-			false;
+		{ value, use_existing_certificates } ->
+			?info( "Certificate support enabled, based on existing ones "
+				   "(no renewal)." ),
+			use_existing_certificates;
 
-		{ value, Other } ->
-			?error_fmt( "Invalid certificate management setting: '~p'.",
-						[ Other ] ),
-			throw( { invalid_certificate_management_setting, Other } )
+		{ value, renew_certificates } ->
+			?info( "Certificate generation, use and renewal enabled." ),
+			renew_certificates;
+
+		{ value, OtherSupport } ->
+			?error_fmt( "Invalid certificate support setting: '~p'.",
+						[ OtherSupport ] ),
+			throw( { invalid_certificate_mode, OtherSupport } )
 
 	end,
 
-	setAttribute( State, cert_enabled, CertEnabled ).
+	MaybeCertMode = case CertSupport of
+
+		% Mode only relevant here:
+		renew_certificates ->
+			case table:lookup_entry( ?certificate_mode_key,
+									 ConfigTable ) of
+
+				key_not_found ->
+					% Default:
+					?info( "Certificate mode set by default to production." ),
+					production;
+
+				{ value, development } ->
+					?info( "Certificate mode set to development." ),
+					development;
+
+				{ value, production } ->
+					?info( "Certificate mode set to production." ),
+					production
+
+			end;
+
+		_ ->
+			undefined
+
+	end,
+
+	setAttributes( State, [ { cert_support, CertSupport },
+							{ cert_mode, MaybeCertMode } ] ).
 
 
 
@@ -2263,8 +2439,8 @@ manage_routes( ConfigTable, State ) ->
 	%
 	{ DomainTable, DispatchRoutes, ProcessState } = process_domain_info(
 		UserRoutes, BinLogDir, ?getAttr(default_web_root),
-		?getAttr(log_analysis_settings), ?getAttr(cert_enabled), SchedulerPid,
-		State ),
+		?getAttr(log_analysis_settings), ?getAttr(cert_support),
+		?getAttr(cert_mode), ?getAttr(cert_directory), SchedulerPid, State ),
 
 	% Now that all loggers are created, we gather their PID so that they are
 	% managed by a task ring, in order to synchronise them properly:
@@ -2273,11 +2449,11 @@ manage_routes( ConfigTable, State ) ->
 
 	basic_utils:check_all_defined( AllLoggerPids ),
 
-	TaskPeriodicity = class_USWebLogger:get_default_log_rotation_periodicity(),
+	TaskPeriod = class_USWebLogger:get_default_log_rotation_period(),
 
 	TaskRingPid = class_USTaskRing:new_link( _RingName="USWebLoggerRing",
 		_Actuators=AllLoggerPids, _TaskRequestName=rotateLogsSynch,
-		_TaskRequestArgs=[], TaskPeriodicity, _ScheduleCount=unlimited,
+		_TaskRequestArgs=[], TaskPeriod, _ScheduleCount=unlimited,
 		SchedulerPid ),
 
 	DispatchRules = cowboy_router:compile( DispatchRoutes ),
@@ -2393,6 +2569,28 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 -spec to_string( wooper:state() ) -> text_utils:ustring().
 to_string( State ) ->
 
+	HttpString = case ?getAttr(http_tcp_port) of
+
+		undefined ->
+			"with no http scheme enabled";
+
+		HttpTCPPort ->
+			text_utils:format( "using for the http scheme "
+				"the TCP port #~B", [ HttpTCPPort ] )
+
+	end,
+
+	HttpsString = case ?getAttr(https_tcp_port) of
+
+		undefined ->
+			"with no https scheme enabled";
+
+		HttpsTCPPort ->
+			text_utils:format( "using for the https scheme "
+				"the TCP port #~B", [ HttpsTCPPort ] )
+
+	end,
+
 	WebRootString = case ?getAttr(default_web_root) of
 
 		undefined ->
@@ -2400,6 +2598,20 @@ to_string( State ) ->
 
 		WebRoot ->
 			text_utils:format( "using default web root '~s'", [ WebRoot ] )
+
+	end,
+
+	CertString = case ?getAttr(cert_support) of
+
+		no_certificates ->
+			"with no certificate management enabled";
+
+		use_existing_certificates ->
+			"using existing certificates";
+
+		renew_certificates ->
+			text_utils:format( "relying on auto-renewed certificates "
+				"(mode: ~s)", [ ?getAttr(cert_mode) ] )
 
 	end,
 
@@ -2413,14 +2625,14 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US-Web configuration ~s, using for the http "
-		"scheme the TCP port #~B, ~s, running in the ~s execution context, "
+	text_utils:format( "US-Web configuration ~s, ~s, "
+		"running in the ~s execution context, ~s, "
 		"knowing: ~s, US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "
 		"on the '~s' log directory.~n~nIn terms of routes, using ~s~n~n"
 		"Corresponding dispatch rules:~n~p",
-		[ class_USServer:to_string( State ), ?getAttr(http_tcp_port),
-		  WebRootString, ?getAttr(execution_context), SrvString,
+		[ class_USServer:to_string( State ), HttpString, HttpsString,
+		  WebRootString, ?getAttr(execution_context), CertString, SrvString,
 		  ?getAttr(us_config_server_pid), ?getAttr(us_web_supervisor_pid),
 		  ?getAttr(config_base_directory), ?getAttr(log_directory),
 		  domain_table_to_string( ?getAttr(domain_config_table) ),

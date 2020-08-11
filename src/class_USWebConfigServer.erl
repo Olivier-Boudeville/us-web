@@ -216,13 +216,6 @@
 								   maybe( file_utils:bin_directory_path() ) }.
 
 
-
-% Certificate information about a FQDN:
--type cert_info() :: cert_manager_pid().
-
--type cert_table() :: table( bin_domain_name(), cert_info() ).
-
-
 % Tells whether certificates shall be used, and how:
 -type cert_support() :: 'no_certificates' % Hence no https
 					  | 'use_existing_certificates' % Hence use but no renewal
@@ -246,7 +239,6 @@
 
 -type domain_name() :: net_utils:domain_name().
 -type bin_domain_name() :: net_utils:bin_domain_name().
--type bin_fqdn() :: net_utils:bin_fqdn().
 
 
 %-type bin_subdomain() :: net_utils:bin_subdomain().
@@ -334,10 +326,6 @@
 	{ cert_mode, maybe( cert_mode() ),
 	  "tells whether certificates (if any) are in production mode or not" },
 
-	{ cert_table, cert_table(),
-	  "a table associating to a (binary) virtual hostname its certificate "
-	  "information (manager-wise)" },
-
 	{ cert_service_pid, maybe( pid() ),
 	  "the PID of the Let's Encrypt gen_server (if any)" },
 
@@ -420,7 +408,6 @@ construct( State, SupervisorPid ) ->
 	SupState = setAttributes( TraceState, [
 					{ us_web_supervisor_pid, SupervisorPid },
 					{ start_timestamp, StartTimestamp },
-					{ cert_table, table:new() },
 					{ cert_service_pid, undefined },
 					{ cert_directory, undefined } ] ),
 
@@ -465,6 +452,9 @@ destruct( State ) ->
 	?getAttr(logger_task_ring) ! delete,
 
 	[ LPid ! delete || LPid <- get_all_logger_pids( State ) ],
+
+	[ CMPid ! delete
+	  || CMPid <- get_all_certificate_manager_pids( State ) ],
 
 	% Unregisters regarding certificate renewal:
 	case ?getAttr(cert_support) of
@@ -774,11 +764,6 @@ start_certificate_generation_support( State ) ->
 
 	% Starts once for all Let's Encrypt:
 
-	CertDirPath = file_utils:join( ?getAttr(data_directory), "certificates" ),
-
-	file_utils:create_directory_if_not_existing( CertDirPath,
-				_ParentCreation=create_parents ),
-
 	HttpQueryTimeoutMs = 30000,
 
 	CertMode = ?getAttr(cert_mode),
@@ -793,6 +778,8 @@ start_certificate_generation_support( State ) ->
 			prod
 
 	end,
+
+	CertDirPath = ?getAttr(cert_directory),
 
 	% Slave, as we control the webserver for the challenge:
 	% (CertDirPath must be writable by this process)
@@ -812,72 +799,8 @@ start_certificate_generation_support( State ) ->
 
 	end,
 
-	FQDNsToCertify = get_fqdns_to_certify( State ),
-
-	% Most probably empty:
-	CertTable = ?getAttr(cert_table),
-
-	NewCertTable = create_certificate_managers( FQDNsToCertify, CertMode,
-		CertTable, CertDirPath, ?getAttr(us_web_scheduler_pid), State ),
-
-	setAttributes( State, [ { cert_table, NewCertTable },
-							{ cert_service_pid, LEServicePid },
+	setAttributes( State, [ { cert_service_pid, LEServicePid },
 							{ cert_directory, CertDirPath } ] ).
-
-
-
-% Returns a list of the FQDNs for which certificates shall be issued.
--spec get_fqdns_to_certify( wooper:state() ) -> [ bin_fqdn() ].
-get_fqdns_to_certify( State ) ->
-
-	AllFQDNs = get_fqdns_helper(
-		table:values( ?getAttr(domain_config_table) ), _Acc=[], State ),
-
-	% FQDNs that shall not have a certificate generated:
-	% (meta auto-generated websites shall remain unadvertised)
-	%
-	NoCertBinFQDNs = case ?getAttr(meta_web_settings) of
-
-		undefined ->
-			[];
-
-		% Catchalls not managed:
-		{ BinDomainName, BinHostname, _BinDirPath } ->
-			[ text_utils:bin_format( "~s.~s",
-				[ BinHostname, BinDomainName ] ) ]
-
-	end,
-
-	CertFQDNs = list_utils:difference( AllFQDNs, NoCertBinFQDNs ),
-
-	?debug_fmt( "After having removed FQDNs ~p from all the known ones (~p), "
-		"a certificate will be generated for following FQDNs: ~p.",
-		[ NoCertBinFQDNs, AllFQDNs, CertFQDNs ] ),
-
-	CertFQDNs.
-
-
-
-% (helper)
-get_fqdns_helper( _VHostCfgTables=[], Acc, _State ) ->
-	Acc;
-
-get_fqdns_helper( [ VHostCfgTable | T ], Acc, State ) ->
-	VHostCfgEntries = table:values( VHostCfgTable ),
-	AddFQDNs = get_vhosts_for_domain( VHostCfgEntries, _VAcc=[] ),
-	get_fqdns_helper( T, AddFQDNs ++ Acc, State ).
-
-
-% (helper)
-get_vhosts_for_domain( _VHostCfgEntries=[], VAcc ) ->
-	VAcc;
-
-get_vhosts_for_domain( [ #vhost_config_entry{
-						  virtual_host=BinVHost,
-						  parent_host=BinParentHost } | T ], VAcc ) ->
-	BinFQDN = text_utils:bin_format( "~s.~s", [ BinVHost, BinParentHost ] ),
-	get_vhosts_for_domain( T, [ BinFQDN | VAcc ] ).
-
 
 
 
@@ -885,8 +808,10 @@ get_vhosts_for_domain( [ #vhost_config_entry{
 -spec handle_certificate_manager_for( vhost_id(), domain_id(),
 		cert_support(), cert_mode(), bin_directory_path(), scheduler_pid() ) ->
 											cert_manager_pid().
+% Nothing done for catch-alls:
 handle_certificate_manager_for( VHostId, DomainId,
-		_CertSupport=renew_certificates, CertMode, BinCertDir, SchedulerPid ) ->
+		_CertSupport=renew_certificates, CertMode, BinCertDir, SchedulerPid )
+  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
 
 	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
 
@@ -894,30 +819,8 @@ handle_certificate_manager_for( VHostId, DomainId,
 					BinCertDir, SchedulerPid, _IsSingleton=false );
 
 handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
-								_CertMode, _BinCertDir,	_SchedulerPid ) ->
+								_CertMode, _BinCertDir, _SchedulerPid ) ->
 	undefined.
-
-
-
-% Creates a certificate for each of the specified FQDNs.
--spec create_certificate_managers( [ bin_fqdn() ], cert_mode(), cert_table(),
-	bin_directory_path(), scheduler_pid(), wooper:state() ) -> wooper:state().
-create_certificate_managers( _AllFQDNs=[], _CertMode, CertTable, _BinCertDir,
-							 _SchedulerPid, _State ) ->
-	CertTable;
-
-create_certificate_managers( _AllFQDNs=[ BinFQDN | T ], CertMode, CertTable,
-							 BinCertDir, SchedulerPid, State ) ->
-
-	NewCertManagerPid = class_USCertificateManager:new_link( BinFQDN, CertMode,
-								BinCertDir, SchedulerPid, _IsSingleton=false ),
-
-	NewCertTable = table:add_new_entry( BinFQDN, NewCertManagerPid, CertTable ),
-
-	create_certificate_managers( T, CertMode, NewCertTable, BinCertDir,
-								 SchedulerPid, State ).
-
-
 
 
 
@@ -926,10 +829,6 @@ create_certificate_managers( _AllFQDNs=[ BinFQDN | T ], CertMode, CertTable,
 stop_certificate_generation_support( State ) ->
 
 	?trace( "Stopping certificate generation support." ),
-
-	CertManagerPids = table:values( ?getAttr(cert_table) ),
-
-	[ Pid ! delete || Pid <- CertManagerPids ],
 
 	letsencrypt:stop().
 
@@ -2375,12 +2274,13 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
-	MaybeCertMode = case CertSupport of
+	{ MaybeCertMode, MaybeCertDir } = case CertSupport of
 
 		% Mode only relevant here:
 		renew_certificates ->
-			case table:lookup_entry( ?certificate_mode_key,
-									 ConfigTable ) of
+
+			CertMode = case table:lookup_entry( ?certificate_mode_key,
+												ConfigTable ) of
 
 				key_not_found ->
 					% Default:
@@ -2395,15 +2295,24 @@ manage_certificates( ConfigTable, State ) ->
 					?info( "Certificate mode set to production." ),
 					production
 
-			end;
+			end,
+
+			CertDir = file_utils:join( ?getAttr(data_directory),
+									   "certificates" ),
+
+			file_utils:create_directory_if_not_existing( CertDir,
+				_ParentCreation=create_parents ),
+
+			{ CertMode, CertDir };
 
 		_ ->
-			undefined
+			{ undefined, undefined }
 
 	end,
 
 	setAttributes( State, [ { cert_support, CertSupport },
-							{ cert_mode, MaybeCertMode } ] ).
+							{ cert_mode, MaybeCertMode },
+							{ cert_directory, MaybeCertDir } ] ).
 
 
 
@@ -2556,12 +2465,29 @@ get_all_logger_pids( State ) ->
 	get_all_logger_pids_from( ?getAttr(domain_config_table) ).
 
 
-
 % (helper)
 get_all_logger_pids_from( DomainCfgTable ) ->
 	list_utils:flatten_once( [ [ VHCfgE#vhost_config_entry.logger_pid
 							   || VHCfgE <- table:values( VHCfgTable ) ]
 						 || VHCfgTable <- table:values( DomainCfgTable ) ] ).
+
+
+
+% Returns a list of all the PIDs of the certificate managers.
+-spec get_all_certificate_manager_pids( wooper:state() ) ->
+		  [ cert_manager_pid() ].
+get_all_certificate_manager_pids( State ) ->
+	get_all_certificate_manager_pids_from( ?getAttr(domain_config_table) ).
+
+
+
+% (helper)
+get_all_certificate_manager_pids_from( DomainCfgTable ) ->
+	MaybePids = list_utils:flatten_once(
+				  [ [ VHCfgE#vhost_config_entry.cert_manager_pid
+					  || VHCfgE <- table:values( VHCfgTable ) ]
+					|| VHCfgTable <- table:values( DomainCfgTable ) ] ),
+	list_utils:filter_out_undefined( MaybePids ).
 
 
 

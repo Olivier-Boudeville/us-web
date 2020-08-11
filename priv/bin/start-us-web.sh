@@ -76,14 +76,28 @@ echo
 echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: ${erl_epmd_port}) with '${us_web_exec}'..."
 
 
-#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${epmd_opt} ${authbind} --deep ${us_web_exec} start
+# We specify here the actual cookie to the release script, so that the rpc
+# operations it performs (ex: in link with the relx hooks) can succeed;
+# otherwise it might be stuck performing one-per-second failed connection
+# attempts), and the script seems to be blocking (the release operates yet the
+# script does not return, whereas it should).
+#
+# Since 'start' was replaced by 'daemon', we relies on the latter, whereas the
+# use of 'foreground' was strongly recommended instead (yet with it, Awstats was
+# failing for unidentified reasons - presumably permissions).
+#
+if [ -n "${vm_cookie}" ]; then
+	echo "Using cookie '${vm_cookie}'."
+	cookie_env="COOKIE=${vm_cookie}"
+else
+	cookie_env=""
+fi
 
+#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep ${us_web_exec} daemon
 
-# Since 'start' was replaced by 'daemon', the release exec does not return, adding &:
-/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${epmd_opt} ${authbind} --deep ${us_web_exec} daemon &
+/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep ${us_web_exec} daemon
 
 res=$?
-
 
 if [ $res -eq 0 ]; then
 

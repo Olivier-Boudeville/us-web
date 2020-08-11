@@ -147,7 +147,7 @@ release: release-prod
 # ('compile' is not needed either: same happens because of 'release')
 #
 release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #update-release
-	@echo "  Generating OTP us_web release in development mode"
+	@echo "  Generating OTP us_web release in development mode, using $(shell rebar3 -v)"
 	@$(REBAR3_EXEC) release
 	@cd $(US_WEB_DEFAULT_REL_DIR)/releases && /bin/ln -sf $(US_WEB_VERSION) latest-release
 
@@ -155,8 +155,10 @@ release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #
 # Rebuilding all dependencies ('compile' implied):
 # (yes, 'tar', not 'release')
 #
-release-prod: clean-otp-build-tree rebar3-create-app-file rebar.config  #update-release
-	@echo "  Generating OTP us_web release in production mode"
+# One may execute the 'real-clean' make target for additional safety.
+#
+release-prod: clean-otp-build-tree rebar3-create-app-file set-rebar-conf #update-release
+	@echo "  Generating OTP us_web release in production mode, using $(shell rebar3 -v)"
 	@$(REBAR3_EXEC) as prod tar
 
 
@@ -166,7 +168,11 @@ rebar.config: conf/rebar.config.template
 
 
 # Just rebuilding us-web:
-release-prod-light: compile
+#
+# (updating rebar config for example to take into account changes in release
+# version)
+#
+release-prod-light: set-rebar-conf compile
 	@echo "  Generating OTP us_web release in production mode (with lightest rebuild)"
 	@$(REBAR3_EXEC) as prod tar
 

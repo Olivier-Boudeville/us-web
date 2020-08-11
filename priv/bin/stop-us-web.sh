@@ -63,11 +63,20 @@ echo " -- Stopping us_web application as user '${us_web_username}' (EPMD port: $
 # We must stop the VM with the right (Erlang) cookie, i.e. the actual runtime
 # one, not the dummy, original one:
 #
-update_us_web_config_cookie
+#update_us_web_config_cookie
+#
+# Commented-out, as we can actually specify it directly on the command-line:
 
-#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${epmd_opt} ${authbind} --deep ${us_web_exec} stop
+if [ -n "${vm_cookie}" ]; then
+	echo "Using cookie '${vm_cookie}'."
+	cookie_env="COOKIE=${vm_cookie}"
+else
+	cookie_env=""
+fi
 
-/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${epmd_opt} ${authbind} --deep ${us_web_exec} stop
+#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep ${us_web_exec} stop
+
+/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep ${us_web_exec} stop
 
 res=$?
 

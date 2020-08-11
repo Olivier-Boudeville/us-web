@@ -23,7 +23,9 @@
 	{cowboy,             {git, "git://github.com/ninenines/cowboy",
 						   {tag, "2.8.0"}}},
 
-	%{letsencrypt,        {git, "git://github.com/Olivier-Boudeville/letsencrypt-erlang",
+	{letsencrypt,        {git, "git://github.com/Olivier-Boudeville/letsencrypt-erlang",
+						   {branch, "master"}}},
+	%{letsencrypt,        {git, "git://github.com/gbour/letsencrypt-erlang.git",
 	%					   {branch, "master"}}},
 
 	%{simple_bridge,     {git, "git://github.com/nitrogen/simple_bridge",

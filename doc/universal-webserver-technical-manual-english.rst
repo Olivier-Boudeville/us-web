@@ -712,6 +712,13 @@ Execution Hints
 
 - log rotation results in timestamped, compressed files such as ``access-for-bar.localhost.log.2019-12-31-at-22h-03m-35s.xz``; note that the timestamp corresponds to the moment at which the rotation took place (hence not the time range of these logs, more an upper bound of it)
 
+- to test whether a combination of EPMD port and cookie is legit, one may use for example::
+
+  $ ERL_EPMD_PORT=44000 /usr/local/lib/erlang/erts-x.y/bin/erl_call -name us_web@baz.foobar.org -R -c 'MyCookie' -timeout 60 -a 'erlang is_alive'
+
+You then expect ``true`` to be returned - not::
+
+ erl_call: failed to connect to node us_web@baz.foobar.org
 
 
 

@@ -20,7 +20,7 @@
 
 {application, us_web,
  [{description, "US-Web, the OTP active application offering web services in the context of the Universal Server framework (see http://us-web.esperide.org)"},
-  {vsn, "0.0.9"},
+  {vsn, "0.0.10"},
   {registered, [us_web]},
 
  % Active application:

@@ -80,8 +80,7 @@
 	% in the code path:
 	%
 	%[ crypto, ranch, simple_cache, qdate, nitrogen_core, cowboy, us_web ] },
-	%[ crypto, ranch, cowboy, letsencrypt, us_common, us_web ] },
-	[ crypto, ranch, cowboy, us_common, us_web ] },
+	[ crypto, ranch, cowboy, letsencrypt, us_common, us_web ] },
 
 	{sys_config, "conf/sys.config"},
 

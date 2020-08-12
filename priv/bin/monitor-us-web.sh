@@ -75,13 +75,19 @@ if [ -z "${us_web_hostname}" ]; then
 
 fi
 
-if ! ping -c 1 ${us_web_hostname} 1>/dev/null 2>&1 ; then
 
-	echo "  Error, unable to ping the '${us_web_hostname}' remote US-Web hostname." 1>&2
+# Finally disabled, as a host that does not answer to ping would trigger a too
+# long time-out:
+#
+#if ! ping -c 1 ${us_web_hostname} 1>/dev/null 2>&1 ; then
 
-	exit 15
+	# Not a fatal error, as not all servers answer pings:
+	#echo "  Error, unable to ping the '${us_web_hostname}' remote US-Web hostname." 1>&2
+	#exit 15
 
-fi
+	#echo "  Warning: unable to ping the '${us_web_hostname}' remote US-Web hostname." 1>&2
+
+#fi
 
 #echo "Using '${us_web_hostname}' as remote US-Web hostname."
 

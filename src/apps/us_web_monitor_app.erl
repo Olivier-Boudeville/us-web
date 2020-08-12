@@ -72,8 +72,11 @@ exec() ->
 			ok;
 
 		pang ->
-			trace_utils:error_fmt( "Unable to connect to '~s'. Is this node "
-								   "really running?", [ TargetNodeName ] ),
+			trace_utils:error_fmt( "Unable to connect to '~s'.~nIf the target "
+				"node is really running and is named exactly like that, check "
+				"that the cookies match and, finally, that no firewall is in "
+				"the way (ex: a server may filter the EPMD port of interest).",
+				[ TargetNodeName ] ),
 
 			throw( { unable_to_connect_to, TargetNodeName } )
 

@@ -24,10 +24,16 @@ fi
 
 archive_dir="/tmp"
 
-# As listed in alphabetical order, selecting the last line shall yield the
-# highest (hence more recent) version:
+
+# Selecting the last line shall yield the highest (hence more recent) version.
 #
-rel_archive=$(/bin/ls -1 ${archive_dir}/us_web-*.tar.gz | tail -1 2>/dev/null)
+# Used to rely on alphabetical order, yet did not manage properly x.10 being
+# more recent than x.9:
+#
+#rel_archive=$(/bin/ls -1 ${archive_dir}/us_web-*.tar.gz | tail -1 2>/dev/null)
+
+# Now relying on timestamps (newest first):
+rel_archive=$(/bin/ls -t ${archive_dir}/us_web-*.tar.gz | head -n 1 2>/dev/null)
 
 if [ -z "${rel_archive}" ]; then
 

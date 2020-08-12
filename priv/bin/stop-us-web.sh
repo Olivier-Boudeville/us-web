@@ -33,25 +33,38 @@ fi
 
 #echo "Stopping US-Web as following user: $(id)"
 
+# We need first to locate the us-web-common.sh script:
 
-# Will source in turn us-common.sh:
-us_web_common_script_name="us-web-common.sh"
-us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
+us_web_rel_root=$(/bin/ls -d -t /opt/universal-server/us_web-* 2>/dev/null | head -n 1)
 
-if [ ! -f "${us_web_common_script}" ]; then
+if [ ! -d "${us_web_rel_root}" ]; then
 
-	echo "Error, unable to find ${us_web_common_script_name} script (not found in '${us_web_common_script}')." 1>&2
-	exit 35
+	echo "  Error, unable to locate the root of the target US-Web release (tried, from '$(pwd)', '${us_web_rel_root}')." 1>&2
+
+	exit 30
 
 fi
 
+# Location expected also by us-common.sh afterwards:
+cd "${us_web_rel_root}"
+
+# Will source in turn us-common.sh:
+us_web_common_script_name="us-web-common.sh"
+us_web_common_script="lib/us_web-latest/priv/bin/${us_web_common_script_name}"
+
+if [ ! -f "${us_web_common_script}" ]; then
+
+	echo "  Error, unable to find ${us_web_common_script_name} script (not found as '${us_web_common_script}', while being in '$(pwd)')." 1>&2
+	exit 35
+
+fi
 
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
 
 read_us_config_file $1 #1>/dev/null
 
-read_us_web_config_file
+read_us_web_config_file #1>/dev/null
 
 secure_authbind
 
@@ -63,9 +76,9 @@ echo " -- Stopping us_web application as user '${us_web_username}' (EPMD port: $
 # We must stop the VM with the right (Erlang) cookie, i.e. the actual runtime
 # one, not the dummy, original one:
 #
-#update_us_web_config_cookie
-#
 # Commented-out, as we can actually specify it directly on the command-line:
+#update_us_web_config_cookie
+
 
 if [ -n "${vm_cookie}" ]; then
 	echo "Using cookie '${vm_cookie}'."
@@ -84,7 +97,7 @@ res=$?
 # Otherwise at next start, the runtime cookie will be seen with any /bin/ps
 # (since being in the release-related launch command-line):
 #
-restore_us_web_config_cookie
+#restore_us_web_config_cookie
 
 
 # Not so reliable unfortunately:
@@ -113,8 +126,8 @@ else
 
 fi
 
-# Restore original file:
-/bin/mv -f "${backup_vm_args_file}" "${vm_args_file}"
+# Restore original cookie file:
+#/bin/mv -f "${backup_vm_args_file}" "${vm_args_file}"
 #/bin/cp -f "${backup_vm_args_file}" "${vm_args_file}"
 
 

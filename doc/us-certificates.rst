@@ -62,7 +62,7 @@ The support for X.509 certificates (use, and possibly generation and renewal) is
 
 .. comment letsencrypt-erlang must be able to write on the webserver, at the root of the website.
 
-When a proper certificate is available, the US webserver shall automatically promote any HTTP request into a HTTPS one, see the `us_web_port_forwarder <https://github.com/Olivier-Boudeville/us-web/blob/master/src/ us_web_port_forwarder.erl`_ module for that (based on relevant routing rules).
+When a proper certificate is available, the US webserver shall automatically promote any HTTP request into a HTTPS one, see the `us_web_port_forwarder <https://github.com/Olivier-Boudeville/us-web/blob/master/src/us_web_port_forwarder.erl>`_ module for that (based on relevant routing rules).
 
 
 .. Possible causes of errors: - firewall filtering

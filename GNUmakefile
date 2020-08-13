@@ -156,7 +156,7 @@ release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #
 # (yes, 'tar', not 'release')
 #
 release-prod: real-clean rebar3-create-app-file set-rebar-conf
-	@echo "  Generating OTP us_web release $(US_WEB_VERSION) in production mode, using $(shell rebar3 -v)"
+	@echo "  Generating OTP us_web release $(US_WEB_VERSION) from scratch in production mode, using $(shell rebar3 -v)"
 	@$(REBAR3_EXEC) as prod tar
 
 
@@ -167,11 +167,13 @@ rebar.config: conf/rebar.config.template
 
 # Just rebuilding us-web:
 #
-# (updating rebar config for example to take into account changes in release
-# version)
+# (not updating rebar config for example to take into account changes in release
+# version, as the new release archive contains paths with the former version...)
 #
-release-prod-light: set-rebar-conf #compile
-	@echo "  Generating OTP us_web release $(US_WEB_VERSION) in production mode (with lightest rebuild)"
+# Note: 'rebar3 compile' / 'compile' dependency target not needed here (as implied).
+#
+release-prod-light:
+	@echo "  Generating OTP us_web release $(US_WEB_VERSION) in production mode"
 	@$(REBAR3_EXEC) as prod tar
 
 
@@ -181,6 +183,7 @@ export-release: release-prod-light just-export-release
 just-export-release:
 	@echo "  Exporting production release $(RELEASE_NAME) to $(EXPORT_TARGET)"
 	@scp $(SP) $(RELEASE_PATH) $(RELEASE_DEPLOY_SCRIPT) $(EXPORT_TARGET)
+	-@$(NOTIFIER_TOOL)
 
 
 # So that any change in US-Common repository can be used here:

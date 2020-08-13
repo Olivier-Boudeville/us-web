@@ -25,7 +25,7 @@ endif
 
 
 # The uniquely-defined version of this layer, for all uses, including rebar:
-US_WEB_VERSION := 0.0.10
+US_WEB_VERSION := 0.0.11
 
 
 # PROJECT_VERSION should be defined on a per-project basis:

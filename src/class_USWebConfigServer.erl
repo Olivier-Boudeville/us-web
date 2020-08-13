@@ -382,6 +382,10 @@ construct( State, SupervisorPid ) ->
 
 	?send_info( TraceState, "Creating a US-Web configuration server." ),
 
+	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s",
+		[ system_utils:get_interpreter_version(),
+		  code_utils:get_code_path_as_string() ] ),
+
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
 	%
@@ -415,6 +419,7 @@ construct( State, SupervisorPid ) ->
 
 
 	?send_info( CfgState, to_string( CfgState ) ),
+
 
 	% Done rather late on purpose, so that the existence of that file can be
 	% seen as a sign that the initialisation went well (used by start-us-web.sh)
@@ -502,7 +507,7 @@ getWebConfigSettings( State ) ->
 
 
 % Notifies this server that the webserver has been started (typically once the
-% listening socket(s) have been properly initialized.
+% listening socket(s) have been properly initialized).
 %
 -spec onStarted( wooper:state() ) -> oneway_return().
 onStarted( State ) ->
@@ -512,7 +517,8 @@ onStarted( State ) ->
 	CertState = case ?getAttr(cert_support) of
 
 		renew_certificates ->
-			start_certificate_generation_support( State );
+			%start_certificate_generation_support( State );
+			State;
 
 		_ ->
 			?debug( "No certificate generation enabled." ),
@@ -753,54 +759,6 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
 
 	end.
-
-
-
-% Starts the support for X.509 certificates.
--spec start_certificate_generation_support(  wooper:state() ) -> wooper:state().
-start_certificate_generation_support( State ) ->
-
-	?trace( "Starting certificate generation support." ),
-
-	% Starts once for all Let's Encrypt:
-
-	HttpQueryTimeoutMs = 30000,
-
-	CertMode = ?getAttr(cert_mode),
-
-	LEExecMode = case CertMode of
-
-		development ->
-			% For testing only, with fake certificates:
-			staging;
-
-		production ->
-			prod
-
-	end,
-
-	CertDirPath = ?getAttr(cert_directory),
-
-	% Slave, as we control the webserver for the challenge:
-	% (CertDirPath must be writable by this process)
-	%
-	LEOpts = [ LEExecMode, { mode, slave }, { cert_path, CertDirPath },
-			   { http_timeout, HttpQueryTimeoutMs } ],
-
-	LEServicePid = case letsencrypt:start( LEOpts ) of
-
-		{ ok, LEPid } ->
-			?trace_fmt( "Certicate generation support enabled, based on "
-				"Let's Encrypt (service PID: ~w); certificates will be "
-				"stored in the '~s' directory.", [ LEPid, CertDirPath ] );
-
-		{ error, Error } ->
-			throw( { letsencrypt_start_failed, Error, LEOpts } )
-
-	end,
-
-	setAttributes( State, [ { cert_service_pid, LEServicePid },
-							{ cert_directory, CertDirPath } ] ).
 
 
 
@@ -2247,6 +2205,7 @@ set_log_tool_settings( Unexpected, State ) ->
 								 wooper:state().
 manage_certificates( ConfigTable, State ) ->
 
+
 	CertSupport =
 			case table:lookup_entry( ?certificate_support_key, ConfigTable ) of
 
@@ -2274,7 +2233,8 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
-	{ MaybeCertMode, MaybeCertDir } = case CertSupport of
+
+	{ MaybeCertMode, MaybeCertDir, MaybeCertLEPid } = case CertSupport of
 
 		% Mode only relevant here:
 		renew_certificates ->
@@ -2303,16 +2263,53 @@ manage_certificates( ConfigTable, State ) ->
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
 
-			{ CertMode, CertDir };
+			?trace( "Starting certificate generation support." ),
+
+			% Starts once for all Let's Encrypt:
+
+			HttpQueryTimeoutMs = 30000,
+
+			LEExecMode = case CertMode of
+
+				development ->
+					% For testing only, with fake certificates:
+					staging;
+
+				production ->
+					prod
+
+			end,
+
+			% Slave, as we control the webserver for the challenge:
+			% (CertDirPath must be writable by this process)
+			%
+			LEOpts = [ LEExecMode, { mode, slave }, { cert_path, CertDir },
+					   { http_timeout, HttpQueryTimeoutMs } ],
+
+			LEServicePid = case letsencrypt:start( LEOpts ) of
+
+				{ ok, LEPid } ->
+					?trace_fmt( "Certicate generation support enabled, based "
+						"on Let's Encrypt (service PID: ~w); certificates "
+						"will be stored in the '~s' directory.",
+						[ LEPid, CertDir ] );
+
+				{ error, Error } ->
+					throw( { letsencrypt_start_failed, Error, LEOpts } )
+
+			 end,
+
+			{ CertMode, CertDir, LEServicePid };
 
 		_ ->
-			{ undefined, undefined }
+			{ undefined, undefined, undefined }
 
 	end,
 
 	setAttributes( State, [ { cert_support, CertSupport },
 							{ cert_mode, MaybeCertMode },
-							{ cert_directory, MaybeCertDir } ] ).
+							{ cert_directory, MaybeCertDir },
+							{ cert_service_pid, MaybeCertLEPid } ] ).
 
 
 

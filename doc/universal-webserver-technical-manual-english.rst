@@ -180,7 +180,7 @@ As explained in `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/b
 
 The main, overall US configuration file (``us.config``) is found based on a series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* US configuration directory.
 
-The other US-related configuration files (ex: any ``us-web.config``) are specified directly in the main one (``us.config``), through specific keys (ex: ``us_web_config_filename``); they may be either absolutely defined, or relatively to the US configuration directory.
+The other US-related configuration files (ex: any ``us-web.config``) are referenced directly from the main one (``us.config``), through specific keys (ex: ``us_web_config_filename``); they may be either absolutely defined, or relatively to the US configuration directory.
 
 Let's name ``US_CFG_ROOT`` the actual directory in which they all lie; it is typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
 
@@ -265,6 +265,18 @@ Instead the traces may then be supervised and browsed remotely (at any time, and
 For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a ``us-monitor.config`` file that is typically located in the ``~/.config/universal-server`` directory.
 
 
+Configuration Files
+===================
+
+A ``us.config`` file referencing a suitable US-Web configuration file will be needed; most of the behaviour of the US-Web server is determined by this last configuration file.
+
+As the US-related configuration files are heavily commented, proceeding based on examples in the simplest approach [#]_.
+
+.. [#] The second best approach being to have directly a look at the code reading them, see `class_USConfigServer.erl <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USConfigServer.erl>`_ for us.config and `class_USWebConfigServer.erl <https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl>`_ for its US-Web counterpart.
+
+Refer for that at this `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and at this `US-Web counterpart example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
+
+
 
 
 -------------------------------
@@ -342,8 +354,11 @@ As for our higher-level, **applicative traces**, they are stored in the the ``us
 
 In practice, this trace file is generally found:
 
-- in development mode, in ``priv/for-testing/log``, relatively to the base directory specified in ``us_app_base_dir``
-- in production mode, generally in ``/var/log/universal-server``
+- in development mode, if testing, in ``priv/for-testing/log``, relatively to the base directory specified in ``us_app_base_dir``
+- in production mode, generally in ``/var/log/universal-server`` of ``/opt/universal-server``
+
+This path is updated at runtime once the US-Web configuration file is read; so typically it is renamed from ``/opt/universal-server/us_web-x.y.z/traces_via_otp.traces`` to ``/var/log/universal-server/us_web.traces``.
+
 
 
 

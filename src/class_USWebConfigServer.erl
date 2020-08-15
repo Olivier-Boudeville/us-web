@@ -227,7 +227,8 @@
 
 
 % To silence attribute-only types:
--export_type([ log_analysis_settings/0, cert_support/0, cert_mode/0 ]).
+-export_type([ dispatch_rules/0, log_analysis_settings/0,
+			   cert_support/0, cert_mode/0 ]).
 
 
 % Shorthands:
@@ -248,7 +249,9 @@
 %-type server_pid() :: class_UniversalServer:server_pid().
 
 -type logger_pid() :: class_USWebLogger:logger_pid().
+
 -type cert_manager_pid() :: class_USCertificateManager:manager_pid().
+
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 
@@ -331,6 +334,10 @@
 
 	{ cert_directory, maybe( bin_directory_path() ),
 	  "the directory where the certificate information will be written" },
+
+	{ sni_info, maybe( sni_info() ),
+	  "information regarding Server Name Indication, so that virtual hosts "
+	  "can be supported with https" },
 
 	{ scheduler_registration_name, naming_utils:registration_name(),
 	  "the name under which the dedicated scheduler is registered" },
@@ -486,10 +493,10 @@ destruct( State ) ->
 %
 -spec getWebConfigSettings( wooper:state() ) ->
 	const_request_return( { dispatch_rules(), maybe( net_utils:tcp_port() ),
-							maybe( net_utils:tcp_port() ) } ).
+		maybe( net_utils:tcp_port() ), maybe( bin_directory_path() ) } ).
 getWebConfigSettings( State ) ->
 
-	% HTTPS Port only returned if https enabled:
+	% HTTPS port only returned if https enabled:
 	MaybeHTTPSTCPPort = case ?getAttr(cert_support) of
 
 		no_certificates ->
@@ -502,32 +509,7 @@ getWebConfigSettings( State ) ->
 	end,
 
 	wooper:const_return_result( { ?getAttr(dispatch_rules),
-		?getAttr(http_tcp_port), MaybeHTTPSTCPPort } ).
-
-
-
-% Notifies this server that the webserver has been started (typically once the
-% listening socket(s) have been properly initialized).
-%
--spec onStarted( wooper:state() ) -> oneway_return().
-onStarted( State ) ->
-
-	?trace( "Webserver started." ),
-
-	CertState = case ?getAttr(cert_support) of
-
-		renew_certificates ->
-			%start_certificate_generation_support( State );
-			State;
-
-		_ ->
-			?debug( "No certificate generation enabled." ),
-			State
-
-	end,
-
-	wooper:return_state( CertState ).
-
+		?getAttr(http_tcp_port), MaybeHTTPSTCPPort, ?getAttr(sni_info) } ).
 
 
 
@@ -773,8 +755,9 @@ handle_certificate_manager_for( VHostId, DomainId,
 
 	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
 
+	% Expected to trigger onCertificateReady/2 when obtained:
 	class_USCertificateManager:new_link( BinFQDN, CertMode,
-					BinCertDir, SchedulerPid, _IsSingleton=false );
+					BinCertDir, SchedulerPid, self(), _IsSingleton=false );
 
 handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
 								_CertMode, _BinCertDir, _SchedulerPid ) ->
@@ -2269,21 +2252,22 @@ manage_certificates( ConfigTable, State ) ->
 
 			HttpQueryTimeoutMs = 30000,
 
-			LEExecMode = case CertMode of
+			LEExecOpts = case CertMode of
 
 				development ->
 					% For testing only, with fake certificates:
-					staging;
+					[ staging ];
 
 				production ->
-					prod
+					% No 'prod' option supported:
+					[]
 
 			end,
 
 			% Slave, as we control the webserver for the challenge:
 			% (CertDirPath must be writable by this process)
 			%
-			LEOpts = [ LEExecMode, { mode, slave }, { cert_path, CertDir },
+			LEOpts = LEExecOpts ++ [ { mode, slave }, { cert_path, CertDir },
 					   { http_timeout, HttpQueryTimeoutMs } ],
 
 			LEServicePid = case letsencrypt:start( LEOpts ) of
@@ -2340,13 +2324,28 @@ manage_routes( ConfigTable, State ) ->
 
 	SchedulerPid = ?getAttr(us_web_scheduler_pid),
 
+	CertSupport = ?getAttr(cert_support),
+
+	CertDir = ?getAttr(cert_directory),
+
 	% Only routes expected to remain (so we check that no extraneous entry
 	% remains):
 	%
 	{ DomainTable, DispatchRoutes, ProcessState } = process_domain_info(
 		UserRoutes, BinLogDir, ?getAttr(default_web_root),
-		?getAttr(log_analysis_settings), ?getAttr(cert_support),
-		?getAttr(cert_mode), ?getAttr(cert_directory), SchedulerPid, State ),
+		?getAttr(log_analysis_settings), CertSupport,
+		?getAttr(cert_mode), CertDir, SchedulerPid, State ),
+
+	% TLS configuration for any https support:
+	MaybeSNIInfo = case CertSupport of
+
+		no_certificates ->
+			undefined;
+
+		_ ->
+			class_USCertificateManager:get_sni_info( UserRoutes, CertDir )
+
+	end,
 
 	% Now that all loggers are created, we gather their PID so that they are
 	% managed by a task ring, in order to synchronise them properly:
@@ -2366,7 +2365,8 @@ manage_routes( ConfigTable, State ) ->
 
 	setAttributes( ProcessState, [ { domain_config_table, DomainTable },
 								   { dispatch_rules, DispatchRules },
-								   { logger_task_ring, TaskRingPid } ] ).
+								   { logger_task_ring, TaskRingPid },
+								   { sni_info, MaybeSNIInfo } ] ).
 
 
 

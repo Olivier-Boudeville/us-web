@@ -37,10 +37,10 @@
 
 -spec init( cowboy_req:req(), handler_state() ) ->
 				  us_web_handler:handler_return().
-init( Req, HandlerState ) ->
+init( Req, _HandlerState ) ->
 
-	trace_utils:debug_fmt( "Request ~p to be handled for letsencrypt, while "
-		"handler state is ~p...", [ Req, HandlerState ] ),
+	%trace_utils:debug_fmt( "Request ~p to be handled for letsencrypt, while "
+	%	"handler state is ~p...", [ Req, HandlerState ] ),
 
 	BinHost = cowboy_req:host( Req ),
 
@@ -60,19 +60,20 @@ init( Req, HandlerState ) ->
 	% Returns 'error' if token+thumbprint are not available:
 	Thumbprints = letsencrypt:get_challenge(),
 
-	{ ok, Reply } = case maps:get( Token, Thumbprints, _Default=undefined ) of
+	Reply = case maps:get( Token, Thumbprints, _Default=undefined ) of
 
-		Thumbprints ->
-			trace_utils:debug_fmt( "For host '~s', token '~p' found in "
-				"thumbprints '~p'.", [ BinHost, Token, Token ] ),
+		undefined ->
+			trace_utils:error_fmt( "For host '~s', token '~p' not found among "
+				"thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
+			cowboy_req:reply( 404, Req );
+
+		TokenThumbprint ->
+			%trace_utils:debug_fmt( "For host '~s', token '~p' found associated "
+			%	"to '~p', among thumbprints '~p'.",
+			%	[ BinHost, Token, TokenThumbprint, Thumbprints ] ),
 			cowboy_req:reply( 200,
-				[ #{ <<"content-type">> => <<"text/plain">> } ],
-				Thumbprints, Req );
-
-		_Other ->
-			trace_utils:error_fmt( "For host '~s', token '~p' not found in "
-				"thumbprints '~p'.", [ BinHost, Token, Token ] ),
-			cowboy_req:reply( 404, Req )
+				#{ <<"content-type">> => <<"text/plain">> },
+				TokenThumbprint, Req )
 
 	end,
 
@@ -81,11 +82,11 @@ init( Req, HandlerState ) ->
 
 
 handle( Req, HandlerState ) ->
-	trace_utils:trace_fmt( "Handle called for request ~p.", [ Req ] ),
+	%trace_utils:trace_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
 
 
-terminate( Reason, Req, _HandlerState ) ->
-	trace_utils:trace_fmt( "Terminate called for request ~p; reason: ~p.",
-						   [ Req, Reason ] ),
+terminate( _Reason, _Req, _HandlerState ) ->
+	%trace_utils:trace_fmt( "Terminate called for request ~p; reason: ~p.",
+	%					   [ Req, Reason ] ),
 	ok.

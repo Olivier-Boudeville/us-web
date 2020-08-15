@@ -63,7 +63,21 @@
 
 -type manager_pid() :: class_UniversalServer:server_pid().
 
--export_type([ manager_pid/0 ]).
+
+% Per-virtual-host SNI (SSL-related) option:
+-type sni_option() :: ssl:server_option() | ssl:common_option().
+
+% Virtual-host pair storing SNI-related certificate information:
+-type sni_host_info() :: { net_utils:string_host_name(), [ sni_option() ] }.
+
+
+% Information regarding Server Name Indication: certificate path for the default
+% hostname, and per-virtual host information.
+%
+-type sni_info() :: { BinCertDefaultHostname :: bin_file_path(),
+					  [ sni_host_info() ] }.
+
+-export_type([ manager_pid/0, sni_option/0, sni_host_info/0, sni_info/0 ]).
 
 
 
@@ -74,11 +88,12 @@
 -type bin_fqdn() :: net_utils:bin_fqdn().
 
 -type bin_directory_path() :: file_utils:bin_directory_path().
-%-type bin_file_name() :: file_utils:bin_file_name().
+-type bin_file_path() :: file_utils:bin_file_path().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
+%-type task_id() :: class_USScheduler:task_id().
 
-
+-type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
 -type cert_mode() :: class_USWebConfigServer:cert_mode().
 
 
@@ -97,7 +112,11 @@
 	  "the base delay between two successful certificate renewals (if any)" },
 
 	{ scheduler_pid, maybe( scheduler_pid() ),
-	  "the PID of any scheduler used by this manager" } ] ).
+	  "the PID of any scheduler used by this manager" },
+
+	{ task_id, maybe( task_id() ), "the identifier of the scheduler task "
+	  "(if any) to request the next certificate renewal" } ] ).
+
 
 
 % Used by the trace_categorize/1 macro to use the right emitter:
@@ -250,7 +269,8 @@ construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 		{ fqdn, BinFQDN },
 		{ cert_dir, BinCertDir },
 		{ cert_renewal_period, MaybeRenewPeriodSecs },
-		{ scheduler_pid, MaybeSchedulerPid } ] ),
+		{ scheduler_pid, MaybeSchedulerPid },
+		{ task_id, undefined } ] ),
 
 	?send_info( ReadyState, "Just created: " ++ to_string( ReadyState ) ),
 
@@ -317,8 +337,10 @@ destruct( State ) ->
 
 
 % Requests synchronously a certificate for the management hostname.
--spec requestCertificate( wooper:state() ) -> const_oneway_return().
+-spec requestCertificate( wooper:state() ) -> oneway_return().
 requestCertificate( State ) ->
+
+	% The task_id attribute may or may not be defined.
 
 	FQDN = ?getAttr(fqdn),
 
@@ -329,7 +351,7 @@ requestCertificate( State ) ->
 	% next certificate renewal (quickly if having just failed, normally if
 	% having succeeded):
 	%
-	MaybeDHMSRenewDelay =
+	MaybeRenewDelay =
 			case letsencrypt:make_cert( FQDN, #{ async => false } ) of
 
 		{ ok, #{ cert := BinCertPath, key := BinCertKey } } ->
@@ -350,53 +372,149 @@ requestCertificate( State ) ->
 			case ?getAttr(cert_mode) of
 
 				development ->
-					?dhms_cert_renewal_delay_after_failure_development;
+					time_utils:dhms_to_seconds(
+					  ?dhms_cert_renewal_delay_after_failure_development );
 
 				production ->
-					?dhms_cert_renewal_delay_after_failure_production
+					time_utils:dhms_to_seconds(
+					  ?dhms_cert_renewal_delay_after_failure_production )
 
 			end
 
 	end,
 
-	case ?getAttr(scheduler_pid) of
+	NewState = case ?getAttr(scheduler_pid) of
 
 		undefined ->
 			?info( "No certificate renewal will be attempted "
-				   "(no scheduler registered)." );
+				   "(no scheduler registered)." ),
+			State;
 
 		SchedPid ->
-			case MaybeDHMSRenewDelay of
+			case MaybeRenewDelay of
 
 				undefined ->
 					?info( "No certificate renewal will be attempted "
-						   "(no periodicity defined)." );
+						   "(no periodicity defined)." ),
+					State;
 
-				DHMSRenewDelay ->
+
+				RenewDelay ->
+
+					% A bit of interleaving:
+					SchedPid ! { registerOneshotTask, [ _Cmd=requestCertificate,
+									_Delay=RenewDelay, _ActPid=self() ], self() },
 
 					NextTimestamp = time_utils:offset_timestamp(
-						time_utils:get_timestamp(), DHMSRenewDelay ),
+						time_utils:get_timestamp(), RenewDelay ),
 
 					?debug_fmt( "Next attempt of certificate renewal to "
 					  "take place in ~s, i.e. at ~s.",
-					  [ time_utils:dhms_to_string( DHMSRenewDelay ),
+					  [ time_utils:duration_to_string( RenewDelay ),
 						time_utils:timestamp_to_string( NextTimestamp ) ] ),
 
-					SchedPid ! { registerOneshotTask, [ _Cmd=requestCertificate,
-							_Delay=DHMSRenewDelay, _ActPid=self() ] }
+					receive
+
+						{ wooper_result, { task_registered, TaskId } } ->
+							setAttribute( State, task_id, TaskId );
+
+						% Quite unlikely, yet possible:
+						{ wooper_result, task_done } ->
+							State
+
+					end
 
 			end
 
 	end,
 
-	wooper:const_return().
+	wooper:return_state( NewState ).
+
 
 
 % Static section.
 
 
+% Returns SNI information suitable for https-enabled virtual hosts, i.e. the
+% path to the PEM certificate for the main, default host (ex: foobar.org),
+% together with SNI (Server Name Indication, see
+% https://erlang.org/doc/man/ssl.html#type-sni_hosts) host information for the
+% other (virtual) hosts (ex: baz.foobar.org, aa.buz.net), etc.
+%
+-spec get_sni_info( dispatch_routes(), bin_directory_path() ) ->
+		  static_return( sni_info() ).
+get_sni_info( _UserRoutes, _BinCertDir=undefined ) ->
+	throw( no_certificate_directory_for_sni );
+
+get_sni_info( _UserRoutes=[], _BinCertDir ) ->
+	throw( no_hostname_for_sni );
+
+get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
+			  BinCertDir ) ->
+
+	% For https with SNI, a default host is defined, distinct from the SNI ones;
+	% by convention it is the first one found in the user-defined dispatch
+	% routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
+	% not something.foobar.org): (plain string required, apparently)
+	%
+	DefaultCertFilename = FirstHostname ++ ".pem",
+
+	DefaultHostnameCertPath =
+		file_utils:join( BinCertDir, DefaultCertFilename ),
+
+	% Options to apply for the host that matches what the client requested with
+	% Server Name Indication:
+	%
+	SNIHostInfos = list_utils:flatten_once(
+				  [ get_virtual_host_sni_infos( H, VH, BinCertDir )
+					|| { H, VH } <- UserRoutes ] ),
+
+	trace_utils:debug_fmt( "SNI information: certificate path for the default "
+		"hostname is '~s', virtual host options are:~n~p",
+		[ DefaultHostnameCertPath, SNIHostInfos ] ),
+
+	wooper:return_static( { DefaultHostnameCertPath, SNIHostInfos } ).
+
+
+
 
 % Helper section.
+
+
+% No domain-level wildcard certificate:
+get_virtual_host_sni_infos( _Hostname=default_domain_catch_all,
+					   _VirtualHostPairs, _BinCertDir ) ->
+	[];
+
+get_virtual_host_sni_infos( _Hostname="localhost", _VirtualHostPairs,
+							_BinCertDir ) ->
+	[];
+
+get_virtual_host_sni_infos( Hostname, VirtualHostPairs, BinCertDir ) ->
+	get_vh_sni_infos_for( Hostname, VirtualHostPairs, BinCertDir, _Acc=[] ).
+
+
+
+% (helper)
+get_vh_sni_infos_for( _Hostname, _VirtualHostPairs=[], _BinCertDir, Acc ) ->
+	% Preferring to respect the order from the user rules:
+	lists:reverse( Acc );
+
+% No host-level wildcard certificate:
+get_vh_sni_infos_for( Hostname, _VirtualHostPairs=[ { _VH=default_vhost_catch_all,
+					_ContentRoot } | T ], BinCertDir, Acc ) ->
+	get_vh_sni_infos_for( Hostname, T, BinCertDir, Acc );
+
+get_vh_sni_infos_for( Hostname,
+		_VirtualHostPairs=[ { VHostname, _ContentRoot } | T ], BinCertDir,
+		Acc ) ->
+
+	FQDN = VHostname ++ Hostname,
+	CertFilename = FQDN ++ ".pem",
+	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
+	VHPair = { FQDN, [ { certfile, CertFilePath } ] },
+	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] ).
+
 
 
 

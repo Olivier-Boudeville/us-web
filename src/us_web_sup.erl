@@ -52,9 +52,11 @@ init( _Args=[] ) ->
 	%
 	USWebCfgServerPid = class_USWebConfigServer:new_link( self() ),
 
+	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
 
-	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort } = receive
+	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort, MaybeSNIHostsInfo } =
+			receive
 
 		{ wooper_result, WebSettings } ->
 			WebSettings
@@ -63,8 +65,9 @@ init( _Args=[] ) ->
 
 	trace_utils:debug( "Starting Cowboy webserver..." ),
 
-
 	ProtoOpts = #{ env => #{ dispatch => DispatchRules } },
+
+	HttpProtoOpts = ProtoOpts,
 
 	case MaybeHttpTCPPort of
 
@@ -79,11 +82,13 @@ init( _Args=[] ) ->
 			% external dependency, and as such we rely on its using of its
 			% vanilla supervision tree, not linked to the US-Web one, so this is
 			% not a child of this supervisor:
-			%
-			case cowboy:start_clear( http, [ { port, HttpTCPPort } ],
-									 ProtoOpts ) of
 
-				{ ok, _HttpRanchListenerPid } ->
+			HttpTransportOpts = [ { port, HttpTCPPort } ],
+
+			case cowboy:start_clear( us_web_http_listener, HttpTransportOpts,
+									 HttpProtoOpts ) of
+
+				{ ok, _HttpRanchListenerSupPid } ->
 					ok;
 
 				{ error, HttpError } ->
@@ -94,44 +99,68 @@ init( _Args=[] ) ->
 						[ HttpTCPPort, HttpError, ProtoOpts ] ),
 
 					throw( { webserver_launch_failed, http_scheme,
-							 HttpTCPPort } )
+							 HttpTCPPort, HttpError } )
 
 			end
 
 	end,
 
+	%case undefined of
 	case MaybeHttpsTCPPort of
 
 		undefined ->
 			trace_utils:trace( "No HTTPS listening enabled." );
 
+	   % Using TLS here:
 		HttpsTCPPort ->
+
 			trace_utils:debug_fmt( "Listening for the HTTPS scheme "
 								   "at port #~B.", [ HttpsTCPPort ] ),
 
-			case cowboy:start_tls( https, [ { port, HttpsTCPPort } ],
+			{ PEMCertFilePath, SNIVhInfos } = MaybeSNIHostsInfo,
+
+			% Refer to https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/:
+			% (currently we do not include {key, CertKeyPath} entries short of
+			% knowing the interest of it)
+			%
+			HttpsTransportOpts = [
+
+				{ port, HttpsTCPPort },
+
+				% Path to the PEM certificate corresponding to the default host
+				% (ex: "foobar.org"), if the hostname is not received in the SSL
+				% handshake, e.g. if the browser does not support SNI: (ex:
+				% "foobar.org.crt")
+				%
+				{ certfile, PEMCertFilePath },
+
+				% Server Name Indication (virtual) hosts:
+				{ sni_hosts, SNIVhInfos } ],
+
+			trace_utils:debug_fmt( "https transport options: ~p~n"
+				"protocol options: ~p", [ HttpsTransportOpts, ProtoOpts ] ),
+
+			case cowboy:start_tls( us_web_https_listener, HttpsTransportOpts,
 								   ProtoOpts ) of
 
-				{ ok, _HttpsRanchListenerPid } ->
+				{ ok, _HttpsRanchListenerSupPid } ->
 					ok;
 
 				{ error, HttpsError } ->
 
 					trace_utils:error_fmt( "Unable to start a cowboy HTTPS"
 						"listener at TCP port #~B, error being: ~p.~n"
-						"(protocol options were ~p).",
-						[ HttpsTCPPort, HttpsError, ProtoOpts ] ),
+						"(transport options were ~p, while protocol "
+						"options were ~p).",
+						[ HttpsTCPPort, HttpsError, HttpsTransportOpts,
+						  ProtoOpts ] ),
 
 					throw( { webserver_launch_failed, https_scheme,
-							 HttpsTCPPort } )
+							 HttpsTCPPort, HttpsError } )
 
 			end
 
 	end,
-
-
-	% Useful for example to trigger the Let's Encrypt support:
-	USWebCfgServerPid ! onStarted,
 
 	% See
 	% https://ninenines.eu/docs/en/cowboy/2.8/guide/listeners/#_secure_tls_listener

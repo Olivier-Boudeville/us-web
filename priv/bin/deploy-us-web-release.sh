@@ -2,6 +2,82 @@
 
 usage="Usage: $(basename $0): deploys (installs and runs) locally a US-Web release."
 
+
+# Disabled since my https://github.com/erlware/relx/pull/809 pull request has
+# been integrated:
+#
+patch_for_cookie_env()
+{
+
+	cd "${rel_root}/bin"
+
+	patch_file="us_web-cookie-management.patch"
+
+   # Note: do not clean-up whitespaces in this script, otherwise this patch will
+   # become faulty.
+
+   cat << '__HERE_DOC__' > "${patch_file}"
+--- us_web.source       2020-08-11 21:51:04.724167964 +0200
++++ us_web.target       2020-08-11 21:56:14.507137897 +0200
+@@ -647,17 +647,19 @@
+ 
+ # Extract the target cookie
+ # Do this before relx_get_nodename so we can use it and not create a ~/.erlang.cookie
+-COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
+-DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
+-if [ -z "$COOKIE_ARG" ]; then
+-    if [ -f "$DEFAULT_COOKIE_FILE" ]; then
+-        COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
++if [ -z "$COOKIE" ]; then
++    COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
++    DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
++    if [ -z "$COOKIE_ARG" ]; then
++        if [ -f "$DEFAULT_COOKIE_FILE" ]; then
++            COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
++        else
++            echo "No cookie is set or found. This limits the scripts functionality, installing, upgrading, rpc and getting a list of versions will not work."
++        fi
+     else
+-        echo "No cookie is set or found. This limits the scripts functionality, installing, upgrading, rpc and getting a list of versions will not work."
++        # Extract cookie name from COOKIE_ARG
++        COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
+     fi
+-else
+-    # Extract cookie name from COOKIE_ARG
+-    COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
+ fi
+ 
+ # User can specify an sname without @hostname
+__HERE_DOC__
+
+
+   if [ ! -f "${patch_file}" ]; then
+
+	   echo "  Error, patch file (${patch_file}) could not be created." 1>&2
+	   exit 80
+
+   fi
+
+   patch_tool=$(which patch 2>/dev/null)
+
+   if [ ! -x "${patch_tool}" ]; then
+
+	   echo "  Error, not patch tool available." 1>&2
+	   exit 85
+
+   fi
+
+   if ! ${patch_tool} -u -b us_web -i "${patch_file}"; then
+
+	   echo " Error, the patching of us_web with ${patch_file} failed." 1>&2
+	   exit 90
+
+   fi
+
+}
+
+
+
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 	echo "${usage}"
@@ -147,6 +223,7 @@ fi
 
 priv_dir="${rel_root}/lib/${rel_dir}/priv"
 
+# Actual cookie managed there:
 start_script="${priv_dir}/bin/start-us-web.sh"
 
 if [ ! -x "${start_script}" ]; then
@@ -184,75 +261,6 @@ fi
 read_us_config_file 1>/dev/null
 
 read_us_web_config_file 1>/dev/null
-
-
-cd "${rel_root}/bin"
-
-
-# As long as https://github.com/erlware/relx/pull/809 is not integrated:
-
-patch_file="us_web-cookie-management.patch"
-
-# Note: do not clean-up whitespaces in this script, otherwise the patch will
-# become faulty.
-
-cat << '__HERE_DOC__' > "${patch_file}"
---- us_web.source       2020-08-11 21:51:04.724167964 +0200
-+++ us_web.target       2020-08-11 21:56:14.507137897 +0200
-@@ -647,17 +647,19 @@
- 
- # Extract the target cookie
- # Do this before relx_get_nodename so we can use it and not create a ~/.erlang.cookie
--COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
--DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
--if [ -z "$COOKIE_ARG" ]; then
--    if [ -f "$DEFAULT_COOKIE_FILE" ]; then
--        COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
-+if [ -z "$COOKIE" ]; then
-+    COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
-+    DEFAULT_COOKIE_FILE="$HOME/.erlang.cookie"
-+    if [ -z "$COOKIE_ARG" ]; then
-+        if [ -f "$DEFAULT_COOKIE_FILE" ]; then
-+            COOKIE="$(cat "$DEFAULT_COOKIE_FILE")"
-+        else
-+            echo "No cookie is set or found. This limits the scripts functionality, installing, upgrading, rpc and getting a list of versions will not work."
-+        fi
-     else
--        echo "No cookie is set or found. This limits the scripts functionality, installing, upgrading, rpc and getting a list of versions will not work."
-+        # Extract cookie name from COOKIE_ARG
-+        COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
-     fi
--else
--    # Extract cookie name from COOKIE_ARG
--    COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
- fi
- 
- # User can specify an sname without @hostname
-__HERE_DOC__
-
-
-if [ ! -f "${patch_file}" ]; then
-
-	echo "  Error, patch file (${patch_file}) could not be created." 1>&2
-	exit 80
-
-fi
-
-patch_tool=$(which patch 2>/dev/null)
-
-if [ ! -x "${patch_tool}" ]; then
-
-	echo "  Error, not patch tool available." 1>&2
-	exit 85
-
-fi
-
-if ! ${patch_tool} -u -b us_web -i "${patch_file}"; then
-
-	echo " Error, the patching of us_web with ${patch_file} failed." 1>&2
-	exit 90
-
-fi
 
 
 echo " Changing, from '${rel_root}', the owner of release files to '${us_web_username}' and their group to '${us_groupname}'."

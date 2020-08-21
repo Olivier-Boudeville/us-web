@@ -88,7 +88,7 @@ echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: $
 #
 if [ -n "${vm_cookie}" ]; then
 	echo "Using cookie '${vm_cookie}'."
-	cookie_env="COOKIE=${vm_cookie}"
+	cookie_env="RELX_COOKIE=${vm_cookie}"
 else
 	cookie_env=""
 fi

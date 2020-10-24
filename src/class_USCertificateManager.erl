@@ -40,7 +40,8 @@
 % - requesting and obtaining such certificates, typically for such a FQDN
 % - renewing them on time
 %
-% Certificates are obtained thanks to Let's Encrypt.
+% Certificates are obtained thanks to Let's Encrypt (our fork thereof, namely
+% https://github.com/Olivier-Boudeville/letsencrypt-erlang).
 %
 % Each instance of this class is dedicated to the certificates for a given FQDN.
 % This allows multiplexing requests possibly for several FQDNs in parallel,
@@ -134,13 +135,13 @@
 % requested by a given manager instance for the FQDN it takes care of.
 %
 % Let’s Encrypt certificate lifetime is 90 days (cf. duration in
-% https://letsencrypt.org/docs/faq/), we trigger a renewal with some margin:
+% https://letsencrypt.org/docs/faq/); we trigger a renewal with some margin:
 
 % Every 4 minutes (for development):
 -define( dhms_cert_renewal_period_development, { 0, 0, 4, 0 } ).
 
 % Every 75 days (minimum being 60 days, as lasting for 90 days and only renewed
-% the last 30 days), for production:
+% in the last 30 days), for production:
 %
 -define( dhms_cert_renewal_period_production, { 75, 0, 0, 0 } ).
 
@@ -185,15 +186,17 @@ construct( State, BinFQDN, BinCertDir, MaybeSchedulerPid ) ->
 
 
 % Constructs a US certificate manager for the specified FQDN (host in specified
-% domain), in specified mode, using specified directory to write certificate
-% information, and any specified scheduler.
+% domain), in specified certificate management mode, using specified directory
+% to write certificate information, and any specified scheduler.
+%
+% (most complete constructor)
 %
 -spec construct( wooper:state(), bin_fqdn(), cert_mode(), bin_directory_path(),
 				 maybe( scheduler_pid() ), boolean() ) -> wooper:state().
 construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 		   _IsSingleton=true ) ->
 
-	% Relies first on the next, main constructor:
+	% Relies first on the next, main constructor clause:
 	InitState = construct( State, BinFQDN, CertMode, BinCertDir,
 						   MaybeSchedulerPid, _Sing=false ),
 
@@ -211,8 +214,8 @@ construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 		   _IsSingleton=false ) ->
 
 	% Rather than relying on a periodic scheduling, each renewal will just plan
-	% the next one, to better account for any failed attemps / delay introduced:
-	% (and certificates shall be created directly when starting up:
+	% the next one, to better account for any failed attempts / delay introduced
+	% (and certificates shall be created directly when starting up):
 	%
 	self() ! requestCertificate,
 
@@ -225,7 +228,7 @@ construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 		_ ->
 			{ BaseRenewPeriodDHMS, JitterMaxDHMS } = case CertMode of
 
-				% Fake certificates in staging:
+				% Fake, frequent certificates in staging:
 				development ->
 					{ ?dhms_cert_renewal_period_development,
 					  ?max_dhms_cert_renewal_jitter_development };
@@ -261,7 +264,8 @@ construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 			ok;
 
 		false ->
-			throw( { non_existing_certificate_directory, BinCertDir } )
+			throw( { non_existing_certificate_directory, 
+					 text_utils:binary_to_string( BinCertDir ) } )
 
 	end,
 

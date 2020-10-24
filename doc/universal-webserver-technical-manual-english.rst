@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Thursday, August 13, 2020
+:Lastly updated: Sunday, October 11, 2020
 :Status: Work in progress
-:Version: 0.0.8
+:Version: 0.0.9
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -811,8 +811,8 @@ Indeed, in terms of RSS use (for a few domains, each with a few low-traffic webs
  - at start-up: only about 67MB
  - after 5 days: just 68 MB
  - after 24 days: 76 MB
- - after 55 days: 88 MB
-
+ - after 55 days: 80-88 MB
+80496
 
 
 Trace Monitoring

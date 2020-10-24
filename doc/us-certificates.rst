@@ -6,7 +6,7 @@ Managing Public-Key Certificates
 The goal here is to benefit from suitable certificates, notably for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. `Server Name Indication <Server Name Indication>`_ [#]_), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.
 
 
-.. [#] As a consequence, the specific visited virtual hostname is *not* encrypted, and thus might be known of an eavesdropper.
+.. [#] As a consequence, the specific visited virtual hostname (ex: ``baz``, in  ``baz.foobar.org``) is *not* encrypted, and thus might be known of an eavesdropper.
 
 
 
@@ -24,15 +24,15 @@ Such certificates can be used for any protocol or standard, and `many <https://e
 Let's Encrypt
 =============
 
-US-Web relies on `Let's Encrypt <https://letsencrypt.org>`_, a non-profit certificate authority from which one can obtain mono-domain X.509 certificates [#]_ for free, valid for 90 days and that can be renewed as often as needed.
+US-Web relies on `Let's Encrypt <https://letsencrypt.org>`_, a non-profit certificate authority from which one can obtain mono-domain X.509 certificates [#]_ for free, valid for 90 days and that can be renewed as long as needed.
 
-.. [#] ``Let's Encrypt`` provides *Domain Validation* (DV) certificates, but not more general *Organization Validation* (OV) or *Extended Validation* (EV).
+.. [#] ``Let's Encrypt`` provides *Domain Validation* (DV) certificates, but neither more general *Organization Validation* (OV) nor *Extended Validation* (EV).
 
 Let's Encrypt follows the ACME (*Automatic Certificate Management Environment*) protocol. It relies on an agent running on the server bound to the domain for which a certificate is requested.
 
-This agent generates first a RSA key pair in order to interact with the Let’s Encrypt certificate authority, so that it can prove through received challenge(s) that it is bound to the claimed domain / virtual host (ex: ``baz.foobar.org``) and has the control to the private key corresponding to the public one it transmitted to the CA.
+This agent generates first a RSA key pair in order to interact with the Let’s Encrypt certificate authority, so that it can prove through received challenge(s) that it is bound to the claimed domain / virtual host (ex: ``baz.foobar.org``) and has the control to the private key corresponding to the public one that it transmitted to the CA.
 
-Generally this involves for that agent to receive a "random" piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting file available through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: ``http://baz.foobar.org/.well-known/acme-challenge``). Refer to `this page <https://letsencrypt.org/how-it-works/>`_ for more information.
+Generally this involves for that agent to receive a "random" piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting file available through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: ``http://baz.foobar.org/.well-known/acme-challenge/xxx``). Refer to `this page <https://letsencrypt.org/how-it-works/>`_ for more information.
 
 
 
@@ -42,14 +42,13 @@ US-Web Mode of Operation
 
 Rather than using a standalone ACME agent such as the standard one, ``certbot``, we prefer driving everything from Erlang, for a better control and periodical renewal (see the scheduler provided by `US-Common <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USScheduler.erl>`_).
 
-Various libraries exist for that in Erlang, the most popular one being probably `letsencrypt-erlang <https://github.com/gbour/letsencrypt-erlang>`_ (we also `forked <https://github.com/Olivier-Boudeville/letsencrypt-erlang>`_ it).
+Various libraries exist for that in Erlang, the most popular one being probably `letsencrypt-erlang <https://github.com/gbour/letsencrypt-erlang>`_; we `forked <https://github.com/Olivier-Boudeville/letsencrypt-erlang>`_ it, in order to support newer Erlang versions and to allow for *concurrent* certificate renewals (knowing that one certificate per virtual host will be needed).
 
-
-Three `action modes <https://github.com/gbour/letsencrypt-erlang#action-modes>`_ can be considered to interact with the Let's Encrypt infrastructure and solve its challenges. As the US-Web server is itself a webserver, the ``slave`` mode is the most relevant here.
+Three `action modes <https://github.com/gbour/letsencrypt-erlang#action-modes>`_ can be considered to interact with the Let's Encrypt infrastructure and to solve its challenges. As the US-Web server is itself a webserver, the ``slave`` mode is the most relevant here.
 
 For that, the `us_web_letsencrypt_handler <https://github.com/Olivier-Boudeville/us-web/blob/master/src/us_web_letsencrypt_handler.erl>`_ has been introduced.
 
-By default, thanks to the US-Web scheduler, certificates (which last for up to 90 days and cannot be renewed before 60 days are elapsed) will be renewed every 75 days (with some random jitter added to avoid synchronising too many certificate requests when having multiple virtual hosts, as they are done concurrently).
+By default, thanks to the US-Web scheduler, certificates (which last for up to 90 days and cannot be renewed before 60 days are elapsed) will be renewed every 75 days, with some random jitter added to avoid synchronising too many certificate requests when having multiple virtual hosts, as they are done concurrently.
 
 
 
@@ -58,28 +57,30 @@ Settings
 
 Various `types of files <https://crypto.stackexchange.com/questions/43697/what-is-the-difference-between-pem-csr-key-and-crt-and-other-such-file-ext>`_ are involved in the process:
 
-- a ``.key`` file contains any type of key, here this is a RSA private key; typically ``letsencrypt.key`` will contain the one generated by the agent on behalf of the US-Server (so that it can sign the nonce provided by Let's Encrypt, and thus prove that it controls the key pair), while, for a ``baz.foobar.org`` virtual host, ``baz.foobar.org.key`` will be used
+- a ``.key`` file contains any type of key, here this is a RSA private key; typically ``letsencrypt-agent.key-I``, where ``I`` is an increasing integer, will contain the PEM RSA private key generated by the certificate agent ``I`` on behalf of the US-Server (so that it can sign the nonces provided by Let's Encrypt, and thus prove that it controls the corresponding key pair), while, for a ``baz.foobar.org`` virtual host, ``baz.foobar.org.key`` will be generated and used (another PEM RSA private key)
 - a ``.pem`` (*Privacy-enhanced Electronic Mail*) file just designates a Base64-encoded content with header and footer lines; here it stores an ASN.1 (precisely a Base64-encoded DER) certificate
-- ``.csr`` corresponds to a PKCS#10 *Certificate Signing Request*; it contains information (encoded as PEM or DER) such as the public key and common name required by a Certificate Authority to create and sign a certificate for the requester (ex: ``baz.foobar.org.csr``)
+- ``.csr`` corresponds to a PKCS#10 *Certificate Signing Request*; it contains information (encoded as PEM or DER) such as the public key and common name required by a Certificate Authority to create and sign a certificate for the requester (ex: ``baz.foobar.org.csr`` will be a PEM certificate request)
 - ``.crt`` is the actual certificate (encoded as PEM or DER as well), usually a X509v3 one (ex: ``baz.foobar.org.crt``); it contains the public key and also much more information (most importantly the signature by the Certificate Authority over the data and public key, of course)
 
 
 We must determine:
 
 - the size of the RSA key of the agent; the higher the better, hence: 4096
-- where the certificate-related files will be stored: in the ``certificates`` subdirectory of the US-Web data directory, i.e. the one designated by the ``us_web_data_dir`` key in US-Web's configuration file (hence it is generally the ``/var/local/us-web/us-web-data`` or ``/opt/universal-server/us_web-x.y.z/us-web-data`` directories)
+- where the certificate-related files will be stored: in the ``certificates`` subdirectory of the US-Web data directory, i.e. the one designated by the ``us_web_data_dir`` key in US-Web's configuration file (hence it is generally the ``/var/local/us-web/us-web-data`` or ``/opt/universal-server/us_web-x.y.z/us-web-data`` directory)
 
 
 The precise support for X.509 certificates (use, and possibly generation and renewal) is determined by the ``certificate_support`` key of the US-Web configuration file:
 
-- if not specified or set to ``no_certificates``, then no certificate will be used, and thus no https will be available
+- if not specified or set to ``no_certificates``, then no certificate will be used, and thus no https support will be available
 - if set to ``use_existing_certificates``, then relevant certificates are supposed to pre-exist, and will be used as are (with no automatic renewal thereof done by US-Web)
 - if set to ``renew_certificates``, then relevant certificates will be generated at start-up (none re-used), used since then, and will be automatically renewed whenever appropriate
 
 .. comment letsencrypt-erlang must be able to write on the webserver, at the root of the website.
 
 
-When a proper certificate is available, the US webserver promotes automatically any HTTP request into a HTTPS one, see the `us_web_port_forwarder <https://github.com/Olivier-Boudeville/us-web/blob/master/src/us_web_port_forwarder.erl>`_ module for that (based on relevant routing rules).
+When a proper certificate is available and enabled, the US webserver promotes automatically any HTTP request into a HTTPS one, see the `us_web_port_forwarder <https://github.com/Olivier-Boudeville/us-web/blob/master/src/us_web_port_forwarder.erl>`_ module for that (based on relevant routing rules).
 
 
 Standard, basic firewall settings are sufficient to enable interactions with Let's Encrypt, as it is the US-Web agent that initiates the TCP connection to Let's Encrypt, which is to check the challenge(s) through regular http accesses done to the webserver expected to be available at the domain of interest.
+
+The US-Web server must be able to write in the web content tree, precisely to write files in the ``well-known/acme-challenge/`` subdirectory of the web root.

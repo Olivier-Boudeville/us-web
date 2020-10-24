@@ -212,13 +212,12 @@
 % MaybeAnalysisHelperRoot}.
 %
 -type log_analysis_settings() :: { log_analysis_tool_name(),
-								   maybe( file_utils:bin_directory_path() ),
-								   maybe( file_utils:bin_directory_path() ) }.
+			   maybe( bin_directory_path() ), maybe( bin_directory_path() ) }.
 
 
 % Tells whether certificates shall be used, and how:
 -type cert_support() :: 'no_certificates' % Hence no https
-					  | 'use_existing_certificates' % Hence use but no renewal
+					  | 'use_existing_certificates' % Hence use, but no renewal
 					  | 'renew_certificates'. % Hence use, generate and renew
 
 
@@ -243,15 +242,15 @@
 
 
 %-type bin_subdomain() :: net_utils:bin_subdomain().
-
 -type bin_host_name() :: net_utils:bin_host_name().
+-type tcp_port() :: net_utils:tcp_port().
+
 
 %-type server_pid() :: class_UniversalServer:server_pid().
 
 -type logger_pid() :: class_USWebLogger:logger_pid().
 
 -type cert_manager_pid() :: class_USCertificateManager:manager_pid().
-
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 
@@ -273,11 +272,11 @@
 	  "the domain, virtual host identifiers and web root of the auto-generated "
 	  "meta website (if any)" },
 
-	{ http_tcp_port, maybe( net_utils:tcp_port() ),
+	{ http_tcp_port, maybe( tcp_port() ),
 	  "the TCP port (if any) at which the webserver is to listen for the http "
 	  "scheme" },
 
-	{ https_tcp_port, maybe( net_utils:tcp_port() ),
+	{ https_tcp_port, maybe( tcp_port() ),
 	  "the TCP port (if any) at which the webserver is to listen for the https "
 	  "scheme" },
 
@@ -492,8 +491,8 @@ destruct( State ) ->
 % supervisor).
 %
 -spec getWebConfigSettings( wooper:state() ) ->
-	const_request_return( { dispatch_rules(), maybe( net_utils:tcp_port() ),
-		maybe( net_utils:tcp_port() ), maybe( bin_directory_path() ) } ).
+	const_request_return( { dispatch_rules(), maybe( tcp_port() ),
+		maybe( tcp_port() ), maybe( bin_directory_path() ) } ).
 getWebConfigSettings( State ) ->
 
 	% HTTPS port only returned if https enabled:
@@ -568,8 +567,8 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 		{ value, UserRegName } when is_atom( UserRegName ) ->
 			?info_fmt( "To locate the overall US configuration server, will "
-					   "rely on the user-configured registration name '~s'.",
-					   [ UserRegName ] ),
+				"rely on the user-configured registration name '~s'.",
+				[ UserRegName ] ),
 			UserRegName;
 
 		{ value, InvalidRegName } ->
@@ -745,9 +744,8 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 % Creates if relevant a certificate manager for specified virtual host.
--spec handle_certificate_manager_for( vhost_id(), domain_id(),
-		cert_support(), cert_mode(), bin_directory_path(), scheduler_pid() ) ->
-											cert_manager_pid().
+-spec handle_certificate_manager_for( vhost_id(), domain_id(), cert_support(),
+	cert_mode(), bin_directory_path(), scheduler_pid() ) -> cert_manager_pid().
 % Nothing done for catch-alls:
 handle_certificate_manager_for( VHostId, DomainId,
 		_CertSupport=renew_certificates, CertMode, BinCertDir, SchedulerPid )
@@ -755,12 +753,16 @@ handle_certificate_manager_for( VHostId, DomainId,
 
 	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
 
-	% Expected to trigger onCertificateReady/2 when obtained:
+	% Initially, the certification generation was asynchronous (thus expected to
+	% trigger a onCertificateReady/2 method - counterpart of the on_complete/1
+	% function of Let's Encrypt, when obtained), but now that concurrent FSMs
+	% can be managed thanks to our LEEC fork), it can be fully synchronous:
+	%
 	class_USCertificateManager:new_link( BinFQDN, CertMode,
-					BinCertDir, SchedulerPid, self(), _IsSingleton=false );
+		BinCertDir, SchedulerPid, _IsSingleton=false );
 
-handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
-								_CertMode, _BinCertDir, _SchedulerPid ) ->
+handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport, _CertMode,
+								_BinCertDir, _SchedulerPid ) ->
 	undefined.
 
 
@@ -1617,7 +1619,7 @@ manage_registrations( ConfigTable, State ) ->
 	Scope = ?default_registration_scope,
 
 	WebCfgSrvRegName = case table:lookup_entry(
-				   ?us_web_config_server_registration_name_key, ConfigTable ) of
+			?us_web_config_server_registration_name_key, ConfigTable ) of
 
 		key_not_found ->
 			DefCfgRegName = ?default_us_web_config_server_registration_name,
@@ -1628,7 +1630,7 @@ manage_registrations( ConfigTable, State ) ->
 
 		{ value, CfgRegName } when is_atom( CfgRegName ) ->
 			?info_fmt( "Using user-configured registration name for the "
-					   "US-Web configuration server, '~s'.", [CfgRegName  ] ),
+					   "US-Web configuration server, '~s'.", [ CfgRegName ] ),
 			CfgRegName;
 
 		{ value, InvalidCfgRegName } ->
@@ -1705,15 +1707,15 @@ manage_os_user( ConfigTable, State ) ->
 
 				Username ->
 					?info_fmt( "Using user-configured US-Web operating-system "
-							   "username '~s' for this server, which matches "
-							   "the current runtime user.", [ Username ] ),
+						"username '~s' for this server, which matches "
+						"the current runtime user.", [ Username ] ),
 					Username;
 
 				OtherUsername ->
 					?error_fmt( "The user-configured US-Web operating-system "
-								"username '~s' for this server does not match "
-								"the current runtime user, '~s'.",
-								[ Username, OtherUsername ] ),
+						"username '~s' for this server does not match "
+						"the current runtime user, '~s'.",
+						[ Username, OtherUsername ] ),
 					throw( { inconsistent_os_us_web_user, OtherUsername,
 							 Username, ?us_web_username_key } )
 
@@ -2201,7 +2203,7 @@ manage_certificates( ConfigTable, State ) ->
 			no_certificates;
 
 		{ value, use_existing_certificates } ->
-			?info( "Certificate support enabled, based on existing ones "
+			?info( "Certificate support enabled, based only on existing ones "
 				   "(no renewal)." ),
 			use_existing_certificates;
 
@@ -2219,7 +2221,7 @@ manage_certificates( ConfigTable, State ) ->
 
 	{ MaybeCertMode, MaybeCertDir, MaybeCertLEPid } = case CertSupport of
 
-		% Mode only relevant here:
+		% Only mode relevant here:
 		renew_certificates ->
 
 			CertMode = case table:lookup_entry( ?certificate_mode_key,
@@ -2246,7 +2248,8 @@ manage_certificates( ConfigTable, State ) ->
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
 
-			?trace( "Starting certificate generation support." ),
+			?trace_fmt( "Starting certificate generation support; they "
+				"are to be generated in '~s'.", [ CertDir ] ),
 
 			% Starts once for all Let's Encrypt:
 
@@ -2255,20 +2258,20 @@ manage_certificates( ConfigTable, State ) ->
 			LEExecOpts = case CertMode of
 
 				development ->
-					% For testing only, with fake certificates:
+					% For testing only, then based on fake certificates:
 					[ staging ];
 
 				production ->
-					% No 'prod' option supported:
+					% No 'prod' option supported by Let's Encrypt:
 					[]
 
 			end,
 
-			% Slave, as we control the webserver for the challenge:
+			% Slave mode, as we control the webserver for the challenge:
 			% (CertDirPath must be writable by this process)
 			%
 			LEOpts = LEExecOpts ++ [ { mode, slave }, { cert_path, CertDir },
-					   { http_timeout, HttpQueryTimeoutMs } ],
+									 { http_timeout, HttpQueryTimeoutMs } ],
 
 			LEServicePid = case letsencrypt:start( LEOpts ) of
 
@@ -2285,6 +2288,7 @@ manage_certificates( ConfigTable, State ) ->
 
 			{ CertMode, CertDir, LEServicePid };
 
+		% All modes not requiring to generate certificates:
 		_ ->
 			{ undefined, undefined, undefined }
 
@@ -2428,7 +2432,7 @@ manage_post_meta( State ) ->
 
 
 % Generates the meta website.
--spec generate_meta( meta_web_settings(), boolean(), net_utils:tcp_port(),
+-spec generate_meta( meta_web_settings(), boolean(), tcp_port(),
 					 domain_config_table(), wooper:state() ) -> wooper:state().
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 			   LogAnalysisEnabled, Port, DomainCfgTable, State ) ->
@@ -2549,8 +2553,8 @@ to_string( State ) ->
 	end,
 
 	text_utils:format( "US-Web configuration ~s, ~s, "
-		"running in the ~s execution context, ~s, "
-		"knowing: ~s, US overall configuration server ~w and "
+		"running in the ~s execution context, ~s, knowing: ~s, "
+		"US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "
 		"on the '~s' log directory.~n~nIn terms of routes, using ~s~n~n"
 		"Corresponding dispatch rules:~n~p",

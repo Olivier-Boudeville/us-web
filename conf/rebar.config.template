@@ -25,6 +25,7 @@
 
 	{letsencrypt,        {git, "git://github.com/Olivier-Boudeville/letsencrypt-erlang",
 						   {branch, "master"}}},
+
 	%{letsencrypt,        {git, "git://github.com/gbour/letsencrypt-erlang.git",
 	%					   {branch, "master"}}},
 

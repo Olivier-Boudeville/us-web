@@ -34,7 +34,7 @@
   %  - Traces, see http://traces.esperide.org/traces.html#otp
   %  - WOOPER, see http://wooper.esperide.org/wooper.html#otp
   %  - Myriad, see http://myriad.esperide.org/myriad.html#otp
-  %
+
 
   % myriad is a dependency of wooper, which is itself a dependency of traces,
   % dependency of us_common (dependency of this us_web); as such they may not be

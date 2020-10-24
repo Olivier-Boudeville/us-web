@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, October 11, 2020
+:Lastly updated: Saturday, October 24, 2020
 :Status: Work in progress
-:Version: 0.0.9
+:Version: 0.0.10
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -70,7 +70,7 @@ We present here a short overview of the services offered by the *Universal Webse
 
 The goal of **US-Web** is to provide an integrated, extensible web framework in order:
 
-- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, etc.
+- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, using/generating/renewing certificates, etc.
 - to link to the `Universal Server <https://github.com/Olivier-Boudeville/us-main>`_ optionally (i.e. if available, knowing both should be able to run in the absence of the other), in order to offer a web front-end for it
 
 Beyond this document, the next level of information about US-Web is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
@@ -91,19 +91,20 @@ It should clone, build and run a test server, that should be available at `http:
 Layer Stack
 -----------
 
-From the highest level to the lowest, as summarised `here <https://github.com/Olivier-Boudeville/us-web>`_, a software stack involving the Universal Webserver usually comprises:
+From the highest level to the lowest, as summarised `here <https://github.com/Olivier-Boudeville/us-web>`_, a (free software) stack involving the Universal Webserver usually comprises:
 
 - the *Universal Webserver* services themselves (i.e. this `US-Web <http://us-web.esperide.org/>`_ layer)
 - `Cowboy <https://github.com/ninenines/cowboy>`_ (for a small, fast and modern web framework)
+- [optional] `LEEC <https://github.com/Olivier-Boudeville/letsencrypt-erlang/>`_ (for the management of Let's Encrypt certificates)
 - [optional] `Awstats <http://www.awstats.org/>`_ (for the analysis of access log files)
 - `US-Common <http://us-common.esperide.org/>`_ (for US base facilities)
 - `Ceylan-Traces <http://traces.esperide.org>`_ (for advanced runtime traces)
 - `Ceylan-WOOPER <http://wooper.esperide.org>`_ (for OOP)
-- `Ceylan-Myriad <http://myriad.esperide.org>`_ (as an Erlang toolbox)
-- `Erlang <http://erlang.org>`_ (for the compiler and runtime)
-- `GNU/Linux <https://en.wikipedia.org/wiki/Linux>`_
+- `Ceylan-Myriad <http://myriad.esperide.org>`_ (as a general-purpose Erlang toolbox)
+- `Erlang/OTP <http://erlang.org>`_ (for the compiler and runtime)
+- `GNU/Linux <https://en.wikipedia.org/wiki/Linux>`_ (for a suitable, reliable operating system of course)
 
-The shorthand for ``Universal Webserver`` (a.k.a. ``US-Web``) is ``uw``.
+The shorthand for the ``Universal Webserver`` (a.k.a. ``US-Web``) is ``uw``.
 
 :raw-latex:`\pagebreak`
 
@@ -114,9 +115,9 @@ The shorthand for ``Universal Webserver`` (a.k.a. ``US-Web``) is ``uw``.
 Server Deployment
 -----------------
 
-For that the ``prod`` profile defined in the context of rebar3 shall be used.
+For that, the ``prod`` profile defined in the context of ``rebar3`` shall be used.
 
-Currently we prefer re-using the (supposedly already installed) local Erlang environment on the server (to be shared across multiple services), so by default ERTS is not included in a US-Web release.
+Currently we prefer re-using the (supposedly already installed) local Erlang environment on the server (to be shared across multiple services), so by default ERTS is *not* included in a US-Web release.
 
 Sources are not included either, as we prefer re-rolling a release to editing and compiling code directly on a server.
 
@@ -151,7 +152,7 @@ Then various steps are necessary in order to have a functional release running s
 
 We automated the full deployment process of US-Web on a server for that: once the release has been transferred to that server (possibly thanks to the aforementioned ``export-release`` target, possibly to the ``/tmp`` directory of that server), one may rely on our `deploy-us-web-release.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh>`_ script. One may also just take inspiration from it in order to devise one's deployment scheme.
 
-Let's say from now on that the UNIX name chosen for the US user is ``us-user``, the one of the US-web user is ``us-web-user`` and the US group (containing both users, and possibly only them) is ``us-group``.
+Let's say from now on that the UNIX name chosen for the US user is ``us-user``, the one of the US-web user is ``us-web-user`` and the US group (containing both users, and possibly only them) is ``us-group`` (one should keep in mind that ``US-Web`` is a specialization of the ``US`` framework).
 
 Using that script boils down to running, as root::
 
@@ -178,15 +179,13 @@ Configuring the Universal-Webserver
 
 As explained in `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh>`_ and in `class_USWebConfigServer.erl <https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl>`_, the US configuration files will be searched through various locations.
 
-The main, overall US configuration file (``us.config``) is found based on a series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* US configuration directory.
+The main, overall US configuration file, ``us.config``, is found based on a series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* (single) US configuration directory.
 
-The other US-related configuration files (ex: any ``us-web.config``) are referenced directly from the main one (``us.config``), through specific keys (ex: ``us_web_config_filename``); they may be either absolutely defined, or relatively to the US configuration directory.
+The other US-related configuration files (ex: any ``us-web.config``) are referenced directly from the main one (``us.config``), designated there through specific keys (ex: ``us_web_config_filename``); they may be either absolutely defined, or relatively to the aforementioned US configuration directory.
 
 Let's name ``US_CFG_ROOT`` the actual directory in which they all lie; it is typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
 
-Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected.
-
-Then we should have in terms of permissions, supposing the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_, ``640``::
+Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have ``640``, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_::
 
  -rw-r----- 1 us-user     us-group [...] us.config
  -rw-r----- 1 us-web-user us-group [...] foobar-us-web-for-production.config
@@ -198,13 +197,13 @@ Then we should have in terms of permissions, supposing the ``us.config`` designa
 In a Development Setting
 ========================
 
-The US main configuration file, ``us.config``, is in a directory (``US_CFG_ROOT``) that is ``~/.config/universal-server/`` here. This US-level configuration file will reference a US-Web counterpart configuration file, probably in the same directory.
+The US main configuration file, ``us.config``, is in a directory (``US_CFG_ROOT``) that is ``~/.config/universal-server/`` here. This US-level configuration file will reference (through its ``us_web_config_filename`` entry) a US-Web counterpart configuration file, probably in the same directory.
 
-The US-Web configuration file may define a ``us_web_app_base_dir`` entry. If not, this application directory will then be found thanks to the ``US_WEB_APP_BASE_DIR`` environment variable (if defined, typically through ``~/.bashrc``); otherwise, as a last resort, an attempt to guess it will be done.
+The US-Web configuration file may define a ``us_web_app_base_dir`` entry. If not, this application directory will then be found thanks to the ``US_WEB_APP_BASE_DIR`` environment variable (if defined, typically through one's ``~/.bashrc``); otherwise, as a last resort, an attempt to guess it will be done.
 
 The US webserver may be then run thanks to ``make debug``, from the relevant ``us_web`` directory (typically the root of a GIT clone located in the user's directory).
 
-In such a development context, in ``us_web/conf/sys.config``, we recommend to leave the batch mode disabled (just let the default ``{is_batch,false}``), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see `Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that).
+In such a development context, in ``us_web/conf/sys.config``, we recommend to leave the batch mode disabled (just let the default ``{is_batch,false}``), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that).
 
 
 
@@ -260,7 +259,7 @@ The log base directory (see the ``log_base_directory`` entry) shall be created a
 
 In such a production context, in ``sys.config`` (typically located in ``${US_WEB_REL_ROOT}/releases/latest-release``), we recommend to enable batch mode (just set ``{is_batch,true}``), so that by default no direct, graphical trace supervision is triggered (a server usually does not have a X server anyway).
 
-Instead the traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see `Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that), by running the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
+Instead the traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that), by running the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
 
 For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a ``us-monitor.config`` file that is typically located in the ``~/.config/universal-server`` directory.
 
@@ -274,7 +273,7 @@ As the US-related configuration files are heavily commented, proceeding based on
 
 .. [#] The second best approach being to have directly a look at the code reading them, see `class_USConfigServer.erl <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USConfigServer.erl>`_ for us.config and `class_USWebConfigServer.erl <https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl>`_ for its US-Web counterpart.
 
-Refer for that at this `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and at this `US-Web counterpart example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
+Refer for that at this (US) `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and at this `US-Web counterpart example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
 
 
 
@@ -283,7 +282,7 @@ Refer for that at this `us.config example <https://github.com/Olivier-Boudeville
 Running the Universal-Webserver
 -------------------------------
 
-Note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match.
+Note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using *exactly* the same version).
 
 Supposing a vhost to be served by US-Web is ``baz.foobar.org``, to avoid being confused by your browser, a better way is to test whether a US-Web instance is already running thanks to ``wget`` or ``links``::
 
@@ -360,8 +359,6 @@ In practice, this trace file is generally found:
 This path is updated at runtime once the US-Web configuration file is read; so typically it is renamed from ``/opt/universal-server/us_web-x.y.z/traces_via_otp.traces`` to ``/var/log/universal-server/us_web.traces``.
 
 
-
-
 Webserver Logs
 --------------
 
@@ -374,7 +371,7 @@ These files will be written in the directory designated by the ``us_web_log_dir`
 Remote Monitoring
 =================
 
-Here the state of a US-Web instance remotely, with no shell connection to its server.
+Here the state of a US-Web instance will be inspected remotely, with no shell connection to its server.
 
 First of all, is this US-Web instance available? Check with::
 
@@ -395,7 +392,7 @@ Extra Features
 Auto-generated Meta Website
 ===========================
 
-If requested, at server start-up, a "meta" website - i.e. a website sharing information about the other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
+If requested, at server start-up, a "meta" website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
 
 For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (ex: ``foobar.org``)::
 
@@ -404,14 +401,14 @@ For that, in the US-Web configuration file, among the user-specified ``routes``,
 
 This will generate a suitable website in the ``My-meta-generated`` subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as ``mymeta.foobar.org`` (of course both ``mymeta`` and ``My-meta-generated`` are examples; these names can be freely chosen).
 
-Currently no specific access control is enforced for this website (thus by default anyone knowing or able to guess its virtual hostname can access this website).
+Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).
 
 
 
 Icon (favicon) Management
 =========================
 
-This designates the little image that is displayed by browsers on the tab of the website being visited.
+This designates the little image that is displayed by browsers on the top of the tab of the website being visited.
 
 A default icon file can be defined, it is notably used in order to generate better-looking 404 pages.
 
@@ -442,20 +439,20 @@ Should some requested web page not be found:
 
 A 404 image can be optionally displayed instead of the "0" of "404". To do so, the ``image_404`` key in the US-Web handler state shall be set to the path of such image (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
 
-In the context of the (default) US-Web static web handler, if such a ``images/404.png`` exists, it is automatically registered in ``image_404``.
+In the context of the (default) US-Web static web handler, if such a ``images/404.png`` file exists, it is automatically registered in ``image_404``.
 
 
 
 Site Customisation
 ==================
 
-As mentioned in the sections above, if there is a file (regular or symbolic link), from the content root of a hosted static website, in:
+As a summary of the sections above, if there is a file (regular or symbolic link), from the content root of a hosted static website, in:
 
--  ``common/default.css``, then this CSS will be used for all generated pages (ex: the one for errors such as 404 ones)
+-  ``common/default.css``, then this CSS will be used for all generated pages for that website (ex: the one for errors such as 404 ones)
 -  ``images/default-icon.png``, then this image will be used as an icon (the small image put on browser tabs next to their labels) for all generated pages
 -  ``images/404.png``, then this image will be used for the "0" in the main "404" label of the page denoting a content not found
 
-Each content root is expected to contain at least a (proper) ``index.html`` file (possibly a symbolic link).
+Each content root is expected to contain at least a (proper) ``index.html`` file (possibly as a symbolic link).
 
 
 
@@ -469,7 +466,7 @@ In terms of security, we would advise:
 
 - to apply a streamlined, reproducible **deployment process**, preferably based on our `deploy-us-web-release.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh>`_ script
 
-- to rely on dedicated, **different, low-privileged users and groups** for US and US-Web, which both rely on ``authbind``; refer to our `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh>`_ script for that; see also the ``us_username`` key of US-Common's `us.config <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_, and the ``us_web_username`` key of the US-Web configuration file it refers to
+- to rely on dedicated, **different, low-privileged users and groups** for US and US-Web, which both rely on ``authbind``; refer to our `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh>`_ script for that; see also the ``us_username`` key of US-Common's `us.config <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_, and the ``us_web_username`` key of the US-Web configuration file that it refers to
 
 - still in ``us.config``, to set:
 
@@ -511,14 +508,13 @@ Current Stable Version & Download
 As mentioned, the single, direct prerequisites of the `Universal Webserver <https://github.com/Olivier-Boudeville/Universal Webserver>`_ are:
 
 - `Cowboy <https://github.com/ninenines/cowboy>`_ (version 2.8 or above)
+- `LEEC <https://github.com/Olivier-Boudeville/letsencrypt-erlang/>`_ as an optional, runtime-only dependency
 - `Awstats <http://www.awstats.org/>`_ as an optional, runtime-only dependency (version 7.8 or above)
 - `US-Common <http://us-common.esperide.org/>`_
 
 The latter relies on `Ceylan-Traces <https://github.com/Olivier-Boudeville/Ceylan-Traces>`_, which implies in turn `Ceylan-WOOPER <https://github.com/Olivier-Boudeville/Ceylan-WOOPER>`_, then `Ceylan-Myriad <https://github.com/Olivier-Boudeville/Ceylan-Myriad>`_ and `Erlang <http://erlang.org>`_.
 
-We prefer using GNU/Linux, sticking to the latest stable release of Erlang, and building it from sources, thanks to GNU ``make``.
-
-We recommend indeed obtaining Erlang thanks to a manual installation; refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines.
+We prefer using GNU/Linux, sticking to the latest stable release of Erlang, and building it from sources, thanks to GNU ``make``. We recommend indeed obtaining Erlang thanks to a manual installation; refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines.
 
 The build of the US-Web server is driven by `rebar3 <https://www.rebar3.org/>`_, which can be obtained by following our `guidelines <http://myriad.esperide.org/#getting-rebar3>`_.
 
@@ -539,7 +535,7 @@ Using Cutting-Edge GIT
 
 This is the installation method that we use and recommend; the Universal Webserver ``master`` branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.
 
-Once Erlang (see `here <http://myriad.esperide.org/index.html#getting-erlang>`_), rebar3 (see `here <http://myriad.esperide.org/index.html#getting-rebar3>`_) and possibly Awstats (see `here <#getting-awstats>`_) are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information.
+Once Erlang (see `here <http://myriad.esperide.org/index.html#getting-erlang>`_), rebar3 (see `here <http://myriad.esperide.org/index.html#getting-rebar3>`_) and possibly LEEC (see `here <https://github.com/Olivier-Boudeville/letsencrypt-erlang#building>`_) or Awstats (see `here <#getting-awstats>`_) are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information).
 
 For example:
 
@@ -585,9 +581,9 @@ OTP Considerations
 
 As discussed in these sections of `Myriad <http://myriad.esperide.org/myriad.html#otp>`_, `WOOPER <http://wooper.esperide.org/index.html#otp>`_, `Traces <http://traces.esperide.org/index.html#otp>`_ and `US-Common <http://us-common.esperide.org/index.html#otp>`_, the Universal Webserver *OTP application* is generated out of the build tree, ready to result directly in an *(OTP) release*. For that we rely on `rebar3 <https://www.rebar3.org/>`_, `relx <https://github.com/erlware/relx>`_ and (possibly) `hex <https://hex.pm/>`_.
 
-Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on any number of domains as needed.
+Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on as many number of domains as needed.
 
-As for Myriad, WOOPER, Traces and US-Common, most versions of the Universal Webserver will be also published as `Hex packages <https://hex.pm/packages/us_web>`_.
+As for Myriad, WOOPER, Traces, LEEC and US-Common, most versions of the Universal Webserver will be also published as `Hex packages <https://hex.pm/packages/us_web>`_.
 
 For more details, one may have a look at `rebar.config.template <https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar.config.template>`_, the general rebar configuration file used when generating the Universal Webserver OTP application and release (implying the automatic management of all its dependencies).
 
@@ -617,7 +613,7 @@ If the problem remains, time to perform some investigation, refer to the `Local 
 Hints
 -----
 
-Various keys (ex: ``us_app_base_dir``) may be defined in the US configuration files (ex: in a ``{us_app_base_dir, "/opt/some_dir"}`` entry), from which other elements may derive (ex: paths). To denote the value associated to a key, we surround in this documentation the key with ``@`` characters.
+Various keys (ex: ``us_app_base_dir``) may be defined in the US configuration files (ex: in a ``{us_app_base_dir, "/opt/some_dir"}`` entry), from which other elements may derive (ex: paths). To denote the value associated to a key, we surround in this documentation the key with ``@`` characters (this is just a reading convention).
 
 For example ``@us_app_base_dir@/hello.txt`` would correspond here to ``/opt/some_dir/hello.txt``.
 
@@ -630,7 +626,7 @@ Should a mismatch be detected between the compile-time execution target and the 
 
 When building a fresh release thanks to ``make release-dev``, the corresponding action (``rebar3 release``) will build that release with the base settings, hence in development mode (so not "as prod" - i.e. not with the ``prod`` profile, hence not selecting our ``production`` execution target).
 
-Note that all dependencies (thus of course including Myriad, WOOPER and Traces) are built by rebar3 with their ``prod`` settings. As a result, relying on ``basic_utils:get_execution_target/0`` will only tell us about ``Myriad`` (thus always built in production mode), not any other layer (including ``US-Web``). A US-Web trace allows to check all relevant modes, notably that, in production, the production settings apply indeed.
+Note that all dependencies (thus of course including Myriad, WOOPER, Traces and LEEC) are built by rebar3 with their ``prod`` settings. As a result, relying on ``basic_utils:get_execution_target/0`` will only tell us about ``Myriad`` settings (thus always built in production mode), not about any other layer (including ``US-Web``). A US-Web trace allows to check all relevant modes, notably that, in production, the production settings apply indeed.
 
 
 
@@ -657,7 +653,7 @@ Operating from ``_checkouts`` build trees
 
 (recommended in a development phase, as a lot more flexible/unified than the previous method)
 
-Create a ``us_web/_ckeckouts`` directory containing symbolic links to repositories of dependencies (ex: ``myriad``) that may be updated locally.
+Create a ``us_web/_ckeckouts`` directory containing symbolic links to repositories of dependencies (ex: ``myriad``) that may be updated locally; or, preferably, execute the ``create-us-web-checkout`` make target to automate and streamline this step.
 
 .. Then, when needing to repopulate the suitable ``ebin`` directory:
 
@@ -725,7 +721,7 @@ Execution Hints
 .. [#] See ``priv/for-testing/test-static-website-A/to-test-for-errors``, which was created precisely for that. Note that its permissions have been restored to sensible values, as otherwise that directory was blocking the OTP release generation.
 
 
-- log rotation results in timestamped, compressed files such as ``access-for-bar.localhost.log.2019-12-31-at-22h-03m-35s.xz``; note that the timestamp corresponds to the moment at which the rotation took place (hence not the time range of these logs, more an upper bound of it)
+- log rotation results in timestamped, compressed files such as ``access-for-bar.localhost.log.2019-12-31-at-22h-03m-35s.xz``; note that the timestamp corresponds to the moment at which the rotation took place (hence not the time range of these logs; more an upper bound thereof)
 
 - to test whether a combination of EPMD port and cookie is legit, one may use for example::
 
@@ -781,14 +777,14 @@ Using ``htop``, one can see that the ``run_erl`` process spawned a ``us_web`` on
 
 ``RSS/RSZ`` (*Resident Set Size*) is a far better metric than ``VIRT/VSZ`` (*Virtual Memory Size*); indeed ``VIRT = RSS + SWP`` and:
 
- - ``RSS`` shows how much memory is allocated to that process and is in RAM; it does not include memory that is swapped out; it includes memory from shared libraries (as long as the pages from those libraries are actually in memory), and all stack and heap memory used
- - ``VIRT`` includes all memory that the process can access, including memory that is swapped out, memory that is allocated but not used, and memory that is from shared libraries
+- ``RSS`` shows how much memory is allocated to that process and is in RAM; it does not include memory that is swapped out; it includes memory from shared libraries (as long as the pages from those libraries are actually in memory), and all stack and heap memory used
+- ``VIRT`` includes all memory that the process can access, including memory that is swapped out, memory that is allocated but not used, and memory that is from shared libraries
 
-Knowing that with ``ps`` one may add ``-L`` to display thread information and ``-f`` to have full-format listing, a base command to monitor the US-Web processes is: ``ps -eww -o rss,pid,args | grep us_web``, with:
+Knowing that, with ``ps``, one may add ``-L`` to display thread information and ``-f`` to have full-format listing, a base command to monitor the US-Web processes is: ``ps -eww -o rss,pid,args | grep us_web``, with:
 
- - ``-e``: select all processes
- - ``-w`` (once or twice): request wide output
- - ``-o rss,pid,args``: display RSS memory used (in kilobytes), PID and full command line
+- ``-e``: select all processes
+- ``-w`` (once or twice): request wide output
+- ``-o rss,pid,args``: display RSS memory used (in kilobytes), PID and full command line
 
 
 (apparently there is no direct way of displaying human-readable sizes)
@@ -808,11 +804,13 @@ This confirms that, even if higher VIRT sizes can be reported (ex: 5214M, hence 
 
 Indeed, in terms of RSS use (for a few domains, each with a few low-traffic websites, if that matters), we found:
 
- - at start-up: only about 67MB
- - after 5 days: just 68 MB
- - after 24 days: 76 MB
- - after 55 days: 80-88 MB
-80496
+- at start-up: only about 67MB
+- after 5 days: just 68 MB
+- after 24 days: 76 MB
+- after 55 days: 80-88 MB
+
+A more recent server instance is using, after more than 70 days, 60 MB of RSS memory.
+
 
 
 Trace Monitoring
@@ -856,7 +854,7 @@ Then one may switch to the *Job control mode* (JCL) by pressing ``Ctrl-G`` then 
 Planned Enhancements
 --------------------
 
-- **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to the embedded scheduler)
+- bullet-proof **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to our embedded scheduler)
 - **Nitrogen** and/or **Zotonic** support, in addition to static websites
 
 

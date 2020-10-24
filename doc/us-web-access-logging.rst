@@ -3,9 +3,10 @@
 Standard Log Generation & Analysis
 ----------------------------------
 
-The objective is to have US-Web generate access logs like the standard webservers do, so that standard tools able to produce log analyses can be used afterwards. They may generate HTML pages, which can in turn be appropriately hosted directly by the US-Web framework itself.
+The objective in this section is to have US-Web generate access logs like the standard webservers do, so that standard tools able to produce log analyses can be used afterwards. They may generate HTML pages, which can in turn be appropriately hosted directly by the US-Web framework itself.
 
-US-Web (rather than a ``crontab``) takes control of log writing, for full control onto the start, stop and rotate behaviours.
+US-Web (rather than a ``crontab``) takes control of log writing, for full control onto the start, stop and rotation behaviours.
+
 For write efficiency, It is done by an (Erlang) process specific to a given virtual host (see ``class_USWebLogger``), and a task ring is used for synchronicity and load balancing with regard to log report generation.
 
 
@@ -104,9 +105,9 @@ Log analysis will be triggered periodically by the US-Web server rather than on-
 
 More precisely, and as already mentioned, in the US-Web log directory (see ``us_web_log_dir``), dedicated access and error log files will be generated for each known virtual host. For example the accesses to a ``baz.foobar.org`` virtual host will be written by the US-Web server in a corresponding ``access-for-baz.foobar.org.log`` file.
 
-At server start-up, the US-Web meta module (``us_web_meta``) will have generated a suitable configuration file (namely ``awstats.baz.foobar.org.conf``) that will trigger the generation of the corresponding static web pages (``awstats.baz.foobar.org.*``, notably ``awstats.baz.foobar.org.html``) in the web root of the meta website.
+At server start-up, the US-Web meta module (``us_web_meta``) will have generated a suitable Awstats configuration file (namely ``awstats.baz.foobar.org.conf``) that will trigger the generation of the corresponding static web pages (``awstats.baz.foobar.org.*``, notably ``awstats.baz.foobar.org.html``) in the web root of the meta website.
 
-There configuration files are now placed in ``/usr/local/etc/awstats`` (they were previously in the ``conf`` subdirectory of the root specified in ``us_web_app_base_dir``).
+These configuration files are now placed in ``/usr/local/etc/awstats`` (they were previously in the ``conf`` subdirectory of the root specified in ``us_web_app_base_dir``).
 
 Indeed, if starting from version 7.8, Awstats allows these configuration files to be specified as absolute paths, its previous versions:
 
@@ -122,11 +123,11 @@ Such a target directory shall thus be created beforehand, and made writable by t
 
 .. All Awstats configuration files will be generated in the ``us_web/conf`` directory.
 
-Each virtual host (say: ``baz.foobar.org``) will have its configuration file deriving from ``priv/conf/awstats.template.conf``, where the following patterns will be replaced by relevant ones (keyword-based replacements):
+Each virtual host (say: ``baz.foobar.org``) will have its configuration file deriving from ``priv/conf/awstats.template.conf``, where the following patterns will be replaced by relevant ones (through keyword-based replacements):
 
- - ``US_WEB_VHOST_LOG_FILE`` to become the full path to the corresponding access log (ex: ``access-for-baz.foobar.org.log``, in ``us_web_log_dir``)
- - ``US_WEB_VHOST_DOMAIN`` to become the virtual host domain (ex: ``baz.foobar.org``)
- - ``US_WEB_LOG_ANALYSIS_DATA_DIR`` to become the directory in which the working data (ex: state files) of the web analyzer (here Awstats) shall be written
+- ``US_WEB_VHOST_LOG_FILE`` to become the full path to the corresponding access log (ex: ``access-for-baz.foobar.org.log``, in ``us_web_log_dir``)
+- ``US_WEB_VHOST_DOMAIN`` to become the virtual host domain (ex: ``baz.foobar.org``)
+- ``US_WEB_LOG_ANALYSIS_DATA_DIR`` to become the directory in which the working data (ex: state files) of the web analyzer (here Awstats) shall be written
 
 Awstats icons are copied to the ``icon`` directory at the root of the meta website.
 

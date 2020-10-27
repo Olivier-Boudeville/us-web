@@ -25,7 +25,7 @@
 
 -define( class_description,
 		 "Class in charge of managing the generation and renewal of X.509 "
-		 "certificates." ).
+		 "certificates for a given domain." ).
 
 
 % Determines what are the direct mother classes of this class (if any):
@@ -33,15 +33,16 @@
 
 
 
-% Managing X.509 certificates on behalf of the US framework, for a given need
-% (typically a specific FQDN).
+% Managing the generation and renewal of X.509 certificates on behalf of the US
+% framework, for a given need (typically a specific FQDN).
 %
 % This includes:
 % - requesting and obtaining such certificates, typically for such a FQDN
 % - renewing them on time
 %
-% Certificates are obtained thanks to Let's Encrypt (our fork thereof, namely
-% https://github.com/Olivier-Boudeville/letsencrypt-erlang).
+% Certificates are obtained thanks to Let's Encrypt, more precisely thanks to
+% LEEC ("Let's Encrypt Erlang with Ceylan", our fork of letsencrypt-erlang),
+% namely https://github.com/Olivier-Boudeville/letsencrypt-erlang).
 %
 % Each instance of this class is dedicated to the certificates for a given FQDN.
 % This allows multiplexing requests possibly for several FQDNs in parallel,
@@ -55,12 +56,11 @@
 %
 % A certificate filename is like 'mydomain.tld.crt', whereas a key filename is
 % like 'mydomain.tld.key'; both are written in the certificate directory (which
-% of course shall be writable by this Erlang VM). A 'mydomain.tld.csr' is also
-% created.
+% of course shall be writable by this Erlang VM). A 'mydomain.tld.csr'
+% Certificate Signing Request is also created.
 %
-% In addition to TCP port 80 for http, the TCP port 443 must be opened for
-% https.
-
+% In addition to TCP for http (generally port 80), the TCP for https port
+% (generally 443) must be opened.
 
 -type manager_pid() :: class_UniversalServer:server_pid().
 
@@ -97,6 +97,10 @@
 -type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
 -type cert_mode() :: class_USWebConfigServer:cert_mode().
 
+-type leec_pid() :: letsencrypt:fsm_pid().
+-type thumbprint_map() :: letsencrypt:thumbprint_map().
+
+
 
 % The class-specific attributes:
 -define( class_attributes, [
@@ -104,19 +108,27 @@
 	{ fqdn, bin_fqdn(), "the FQDN for which a certificate is to be managed" },
 
 	{ cert_mode, cert_mode(), "tells whether certificate generation is in "
-	  "testing/staging mode or not" },
+	  "staging or production mode" },
 
 	{ cert_dir, bin_directory_path(),
 	  "the directory where certificates shall be written" },
 
-	{ cert_renewal_period, maybe( unit_utils:seconds() ),
-	  "the base delay between two successful certificate renewals (if any)" },
+	{ cert_path, maybe( bin_file_path() ),
+	  "the full path where the final certificate file (if any) is located" },
 
-	{ scheduler_pid, maybe( scheduler_pid() ),
-	  "the PID of any scheduler used by this manager" },
+	{ cert_renewal_period, maybe( unit_utils:seconds() ),
+	  "the base delay between two successful certificate renewals" },
+
+	{ webroot_dir, bin_directory_path(),
+	  "the base directory served by the webserver" },
+
+	{ leec_pid, leec_pid(), "the PID of the LEEC FSM" },
+
+	{ scheduler_pid, scheduler_pid(),
+	  "the PID of the scheduler used by this manager" },
 
 	{ task_id, maybe( task_id() ), "the identifier of the scheduler task "
-	  "(if any) to request the next certificate renewal" } ] ).
+	  "(if any) in charge of requesting the certificate renewals" } ] ).
 
 
 
@@ -174,30 +186,31 @@
 
 % Constructs a US certificate manager for the specified FQDN (host in specified
 % domain), in production mode, using the specified directory to write
-% certificate information, and any specified scheduler for automatic certificate
+% certificate information, and the specified scheduler for automatic certificate
 % renewal.
 %
 -spec construct( wooper:state(), bin_fqdn(), bin_directory_path(),
-				 maybe( scheduler_pid() ) ) -> wooper:state().
-construct( State, BinFQDN, BinCertDir, MaybeSchedulerPid ) ->
+		 bin_directory_path(), maybe( scheduler_pid() ) ) -> wooper:state().
+construct( State, BinFQDN, BinCertDir, BinWebrootDir, MaybeSchedulerPid ) ->
 	construct( State, BinFQDN, _CertMode=production, BinCertDir,
-			   MaybeSchedulerPid, _IsSingleton=false ).
+			   BinWebrootDir, MaybeSchedulerPid, _IsSingleton=false ).
 
 
 
 % Constructs a US certificate manager for the specified FQDN (host in specified
 % domain), in specified certificate management mode, using specified directory
-% to write certificate information, and any specified scheduler.
+% to write certificate information, and the specified scheduler.
 %
 % (most complete constructor)
 %
 -spec construct( wooper:state(), bin_fqdn(), cert_mode(), bin_directory_path(),
-				 maybe( scheduler_pid() ), boolean() ) -> wooper:state().
-construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
+				 bin_directory_path(), maybe( scheduler_pid() ), boolean() ) ->
+					   wooper:state().
+construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir, MaybeSchedulerPid,
 		   _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
-	InitState = construct( State, BinFQDN, CertMode, BinCertDir,
+	InitState = construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
 						   MaybeSchedulerPid, _Sing=false ),
 
 	% Then self-registering:
@@ -210,46 +223,9 @@ construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 								{ registration_scope, RegScope } ] );
 
 
-construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
-		   _IsSingleton=false ) ->
-
-	% Rather than relying on a periodic scheduling, each renewal will just plan
-	% the next one, to better account for any failed attempts / delay introduced
-	% (and certificates shall be created directly when starting up):
-	%
-	self() ! requestCertificate,
-
-	% As periodic renewal may be disabled:
-	MaybeRenewPeriodSecs = case MaybeSchedulerPid of
-
-		undefined ->
-			undefined;
-
-		_ ->
-			{ BaseRenewPeriodDHMS, JitterMaxDHMS } = case CertMode of
-
-				% Fake, frequent certificates in staging:
-				development ->
-					{ ?dhms_cert_renewal_period_development,
-					  ?max_dhms_cert_renewal_jitter_development };
-
-				% Renewal must be within ]60,90[ days:
-				production ->
-					{ ?dhms_cert_renewal_period_production,
-					  ?max_dhms_cert_renewal_jitter_production }
-
-			end,
-
-			BaseRenewPeriodSecs =
-				time_utils:dhms_to_seconds( BaseRenewPeriodDHMS ),
-
-			JitterMaxSecs = time_utils:dhms_to_seconds( JitterMaxDHMS ),
-
-			% Random value in [0.0, 1.0[:
-			BaseRenewPeriodSecs
-				+ round( JitterMaxSecs * random_utils:get_random_value() )
-
-	end,
+% No self-registering here:
+construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
+		   MaybeSchedulerPid, _IsSingleton=false ) ->
 
 	ServerName =
 		text_utils:format( "Certificate manager for ~s", [ BinFQDN ] ),
@@ -258,27 +234,123 @@ construct( State, BinFQDN, CertMode, BinCertDir, MaybeSchedulerPid,
 	TraceState = class_USServer:construct( State,
 										   ?trace_categorize(ServerName) ),
 
+	{ LEECPid, RenewPeriodSecs } =
+		init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, TraceState ),
+
+	% Registration to scheduler to happen in next (first) requestCertificate/1
+	% call.
+
+	ReadyState = setAttributes( TraceState, [
+		{ fqdn, BinFQDN },
+		{ cert_mode, CertMode },
+		{ cert_dir, BinCertDir },
+		{ cert_path, undefined },
+		{ cert_renewal_period, RenewPeriodSecs },
+		{ webroot_dir, BinWebrootDir },
+		{ leec_pid, LEECPid },
+		{ scheduler_pid, MaybeSchedulerPid },
+		{ task_id, undefined } ] ),
+
+	?send_info( ReadyState, "Just created: " ++ to_string( ReadyState ) ),
+
+	% Rather than relying on a periodic scheduling, each renewal will just plan
+	% the next one, to better account for any failed attempts / delay introduced
+	% (and certificates shall be created directly when starting up):
+	%
+	self() ! requestCertificate,
+
+	ReadyState.
+
+
+
+% Initializes our LEEC private instance.
+-spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(),
+				 bin_directory_path(), wooper:state() ) -> leec_pid().
+init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
+
 	case file_utils:is_existing_directory( BinCertDir ) of
 
 		true ->
 			ok;
 
 		false ->
-			throw( { non_existing_certificate_directory, 
+			throw( { non_existing_certificate_directory,
 					 text_utils:binary_to_string( BinCertDir ) } )
 
 	end,
 
-	ReadyState = setAttributes( TraceState, [
-		{ fqdn, BinFQDN },
-		{ cert_dir, BinCertDir },
-		{ cert_renewal_period, MaybeRenewPeriodSecs },
-		{ scheduler_pid, MaybeSchedulerPid },
-		{ task_id, undefined } ] ),
+	{ BaseRenewPeriodDHMS, JitterMaxDHMS } = case CertMode of
 
-	?send_info( ReadyState, "Just created: " ++ to_string( ReadyState ) ),
+		% Fake, frequently renewed certificates in staging:
+		development ->
+			{ ?dhms_cert_renewal_period_development,
+			  ?max_dhms_cert_renewal_jitter_development };
 
-	ReadyState.
+		% Renewal must be within ]60,90[ days:
+		production ->
+			{ ?dhms_cert_renewal_period_production,
+			  ?max_dhms_cert_renewal_jitter_production }
+
+	end,
+
+	BaseRenewPeriodSecs = time_utils:dhms_to_seconds( BaseRenewPeriodDHMS ),
+
+	JitterMaxSecs = time_utils:dhms_to_seconds( JitterMaxDHMS ),
+
+	% Only positive (delaying) jitter, as random value in [0.0, 1.0[:
+	RenewPeriodSecs = BaseRenewPeriodSecs
+		+ round( JitterMaxSecs * random_utils:get_random_value() ),
+
+	% Let's start LEEC now, enabling first the integration of its traces:
+	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ BinFQDN ] ),
+
+	trace_bridge:register( TraceEmitterName, ?trace_emitter_categorization,
+						   ?getAttr(trace_aggregator_pid) ),
+
+	% Refer to https://github.com/Olivier-Boudeville/letsencrypt-erlang#api.
+
+	% Slave mode, as we control the webserver for the challenge:
+	% (BinCertDir must be writable by this process)
+
+	% No agent_key_file_path specified, a suitable agent key will be
+	% auto-generated.
+	%
+	% No TCP port to be specified on slave mode.
+
+	HttpQueryTimeoutMs = 30000,
+
+	StartBaseOpts = [ { mode, slave },
+					  { cert_dir_path, BinCertDir },
+					  { webroot_dir_path, BinWebrootDir },
+					  { http_timeout, HttpQueryTimeoutMs } ],
+
+	StartOpts = case CertMode of
+
+		development ->
+			% For testing only, then based on fake certificates:
+			[ staging | StartBaseOpts ];
+
+		production ->
+			% No 'prod' option supported by LEEC:
+			StartBaseOpts
+
+	end,
+
+	LEECPid = case letsencrypt:start( StartOpts ) of
+
+		{ ok, FsmPid } ->
+			?trace_fmt( "LEEC initialized, using FSM of PID ~w, based on "
+				"following start options:~n  ~p", [ FsmPid, StartOpts ] ),
+			FsmPid;
+
+		{ error, Reason } ->
+			?error_fmt( "Initialization of LEEC failed: ~p; "
+				"start options were:~n  ~p", [ Reason, StartOpts ] ),
+			throw( { leec_initialization_failed, Reason } )
+
+	end,
+
+	{ LEECPid, RenewPeriodSecs }.
 
 
 
@@ -308,9 +380,18 @@ destruct( State ) ->
 
 	end,
 
-	?trace( "Shutting down Let's Encrypt." ),
-	letsencrypt:stop(),
+	case ?getAttr(leec_pid) of
 
+		undefined ->
+			ok;
+
+		LeecPid ->
+			?trace( "Shutting down LEEC." ),
+			letsencrypt:stop( LeecPid )
+
+	end,
+
+	% End of interleaving:
 	case MaybeSchedPid of
 
 		undefined ->
@@ -355,16 +436,20 @@ requestCertificate( State ) ->
 	% next certificate renewal (quickly if having just failed, normally if
 	% having succeeded):
 	%
-	MaybeRenewDelay =
-			case letsencrypt:make_cert( FQDN, #{ async => false } ) of
+	{ MaybeRenewDelay, MaybeCertPath } =
+			case letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
+											 _OptionMap=#{ async => false } ) of
 
-		{ ok, #{ cert := BinCertPath, key := BinCertKey } } ->
+		%{ ok, #{ cert := BinCertPath, key := BinCertKey } } ->
+		%	?trace_fmt( "Certificate generation success for '~s': "
+		%		"certificate file is '~s' and certificate key is '~s'.",
+		%		[ FQDN, BinCertPath, BinCertKey ] ),
 
-			?trace_fmt( "Certificate generation success for '~s': "
-				"certificate file is '~s' and certificate key is '~s'.",
-				[ FQDN, BinCertPath, BinCertKey ] ),
+		{ certificate_ready, BinCertFilePath } ->
+			?info_fmt( "Certificate generation success for '~s', "
+				"certificate stored in '~s'.", [ FQDN, BinCertFilePath ] ),
 
-			?getAttr(cert_renewal_period);
+			{ ?getAttr(cert_renewal_period), BinCertFilePath };
 
 
 		{ error, Reason } ->
@@ -373,7 +458,7 @@ requestCertificate( State ) ->
 						[ Reason ] ),
 
 			% Reasonable offset for next attempt:
-			case ?getAttr(cert_mode) of
+			Dur = case ?getAttr(cert_mode) of
 
 				development ->
 					time_utils:dhms_to_seconds(
@@ -383,7 +468,8 @@ requestCertificate( State ) ->
 					time_utils:dhms_to_seconds(
 					  ?dhms_cert_renewal_delay_after_failure_production )
 
-			end
+			end,
+			{ Dur, undefined }
 
 	end,
 
@@ -432,7 +518,74 @@ requestCertificate( State ) ->
 
 	end,
 
-	wooper:return_state( NewState ).
+	CertState = setAttribute( NewState, cert_path, MaybeCertPath ),
+
+	wooper:return_state( CertState ).
+
+
+
+% Requests this manager to return the current thumprint challenges.
+%
+% Typically called from a web handler whenever the ACME well-known URL is read
+% by an ACME server.
+%
+-spec getChallenge( wooper:state() ) ->
+						  const_request_return( thumbprint_map() ).
+getChallenge( State ) ->
+
+	FSMPid = ?getAttr(leec_pid),
+
+	?trace_fmt( "Requested to return the current thumprint challenges from ~w.",
+				[ FSMPid ] ),
+
+	case letsencrypt:get_ongoing_challenges( FSMPid ) of
+
+		error ->
+			throw( { no_thumbprint_obtained_from, FSMPid } );
+
+		Thumbprints ->
+			wooper:const_return_result( Thumbprints )
+
+	end.
+
+
+
+% Callback triggered, as we trap exits, whenever a linked process stops
+% (typically should the LEEC FSM crash).
+%
+-spec onWOOPERExitReceived( wooper:state(), pid(),
+							basic_utils:exit_reason() ) -> oneway_return().
+onWOOPERExitReceived( State, CrashPid, ExitType ) ->
+
+	% Typically: "Received exit message '{{nocatch,
+	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
+	%							FunName,Arity,Args,AtomCause}}, [...]}"
+
+	FQDN = ?getAttr(fqdn),
+
+	% No need to overwhelm the ACME server in case of permacrash:
+	WaitDurationMs = 15000,
+
+	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~s'), "
+		"starting a new LEEC instance after a delay of ~s.",
+		[ ExitType, CrashPid, FQDN,
+		  text_utils:duration_to_string( WaitDurationMs ) ] ),
+
+	timer:sleep( WaitDurationMs ),
+
+	{ LEECPid, _RenewPeriodSecs } =
+		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
+				   ?getAttr(webroot_dir), State ),
+
+	?info_fmt( "New LEEC instance started for '~s': ~w; requesting new "
+			   "certificate.", [ FQDN, LEECPid ] ),
+
+	% Immediately retries:
+	self() ! requestCertificate,
+
+	RestartState = setAttribute( State, leec_pid, LEECPid ),
+
+	wooper:return_state( RestartState ).
 
 
 
@@ -537,6 +690,26 @@ to_string( State ) ->
 
 	end,
 
+	FSMStr = case ?getAttr(leec_pid) of
+
+		undefined ->
+			"no LEEC FSM";
+
+		LeecPid ->
+			text_utils:format( "LEEC FSM of PID ~s", [ LeecPid ] )
+
+	end,
+
+	CertStr = case ?getAttr(cert_path) of
+
+		undefined ->
+			"no certificate generated";
+
+		CertPath ->
+			text_utils:format( "a certificate generated in '~s'", [ CertPath ] )
+
+	end,
+
 	text_utils:format( "US certificate manager for '~s', using "
-		"certificate directory '~s', with ~s",
-		[ ?getAttr(fqdn), ?getAttr(cert_dir), PeriodStr ] ).
+		"certificate directory '~s', with ~s, using ~s, with ~s",
+		[ ?getAttr(fqdn), ?getAttr(cert_dir), PeriodStr, FSMStr, CertStr ] ).

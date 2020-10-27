@@ -255,6 +255,7 @@
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 
 
+
 % The class-specific attributes:
 -define( class_attributes, [
 
@@ -326,10 +327,7 @@
 	  "certificates is requested" },
 
 	{ cert_mode, maybe( cert_mode() ),
-	  "tells whether certificates (if any) are in production mode or not" },
-
-	{ cert_service_pid, maybe( pid() ),
-	  "the PID of the Let's Encrypt gen_server (if any)" },
+	  "tells whether certificates (if any) are in staging or production mode" },
 
 	{ cert_directory, maybe( bin_directory_path() ),
 	  "the directory where the certificate information will be written" },
@@ -418,7 +416,6 @@ construct( State, SupervisorPid ) ->
 	SupState = setAttributes( TraceState, [
 					{ us_web_supervisor_pid, SupervisorPid },
 					{ start_timestamp, StartTimestamp },
-					{ cert_service_pid, undefined },
 					{ cert_directory, undefined } ] ),
 
 	CfgState = load_and_apply_configuration( BinCfgDir, SupState ),
@@ -464,19 +461,9 @@ destruct( State ) ->
 
 	[ LPid ! delete || LPid <- get_all_logger_pids( State ) ],
 
+	% Includes the LEEC FSM shutdown:
 	[ CMPid ! delete
 	  || CMPid <- get_all_certificate_manager_pids( State ) ],
-
-	% Unregisters regarding certificate renewal:
-	case ?getAttr(cert_support) of
-
-		renew_certificates ->
-			stop_certificate_generation_support( State );
-
-		_ ->
-			ok
-
-	end,
 
 	?info( "Deleted." ),
 	State.
@@ -743,12 +730,14 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% Creates if relevant a certificate manager for specified virtual host.
+% Creates if relevant a certificate manager for the specified virtual host.
 -spec handle_certificate_manager_for( vhost_id(), domain_id(), cert_support(),
-	cert_mode(), bin_directory_path(), scheduler_pid() ) -> cert_manager_pid().
+		cert_mode(), bin_directory_path(), bin_directory_path(),
+		scheduler_pid() ) -> maybe( cert_manager_pid() ).
 % Nothing done for catch-alls:
 handle_certificate_manager_for( VHostId, DomainId,
-		_CertSupport=renew_certificates, CertMode, BinCertDir, SchedulerPid )
+		_CertSupport=renew_certificates, CertMode, BinCertDir, BinWebrootDir,
+		SchedulerPid )
   when is_binary( VHostId ) andalso is_binary( DomainId ) ->
 
 	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
@@ -756,24 +745,16 @@ handle_certificate_manager_for( VHostId, DomainId,
 	% Initially, the certification generation was asynchronous (thus expected to
 	% trigger a onCertificateReady/2 method - counterpart of the on_complete/1
 	% function of Let's Encrypt, when obtained), but now that concurrent FSMs
-	% can be managed thanks to our LEEC fork), it can be fully synchronous:
+	% can be managed thanks to our LEEC fork, it can be fully synchronous, which
+	% is better:
 	%
-	class_USCertificateManager:new_link( BinFQDN, CertMode,
-		BinCertDir, SchedulerPid, _IsSingleton=false );
+	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
+		BinWebrootDir, SchedulerPid, _IsSingleton=false );
 
 handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport, _CertMode,
-								_BinCertDir, _SchedulerPid ) ->
+								_BinCertDir, _BinWebrootDir, _SchedulerPid ) ->
 	undefined.
 
-
-
-% Stops the support for X.509 certificates.
--spec stop_certificate_generation_support( wooper:state() ) -> wooper:state().
-stop_certificate_generation_support( State ) ->
-
-	?trace( "Stopping certificate generation support." ),
-
-	letsencrypt:stop().
 
 
 
@@ -1063,6 +1044,7 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 % Multiple operations have to be done in one pass as they are quite interlinked.
 %
 % (helper)
+%
 -spec build_vhost_table( domain_id(), [ term() ], bin_directory_path(),
 	maybe( bin_directory_path() ), maybe( web_analysis_info() ),
 	list(), dispatch_routes(), cert_support(), cert_mode(),
@@ -1188,7 +1170,7 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 
 
 
-% Returns the corresponding {VHostEntry,VHostRoute} pair.
+% Returns the corresponding {VHostEntry, VHostRoute} pair.
 %
 % (centralising helper)
 %
@@ -1204,7 +1186,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 			_MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
 
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
-							CertSupport, CertMode, BinCertDir, SchedulerPid ),
+			CertSupport, CertMode, BinCertDir, BinContentRoot, SchedulerPid ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
@@ -1214,7 +1196,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 									  cert_manager_pid=MaybeCertManagerPid },
 
 	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-										  LoggerPid, CertSupport ),
+								  LoggerPid, CertSupport, MaybeCertManagerPid ),
 
 	{ VHostEntry, VHostRoute };
 
@@ -1299,7 +1281,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 					_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
-							CertSupport, CertMode, BinCertDir, SchedulerPid ),
+		CertSupport, CertMode, BinCertDir, BinContentRoot, SchedulerPid ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
@@ -1309,7 +1291,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 									  cert_manager_pid=MaybeCertManagerPid },
 
 	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-										  LoggerPid, CertSupport ),
+								  LoggerPid, CertSupport, MaybeCertManagerPid ),
 
 	{ VHostEntry, VHostRoute }.
 
@@ -1406,8 +1388,7 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 		false ->
 			HostDesc = describe_host( VHostId, DomainId ),
 			?warning_fmt( "For the ~s, the specified meta content root ('~s') "
-						  "does not exist, creating it.",
-						  [ HostDesc, NormContentRoot ] ),
+				"does not exist, creating it.", [ HostDesc, NormContentRoot ] ),
 			file_utils:create_directory( NormContentRoot )
 
 	end,
@@ -1447,9 +1428,10 @@ describe_host( VHostId, BinDomainName ) ->
 % See https://ninenines.eu/docs/en/cowboy/2.7/guide/routing/ for more details.
 %
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
-							   logger_pid(), cert_support() ) -> route_rule().
+		logger_pid(), cert_support(), maybe( cert_manager_pid() ) ) ->
+									route_rule().
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
-						 CertSupport ) ->
+						 CertSupport, MaybeCertManagerPid ) ->
 
 	% We prepare, once for all, all settings for a given (virtual) host.
 
@@ -1566,7 +1548,8 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 		renew_certificates ->
 			% Be able to answer Let's Encrypt ACME challenges:
-			[ NoPagePathMatch, get_challenge_path_match(), OtherPathsMatch ];
+			[ NoPagePathMatch, get_challenge_path_match( MaybeCertManagerPid ),
+			  OtherPathsMatch ];
 
 		_ ->
 			[ NoPagePathMatch, OtherPathsMatch ]
@@ -1578,14 +1561,17 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 % Returns the path match that shall be used in order to answer ACME challenges
-% from Let's Encrypt.
+% from Let's Encrypt from a LEEC FSM.
 %
-% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#slave
+% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave
 %
--spec get_challenge_path_match() -> path_match().
-get_challenge_path_match() ->
+-spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
+get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
 	{ <<"/.well-known/acme-challenge/:token">>, us_web_letsencrypt_handler,
-	  _InitialState=[] }.
+	  _InitialState=CertManagerPid };
+
+get_challenge_path_match( Unexpected ) ->
+	throw( { invalid_certificate_manager, Unexpected } ).
 
 
 
@@ -2190,7 +2176,6 @@ set_log_tool_settings( Unexpected, State ) ->
 								 wooper:state().
 manage_certificates( ConfigTable, State ) ->
 
-
 	CertSupport =
 			case table:lookup_entry( ?certificate_support_key, ConfigTable ) of
 
@@ -2218,8 +2203,7 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
-
-	{ MaybeCertMode, MaybeCertDir, MaybeCertLEPid } = case CertSupport of
+	{ MaybeCertMode, MaybeCertDir } = case CertSupport of
 
 		% Only mode relevant here:
 		renew_certificates ->
@@ -2248,56 +2232,24 @@ manage_certificates( ConfigTable, State ) ->
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
 
-			?trace_fmt( "Starting certificate generation support; they "
-				"are to be generated in '~s'.", [ CertDir ] ),
+			?trace_fmt( "Certificates are to be generated in '~s'.",
+						[ CertDir ] ),
 
-			% Starts once for all Let's Encrypt:
+			% A LEEC instance will be started by each (independant) certificate
+			% managers.
 
-			HttpQueryTimeoutMs = 30000,
+			{ CertMode, CertDir };
 
-			LEExecOpts = case CertMode of
-
-				development ->
-					% For testing only, then based on fake certificates:
-					[ staging ];
-
-				production ->
-					% No 'prod' option supported by Let's Encrypt:
-					[]
-
-			end,
-
-			% Slave mode, as we control the webserver for the challenge:
-			% (CertDirPath must be writable by this process)
-			%
-			LEOpts = LEExecOpts ++ [ { mode, slave }, { cert_path, CertDir },
-									 { http_timeout, HttpQueryTimeoutMs } ],
-
-			LEServicePid = case letsencrypt:start( LEOpts ) of
-
-				{ ok, LEPid } ->
-					?trace_fmt( "Certicate generation support enabled, based "
-						"on Let's Encrypt (service PID: ~w); certificates "
-						"will be stored in the '~s' directory.",
-						[ LEPid, CertDir ] );
-
-				{ error, Error } ->
-					throw( { letsencrypt_start_failed, Error, LEOpts } )
-
-			 end,
-
-			{ CertMode, CertDir, LEServicePid };
 
 		% All modes not requiring to generate certificates:
 		_ ->
-			{ undefined, undefined, undefined }
+			{ undefined, undefined }
 
 	end,
 
 	setAttributes( State, [ { cert_support, CertSupport },
 							{ cert_mode, MaybeCertMode },
-							{ cert_directory, MaybeCertDir },
-							{ cert_service_pid, MaybeCertLEPid } ] ).
+							{ cert_directory, MaybeCertDir } ] ).
 
 
 
@@ -2552,7 +2504,7 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US-Web configuration ~s, ~s, "
+	text_utils:format( "US-Web configuration ~s, ~s, ~s, ~s, "
 		"running in the ~s execution context, ~s, knowing: ~s, "
 		"US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "

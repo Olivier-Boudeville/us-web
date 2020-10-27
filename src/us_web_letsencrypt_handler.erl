@@ -23,24 +23,28 @@
 % Let's Encrypt-compliant handler for us_web, in order to answer ACME
 % challenges.
 %
-% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#slave
+% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave
 %
 -module(us_web_letsencrypt_handler).
 
 
 -export([ init/2, handle/2, terminate/3 ]).
 
+-type cert_manager_pid() :: class_USCertificateManager:manager_pid().
 
-% Actually []:
--type handler_state() :: any().
+-type handler_state() :: cert_manager_pid().
 
 
 -spec init( cowboy_req:req(), handler_state() ) ->
 				  us_web_handler:handler_return().
-init( Req, _HandlerState ) ->
+init( Req, _HandlerState=CertManagerPid ) ->
 
-	%trace_utils:debug_fmt( "Request ~p to be handled for letsencrypt, while "
-	%	"handler state is ~p...", [ Req, HandlerState ] ),
+	% A bit of interleaving:
+	CertManagerPid ! { getChallenge, [], self() },
+
+	trace_bridge:debug_fmt( "Request ~p to be handled for letsencrypt, while "
+		"handler state is the PID of the associated certificate manager: ~w.",
+		[ Req, CertManagerPid ] ),
 
 	BinHost = cowboy_req:host( Req ),
 
@@ -57,20 +61,31 @@ init( Req, _HandlerState ) ->
 
 	end,
 
-	% Returns 'error' if token+thumbprint are not available:
-	Thumbprints = letsencrypt:get_challenge(),
+	% Returns 'error' if token+thumbprint are not available, or 'no_challenge'
+	% if being in 'idle' state:
+	%
+	Thumbprints = receive
+
+		{ wooper_result, FailedAtom } when is_atom( FailedAtom )->
+			throw( { no_challenge_obtained, FailedAtom } );
+
+		{ wooper_result, Thmbprnts } ->
+			Thmbprnts
+
+	end,
 
 	Reply = case maps:get( Token, Thumbprints, _Default=undefined ) of
 
 		undefined ->
-			trace_utils:error_fmt( "For host '~s', token '~p' not found among "
+			trace_bridge:error_fmt( "For host '~s', token '~p' not found among "
 				"thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
 			cowboy_req:reply( 404, Req );
 
 		TokenThumbprint ->
-			%trace_utils:debug_fmt( "For host '~s', token '~p' found associated "
+			%trace_bridge:debug_fmt( "For host '~s', token '~p' found associated "
 			%	"to '~p', among thumbprints '~p'.",
 			%	[ BinHost, Token, TokenThumbprint, Thumbprints ] ),
+
 			cowboy_req:reply( 200,
 				#{ <<"content-type">> => <<"text/plain">> },
 				TokenThumbprint, Req )
@@ -82,11 +97,11 @@ init( Req, _HandlerState ) ->
 
 
 handle( Req, HandlerState ) ->
-	%trace_utils:trace_fmt( "Handle called for request ~p.", [ Req ] ),
+	%trace_bridge:trace_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
 
 
 terminate( _Reason, _Req, _HandlerState ) ->
-	%trace_utils:trace_fmt( "Terminate called for request ~p; reason: ~p.",
+	%trace_bridge:trace_fmt( "Terminate called for request ~p; reason: ~p.",
 	%					   [ Req, Reason ] ),
 	ok.

@@ -26,9 +26,6 @@
 	{letsencrypt,        {git, "git://github.com/Olivier-Boudeville/letsencrypt-erlang",
 						   {branch, "master"}}},
 
-	%{letsencrypt,        {git, "git://github.com/gbour/letsencrypt-erlang.git",
-	%					   {branch, "master"}}},
-
 	%{simple_bridge,     {git, "git://github.com/nitrogen/simple_bridge",
 	%					   {branch, "master"}}},
 	%{qdate,             {git, "git://github.com/choptastic/qdate",

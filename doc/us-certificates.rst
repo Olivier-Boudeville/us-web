@@ -75,6 +75,9 @@ The precise support for X.509 certificates (use, and possibly generation and ren
 - if set to ``use_existing_certificates``, then relevant certificates are supposed to pre-exist, and will be used as are (with no automatic renewal thereof done by US-Web)
 - if set to ``renew_certificates``, then relevant certificates will be generated at start-up (none re-used), used since then, and will be automatically renewed whenever appropriate
 
+
+Another setting applies, determined this time by the ``certificate_mode`` key, whose associated value (which matters iff ``certificate_support`` has been set to ``renew_certificates``) is either ``development`` or ``production`` (the default). In the former case, the `staging ACME parameters <https://letsencrypt.org/docs/staging-environment/>`_ will apply (implying relaxed limits, yet resulting in the obtained certificates to be issued by a fake, test CA), whereas the latter case will imply the use of the `production <https://letsencrypt.org/docs/rate-limits/>`_ ones.
+
 .. comment letsencrypt-erlang must be able to write on the webserver, at the root of the website.
 
 
@@ -84,3 +87,9 @@ When a proper certificate is available and enabled, the US webserver promotes au
 Standard, basic firewall settings are sufficient to enable interactions of US-Web (through LEEC) with Let's Encrypt, as it is the US-Web agent that initiates the TCP connection to Let's Encrypt, which is to check the challenge(s) through regular http accesses done to the webserver expected to be available at the domain of interest.
 
 The US-Web server must be able to write in the web content tree, precisely to write files in the ``well-known/acme-challenge/`` subdirectory of the web root.
+
+
+Troubleshooting
+===============
+
+If trying to connect with the https scheme whereas it has not been enabled, ``wget https://baz.foobar.org/ -O -`` is to report ``Connection refused``.

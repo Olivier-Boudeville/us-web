@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Tells whether dependencies shall be built:
+do_build=0
+
 checkout_opt="--checkout"
 checkout_dir="_checkouts"
 
@@ -19,6 +22,14 @@ github_base="https://github.com/Olivier-Boudeville"
 
 # Defaults:
 checkout_mode=1
+
+
+# Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
+# itself, even if it used at least for some dependencies (ex: LEEC).
+#
+# This leads to duplications (ex: Myriad is built once in the context of LEEC
+# and also once for the other packages).
+
 
 
 if [ $# -eq 1 ]; then
@@ -101,11 +112,37 @@ echo "   Installing US-Web in ${base_install_dir}..."
 echo
 
 
+git=$(which git 2>/dev/null)
+
+if [ ! -x "${git}" ]; then
+
+	echo "  Error, not 'git' tool found." 1>&2
+	exit 18
+
+fi
+
+
+make=$(which make 2>/dev/null)
+
+if [ ! -x "${make}" ]; then
+
+	echo "  Error, not 'make' tool found." 1>&2
+	exit 19
+
+fi
+
+
 # First US-Web itself, so that any _checkouts directory can be created afterwards:
 cd "${base_install_dir}"
 
 
-git clone ${github_base}/us-web us_web #&& cd us_web && make all
+clone_opts="--quiet"
+
+echo "Getting the relevant packages:"
+
+echo " - cloning US-Web"
+
+${git} clone ${clone_opts} ${github_base}/us-web us_web
 
 res=$?
 if [ ! $res -eq 0 ] ; then
@@ -114,8 +151,6 @@ if [ ! $res -eq 0 ] ; then
 	exit 40
 
 fi
-
-echo
 
 
 # Not building prerequisites from their source tree (mostly needed for their
@@ -140,8 +175,9 @@ fi
 
 cd ${prereq_install_dir}
 
+echo " - cloning US-Common"
 
-git clone ${github_base}/us-common us_common #&& cd us_common && make all
+${git} clone ${clone_opts} ${github_base}/us-common us_common
 
 res=$?
 if [ ! $res -eq 0 ] ; then
@@ -151,54 +187,118 @@ if [ ! $res -eq 0 ] ; then
 
 fi
 
-echo
-#cd ..
 
 
-git clone ${github_base}/Ceylan-Traces traces #&& cd traces && make all
+echo " - cloning LEEC"
+
+${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec #&& cd leec && make all
 
 res=$?
 if [ ! $res -eq 0 ] ; then
 
-	echo " Error, unable to obtain Traces." 1>&2
+	echo " Error, unable to obtain LEEC (Let's Encrypt Erlang with Ceylan)." 1>&2
+	exit 32
+
+fi
+
+
+echo " - cloning Ceylan-Traces"
+
+${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces
+
+res=$?
+if [ ! $res -eq 0 ] ; then
+
+	echo " Error, unable to obtain Ceylan-Traces." 1>&2
 	exit 30
 
 fi
 
-echo
-#cd ..
 
+echo " - cloning Ceylan-WOOPER"
 
-git clone ${github_base}/Ceylan-WOOPER wooper #&& cd wooper && make all
+${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper
 
 res=$?
 if [ ! $res -eq 0 ] ; then
 
-	echo " Error, unable to obtain WOOPER." 1>&2
+	echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
 	exit 25
 
 fi
 
-echo
-#cd ..
 
+echo " - cloning Ceylan-Myriad"
 
-git clone ${github_base}/Ceylan-Myriad myriad #&& cd myriad && make all
+${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad
 
 res=$?
 if [ ! $res -eq 0 ] ; then
 
-	echo " Error, unable to obtain Myriad." 1>&2
+	echo " Error, unable to obtain Ceylan-Myriad." 1>&2
 	exit 20
 
 fi
 
-echo
-#cd ..
+
+if [ ${do_build} -eq 0 ]; then
+
+	echo
+	echo "Building these packages:"
+
+	echo " - building Ceylan-Myriad"
+	cd myriad && ${make} all 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of Ceylan-Myriad failed." 1>&2
+		exit 50
+	fi
+	cd ..
+
+	echo " - building Ceylan-WOOPER"
+	cd wooper && ${make} all 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of Ceylan-WOOPER failed." 1>&2
+		exit 55
+	fi
+	cd ..
+
+	echo " - building Ceylan-Traces"
+	cd traces && ${make} all 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of Ceylan-Traces failed." 1>&2
+		exit 60
+	fi
+	cd ..
+
+	echo " - building LEEC"
+	cd leec && ${make} all 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of LEEC failed." 1>&2
+		exit 65
+	fi
+	cd ..
+
+	echo " - building US-Common"
+	cd us_common && ${make} all 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of US-Common failed." 1>&2
+		exit 70
+	fi
+	cd ..
+
+	echo " - building US-Web"
+	cd us_web && ${make} all 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of US-Web failed." 1>&2
+		exit 75
+	fi
+	cd ..
+
+fi
 
 
 
-echo "   Configuring a US-Web test instance"
+echo " - configuring a US-Web test instance"
 
 if [ ! -d "${config_dir}" ] ; then
 

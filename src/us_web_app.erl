@@ -23,14 +23,15 @@
 % The main entry point of the US-Web application.
 %
 % Typically triggered:
-%  - through OTP, by ebin/us_web.app (as obtained from conf/us_web.app.src)
-%  - through Myriad BDR (Build/Deploy/Run) System
+%  - through OTP/rebar3, by ebin/us_web.app (as obtained from
+%  conf/us_web.app.src; see start/2)
+%  - directly, with the help of Myriad's otp_utils (see exec/0)
 %
 -module(us_web_app).
 
 -behaviour(application).
 
--export([ start/0, start/2, stop/1 ]).
+-export([ exec/0, get_ordered_otp_prerequisites/0, start/0, start/2, stop/1 ]).
 
 
 % Implementation notes:
@@ -40,16 +41,77 @@
 % Myriad not be found).
 
 
+% Shorthands:
+-type application_name() :: otp_utils:application_name().
+
+
+% Runs US-Web, directly (ex: as 'make us_web_exec') rather than as a release.
+-spec exec() -> void().
+exec() ->
+
+	% Myriad may not be already available:
+	io:format( "Starting the US-Web application directly "
+			   "(not as a release).~n" ),
+
+	% Not in an OTP context here, yet we need OTP applications (Cowboy, LEEC,
+	% etc.) to be available (ex: w.r.t. their .app being found, etc.):
+
+	OrderedAppNames = get_ordered_otp_prerequisites(),
+
+	% Build root directory from which prerequisite applications may be found:
+	BuildRootDir = "..",
+
+	% Updating ebin paths so that the corresponding *.app files are found:
+	%
+	% (not adding us_web as the purpose of this function is to build/run US-Web
+	% without rebar3)
+	%
+	case otp_utils:prepare_for_execution( OrderedAppNames, BuildRootDir ) of
+
+		ready ->
+			ok;
+
+		{ lacking_app, AppName } ->
+			throw( { lacking_prerequisite_app, AppName } )
+
+	end,
+
+	start().
+
+
+
+% Returns an (ordered) list of the US-Web prerequisite OTP applications, to be
+% started in that order.
+%
+% Notes:
+% - not listed here (not relevant for that use case): elli, getopt, yamerl,
+% erlang_color
+% - jsx preferred over jiffy; yet neither needs to be initialized as an
+% application
+% - no need to start myriad either
+%
+-spec get_ordered_otp_prerequisites() -> [ application_name() ].
+get_ordered_otp_prerequisites() ->
+	[ ranch, cowlib, cowboy, myriad, wooper, traces ].
+
+
 
 % Typically if called manually, from a shell:
 start() ->
-	io:format( "Starting us_web application with default settings...~n" ),
-	application:start( us_web ).
+
+	trace_utils:info( "Starting the US-Web application "
+					  "with default settings..." ),
+
+	{ ok, AppNames } = application:ensure_all_started( us_web ),
+
+	trace_bridge:debug_fmt( "Applications started: ~p.", [ AppNames ] ),
+
+	%application:start( us_web ).
+	ok.
 
 
-
-% Typically called by running '[...]/bin/us_web start' (see the 'start' make
-% target):
+% Typically called when executed as a release, by running '[...]/bin/us_web
+% start' (see the 'start' make target):
 %
 start( StartType, StartArgs ) ->
 

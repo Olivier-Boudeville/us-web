@@ -80,11 +80,9 @@ Beyond this document, the next level of information about US-Web is to read the 
 Easy Testing of US-Web
 ----------------------
 
-Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter should suffice.
+Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter should suffice.
 
 It should clone, build and run a test server, that should be available at `http://localhost:8080 <`http://localhost:8080>`_.
-
-
 
 
 -----------

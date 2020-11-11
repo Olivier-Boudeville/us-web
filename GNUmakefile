@@ -2,12 +2,13 @@ US_WEB_TOP = .
 
 
 .PHONY: help help-intro help-us-web register-version-in-header register-us-web \
-		list-beam-dirs add-prerequisite-plts link-plt stats all                \
-		all compile                                                            \
+		list-beam-dirs add-prerequisite-plts link-plt stats                    \
+		all all-rebar3 compile                                                 \
 		ensure-dev-release ensure-prod-release                                 \
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
-		start debug start-as-release status stop stop-as-release               \
+		start debug debug-as-release start-as-release status                   \
+		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability                            \
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive                                       \
@@ -71,6 +72,17 @@ VM_LOG_FILES := $(LOG_DIR)/erlang.log.*
 # SIMPLE_BRIDGE_LIB_DIR := $(DEFAULT_BASE)/lib/simple_bridge
 
 # SIMPLE_BRIDGE_CONFIG := $(SIMPLE_BRIDGE_LIB_DIR)/etc/simple_bridge.config
+
+
+# Now the default build system is our own. Use the 'all-rebar3' target if
+# preferring the rebar3 way of building.
+#
+all:
+
+
+all-rebar3:
+	@$(REBAR3_EXEC) upgrade
+	@$(REBAR3_EXEC) compile
 
 
 # Default target:
@@ -222,8 +234,13 @@ start: kill clean-logs compile
 	@sleep 1 ; $(MAKE) -s log
 
 
-debug: ensure-dev-release
-	@echo " Running us_web for debug (EPMD port: $(EPMD_PORT))"
+debug:
+	@echo " Running us_web for debug natively (EPMD port: $(EPMD_PORT))"
+	@cd src && $(MAKE) us_web_exec CMD_LINE_OPT="--batch"
+
+
+debug-as-release: ensure-dev-release
+	@echo " Running us_web for debug as a release (EPMD port: $(EPMD_PORT))"
 	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) -s log
 
 

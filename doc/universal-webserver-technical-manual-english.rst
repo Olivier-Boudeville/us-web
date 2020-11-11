@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Saturday, October 24, 2020
+:Lastly updated: Sunday, November 1, 2020
 :Status: Work in progress
-:Version: 0.0.10
+:Version: 0.0.11
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -577,7 +577,9 @@ Based on that, devising one's version of them should allow to have one's US-Web 
 OTP Considerations
 ==================
 
-As discussed in these sections of `Myriad <http://myriad.esperide.org/myriad.html#otp>`_, `WOOPER <http://wooper.esperide.org/index.html#otp>`_, `Traces <http://traces.esperide.org/index.html#otp>`_ and `US-Common <http://us-common.esperide.org/index.html#otp>`_, the Universal Webserver *OTP application* is generated out of the build tree, ready to result directly in an *(OTP) release*. For that we rely on `rebar3 <https://www.rebar3.org/>`_, `relx <https://github.com/erlware/relx>`_ and (possibly) `hex <https://hex.pm/>`_.
+The default build system of US-Web is the native Ceylan one (triggered by ``make all``), yet a rebar3-based one is also available (triggered by ``make all-rebar3``).
+
+In this last context, as discussed in these sections of `Myriad <http://myriad.esperide.org/myriad.html#otp>`_, `WOOPER <http://wooper.esperide.org/index.html#otp>`_, `Traces <http://traces.esperide.org/index.html#otp>`_ and `US-Common <http://us-common.esperide.org/index.html#otp>`_, the Universal Webserver *OTP application* is generated out of the build tree, ready to result directly in an *(OTP) release*. For that we rely on `rebar3 <https://www.rebar3.org/>`_, `relx <https://github.com/erlware/relx>`_ and (possibly) `hex <https://hex.pm/>`_.
 
 Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on as many number of domains as needed.
 

@@ -4,24 +4,25 @@
 do_build=0
 
 checkout_opt="--checkout"
+
+# To avoid typos:
 checkout_dir="_checkouts"
 
 usage="
-Usage: $(basename $0) [-h|--help] [${checkout_opt}]: clones and builds a fully functional US-Web environment in the current directory, then configures a test instance thereof, and runs it.
- By default, creates a basic installation where dependencies are sibling directories of US-Web.
- If the '${checkout_opt}' option is specified, dependencies will be cloned in the us-web/${checkout_dir} directory instead, so that they can be modified and updated by developers more easily.
+Usage: $(basename $0) [-h|--help]: clones and builds a fully functional US-Web environment in the current directory, then configures a test instance thereof, and runs it.
+ Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories.
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
+ - rebar3 (see http://myriad.esperide.org/#getting-rebar3)
  - [optional] Awstats (see http://www.awstats.org/)
 
-No server shall already run at TCP port #8080."
+For the testing, no server shall already be running at TCP port #8080."
 
 erlc=$(which erlc 2>/dev/null)
+rebar3=$(which rebar3 2>/dev/null)
 github_base="https://github.com/Olivier-Boudeville"
 
-# Defaults:
-checkout_mode=1
 
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
@@ -38,11 +39,6 @@ if [ $# -eq 1 ]; then
 
 		echo "${usage}"
 		exit 0
-
-	elif [ "$1" = "${checkout_opt}" ]; then
-
-		echo "Switching to checkout mode."
-		checkout_mode=0
 
 	else
 
@@ -71,11 +67,22 @@ fi
 # No version checked:
 if [ ! -x "${erlc}" ]; then
 
-	echo "  Error, no Erlang compiler (erlc) found. Consider installing Erlang first, possibly thanks to our dedicated script, ${github_base}/Ceylan-Myriad/blob/master/conf/install-erlang.sh" 1>&2
+	echo "  Error, no Erlang compiler (erlc) found. Consider installing Erlang first, possibly thanks to our dedicated script, ${github_base}/Ceylan-Myriad/blob/master/conf/install-erlang.sh." 1>&2
 
 	exit 10
 
 fi
+
+
+# No version checked:
+if [ ! -x "${rebar3}" ]; then
+
+	echo "  Error, rebar3 not found. Consider installing it first, one may refer to http://myriad.esperide.org/#getting-rebar3." 1>&2
+
+	exit 11
+
+fi
+
 
 
 config_dir="${HOME}/.config/universal-server"
@@ -105,6 +112,8 @@ fi
 base_install_dir="$(pwd)"
 
 us_web_dir="${base_install_dir}/us_web"
+
+prereq_install_dir="${base_install_dir}"
 
 
 echo
@@ -153,27 +162,21 @@ if [ ! $res -eq 0 ] ; then
 fi
 
 
-# Not building prerequisites from their source tree (mostly needed for their
-# GNU* files to be available to generate the US-Web release), just cloning.
+# The explicit build of Cowboy is needed due to a rebar3 bug encountered when
+# building US-Web (see the comment in the 'building US-Web' section).
 
-if [ $checkout_mode -eq 0 ]; then
+echo " - cloning Cowboy"
 
-	prereq_install_dir="${us_web_dir}/${checkout_dir}"
+${git} clone ${clone_opts} git@github.com:ninenines/cowboy.git
 
-	if [ ! -d "{prereq_install_dir}" ]; then
+res=$?
+if [ ! $res -eq 0 ] ; then
 
-		mkdir -p "${prereq_install_dir}"
-
-	fi
-
-else
-
-	prereq_install_dir="${base_install_dir}"
+	echo " Error, unable to obtain Cowboy." 1>&2
+	exit 35
 
 fi
 
-
-cd ${prereq_install_dir}
 
 echo " - cloning US-Common"
 
@@ -189,9 +192,9 @@ fi
 
 
 
-echo " - cloning LEEC"
+echo " - cloning LEEC (Ceylan fork of letsencrypt-erlang)"
 
-${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec #&& cd leec && make all
+${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec
 
 res=$?
 if [ ! $res -eq 0 ] ; then
@@ -246,6 +249,9 @@ if [ ${do_build} -eq 0 ]; then
 	echo
 	echo "Building these packages:"
 
+	# For Myriad, WOOPER and Traces, we prefer to rely on our own good old build
+	# system (i.e. not on rebar3).
+
 	echo " - building Ceylan-Myriad"
 	cd myriad && ${make} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
@@ -254,6 +260,7 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
+	# Our build; uses Myriad's sibling tree:
 	echo " - building Ceylan-WOOPER"
 	cd wooper && ${make} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
@@ -262,6 +269,7 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
+	# Our build; uses Myriad's and WOOPER's sibling trees:
 	echo " - building Ceylan-Traces"
 	cd traces && ${make} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
@@ -270,14 +278,54 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
-	echo " - building LEEC"
-	cd leec && ${make} all 1>/dev/null
+	# Only for US-Web (not for prerequisites of LEEC):
+	# (implies cowlib and ranch)
+	#
+	echo " - building Cowboy"
+	cd cowboy && ${rebar3} compile 1>/dev/null
 	if [ ! $? -eq 0 ]; then
-		echo " Error, the build of LEEC failed." 1>&2
+		echo " Error, the build of Cowboy failed." 1>&2
 		exit 65
 	fi
 	cd ..
 
+	# Apart from Myriad (used as a checkout to point to the same, unique install
+	# thereof here), LEEC has dependencies of its own (shotgun, jsx otherwise
+	# jiffy, elli, getopt, yamerl, erlang_color), so, even if not all of them
+	# are actually needed by our use case, we prefer relying on rebar3 (as
+	# indirect dependencies, such as cowlib or gun, are also induced):
+	#
+	echo " - building LEEC"
+	cd leec && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
+
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the pre-build of LEEC failed." 1>&2
+		exit 65
+	fi
+
+	# Relies on rebar3, so that prerequisites such as shotgun are managed):
+	${make} all-rebar3 1>/dev/null
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of LEEC failed." 1>&2
+		exit 66
+	fi
+
+	# So that later US-Web is able to find the element of the 'leec'
+	# application:
+	#
+	cd _build/default/lib/ && ln -s letsencrypt leec && cd leec/ebin && ln -s letsencrypt.app leec.app
+
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the post-build of LEEC failed." 1>&2
+		exit 67
+	fi
+
+	cd "${base_install_dir}"
+
+	# US-Common does not introduce third-party dependencies, so going for our
+	# native build, which thus uses Myriad's, WOOPER's and Traces' sibling
+	# trees:
+	#
 	echo " - building US-Common"
 	cd us_common && ${make} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
@@ -286,8 +334,18 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
+	# US-Web has for external dependencies only cowboy; we used to rely on a
+	# rebar3-based build here, and thus checkouts for most of our libraries,
+	# yet, due to a rebar3 bug, Traces was attempted to be built again, which
+	# failed as the WOOPER parse transform was not found, as WOOPER had not been
+	# built before - in spite of the dependency; so now we are not using rebar3
+	# for US-Web either, which requires installing by ourselves cowboy):
+	#
 	echo " - building US-Web"
-	cd us_web && ${make} all 1>/dev/null
+	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
+
+	# Relies on rebar3:
+	${make} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of US-Web failed." 1>&2
 		exit 75
@@ -341,8 +399,12 @@ fi
 cd ${us_web_dir}
 
 echo
-echo "   Building and launching a test US-Web release"
-make debug
+
+echo "   Building and launching a test US-Web native application"
+${make} debug
+
+#echo "   Building and launching a test US-Web release"
+#${make} debug-as-release
 
 res=$?
 

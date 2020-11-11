@@ -245,6 +245,9 @@
 -type bin_host_name() :: net_utils:bin_host_name().
 -type tcp_port() :: net_utils:tcp_port().
 
+-type supervisor_pid() :: otp_utils:supervisor_pid().
+-type application_run_context() :: otp_utils:application_run_context().
+
 
 %-type server_pid() :: class_UniversalServer:server_pid().
 
@@ -261,6 +264,11 @@
 
 	{ execution_context, basic_utils:execution_context(),
 	  "tells whether this server is to run in development or production mode" },
+
+	% As it impacts at least various paths:
+	{ app_run_context, application_run_context(),
+	  "tells how US-Web is run, natively (using the Ceylan build/run system) "
+	  "or as an OTP release" },
 
 	{ domain_config_table, domain_config_table(),
 	  "a table containing all configuration information related to virtual "
@@ -297,7 +305,7 @@
 	{ us_web_username, basic_utils:user_name(),
 	  "the user (if any) who shall launch the US web application" },
 
-	{ us_web_supervisor_pid, otp_utils:supervisor_pid(),
+	{ us_web_supervisor_pid, supervisor_pid(),
 	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
 
 	{ dispatch_rules, dispatch_rules(),
@@ -375,8 +383,13 @@
 
 
 % Constructs the US-Web configuration server.
--spec construct( wooper:state(), otp_utils:supervisor_pid() ) -> wooper:state().
-construct( State, SupervisorPid ) ->
+%
+% SupervisorPid is the PID of the main US-Web OTP supervisor, and AppRunContext
+% tells how US-Web is being run.
+%
+-spec construct( wooper:state(), supervisor_pid(),
+				 application_run_context() ) -> wooper:state().
+construct( State, SupervisorPid, AppRunContext ) ->
 
 	StartTimestamp = time_utils:get_timestamp(),
 
@@ -384,7 +397,9 @@ construct( State, SupervisorPid ) ->
 	TraceState = class_USServer:construct( State,
 										   ?trace_categorize("USWebServer") ),
 
-	?send_info( TraceState, "Creating a US-Web configuration server." ),
+	?send_info_fmt( TraceState, "Creating a US-Web configuration server, "
+		"running ~s.",
+		[ otp_utils:application_run_context_to_string( AppRunContext ) ] ),
 
 	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s",
 		[ system_utils:get_interpreter_version(),
@@ -403,7 +418,7 @@ construct( State, SupervisorPid ) ->
 
 		{ undefined, CfgMsg } ->
 			?send_error_fmt( TraceState, "Unable to determine the US "
-							 "configuration directory: ~s.", [ CfgMsg ] ),
+							 "configuration directory: ~s", [ CfgMsg ] ),
 			throw( us_configuration_directory_not_found );
 
 		{ FoundCfgDir, CfgMsg } ->
@@ -414,6 +429,7 @@ construct( State, SupervisorPid ) ->
 
 	% Other attributes set by the next function:
 	SupState = setAttributes( TraceState, [
+					{ app_run_context, AppRunContext },
 					{ us_web_supervisor_pid, SupervisorPid },
 					{ start_timestamp, StartTimestamp },
 					{ cert_directory, undefined } ] ),
@@ -1714,7 +1730,7 @@ manage_os_user( ConfigTable, State ) ->
 
 
 
-% Manages any user-configured application base directory, and set related
+% Manages any user-configured application base directory, and sets related
 % directories.
 %
 -spec manage_app_base_directories( us_web_config_table(), wooper:state() ) ->
@@ -1781,23 +1797,33 @@ manage_app_base_directories( ConfigTable, State ) ->
 			case file_utils:is_existing_directory_or_link( BaseDir ) of
 
 		true ->
-			% As it may end with a version (ex: "us_web-0.0.1") or as a
-			% "us_web-latest" symlink thereof:
-			%
-			case filename:basename( BaseDir ) of
+			BinBaseDir = text_utils:string_to_binary( BaseDir ),
+			case ?getAttr(app_run_context) of
 
-				"us_web" ++ _ ->
-					?info_fmt( "US-Web application base directory set to '~s'.",
-							   [ BaseDir ] ),
-					text_utils:string_to_binary( BaseDir );
+				as_otp_release ->
+					% As, if run as a release, it may end with a version (ex:
+					% "us_web-0.0.1") or as a "us_web-latest" symlink thereof:
+					%
+					case filename:basename( BaseDir ) of
 
-				_Other ->
-					%?warning_fmt( "The US-Web application base directory '~s' "
-					%	"does not seem legit (it should end with 'us_web'), "
-					%	"thus considering knowing none.", [ BaseDir ] ),
-					%undefined
-					throw( { incorrect_us_web_app_base_directory, BaseDir,
-							 ?us_web_app_base_dir_key } )
+						"us_web" ++ _ ->
+							?info_fmt( "US-Web application base directory "
+									   "set to '~s'.", [ BaseDir ] ),
+							BinBaseDir;
+
+						_Other ->
+							%?warning_fmt( "The US-Web application base "
+							%  "directory '~s' does not seem legit (it "
+							%  "should end with 'us_web'), thus considering "
+							%   "knowing none.", [ BaseDir ] ),
+							%undefined
+							throw( { incorrect_us_web_app_base_directory,
+									 BaseDir, ?us_web_app_base_dir_key } )
+
+					end;
+
+				as_native ->
+					BinBaseDir
 
 			end;
 
@@ -2504,13 +2530,16 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US-Web configuration ~s, ~s, ~s, ~s, "
+	text_utils:format( "US-Web configuration ~s, running ~s, ~s, ~s, ~s, "
 		"running in the ~s execution context, ~s, knowing: ~s, "
 		"US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "
 		"on the '~s' log directory.~n~nIn terms of routes, using ~s~n~n"
 		"Corresponding dispatch rules:~n~p",
-		[ class_USServer:to_string( State ), HttpString, HttpsString,
+		[ class_USServer:to_string( State ),
+		  otp_utils:application_run_context_to_string(
+			?getAttr(app_run_context ) ),
+		  HttpString, HttpsString,
 		  WebRootString, ?getAttr(execution_context), CertString, SrvString,
 		  ?getAttr(us_config_server_pid), ?getAttr(us_web_supervisor_pid),
 		  ?getAttr(config_base_directory), ?getAttr(log_directory),

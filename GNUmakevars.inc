@@ -124,3 +124,25 @@ else
 	endif
 
 endif
+
+
+# We do the same for LEEC:
+ifneq ($(wildcard $(US_WEB_TOP)/../leec),)
+
+	# By default, expect sibling directories:
+	LEEC_TOP = $(US_WEB_TOP)/../leec
+
+else
+
+	# Otherwise assume a checkout one:
+	ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec),)
+
+		LEEC_TOP = $(US_WEB_TOP)/_checkouts/leec
+
+   else
+
+		FORCE_EVAL := $(error Unable to find the build root of LEEC)
+
+	endif
+
+endif

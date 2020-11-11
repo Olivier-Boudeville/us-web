@@ -36,11 +36,11 @@
   %  - Myriad, see http://myriad.esperide.org/myriad.html#otp
 
 
-  % myriad is a dependency of wooper, which is itself a dependency of traces,
-  % dependency of us_common (dependency of this us_web); as such they may not be
-  % listed here, however we stay conservative;
+  % myriad is a dependency of wooper (and leec), which is itself a dependency of
+  % traces, dependency of us_common (dependency of this us_web); as such they
+  % may not be listed here, however we stay conservative;
   %
-  {applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common]},
+  {applications, [kernel, stdlib, sasl, leec, cowboy, myriad, wooper, traces, us_common]},
   {env,[]},
 
   % Flat hierarchy in ebin here:

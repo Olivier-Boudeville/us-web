@@ -14,6 +14,7 @@
 # First the make variables:
 
 include $(US_WEB_TOP)/GNUmakevars.inc
+include $(LEEC_TOP)/GNUmakevars.inc
 include $(US_COMMON_TOP)/GNUmakevars.inc
 include $(TRACES_TOP)/GNUmakevars.inc
 include $(WOOPER_TOP)/GNUmakevars.inc
@@ -27,12 +28,14 @@ include $(MYRIAD_TOP)/GNUmakevars.inc
 # 'clean-local' target):
 
 include $(US_WEB_TOP)/GNUmakerules-automatic.inc
+include $(LEEC_TOP)/GNUmakerules-automatic.inc
 include $(US_COMMON_TOP)/GNUmakerules-automatic.inc
 include $(TRACES_TOP)/GNUmakerules-automatic.inc
 include $(WOOPER_TOP)/GNUmakerules-automatic.inc
 include $(MYRIAD_TOP)/GNUmakerules-automatic.inc
 
 include $(US_WEB_TOP)/GNUmakerules-explicit.inc
+include $(LEEC_TOP)/GNUmakerules-explicit.inc
 include $(US_COMMON_TOP)/GNUmakerules-explicit.inc
 include $(TRACES_TOP)/GNUmakerules-explicit.inc
 include $(WOOPER_TOP)/GNUmakerules-explicit.inc

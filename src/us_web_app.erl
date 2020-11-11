@@ -20,7 +20,7 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% The main entry point of the US-Web application.
+% The main entry point of the US-Web active OTP application.
 %
 % Typically triggered:
 %  - through OTP/rebar3, by ebin/us_web.app (as obtained from
@@ -31,90 +31,87 @@
 
 -behaviour(application).
 
--export([ exec/0, get_ordered_otp_prerequisites/0, start/0, start/2, stop/1 ]).
-
-
-% Implementation notes:
-%
-% Calls to io:format/{1,2} shall not be replaced typically by trace_utils ones,
-% in order to better diagnose problems with dependencies (typically should
-% Myriad not be found).
-
+-export([ exec/0, start/2, stop/1 ]).
 
 % Shorthands:
 -type application_name() :: otp_utils:application_name().
 
 
-% Runs US-Web, directly (ex: as 'make us_web_exec') rather than as a release.
+% Implementation notes:
+%
+% We define two starting procedures here:
+%  - the direct, native one (yet OTP-compliant for prerequisites), through our
+%  Ceylan make system
+%  - the OTP release-based one (generally based on rebar3)
+
+% Calls to io:format/{1,2} shall not be replaced typically by trace_utils ones,
+% in order to better diagnose problems with dependencies (typically should
+% Myriad not be found).
+
+
+% Silencing:
+-export([ start_application/1 ]).
+
+
+
+% Runs US-Web, directly (ex: as 'make us_web_exec') rather than as an OTP
+% release.
+%
 -spec exec() -> void().
 exec() ->
 
-	% Myriad may not be already available:
-	io:format( "Starting the US-Web application directly "
-			   "(not as a release).~n" ),
+	% Expecting Myriad to be already available in this branch:
+	trace_utils:info(
+	  "Starting the US-Web application natively (not as a release)." ),
 
 	% Not in an OTP context here, yet we need OTP applications (Cowboy, LEEC,
-	% etc.) to be available (ex: w.r.t. their .app being found, etc.):
+	% etc.) to be available (ex: w.r.t. their .app and BEAMs being found, their
+	% starting to be done, etc.); we just not want US-Web to be launched the
+	% same way:
 
-	OrderedAppNames = get_ordered_otp_prerequisites(),
-
-	% Build root directory from which prerequisite applications may be found:
+	% Base build root directory from which prerequisite applications may be
+	% found:
+	%
 	BuildRootDir = "..",
 
-	% Updating ebin paths so that the corresponding *.app files are found:
+	% For all (direct and indirect) OTP prerequisites: updating ebin paths so
+	% that the corresponding *.app and BEAM files are found, checking that
+	% applications are compiled and preparing their starting:
 	%
-	% (not adding us_web as the purpose of this function is to build/run US-Web
-	% without rebar3)
+
+	OrderedAppNames = otp_utils:prepare_for_execution( _ThisApp=us_web,
+													   BuildRootDir ),
+
+	% Retain all applications but US-Web itself, so that we can run US-Web as we
+	% want:
 	%
-	case otp_utils:prepare_for_execution( OrderedAppNames, BuildRootDir ) of
+	{ us_web, PrereqAppNames } =
+		list_utils:extract_last_element( OrderedAppNames ),
 
-		ready ->
-			ok;
+	trace_utils:info_fmt( "Resulting prerequisite applications to start, "
+						  "in order: ~w.", [ OrderedAppNames ] ),
 
-		{ lacking_app, AppName } ->
-			throw( { lacking_prerequisite_app, AppName } )
+	otp_utils:start_applications( PrereqAppNames ),
 
-	end,
+	% So here the us_web application is not regarded as specifically started
+	% (start/2 below never called):
+	%
+	us_web_sup:start_link( as_native ),
 
-	start().
+	trace_utils:debug( "US-Web started (as native)." ).
 
 
 
-% Returns an (ordered) list of the US-Web prerequisite OTP applications, to be
-% started in that order.
+% Called when US-Web itself is started as an OTP application (as opposed to
+% natively, "manually", see exec/0).
 %
-% Notes:
-% - not listed here (not relevant for that use case): elli, getopt, yamerl,
-% erlang_color
-% - jsx preferred over jiffy; yet neither needs to be initialized as an
-% application
-% - no need to start myriad either
-%
--spec get_ordered_otp_prerequisites() -> [ application_name() ].
-get_ordered_otp_prerequisites() ->
-	[ ranch, cowlib, cowboy, myriad, wooper, traces ].
-
-
-
-% Typically if called manually, from a shell:
-start() ->
-
-	trace_utils:info( "Starting the US-Web application "
-					  "with default settings..." ),
-
-	{ ok, AppNames } = application:ensure_all_started( us_web ),
-
-	trace_bridge:debug_fmt( "Applications started: ~p.", [ AppNames ] ),
-
-	%application:start( us_web ).
-	ok.
-
-
-% Typically called when executed as a release, by running '[...]/bin/us_web
-% start' (see the 'start' make target):
+% The setup and dependency management shall have been done already by the OTP
+% release system. So here no ebin path to set or prerequisite applications to
+% start, we focus only on us_web itself.
 %
 start( StartType, StartArgs ) ->
 
+	% Myriad may be already available in this branch as well, though:
 	io:format( "Starting us_web application "
 		"(start type: ~p, arguments: ~p)...~n", [ StartType, StartArgs ] ),
 
@@ -123,16 +120,16 @@ start( StartType, StartArgs ) ->
 	% lost):
 	%
 	%io:format( "Current code path:~n~p~n", [ code:get_path() ] ),
+	%io:format( "undef interpretation: ~s~n",
+	%  [ code_utils:interpret_undef_exception( M, F, A ) ] ),
+	%
 	%timer:sleep( 2000 ),
-
-	start_prerequisites(),
 
 	%basic_utils:display( "Prerequisites started; loaded applications:~n~p~n",
 	%		   [ application:loaded_applications() ] ),
 
 	% See http://erlang.org/doc/design_principles/applications.html:
-	us_web_sup:start_link().
-
+	us_web_sup:start_link( as_otp_release ).
 
 
 stop( _State ) ->
@@ -143,35 +140,9 @@ stop( _State ) ->
 
 % Internal functions:
 
-list_required_applications() ->
 
-	% Actually the applications listed in the relx release section of
-	% rebar.config are automatically started (with default settings), so they
-	% should not be listed here (otherwise will detect that they are already
-	% launched).
-
-	%[ crypto, ranch, cowboy, nprocreg, simple_bridge, simple_cache, qdate,
-	%  nitrogen_core, sync ].
-	%[simple_bridge].
-	%[ ranch, cowlib, cowboy ].
-	[].
-
-
-start_prerequisites() ->
-
-	case list_required_applications() of
-
-		[] ->
-			ok;
-
-		PreReqs ->
-			trace_utils:info_fmt( "Starting prerequisites ~p...", [ PreReqs ] ),
-			[ start_application( App ) || App <- PreReqs ]
-
-	end.
-
-
-% Startings required applications:
+% Startings required applications (not used currently):
+-spec start_application( application_name() ) -> void().
 start_application( simple_bridge ) ->
 
 	trace_utils:info_fmt( "Starting 'simple_bridge'..." ),
@@ -182,30 +153,11 @@ start_application( simple_bridge ) ->
 			trace_utils:debug_fmt( "(simple_bridge started)" );
 
 		Other ->
-			trace_utils:error_fmt( "simple_bridge failed to start :~n~p", [ Other ] ),
+			trace_utils:error_fmt( "simple_bridge failed to start:~n~p",
+								   [ Other ] ),
 			throw( { app_start_failed, simple_bridge, Other } )
 
 	end;
 
-
 start_application( App ) ->
-
-	trace_utils:info_fmt( "Starting application '~s'.", [ App ] ),
-
-	case application:start( App ) of
-
-		ok ->
-			trace_utils:debug_fmt( "(application '~s' started)", [ App ] );
-
-		{ error, { already_started, myriad } } ->
-			trace_utils:error_fmt(
-			  "Error, application '~s' was already started.",  [ App ] ),
-			throw( { app_already_started, App } );
-
-
-		Other ->
-			trace_utils:error_fmt( "Application '~s' failed to start :~n~p",
-								   [ App, Other ] ),
-			throw( { app_start_failed, App, Other } )
-
-	end.
+	otp_utils:start_application( App ).

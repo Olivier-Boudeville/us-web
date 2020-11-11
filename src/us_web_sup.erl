@@ -28,21 +28,43 @@
 
 -behaviour(supervisor).
 
--export([ start_link/0 ]).
+-export([ start_link/0, start_link/1 ]).
 
 -export([ init/1 ]).
 
 -define( server_registration_name, ?MODULE ).
 
+% Shorthand:
+-type application_run_context() :: otp_utils:application_run_context().
 
+
+% OTP conventions:
+%
+% (function probably useless)
+%
+-spec start_link() -> pid().
 start_link() ->
-	supervisor:start_link( { local, ?server_registration_name }, ?MODULE, [] ).
+	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
+						   _Default=[ as_otp_release ] ).
+
+
+% OTP or not conventions:
+-spec start_link( application_run_context() ) -> pid().
+start_link( AppRunContext ) ->
+	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
+						   _Default=[ AppRunContext ] ).
 
 
 
-init( _Args=[] ) ->
+% Initialization of this OTP supervisor.
+-spec init( [ application_run_context() ] ) ->
+				  { 'ok', { supervisor:sup_flags(), supervisor:child_spec() } }.
+init( _Args=[ AppRunContext ] ) ->
 
-	trace_utils:trace( "Starting us_web supervisor..." ),
+	otp_utils:check_application_run_context( AppRunContext ),
+
+	trace_utils:trace_fmt( "Starting us_web supervisor (run context: ~s)...",
+						   [ AppRunContext ] ),
 
 	% The logic below shall better be in a (single) supervised child, for a
 	% better logic separation.
@@ -50,7 +72,8 @@ init( _Args=[] ) ->
 	% The overall US (not US-Web) configuration server will be either found or
 	% created by the US-Web configuration one:
 	%
-	USWebCfgServerPid = class_USWebConfigServer:new_link( self() ),
+	USWebCfgServerPid = class_USWebConfigServer:new_link( self(),
+														  AppRunContext ),
 
 	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
@@ -203,6 +226,5 @@ init( _Args=[] ) ->
 								  "https://localhost:~p", [ SomeHttpsTCPPort ] )
 
 	end,
-
 
 	{ ok, { SupSettings, ChildSpecs } }.

@@ -19,8 +19,6 @@ The prerequisites expected to be already installed are:
 
 For the testing, no server shall already be running at TCP port #8080."
 
-erlc=$(which erlc 2>/dev/null)
-rebar3=$(which rebar3 2>/dev/null)
 github_base="https://github.com/Olivier-Boudeville"
 
 
@@ -53,7 +51,7 @@ fi
 
 if [ ! $# -eq 0 ]; then
 
-	echo "$usage"
+	echo "${usage}"
 
 	exit 5
 
@@ -63,6 +61,8 @@ fi
 
 
 # Checking first:
+
+erlc=$(which erlc 2>/dev/null)
 
 # No version checked:
 if [ ! -x "${erlc}" ]; then
@@ -74,7 +74,9 @@ if [ ! -x "${erlc}" ]; then
 fi
 
 
-# No version checked:
+rebar3=$(which rebar3 2>/dev/null)
+
+# No version checked either:
 if [ ! -x "${rebar3}" ]; then
 
 	echo "  Error, rebar3 not found. Consider installing it first, one may refer to http://myriad.esperide.org/#getting-rebar3." 1>&2
@@ -83,6 +85,25 @@ if [ ! -x "${rebar3}" ]; then
 
 fi
 
+
+git=$(which git 2>/dev/null)
+
+if [ ! -x "${git}" ]; then
+
+	echo "  Error, no 'git' tool found." 1>&2
+	exit 18
+
+fi
+
+
+make=$(which make 2>/dev/null)
+
+if [ ! -x "${make}" ]; then
+
+	echo "  Error, no 'make' tool found." 1>&2
+	exit 19
+
+fi
 
 
 config_dir="${HOME}/.config/universal-server"
@@ -121,25 +142,6 @@ echo "   Installing US-Web in ${base_install_dir}..."
 echo
 
 
-git=$(which git 2>/dev/null)
-
-if [ ! -x "${git}" ]; then
-
-	echo "  Error, not 'git' tool found." 1>&2
-	exit 18
-
-fi
-
-
-make=$(which make 2>/dev/null)
-
-if [ ! -x "${make}" ]; then
-
-	echo "  Error, not 'make' tool found." 1>&2
-	exit 19
-
-fi
-
 
 # First US-Web itself, so that any _checkouts directory can be created afterwards:
 cd "${base_install_dir}"
@@ -147,14 +149,13 @@ cd "${base_install_dir}"
 
 clone_opts="--quiet"
 
-echo "Getting the relevant packages:"
+echo "Getting the relevant repositories:"
 
 echo " - cloning US-Web"
 
 ${git} clone ${clone_opts} ${github_base}/us-web us_web
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain US-Web." 1>&2
 	exit 40
@@ -169,8 +170,7 @@ echo " - cloning Cowboy"
 
 ${git} clone ${clone_opts} git@github.com:ninenines/cowboy.git
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain Cowboy." 1>&2
 	exit 35
@@ -182,8 +182,7 @@ echo " - cloning US-Common"
 
 ${git} clone ${clone_opts} ${github_base}/us-common us_common
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain US-Common." 1>&2
 	exit 35
@@ -196,8 +195,7 @@ echo " - cloning LEEC (Ceylan fork of letsencrypt-erlang)"
 
 ${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain LEEC (Let's Encrypt Erlang with Ceylan)." 1>&2
 	exit 32
@@ -205,12 +203,12 @@ if [ ! $res -eq 0 ] ; then
 fi
 
 
+
 echo " - cloning Ceylan-Traces"
 
 ${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain Ceylan-Traces." 1>&2
 	exit 30
@@ -218,12 +216,12 @@ if [ ! $res -eq 0 ] ; then
 fi
 
 
+
 echo " - cloning Ceylan-WOOPER"
 
 ${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
 	exit 25
@@ -235,8 +233,7 @@ echo " - cloning Ceylan-Myriad"
 
 ${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad
 
-res=$?
-if [ ! $res -eq 0 ] ; then
+if [ ! $? -eq 0 ]; then
 
 	echo " Error, unable to obtain Ceylan-Myriad." 1>&2
 	exit 20
@@ -358,7 +355,7 @@ fi
 
 echo " - configuring a US-Web test instance"
 
-if [ ! -d "${config_dir}" ] ; then
+if [ ! -d "${config_dir}" ]; then
 
 	mkdir "${config_dir}"
 

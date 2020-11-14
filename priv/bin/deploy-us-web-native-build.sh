@@ -19,16 +19,28 @@ checkout_opt="--checkout"
 # To avoid typos:
 checkout_dir="_checkouts"
 
+base_install_dir="/opt/universal-server"
+
+# To be able to coexist with OTP releases (named as us_web-${archive_version});
+# relative to base_install_dir:
+#
+install_dir="us_web-native"
+
+
 usage="
-Usage: $(basename $0) [-h|--help] [INSTALL_DIR]: clones and builds a fully functional US-Web environment in the specified directory (otherwise in the current one), then configures an instance thereof, and runs it.
- Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories.
+Usage: $(basename $0) [-h|--help] [BASE_INSTALL_DIR]: deploys (clones and builds) locally, as root, a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_install_dir}' directory), as '${install_dir}', then launches it.
+ Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
- - rebar3 (see http://myriad.esperide.org/#getting-rebar3)
+ - rebar3, for the prerequisites that relies on it (see http://myriad.esperide.org/#getting-rebar3)
  - [optional] Awstats (see http://www.awstats.org/)
 "
 github_base="https://github.com/Olivier-Boudeville"
+
+
+# See also the deploy-us-web-release.sh script to deploy OTP releases of US-Web
+# instead.
 
 
 
@@ -39,11 +51,7 @@ github_base="https://github.com/Olivier-Boudeville"
 # This leads to duplications (ex: Myriad is built once in the context of LEEC
 # and also once for the other packages).
 
-if [ $# -eq 0 ]; then
-
-	base_install_dir="$(pwd)"
-
-elif [ $# -eq 1 ]; then
+if [ $# -eq 1 ]; then
 
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -52,10 +60,11 @@ elif [ $# -eq 1 ]; then
 
 	else
 
+		# If specified, must exist:
 		base_install_dir="$1"
-		if [ ! -d "${install_dir}" ]; then
+		if [ ! -d "${base_install_dir}" ]; then
 
-			echo "  Error, specified installation directory, '${install_dir}', does not exist." 1>&2
+			echo "  Error, specified installation directory, '${base_install_dir}', does not exist." 1>&2
 			exit 4
 
 
@@ -76,8 +85,18 @@ if [ ! $# -eq 0 ]; then
 fi
 
 
+# Just to avoid error messages if running from a non-existing directory:
+cd /
+
 
 # Checking first:
+
+if [ ! $(id -u ) -eq 0 ]; then
+
+	echo "  Error, this script must be run as root." 1>&2
+	exit 5
+
+fi
 
 erlc=$(which erlc 2>/dev/null)
 
@@ -103,16 +122,6 @@ if [ ! -x "${rebar3}" ]; then
 fi
 
 
-git=$(which git 2>/dev/null)
-
-if [ ! -x "${git}" ]; then
-
-	echo "  Error, no 'git' tool found." 1>&2
-	exit 18
-
-fi
-
-
 make=$(which make 2>/dev/null)
 
 if [ ! -x "${make}" ]; then
@@ -122,20 +131,59 @@ if [ ! -x "${make}" ]; then
 
 fi
 
+if [ -d "${install_dir}" ]; then
+
+	echo "  Error, target installation directory, '${install_dir}', already exists. Remove it first." 1>&2
+
+	exit 20
+
+fi
 
 
-echo
-echo "   Installing US-Web in '${base_install_dir}'..."
-echo
+base_install_dir_created=1
 
+if [ ! -d "${base_install_dir}" ]; then
+
+	echo " Creating base directory '{base_install_dir}'."
+	/bin/mkdir "${base_install_dir}"
+	base_install_dir_created=0
+
+fi
 
 cd "${base_install_dir}"
+
+# Typically a release-like '/opt/universal-server/us_web-native', containing all
+# dependencies:
+#
+abs_install_dir="${base_install_dir}/${install_dir}"
+
+# The US-Web tree itself:
+us_web_dir="${abs_install_dir}/us_web"
+
+
+echo
+echo "   Installing US-Web in '${abs_install_dir}'..."
+echo
+
+
+# Parent already exists by design:
+mkdir "${install_dir}" && cd "${install_dir}"
+
 
 # First US-Web itself, so that any _checkouts directory can be created afterwards:
 
 clone_opts="--quiet"
 
 if [ $do_clone -eq 0 ]; then
+
+	git=$(which git 2>/dev/null)
+
+	if [ ! -x "${git}" ]; then
+
+		echo "  Error, no 'git' tool found." 1>&2
+		exit 18
+
+	fi
 
 	echo "Getting the relevant repositories:"
 
@@ -229,11 +277,23 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
+	# Back in ${base_install_dir}:
+	cd ..
+
+	# Designates this install as the latest one then.
+	#
+	# Rare option needed, otherwise apparently mistook for a directory resulting
+	# in an incorrect link:
+	#
+	/bin/ln -sf --no-target-directory "${install_dir}" us_web-latest
+
 fi
 
 
 
 if [ ${do_build} -eq 0 ]; then
+
+	cd "${install_dir}"
 
 	echo
 	echo "Building these packages:"
@@ -315,7 +375,7 @@ if [ ${do_build} -eq 0 ]; then
 		exit 67
 	fi
 
-	cd "${base_install_dir}"
+	cd ../../../../
 
 	# US-Common does not introduce third-party dependencies, so going again for
 	# our native build, which thus uses Myriad's, WOOPER's and Traces' sibling
@@ -348,6 +408,8 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
+	echo "Native US-Web built and ready in ${abs_install_dir}."
+
 fi
 
 
@@ -359,12 +421,136 @@ echo
 
 if [ $do_launch -eq 0 ]; then
 
-	echo "   Running US-Web native application"
-	cd us_web/src && ${make} us_web_exec
+	# Not expecting here a previous native instance to run.
 
-	res=$?
+	# Typically in '/opt/universal-server/us_web-native/us_web'
+	cd "${us_web_dir}"
+
+	echo "   Running US-Web native application"
+
+	# Simplest: cd src && ${make} us_web_exec
+
+	priv_dir="priv"
+
+	# Actual cookie managed there:
+	start_script="${priv_dir}/bin/start-us-web-native-build.sh"
+
+	if [ ! -x "${start_script}" ]; then
+
+		echo "Error, no start script found (no '${start_script}' found)." 1>&2
+		exit 30
+
+	fi
+
+	# Not wanting the files of that US-Web install to remain owned by root, so
+	# trying to apply a more proper user/group; for that we have to determine
+	# them from the configuration files:
+	#
+	# (will source in turn us-common.sh)
+	us_web_common_script="${priv_dir}/bin/us-web-common.sh"
+
+	if [ ! -f "${us_web_common_script}" ]; then
+
+		echo "Error, unable to find us-web-common.sh script (not found in '${us_web_common_script}')." 1>&2
+		exit 35
+
+	fi
+
+	#echo "Sourcing '${us_web_common_script}' from $(pwd)."
+	. "${us_web_common_script}" 1>/dev/null
+
+	read_us_config_file 1>/dev/null
+
+	read_us_web_config_file 1>/dev/null
+
+	echo " Changing, from '${us_web_dir}', the owner of release files to '${us_web_username}' and their group to '${us_groupname}'."
+
+	if ! chown --recursive ${us_web_username}:${us_groupname} ${us_web_dir}; then
+
+		echo "Error, changing user/group owner from '${us_web_dir}' failed." 1>&2
+
+		exit 40
+
+	fi
+
+	# Not leaving it as root either:
+	if [ ${base_install_dir_created} -eq 0 ]; then
+
+		if ! chown ${us_web_username}:${us_groupname} ${base_install_dir}; then
+
+			echo "Error, changing user/group owner of '${base_install_dir}' failed." 1>&2
+
+			exit 45
+
+		fi
+
+	fi
+
+	cd "${base_install_dir}"
+
+	# Automatic shutdown (that was deferred as much as possible) of any prior
+	# US-Web release running:
+	#
+	for d in $(/bin/ls -d us_web-*.*.* 2>/dev/null) ; do
+
+		exec="${d}/bin/us_web"
+
+		#echo "Testing for ${exec}..."
+
+		if [ -x "${exec}" ]; then
+			echo " Trying to stop gracefully any prior release in ${d}."
+			${exec} stop 1>/dev/null 2>&1
+		fi
+
+	done
+
+	echo "### Launching US-Web release now"
+
+	${start_script}
 
 	if [ $res -eq 0 ]; then
+
+		echo " US-Web launched (start script reported success)."
+
+	else
+		echo " Error, start script ('${start_script}') failed (code: $res)." 1>&2
+
+		exit $res
+
+	fi
+
+	sleep 1
+
+
+	# Maybe use get-us-web-native-build-status.sh
+	#${rel_root}/bin/us_web status
+
+	#log_dir="${xxx_root}/log"
+
+	# See https://erlang.org/doc/embedded/embedded_solaris.html to understand
+	# the naming logic of erlang.log.* files.
+	#
+	# The goal here is only to select the latest-produced of these rotated log files:
+	#
+	#us_web_vm_log_file=$(/bin/ls -t ${log_dir}/erlang.log.* 2>/dev/null | head -n 1)
+
+	#if [ -f "${us_web_vm_log_file}" ]; then
+
+	#	tail -f "${us_web_vm_log_file}"
+
+	#else
+
+	#	echo "(no VM log file found; tried '${us_web_vm_log_file}')"
+
+	#fi
+
+else
+
+	echo "(no auto-launch enabled; one may execute, as root, 'systemctl restart us-web-as-native-build.service')"
+
+fi
+
+
 
 		echo " US-Web launched, please point a browser to http://localhost:8080 to check test sites."
 

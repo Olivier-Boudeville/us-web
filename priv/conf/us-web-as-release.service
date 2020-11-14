@@ -1,5 +1,5 @@
 [Unit]
-Description=Universal Webserver service (US-Web)
+Description=Universal Webserver service (US-Web), as an OTP release
 Requires=network.target
 After=network.target
 
@@ -19,11 +19,11 @@ Type=forking
 # The two scripts below are typically symlinks pointing to an install of US-Web.
 
 # To inspect the outputs, use:
-# journalctl --pager-end --unit=us-web.service
+# journalctl --pager-end --unit=us-web-as-release.service
 #
-ExecStart=/usr/local/bin/start-us-web.sh
+ExecStart=/usr/local/bin/start-us-web-release.sh
 
-ExecStop=/usr/local/bin/stop-us-web.sh
+ExecStop=/usr/local/bin/stop-us-web-release.sh
 
 [Install]
 WantedBy=multi-user.target

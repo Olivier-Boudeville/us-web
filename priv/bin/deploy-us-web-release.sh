@@ -2,6 +2,9 @@
 
 usage="Usage: $(basename $0): deploys (installs and runs) locally a US-Web release."
 
+# See also the deploy-us-web-native-build.sh script to deploy instead a native
+# (locally built from sources) version of US-Web.
+
 
 # Disabled since my https://github.com/erlware/relx/pull/809 pull request has
 # been integrated:
@@ -136,20 +139,22 @@ if [ ! -f "${archive_path}" ]; then
 fi
 
 
-base_rel_dir="/opt/universal-server"
+base_install_dir="/opt/universal-server"
 
-base_rel_dir_created=1
+base_install_dir_created=1
 
-if [ ! -d "${base_rel_dir}" ]; then
+# Not leaving it as root either:
+if [ ! -d "${base_install_dir}" ]; then
 
-	echo " Creating base directory '{base_rel_dir}'."
-	/bin/mkdir "${base_rel_dir}"
-	base_rel_dir_created=0
+	echo " Creating base directory '{base_install_dir}'."
+	/bin/mkdir "${base_install_dir}"
+	base_install_dir_created=0
 
 fi
 
-cd "${base_rel_dir}"
+cd "${base_install_dir}"
 
+# Automatic shutdown of any prior US-Web release running:
 for d in $(/bin/ls -d us_web-*.*.* 2>/dev/null) ; do
 
 	exec="${d}/bin/us_web"
@@ -194,7 +199,7 @@ if ! tar xzf "${archive_path}"; then
 
 fi
 
-rel_root="${base_rel_dir}/${rel_dir}"
+rel_root="${base_install_dir}/${rel_dir}"
 
 cd "${rel_root}/lib"
 
@@ -224,7 +229,7 @@ fi
 priv_dir="${rel_root}/lib/${rel_dir}/priv"
 
 # Actual cookie managed there:
-start_script="${priv_dir}/bin/start-us-web.sh"
+start_script="${priv_dir}/bin/start-us-web-release.sh"
 
 if [ ! -x "${start_script}" ]; then
 
@@ -274,11 +279,11 @@ if ! chown --recursive ${us_web_username}:${us_groupname} ${rel_root}; then
 fi
 
 
-if [ ${base_rel_dir_created} -eq 0 ]; then
+if [ ${base_install_dir_created} -eq 0 ]; then
 
-	if ! chown ${us_web_username}:${us_groupname} ${base_rel_dir}; then
+	if ! chown ${us_web_username}:${us_groupname} ${base_install_dir}; then
 
-		echo "Error, changing user/group owner of '${base_rel_dir}' failed." 1>&2
+		echo "Error, changing user/group owner of '${base_install_dir}' failed." 1>&2
 
 		exit 45
 
@@ -294,6 +299,15 @@ if [ $do_launch -eq 0 ]; then
 	echo "### Launching US-Web release now"
 
 	${start_script}
+	res=$?
+
+	if [ ! $res -eq 0 ]; then
+
+		echo " Error, start script ('${start_script}') failed (code: $res)." 1>&2
+
+		exit 200
+
+	fi
 
 	sleep 1
 
@@ -314,12 +328,12 @@ if [ $do_launch -eq 0 ]; then
 
 	else
 
-		echo "(no VM log file found, tried '${us_web_vm_log_file}')"
+		echo "(no VM log file found; tried '${us_web_vm_log_file}')"
 
 	fi
 
 else
 
-	echo "(no auto-launch enabled; one may execute, as root, 'systemctl restart us-web.service')"
+	echo "(no auto-launch enabled; one may execute, as root, 'systemctl restart us-web-as-release.service')"
 
 fi

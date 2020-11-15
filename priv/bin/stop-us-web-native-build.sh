@@ -57,7 +57,7 @@ local_us_web_install_root="${this_script_dir}/../.."
 # Check:
 if [ -d "${local_us_web_install_root}/priv" ]; then
 
-	us_web_install_root="${local_us_web_install_root}"
+	us_web_install_root="$(realpath ${local_us_web_install_root})"
 	echo "Selecting US-Web development native build in '${us_web_install_root}'."
 
 else
@@ -77,14 +77,6 @@ else
 fi
 
 usage="Usage: $(basename $0) [US_CONF_DIR]: stops a US-Web server, running as a native build, based on a US configuration directory specified on the command-line, otherwise found through the default US search paths. The US-Web installation itself will be looked up in '$(realpath ${us_web_install_root})'."
-
-if [ ! -d "${us_web_install_root}/priv" ]; then
-
-	echo "  Error, unable to locate the root of the target US-Web native build (tried '$(realpath ${us_web_install_root})').
-${usage}" 1>&2
-		exit 5
-
-fi
 
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -128,7 +120,7 @@ fi
 
 
 # Hints for the helper scripts:
-export US_LAUNCH_TYPE="native"
+export us_launch_type="native"
 
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" 1>/dev/null
@@ -143,7 +135,7 @@ read_us_config_file $1 1>/dev/null
 #secure_authbind
 
 
-echo " -- Stopping US-Web natively-built application as user '${us_web_username}' (EPMD port: ${erl_epmd_port}) with '${us_web_exec}'..."
+echo " -- Stopping US-Web natively-built application (EPMD port: ${erl_epmd_port})..."
 
 
 # We must stop the VM with the right (Erlang) cookie, i.e. the actual runtime
@@ -154,7 +146,7 @@ echo " -- Stopping US-Web natively-built application as user '${us_web_username}
 
 
 if [ -n "${vm_cookie}" ]; then
-	echo "Using cookie '${vm_cookie}'."
+	#echo "Using cookie '${vm_cookie}'."
 	cookie_env="COOKIE=${vm_cookie}"
 else
 	cookie_env=""
@@ -163,7 +155,7 @@ fi
 cd src/apps
 
 # No sudo or authbind necessary here, no US_* environment variables either:
-echo make -s us_web_stop_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
+#echo make -s us_web_stop_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
 
 make -s us_web_stop_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
 res=$?
@@ -199,7 +191,7 @@ fi
 
 
 # Will generally not work (-relaxed_command_check not having been used):
-epmd -port ${erl_epmd_port} -stop us_web
+epmd -port ${erl_epmd_port} -stop us_web 1>/dev/null
 
 # So 'killall epmd' may also be your friend, although it may affect other
 # applications such as the Universal server itself.

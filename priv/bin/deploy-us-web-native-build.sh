@@ -5,11 +5,11 @@
 
 # Deactivations useful for testing:
 
-# Tells whether repositories shall be cloned:
-do_clone=1
+# Tells whether repositories shall be cloned (if not done already):
+do_clone=0
 
-# Tells whether dependencies shall be built:
-do_build=1
+# Tells whether dependencies shall be built (if not done already):
+do_build=0
 
 do_launch=0
 
@@ -131,6 +131,8 @@ if [ ! -x "${make}" ]; then
 
 fi
 
+echo "Requesting sudoer rights for the operations that require it:"
+sudo echo
 
 base_install_dir_created=1
 
@@ -425,11 +427,18 @@ if [ $do_launch -eq 0 ]; then
 	# Not expecting here a previous native instance to run.
 
 	# Absolute path; typically in '/opt/universal-server/us_web-native/us_web':
-	cd "${us_web_dir}"
+	if [ ! -d "${us_web_dir}" ]; then
 
-	echo "   Running US-Web native application (as $(id -un))"
+		echo " Error, the target US-Web directory, '${us_web_dir}', does not exist." 1>&2
+		exit 75
+
+	fi
+
+	echo "   Running US-Web native application (as '$(id -un)' initially)"
 
 	# Simplest: cd src && ${make} us_web_exec
+
+	cd "${abs_install_dir}/us_web" || exit 80
 
 	priv_dir="priv"
 
@@ -438,14 +447,15 @@ if [ $do_launch -eq 0 ]; then
 
 	if [ ! -x "${start_script}" ]; then
 
-		echo "Error, no start script found (no '${start_script}' found)." 1>&2
+		echo " Error, no start script found (no '${start_script}' found)." 1>&2
 		exit 30
 
 	fi
 
-	# Not wanting the files of that US-Web install to remain owned by root, so
-	# trying to apply a more proper user/group; for that we have to determine
-	# them from the configuration files:
+	# Not wanting the files of that US-Web install to remain owned by the
+	# deploying user, so trying to apply a more proper user/group; for that we
+	# have to determine them from the configuration files, and this to read and
+	# use them:
 	#
 	# (will source in turn us-common.sh)
 	us_web_common_script="${priv_dir}/bin/us-web-common.sh"
@@ -457,31 +467,54 @@ if [ $do_launch -eq 0 ]; then
 
 	fi
 
+	# Hint for the helper scripts:
+	us_launch_type="native"
+	us_web_install_root="$(pwd)"
+
 	#echo "Sourcing '${us_web_common_script}' from $(pwd)."
-	. "${us_web_common_script}" 1>/dev/null
+	. "${us_web_common_script}" #1>/dev/null
 
-	read_us_config_file 1>/dev/null
+	read_us_config_file #1>/dev/null
 
-	read_us_web_config_file 1>/dev/null
+	read_us_web_config_file #1>/dev/null
 
-	echo " Changing, from '${us_web_dir}', the owner of release files to '${us_web_username}' and their group to '${us_groupname}'."
 
-	if ! sudo chown --recursive ${us_web_username}:${us_groupname} ${us_web_dir}; then
+	if [ -n "${us_web_username}" ]; then
+		chown_spec="${us_web_username}"
 
-		echo "Error, changing user/group owner from '${us_web_dir}' failed." 1>&2
+		if [ -n "${us_groupname}" ]; then
 
-		exit 40
+			# abs_install_dir rather than us_web_dir, as the dependencies shall
+			# also have their permissions updated:
+			#
+			echo " Changing the owner of release files to '${us_web_username}' and their group to '${us_groupname}' in '${abs_install_dir}'."
+			chown_spec="${chown_spec}:${us_web_username}"
 
-	fi
+		else
 
-	# Not leaving it as root either:
-	if [ ${base_install_dir_created} -eq 0 ]; then
+			echo " Changing the owner of release files to '${us_web_username}' in '${abs_install_dir}'."
 
-		if ! sudo chown ${us_web_username}:${us_groupname} ${base_install_dir}; then
+		fi
 
-			echo "Error, changing user/group owner of '${base_install_dir}' failed." 1>&2
+		if ! sudo chown --recursive "${chown_spec}" "${abs_install_dir}"; then
 
-			exit 45
+			echo "Error, changing user/group owner from '${abs_install_dir}' failed." 1>&2
+
+			exit 40
+
+		fi
+
+		# Not leaving it as initial user either:
+		if [ ${base_install_dir_created} -eq 0 ]; then
+
+			# This one is not recursive:
+			if ! sudo chown "${chown_spec}" "${base_install_dir}"; then
+
+				echo "Error, changing user/group owner of '${base_install_dir}' failed." 1>&2
+
+				exit 45
+
+			fi
 
 		fi
 
@@ -496,7 +529,7 @@ if [ $do_launch -eq 0 ]; then
 
 		exec="${d}/bin/us_web"
 
-		#echo "Testing for ${exec}..."
+		echo "Testing for ${exec}..."
 
 		if [ -x "${exec}" ]; then
 			echo " Trying to stop gracefully any prior release in ${d}."
@@ -507,8 +540,11 @@ if [ $do_launch -eq 0 ]; then
 
 	echo "### Launching US-Web release now"
 
+	cd "${abs_install_dir}/us_web" || exit 81
+
 	# Will switch to the US-Web configured user:
 	sudo ${start_script}
+	res=$?
 
 	if [ $res -eq 0 ]; then
 
@@ -521,47 +557,13 @@ if [ $do_launch -eq 0 ]; then
 
 	fi
 
-	sleep 1
+	#sleep 1
 
+	# Maybe use get-us-web-native-build-status.sh in the future.
 
-	# Maybe use get-us-web-native-build-status.sh
-	#${rel_root}/bin/us_web status
-
-	#log_dir="${xxx_root}/log"
-
-	# See https://erlang.org/doc/embedded/embedded_solaris.html to understand
-	# the naming logic of erlang.log.* files.
-	#
-	# The goal here is only to select the latest-produced of these rotated log files:
-	#
-	#us_web_vm_log_file=$(/bin/ls -t ${log_dir}/erlang.log.* 2>/dev/null | head -n 1)
-
-	#if [ -f "${us_web_vm_log_file}" ]; then
-
-	#	tail -f "${us_web_vm_log_file}"
-
-	#else
-
-	#	echo "(no VM log file found; tried '${us_web_vm_log_file}')"
-
-	#fi
 
 else
 
 	echo "(no auto-launch enabled; one may execute, as root, 'systemctl restart us-web-as-native-build.service')"
-
-fi
-
-
-
-		echo " US-Web launched, please point a browser to http://localhost:8080 to check test sites."
-
-	else
-
-		echo " Unable to build and launch the US-Web Server (error code: $res)." 1>&2
-
-		exit $res
-
-	fi
 
 fi

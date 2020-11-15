@@ -4,22 +4,25 @@
 
 # Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
-# - run from systemctl, as root, as: 'systemctl start us-web.service'
+# - run from systemctl, as root, as: 'systemctl start us-web-as-release.service'
 #
-# (hence to be triggered by /etc/systemd/system/us-web.service)
+# (hence to be triggered by /etc/systemd/system/us-web-as-release.service)
+
+base_directory="/opt/universal-server"
 
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
+usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, as a release, based on a US configuration directory specified on the command-line, otherwise found through the default US search paths. The US-Web installation itself will be looked up as the latest onefound in '${base_directory}'."
 
 
 # Note: if run through systemd, all outputs of this script (standard and error
 # ones) are automatically redirected by systemd to its journal.
 #
 # To consult them, use:
-#   $ journalctl --pager-end --unit=us-web.service
+#   $ journalctl --pager-end --unit=us-web-as-release.service
 
 # See also:
-#  - stop-us-web.sh
+#  - deploy-us-web-release.sh
+#  - stop-us-web-release.sh
 #  - start-universal-server.sh
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -31,15 +34,15 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 
-#echo "Starting US-Web as following user: $(id)"
+#echo "Starting US-Web as a release, as following user: $(id)"
 
 # We need first to locate the us-web-common.sh script:
 
-us_web_rel_root=$(/bin/ls -d -t /opt/universal-server/us_web-* 2>/dev/null | head -n 1)
+us_web_rel_root=$(/bin/ls -d -t ${base_directory}/us_web-* 2>/dev/null | head -n 1)
 
 if [ ! -d "${us_web_rel_root}" ]; then
 
-	echo "  Error, unable to locate the root of the target US-Web release (tried, from '$(pwd)', '${us_web_rel_root}')." 1>&2
+	echo "  Error, unable to locate the root of the target US-Web release, '${us_web_rel_root}')." 1>&2
 
 	exit 30
 
@@ -82,9 +85,9 @@ echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: $
 # attempts, and the script seems to be blocking (the release operates, yet the
 # script does not return, whereas it should).
 #
-# Since 'start' was replaced by 'daemon', we relies on the latter, whereas the
-# use of 'foreground' was strongly recommended instead (yet with it, Awstats was
-# failing for unidentified reasons - presumably permissions).
+# Since in rebar3 'start' was replaced by 'daemon', we relies on the latter,
+# whereas the use of 'foreground' was strongly recommended instead (yet with it,
+# Awstats was failing for unidentified reasons - presumably permissions).
 #
 if [ -n "${vm_cookie}" ]; then
 	echo "Using cookie '${vm_cookie}'."

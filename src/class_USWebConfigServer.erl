@@ -327,8 +327,9 @@
 	  "is to be stored" },
 
 	{ log_directory, bin_directory_path(),
-	  "the directory where (basic, technical) US-Web logs shall be written, "
-	  "notably access and error logs for websites" },
+	  "the directory where (non-VM) US-Web logs shall be written, "
+	  "notably access and error logs for websites; traces are stored there "
+	  "as well" },
 
 	{ cert_support, cert_support(),
 	  "tells whether the use and possibly generation/renewal of X.509 "
@@ -1743,30 +1744,42 @@ manage_app_base_directories( ConfigTable, State ) ->
 	% 'make debug'). We finally opted for a stricter policy, as errors could be
 	% induced afterwards.
 
-	RawBaseDir = case table:lookup_entry( ?us_web_app_base_dir_key,
-										  ConfigTable ) of
+	AppRunContext = ?getAttr(app_run_context),
+
+	MaybeConfBaseDir = case table:lookup_entry( ?us_web_app_base_dir_key,
+											   ConfigTable ) of
 
 		key_not_found ->
+			undefined;
 
+
+		{ value, D } when is_list( D ) ->
+			?info_fmt( "User-configured US-Web application base directory "
+					   "is '~s'.", [ D ] ),
+			D;
+
+		{ value, InvalidDir }  ->
+			?error_fmt( "Read invalid user-configured US-Web application base "
+						"directory: '~p'.", [ InvalidDir ] ),
+			throw( { invalid_us_web_app_base_directory, InvalidDir,
+					 ?us_web_app_base_dir_key, AppRunContext } )
+
+	end,
+
+	MaybeBaseDir = case MaybeConfBaseDir of
+
+		undefined ->
 			case system_utils:get_environment_variable(
 				   ?us_web_app_env_variable ) of
 
 				false ->
-					% Guessing then, typically current directory is:
-					% [...]/us_web/_build/default/rel/us_web, and we want the
-					% first us_web, so:
-					%
-					GuessedDir = file_utils:normalise_path( file_utils:join( [
-						file_utils:get_current_directory(), "..", "..", "..",
-						".." ] ) ),
+					undefined;
 
-					% Was a warning:
-					?info_fmt( "No user-configured US-Web application base "
-						"directory set (neither in configuration file nor "
-						"through the '~s' environment variable), hence trying "
-						"to guess it as '~s'.",
-						[ ?us_web_app_env_variable, GuessedDir ] ),
-					GuessedDir;
+				% Might be set, yet to an empty string, typically because of
+				% US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}":
+				%
+				"" ->
+					undefined;
 
 				EnvDir ->
 					?info_fmt( "No user-configured US-Web application base "
@@ -1777,28 +1790,32 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 			end;
 
-		{ value, D } when is_list( D ) ->
-			D;
+		_ ->
+			MaybeConfBaseDir
 
-		{ value, D } when is_binary( D ) ->
-			file_utils:binary_to_string( D );
+	end,
 
-		{ value, InvalidDir }  ->
-			?error_fmt( "Read invalid user-configured US-Web application base "
-						"directory: '~p'.", [ InvalidDir ] ),
-			throw( { invalid_us_web_app_base_directory, InvalidDir,
-					 ?us_web_app_base_dir_key } )
+	RawBaseDir = case MaybeBaseDir of
+
+		undefined ->
+			guess_app_dir( AppRunContext, State );
+
+		_ ->
+			MaybeBaseDir
 
 	end,
 
 	BaseDir = file_utils:ensure_path_is_absolute( RawBaseDir ),
+
+	% We check not only that this candidate app directory exists, but also it is
+	% a right one, expecting to have a 'priv' direct subdirectory then:
 
 	MaybeBaseBinDir =
 			case file_utils:is_existing_directory_or_link( BaseDir ) of
 
 		true ->
 			BinBaseDir = text_utils:string_to_binary( BaseDir ),
-			case ?getAttr(app_run_context) of
+			case AppRunContext of
 
 				as_otp_release ->
 					% As, if run as a release, it may end with a version (ex:
@@ -1807,8 +1824,8 @@ manage_app_base_directories( ConfigTable, State ) ->
 					case filename:basename( BaseDir ) of
 
 						"us_web" ++ _ ->
-							?info_fmt( "US-Web application base directory "
-									   "set to '~s'.", [ BaseDir ] ),
+							?info_fmt( "US-Web (release) application base "
+							  "directory set to '~s'.", [ BaseDir ] ),
 							BinBaseDir;
 
 						_Other ->
@@ -1818,14 +1835,44 @@ manage_app_base_directories( ConfigTable, State ) ->
 							%   "knowing none.", [ BaseDir ] ),
 							%undefined
 							throw( { incorrect_us_web_app_base_directory,
-									 BaseDir, ?us_web_app_base_dir_key } )
+									 BaseDir, ?us_web_app_base_dir_key,
+									 AppRunContext } )
 
 					end;
 
 				as_native ->
-					BinBaseDir
+					case file_utils:get_last_path_element( BaseDir ) of
+
+						"us_web" ->
+							?info_fmt( "US-Web (native) application base "
+							  "directory set to '~s'.", [ BaseDir ] ),
+							BinBaseDir;
+
+						_Other ->
+							throw( { incorrect_us_web_app_base_directory,
+									 BaseDir, ?us_web_app_base_dir_key,
+									 AppRunContext } )
+
+					end
+
+			end,
+
+			% Final paranoid check:
+			PrivDir = file_utils:join( BinBaseDir, "priv" ),
+			case file_utils:is_existing_directory_or_link( PrivDir ) of
+
+				true ->
+					BinBaseDir;
+
+				false ->
+					?error_fmt( "The determined US-Web application base "
+						"directory '~s' does not have a 'priv' subdirectory.",
+						[ BinBaseDir ] ),
+					throw( { no_priv_us_web_app_base_directory,
+							 BaseDir, ?us_web_app_base_dir_key } )
 
 			end;
+
 
 		false ->
 			%?warning_fmt( "The US-Web application base directory '~s' does "
@@ -1856,6 +1903,34 @@ manage_app_base_directories( ConfigTable, State ) ->
 	% Set in all cases:
 	setAttributes( State, [ { app_base_directory, MaybeBaseBinDir },
 							{ conf_directory, ConfBinDir } ] ).
+
+
+
+% Tries to guess the US-Web application directory.
+guess_app_dir( AppRunContext, State ) ->
+	GuessedDir = case AppRunContext of
+
+		as_otp_release ->
+			% [...]/us_web/_build/default/rel/us_web, and we want the first
+			% us_web, so:
+			%
+			file_utils:normalise_path( file_utils:join( [
+				file_utils:get_current_directory(), "..",
+				"..", "..", ".." ] ) );
+
+		as_native ->
+			% In the case of a native build, running from us_web/src, so:
+			file_utils:get_base_path( file_utils:get_current_directory() )
+
+	end,
+
+	% Was a warning:
+	?info_fmt( "No user-configured US-Web application base directory set "
+		"(neither in configuration file nor through the '~s' environment "
+		"variable), hence trying to guess it, in a ~s context, as '~s'.",
+		[ ?us_web_app_env_variable, AppRunContext, GuessedDir ] ),
+
+	GuessedDir.
 
 
 

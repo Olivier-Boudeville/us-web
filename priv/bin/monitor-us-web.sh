@@ -2,7 +2,9 @@
 
 us_monitor_config_filename="us-monitor.config"
 
-usage="$(basename $0) [US_MONITOR_CONFIG_FILE]: monitors the traces emitted by a US-Web instance possibly running on a remote host based, unless specified otherwise, on a '${us_monitor_config_filename}' configuration file, found in a US configuration directory specified on the command-line, otherwise found through the default US search paths."
+usage="$(basename $0) [US_MONITOR_CONFIG_FILE]: monitors the traces emitted by a US-Web instance possibly running on a remote host based, unless specified otherwise, on a '${us_monitor_config_filename}' configuration file, found in a US configuration directory specified on the command-line, otherwise found through the default US search paths.
+Example of use: './monitor-us-web.sh us-monitor-for-development.config', this file being located in the ~/.config/universal-server directory."
+
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 

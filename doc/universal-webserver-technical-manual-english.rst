@@ -37,7 +37,7 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, November 1, 2020
+:Lastly updated: Sunday, November 15, 2020
 :Status: Work in progress
 :Version: 0.0.11
 :Dedication: Users and maintainers of the ``Universal Webserver``.
@@ -189,6 +189,8 @@ Note that, as these files might contain sensitive information (ex: Erlang cookie
  -rw-r----- 1 us-web-user us-group [...] foobar-us-web-for-production.config
 
 .. [#] They shall be in the same ``US_CFG_ROOT`` directory (discussed below), and may be symbolic links.
+
+Finally, if being able to rely on multiple, different US configuration directories is necessary in order to be able to launch multiple US-Web instances (these configurations can then register the managers involved - typically the US-Web Configuration server - under different names), currently a single node can be used as, by default, such a node is named ``us_web`` (two instances would then clash at this level).
 
 
 
@@ -858,9 +860,9 @@ Planned Enhancements
 - **Nitrogen** and/or **Zotonic** support, in addition to static websites
 
 
--------------------------------
-About Nitrogen (future) Support
--------------------------------
+----------------------------------------
+About Nitrogen (possibly future) Support
+----------------------------------------
 
 - "*It is strongly recommended to catch static files with the static_paths setting. simple_bridge does not serve large static files in an optimal way (it loads the files into memory completely before sending)*"
 - `How Nitrogen processes requests <https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/>`_

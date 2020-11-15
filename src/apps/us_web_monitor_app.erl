@@ -25,6 +25,9 @@
 %
 % Typically called through the us_web/priv/bin/monitor-us-web.sh script.
 %
+% Designed to monitor a US-Web instance typically from any remote host able to
+% connect to the VM hosting that instance.
+%
 -module(us_web_monitor_app).
 
 % For exec/0 export:
@@ -221,6 +224,7 @@ get_target_node_name( Cfg ) ->
 
 	end,
 
+	% Note that a single, hardcoded node name is used here:
 	text_utils:string_to_atom( "us_web" ++ [ $@ | RemoteHostname ] ).
 
 

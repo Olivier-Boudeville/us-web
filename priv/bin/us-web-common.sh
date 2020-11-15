@@ -2,16 +2,38 @@
 #
 # Allows to avoid code duplication. Meant to be sourced, not directly executed.
 #
-# Used for example by start-us-web.sh and stop-us-web.sh.
+# Used for example by start-us-web-*.sh and stop-us-web-*.sh.
+
+
+# The us_launch_type environment variable might have been set by the caller
+# (typically to the "native" value) so that these helper scripts can locate more
+# easily specific directories (ex: for the VM logs).
+
+
+# We expect us_web_install_root to be already set by the caller:
+if [ -z "${us_web_install_root}" ]; then
+
+	echo "Error, no us_web_install_root set by the caller." 1>&2
+	exit 10
+
+fi
+
+if [ ! -d "${us_web_install_root}/priv" ]; then
+
+	echo "Error, invalid us_web_install_root ('$(realpath ${us_web_install_root})') set by the caller." 1>&2
+	exit 11
+
+fi
 
 
 # Determining us_common_root:
 
-us_web_script_root=$(dirname $0)
+us_web_script_root="${us_web_install_root}/priv/bin"
 #echo "US-Web script root: ${us_web_script_root}"
 
 us_common_root_in_checkouts="${us_web_script_root}/../../_checkouts/us_common"
 us_common_root_in_build="${us_web_script_root}/../../_build/default/lib/us_common"
+us_common_root_in_sibling="${us_web_script_root}/../../../us_common"
 
 # To be evaluated from rel_root=/opt/universal-server/us_web-x.y.z (see
 # deploy-us-web-release.sh):
@@ -23,28 +45,29 @@ if [ -d "${us_common_root_in_checkouts}" ]; then
 
 	us_common_root="${us_common_root_in_checkouts}"
 
+elif [ -d "${us_common_root_in_build}" ]; then
+
+	us_common_root="${us_common_root_in_build}"
+
+elif [ -d "${us_common_root_in_sibling}" ]; then
+
+	us_common_root="${us_common_root_in_sibling}"
+
+elif [ -d "${us_common_in_deployed_release}" ]; then
+
+	us_common_root="${us_common_in_deployed_release}"
+
 else
 
-	if [ -d "${us_common_root_in_build}" ]; then
-
-		us_common_root="${us_common_root_in_build}"
-
-	else
-
-		if [ -d "${us_common_in_deployed_release}" ]; then
-
-			us_common_root="${us_common_in_deployed_release}"
-
-		else
-
-			echo "  Error, no US-Common root found: searched in '${us_common_root_in_checkouts}', '${us_common_root_in_build}' and '${us_common_in_deployed_release}' (from $(pwd))." 1>&2
-			exit 95
-
-		fi
-
-	fi
+	echo "  Error, no US-Common root found: searched from $(pwd) as checkout '${us_common_root_in_checkouts}', as _build '${us_common_root_in_build}', as sibling '${us_common_root_in_sibling}' and as release '${us_common_in_deployed_release}'." 1>&2
+	exit 95
 
 fi
+
+us_common_root=$(realpath ${us_common_root})
+
+echo "US-Common root found as '${us_common_root}'."
+
 
 # As depends on it:
 us_common_script="${us_common_root}/priv/bin/us-common.sh"
@@ -136,10 +159,21 @@ read_us_web_config_file()
 		# Environment variable as last-resort:
 		if [ -z "${US_WEB_APP_BASE_DIR}" ]; then
 
-			# Wild guess:
-			us_web_app_base_dir=$(/bin/ls -d ${us_app_base_dir}/../../*/us_web 2>/dev/null | xargs realpath)
+			if [ "${us_launch_type}" = "native" ]; then
 
-			echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it from the US application one: trying '${us_web_app_base_dir}'."
+				# As sourced from us_web directly:
+				us_web_app_base_dir="$(pwd)"
+
+				echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it, in a native context, from the current directory, and trying '${us_web_app_base_dir}'."
+
+			else
+
+				# Wild guess:
+				us_web_app_base_dir=$(/bin/ls -d ${us_app_base_dir}/../../*/us_web 2>/dev/null | xargs realpath)
+
+				echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it from the release-dependent US application one: trying '${us_web_app_base_dir}'."
+
+			fi
 
 		else
 
@@ -169,7 +203,8 @@ read_us_web_config_file()
 	# (note that us_web_vm_log_dir is for US-Web what us_log_dir is for
 	# US-Common)
 	#
-	# (typically here in production mode, as a standard release)
+	# (typically here in production mode, as a standard release, or as a sibling
+	# native directory)
 	#
 	us_web_vm_log_dir="${us_web_app_base_dir}/log"
 
@@ -198,6 +233,7 @@ read_us_web_config_file()
 			#us_web_vm_log_dir="LACKING_US_WEB_VM_LOG_DIR"
 			us_web_vm_log_dir="${saved_log_dir}"
 
+			# As a sibling native build is expected to have created it beforehand:
 			echo "Will use, for US-Web VM log directory, '${us_web_vm_log_dir}' (not created yet), in the context of a standard OTP release."
 
 		else
@@ -207,40 +243,55 @@ read_us_web_config_file()
 
 	else
 
-		echo "Standard OTP release detected (most probably already launched at least once), US-Web VM log directory found as '${us_web_vm_log_dir}'."
+		if [ "${us_launch_type}" = "native" ]; then
+
+			echo "Native build installation detected, VM logs expected in '${us_web_vm_log_dir}'."
+
+		else
+
+			echo "Standard OTP release detected (most probably already launched at least once), US-Web VM log directory found as '${us_web_vm_log_dir}'."
+
+		fi
 
 	fi
 
 
-	# Supposing first the path of a real release having been specified; for
-	# example: "/opt/universal-server/us-web-x.y.z":
+	# If not in a native build (where no 'us_web_exec' applies), hunting down
+	# the us_web executable:
 	#
-	us_web_rel_dir="${us_web_app_base_dir}"
+	if [ ! "${us_launch_type}" = "native" ]; then
 
-	us_web_exec="${us_web_app_base_dir}/bin/us_web"
+		# Supposing first that the path of a real release has been specified;
+		# for example: "/opt/universal-server/us-web-x.y.z":
+		#
+		us_web_rel_dir="${us_web_app_base_dir}"
 
-	if [ ! -x "${us_web_exec}" ]; then
-
-		saved_exec="${us_web_exec}"
-
-		# Maybe then in a rebar3 build tree:
-		us_web_rel_dir="${us_web_app_base_dir}/_build/default/rel/us_web"
-
-		us_web_exec="${us_web_rel_dir}/bin/us_web"
+		us_web_exec="${us_web_app_base_dir}/bin/us_web"
 
 		if [ ! -x "${us_web_exec}" ]; then
 
-			echo "  Error, the specified US-Web application base directory ('${us_web_app_base_dir}') does not seem to be a legit one: no '${saved_exec}' (not a standard release) nor '${us_web_exec}' (not a rebar3 build tree)." 1>&2
-			exit 150
+			saved_exec="${us_web_exec}"
+
+			# Maybe then in a rebar3 build tree:
+			us_web_rel_dir="${us_web_app_base_dir}/_build/default/rel/us_web"
+
+			us_web_exec="${us_web_rel_dir}/bin/us_web"
+
+			if [ ! -x "${us_web_exec}" ]; then
+
+				echo "  Error, the specified US-Web application base directory ('${us_web_app_base_dir}') does not seem to be a legit one: no '${saved_exec}' (not a standard release) nor '${us_web_exec}' (not a rebar3 build tree)." 1>&2
+				exit 150
+
+			else
+
+				echo "Rebar3 build tree detected, US-Web application found as '${us_web_exec}'."
+			fi
 
 		else
 
-			echo "Rebar3 build tree detected, US-Web application found as '${us_web_exec}'."
+			echo "Standard OTP release detected, US-Web application found as '${us_web_exec}'."
+
 		fi
-
-	else
-
-		echo "Standard OTP release detected, US-Web application found as '${us_web_exec}'."
 
 	fi
 
@@ -415,7 +466,7 @@ prepare_us_web_launch()
 	/bin/rm -f ${us_web_vm_log_dir}/erlang.log.* ${us_web_vm_log_dir}/run_erl.log 2>/dev/null
 
 	# Needed as a sign that any future start succeeded:
-	trace_file="${us_log_dir}/us_web.traces"
+	trace_file="${us_web_vm_log_dir}/us_web.traces"
 	echo "Removing any '${trace_file}' trace file."
 	/bin/rm -f "${trace_file}" 2>/dev/null
 
@@ -477,7 +528,8 @@ inspect_us_web_log()
 
 		echo "  Error, no US-Web VM log file found (no erlang.log.* found, even after some delay, while searching in '${us_web_vm_log_dir}')." 1>&2
 
-		# Extra information might be gathered from /opt/universal-server/us_web-latest/traces_via_otp.traces and/or
+		# Extra information might be gathered from traces_via_otp.traces and/or
+		# us_web.traces.
 
 		exit 200
 

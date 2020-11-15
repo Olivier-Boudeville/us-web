@@ -5,6 +5,8 @@ usage="Usage: $(basename $0): deploys (installs and runs) locally a US-Web relea
 # See also the deploy-us-web-native-build.sh script to deploy instead a native
 # (locally built from sources) version of US-Web.
 
+# TO-DO: do not run as root and use sudo whenever necessary.
+
 
 # Disabled since my https://github.com/erlware/relx/pull/809 pull request has
 # been integrated:

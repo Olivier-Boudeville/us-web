@@ -1,26 +1,60 @@
 #!/bin/sh
 
-# Starts a US-Web instance, to be run as an OTP release.
+# Starts a US-Web instance, to be run as a native build (on the current host).
 
 # Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
-# - run from systemctl, as root, as: 'systemctl start us-web.service'
+# - run from systemctl, as root, as:
+# 'systemctl start us-web-as-native-build.service'
 #
-# (hence to be triggered by /etc/systemd/system/us-web.service)
-
-
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server based on a US configuration directory specified on the command-line, otherwise found through the default US search paths."
-
-
+# (hence to be triggered by /etc/systemd/system/us-web-as-native-build.service)
+#
 # Note: if run through systemd, all outputs of this script (standard and error
 # ones) are automatically redirected by systemd to its journal.
 #
 # To consult them, use:
-#   $ journalctl --pager-end --unit=us-web.service
+#   $ journalctl --pager-end --unit=us-web-as-native-build.service
 
 # See also:
-#  - stop-us-web.sh
+#  - deploy-us-web-native-build.sh
+#  - stop-us-web-native-build.sh
 #  - start-universal-server.sh
+
+
+# Either this script is called during development, directly from within a US-Web
+# installation, in which case this installation shall be used, or (typically if
+# called through systemd) the standard US-Web base directory shall be targeted:
+#
+this_script_dir="$(dirname $0)"
+
+# Possibly:
+local_us_web_install_root="${this_script_dir}/../.."
+
+# Checks based on the 'priv' subdirectory for an increased reliability:
+if [ -d "${local_us_web_install_root}/priv" ]; then
+
+	us_web_install_root="$(realpath ${local_us_web_install_root})"
+	echo "Selecting US-Web development native build in '${us_web_install_root}'."
+
+else
+
+	# The location enforced by deploy-us-web-native-build.sh:
+	us_web_install_root="/opt/universal-server/us_web-native"
+	echo "Selecting US-Web native build in standard location '${us_web_install_root}'."
+
+	if [ ! -d "${us_web_install_root}/priv" ]; then
+
+		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard location." 1>&2
+
+		exit 15
+
+	fi
+
+fi
+
+
+usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line, otherwise found through the default US search paths. The US-Web installation itself will be looked up in '${us_web_install_root}'."
+
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -31,26 +65,24 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 
-#echo "Starting US-Web as following user: $(id)"
+#echo "Starting US-Web, to run as a native build with following user: $(id)"
 
 # We need first to locate the us-web-common.sh script:
 
-us_web_rel_root=$(/bin/ls -d -t /opt/universal-server/us_web-* 2>/dev/null | head -n 1)
+# Location expected also by us-common.sh afterwards:
+cd "${us_web_install_root}"
 
-if [ ! -d "${us_web_rel_root}" ]; then
+# As expected by us-web-common.sh for the VM logs:
+log_dir="${us_web_install_root}/log"
+if [ ! -d "${log_dir}" ]; then
 
-	echo "  Error, unable to locate the root of the target US-Web release (tried, from '$(pwd)', '${us_web_rel_root}')." 1>&2
-
-	exit 30
+	mkdir "${log_dir}"
 
 fi
 
-# Location expected also by us-common.sh afterwards:
-cd "${us_web_rel_root}"
-
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
-us_web_common_script="lib/us_web-latest/priv/bin/${us_web_common_script_name}"
+us_web_common_script="priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
@@ -58,6 +90,10 @@ if [ ! -f "${us_web_common_script}" ]; then
 	exit 35
 
 fi
+
+
+# Hint for the helper scripts:
+us_launch_type="native"
 
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
@@ -70,34 +106,20 @@ secure_authbind
 
 prepare_us_web_launch
 
-
+cd src
 
 echo
-echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: ${erl_epmd_port}) with '${us_web_exec}'..."
+echo " -- Starting US-Web natively-built application as user '${us_web_username}' (EPMD port: ${erl_epmd_port})..."
 
 
-# We specify here the actual cookie to the release script, so that the rpc
-# operations it performs (ex: in link with the relx hooks) can succeed;
-# otherwise it might be stuck performing one-per-second failed connection
-# attempts, and the script seems to be blocking (the release operates, yet the
-# script does not return, whereas it should).
-#
-# Since 'start' was replaced by 'daemon', we relies on the latter, whereas the
-# use of 'foreground' was strongly recommended instead (yet with it, Awstats was
-# failing for unidentified reasons - presumably permissions).
-#
-if [ -n "${vm_cookie}" ]; then
-	echo "Using cookie '${vm_cookie}'."
-	cookie_env="RELX_COOKIE=${vm_cookie}"
-else
-	cookie_env=""
-fi
+#echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep make us_web_exec_service
 
-#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep ${us_web_exec} daemon
-
-/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep ${us_web_exec} daemon
+/bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep make us_web_exec_service
 
 res=$?
+
+# If a launch time-out keeps on progressing, this might be the sign that a
+# previous US-Web instance is running.
 
 if [ $res -eq 0 ]; then
 
@@ -111,7 +133,7 @@ if [ $res -eq 0 ]; then
 
 	# Better diagnosis than the previous res code:
 	# (only renamed once construction is mostly finished)
-	trace_file="${us_log_dir}/us_web.traces"
+	trace_file="${us_web_log_dir}/us_web.traces"
 
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:

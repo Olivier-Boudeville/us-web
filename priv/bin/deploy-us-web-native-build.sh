@@ -28,7 +28,7 @@ install_dir="us_web-native"
 
 
 usage="
-Usage: $(basename $0) [-h|--help] [BASE_INSTALL_DIR]: deploys (clones and builds) locally, as root, a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_install_dir}' directory), as '${install_dir}', then launches it.
+Usage: $(basename $0) [-h|--help] [BASE_INSTALL_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_install_dir}' directory), as '${install_dir}', then launches it.
  Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
@@ -91,9 +91,9 @@ cd /
 
 # Checking first:
 
-if [ ! $(id -u ) -eq 0 ]; then
+if [ $(id -u ) -eq 0 ]; then
 
-	echo "  Error, this script must be run as root." 1>&2
+	echo "  Error, this script must not be run as root (sudo will be requested only when necessary)." 1>&2
 	exit 5
 
 fi
@@ -131,26 +131,18 @@ if [ ! -x "${make}" ]; then
 
 fi
 
-if [ -d "${install_dir}" ]; then
-
-	echo "  Error, target installation directory, '${install_dir}', already exists. Remove it first." 1>&2
-
-	exit 20
-
-fi
-
 
 base_install_dir_created=1
 
 if [ ! -d "${base_install_dir}" ]; then
 
-	echo " Creating base directory '{base_install_dir}'."
-	/bin/mkdir "${base_install_dir}"
+	echo " Creating base directory '${base_install_dir}'."
+	# Most permissive, will be updated later in the installation:
+	sudo /bin/mkdir --mode=777 "${base_install_dir}"
 	base_install_dir_created=0
 
 fi
 
-cd "${base_install_dir}"
 
 # Typically a release-like '/opt/universal-server/us_web-native', containing all
 # dependencies:
@@ -166,15 +158,25 @@ echo "   Installing US-Web in '${abs_install_dir}'..."
 echo
 
 
-# Parent already exists by design:
-mkdir "${install_dir}" && cd "${install_dir}"
-
 
 # First US-Web itself, so that any _checkouts directory can be created afterwards:
 
-clone_opts="--quiet"
-
 if [ $do_clone -eq 0 ]; then
+
+	cd "${base_install_dir}"
+
+	if [ -d "${install_dir}" ]; then
+
+		echo "  Error, target installation directory, '${base_install_dir}/${install_dir}', already exists. Remove it first." 1>&2
+
+		exit 20
+
+	fi
+
+	# Parent already exists by design:
+	( sudo mkdir --mode=777 "${install_dir}" ) && cd "${install_dir}"
+
+	clone_opts="--quiet"
 
 	git=$(which git 2>/dev/null)
 
@@ -185,12 +187,10 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
-	echo "Getting the relevant repositories:"
+	echo "Getting the relevant repositories (as $(id -un)):"
 
 
 	echo " - cloning US-Web"
-
-	# A specific branch might be selected.
 
 	${git} clone ${clone_opts} ${github_base}/us-web us_web
 
@@ -201,21 +201,32 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
+	# A specific branch might be selected:
+	target_branch="certificate-support"
+	cd us_web && ${git} checkout ${target_branch} 1>/dev/null && cd ..
+	if [ ! $? -eq 0 ]; then
+
+		echo " Error, unable to switch to US-Web branch '${target_branch}'." 1>&2
+		exit 45
+
+	fi
+
 
 	# The explicit build of Cowboy is needed due to a rebar3 bug encountered
 	# when building US-Web (see the comment in the 'building US-Web' section).
 
 	echo " - cloning Cowboy"
 
-	${git} clone ${clone_opts} git@github.com:ninenines/cowboy.git
+	#cowboy_git_id="git@github.com:ninenines/cowboy.git"
+	cowboy_git_id="https://github.com/ninenines/cowboy.git"
 
+	${git} clone ${clone_opts} ${cowboy_git_id}
 	if [ ! $? -eq 0 ]; then
 
 		echo " Error, unable to obtain Cowboy." 1>&2
 		exit 35
 
 	fi
-
 
 	echo " - cloning US-Common"
 
@@ -229,13 +240,13 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 
-	echo " - cloning LEEC (Ceylan fork of letsencrypt-erlang)"
+	echo " - cloning Ceylan-LEEC"
 
 	${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec
 
 	if [ ! $? -eq 0 ]; then
 
-		echo " Error, unable to obtain LEEC (Let's Encrypt Erlang with Ceylan)." 1>&2
+		echo " Error, unable to obtain Ceylan-LEEC." 1>&2
 		exit 32
 
 	fi
@@ -285,7 +296,7 @@ if [ $do_clone -eq 0 ]; then
 	# Rare option needed, otherwise apparently mistook for a directory resulting
 	# in an incorrect link:
 	#
-	/bin/ln -sf --no-target-directory "${install_dir}" us_web-latest
+	sudo /bin/ln -sf --no-target-directory "${install_dir}" us_web-latest
 
 fi
 
@@ -293,10 +304,10 @@ fi
 
 if [ ${do_build} -eq 0 ]; then
 
-	cd "${install_dir}"
+	cd "${abs_install_dir}"
 
 	echo
-	echo "Building these packages:"
+	echo "Building these packages (as $(id -un)):"
 
 	# For Myriad, WOOPER and Traces, we prefer to rely on our own good old build
 	# system (i.e. not on rebar3).
@@ -364,18 +375,7 @@ if [ ${do_build} -eq 0 ]; then
 		echo " Error, the build of LEEC failed." 1>&2
 		exit 66
 	fi
-
-	# So that later US-Web is able to find the element of the 'leec'
-	# application:
-	#
-	cd _build/default/lib/ && ln -s letsencrypt leec && cd leec/ebin && ln -s letsencrypt.app leec.app
-
-	if [ ! $? -eq 0 ]; then
-		echo " Error, the post-build of LEEC failed." 1>&2
-		exit 67
-	fi
-
-	cd ../../../../
+	cd ..
 
 	# US-Common does not introduce third-party dependencies, so going again for
 	# our native build, which thus uses Myriad's, WOOPER's and Traces' sibling
@@ -408,6 +408,7 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
+	echo
 	echo "Native US-Web built and ready in ${abs_install_dir}."
 
 fi
@@ -423,10 +424,10 @@ if [ $do_launch -eq 0 ]; then
 
 	# Not expecting here a previous native instance to run.
 
-	# Typically in '/opt/universal-server/us_web-native/us_web'
+	# Absolute path; typically in '/opt/universal-server/us_web-native/us_web':
 	cd "${us_web_dir}"
 
-	echo "   Running US-Web native application"
+	echo "   Running US-Web native application (as $(id -un))"
 
 	# Simplest: cd src && ${make} us_web_exec
 
@@ -465,7 +466,7 @@ if [ $do_launch -eq 0 ]; then
 
 	echo " Changing, from '${us_web_dir}', the owner of release files to '${us_web_username}' and their group to '${us_groupname}'."
 
-	if ! chown --recursive ${us_web_username}:${us_groupname} ${us_web_dir}; then
+	if ! sudo chown --recursive ${us_web_username}:${us_groupname} ${us_web_dir}; then
 
 		echo "Error, changing user/group owner from '${us_web_dir}' failed." 1>&2
 
@@ -476,7 +477,7 @@ if [ $do_launch -eq 0 ]; then
 	# Not leaving it as root either:
 	if [ ${base_install_dir_created} -eq 0 ]; then
 
-		if ! chown ${us_web_username}:${us_groupname} ${base_install_dir}; then
+		if ! sudo chown ${us_web_username}:${us_groupname} ${base_install_dir}; then
 
 			echo "Error, changing user/group owner of '${base_install_dir}' failed." 1>&2
 
@@ -499,14 +500,15 @@ if [ $do_launch -eq 0 ]; then
 
 		if [ -x "${exec}" ]; then
 			echo " Trying to stop gracefully any prior release in ${d}."
-			${exec} stop 1>/dev/null 2>&1
+			sudo ${exec} stop 1>/dev/null 2>&1
 		fi
 
 	done
 
 	echo "### Launching US-Web release now"
 
-	${start_script}
+	# Will switch to the US-Web configured user:
+	sudo ${start_script}
 
 	if [ $res -eq 0 ]; then
 

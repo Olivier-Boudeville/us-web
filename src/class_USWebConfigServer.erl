@@ -1674,9 +1674,9 @@ manage_registrations( ConfigTable, State ) ->
 	SchedPid = class_USScheduler:new_link( "USWebScheduler", SchedRegName,
 										   _SchedRegScope=local_only ),
 
-	?info_fmt( "This US-Web configuration server was registered as '~s', while "
-	   "its scheduler (~w) was registered as '~s' (scope in all cases: ~s).",
-	   [ WebCfgSrvRegName, SchedPid, SchedRegName, Scope ] ),
+	?info_fmt( "This US-Web configuration server was registered as '~s' "
+		"(scope: ~s), an will be using scheduler ~w.",
+		[ WebCfgSrvRegName, Scope, SchedPid ] ),
 
 	setAttributes( State, [
 			% Inherited:

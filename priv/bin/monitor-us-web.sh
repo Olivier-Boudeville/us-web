@@ -23,9 +23,11 @@ if [ -n "$1" ]; then
 fi
 
 
+us_web_install_root=$(realpath $(dirname $0)/../..)
+
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
-us_web_common_script="$(dirname $0)/${us_web_common_script_name}"
+us_web_common_script="${us_web_install_root}/priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 

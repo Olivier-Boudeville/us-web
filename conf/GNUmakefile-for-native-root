@@ -1,0 +1,33 @@
+# This makefile is to be available (as a symlink) at the root of a native US-Web
+# installation (hence typically in the 'us_web-native' root directory.
+
+
+.PHONY: all update rebuild clean build
+
+
+REPOSITORIES := myriad leec wooper traces us_common cowboy us_web
+
+
+all: update rebuild
+
+
+# Updates all repositories involved:
+#
+# (unset is for Cowboy, potentially troubled by an unrelated define)
+#
+update:
+	@echo "  Updating sources of all repositories involved"
+	@for r in $(REPOSITORIES); do ( echo " - updating $$r" ; cd $$r && git pull ) || exit 5 ; done
+
+
+rebuild: clean build
+
+
+clean:
+	@echo "  Cleaning all repositories involved"
+	@for r in $(REPOSITORIES); do ( unset SP ; echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done
+
+
+build:
+	@echo "  Building (if necessary) all repositories involved"
+	@for r in $(REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done

@@ -161,7 +161,8 @@ echo
 
 
 
-# First US-Web itself, so that any _checkouts directory can be created afterwards:
+# First US-Web itself, so that any _checkouts directory can be created
+# afterwards:
 
 if [ $do_clone -eq 0 ]; then
 
@@ -488,11 +489,12 @@ if [ $do_launch -eq 0 ]; then
 
 		if [ -n "${us_groupname}" ]; then
 
+			chown_spec="${chown_spec}:${us_groupname}"
+
 			# abs_install_dir rather than us_web_dir, as the dependencies shall
 			# also have their permissions updated:
 			#
-			echo " Changing the owner of release files to '${us_web_username}' and their group to '${us_groupname}' in '${abs_install_dir}'."
-			chown_spec="${chown_spec}:${us_web_username}"
+			echo " Changing the owner of release files to '${us_web_username}' and their group to '${us_groupname}' (as ${chown_spec}) in '${abs_install_dir}'."
 
 		else
 

@@ -175,7 +175,9 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
-	# Parent already exists by design:
+	# Parent already exists by design; ensuring any normal user can write the
+	# content to install next:
+	#
 	( sudo mkdir --mode=777 "${install_dir}" ) && cd "${install_dir}"
 
 	clone_opts="--quiet"
@@ -289,6 +291,8 @@ if [ $do_clone -eq 0 ]; then
 		exit 20
 
 	fi
+
+	ln -sf us_web/conf/GNUmakefile-for-native-root GNUmakefile
 
 	# Back in ${base_install_dir}:
 	cd ..
@@ -492,7 +496,7 @@ if [ $do_launch -eq 0 ]; then
 
 		else
 
-			echo " Changing the owner of release files to '${us_web_username}' in '${abs_install_dir}'."
+			echo " Changing the owner of deployed files with '${chown_spec}' in '${abs_install_dir}'."
 
 		fi
 
@@ -507,6 +511,7 @@ if [ $do_launch -eq 0 ]; then
 		# Not leaving it as initial user either:
 		if [ ${base_install_dir_created} -eq 0 ]; then
 
+			echo " Changing the owner of base install directory '${base_install_dir}' with '${chown_spec}'."
 			# This one is not recursive:
 			if ! sudo chown "${chown_spec}" "${base_install_dir}"; then
 

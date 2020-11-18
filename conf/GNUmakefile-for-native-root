@@ -5,29 +5,40 @@
 .PHONY: all update rebuild clean build
 
 
-REPOSITORIES := myriad leec wooper traces us_common cowboy us_web
+CEYLAN_REPOSITORIES := myriad leec wooper traces
+US_REPOSITORIES := us_common us_web
+
+OUR_REPOSITORIES := $(CEYLAN_REPOSITORIES) $(US_REPOSITORIES)
+
+# Preferred in-order:
+ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
 
 
 all: update rebuild
 
 
 # Updates all repositories involved:
-#
-# (unset is for Cowboy, potentially troubled by an unrelated define)
-#
 update:
 	@echo "  Updating sources of all repositories involved"
-	@for r in $(REPOSITORIES); do ( echo " - updating $$r" ; cd $$r && git pull ) || exit 5 ; done
+	@for r in $(ALL_REPOSITORIES); do ( echo " - updating $$r" ; cd $$r && git pull ) || exit 5 ; done
 
 
 rebuild: clean build
 
 
+# We do not clean/build cowboy anymore as a version thereof is not supposed to change.
+
+# (unset is for Cowboy, if even included, as it is potentially troubled by an
+# unrelated define)
+#
 clean:
-	@echo "  Cleaning all repositories involved"
-	@for r in $(REPOSITORIES); do ( unset SP ; echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done
+	@echo "  Cleaning all our (Ceylan and US) repositories involved"
+	@for r in $(OUR_REPOSITORIES) $(); do ( unset SP ; echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done
 
 
+# (unset is for Cowboy, if even included, as it is potentially troubled by an
+# unrelated define)
+#
 build:
-	@echo "  Building (if necessary) all repositories involved"
-	@for r in $(REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
+	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
+	@for r in $(OUR_REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done

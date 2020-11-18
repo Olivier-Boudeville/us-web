@@ -7,7 +7,7 @@ US_WEB_TOP = .
 		ensure-dev-release ensure-prod-release                                 \
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
-		sync-us sync-us-common sync-us-web                                     \
+		sync-us-web                                                            \
 		start debug debug-as-release start-as-release status                   \
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability                            \
@@ -208,16 +208,16 @@ upgrade-us-common:
 	@$(REBAR3_EXEC) upgrade us_common
 
 
-# Synchronises the US-related sources on any remote server:
-sync-us: sync-us-common sync-us-web
-
-sync-us-common:
-	@echo " Synchronising US-Common in $(WEB_SRV)"
-	@rsync -avz -e "ssh -p $$SSH_PORT" $(US_COMMON_TOP)/src/*.erl $(WEB_SRV):$(US_NATIVE_DEPLOY_ROOT)/us_common/src/
-
+# Synchronises all {Ceylan,US}-related sources of US-Web to the specified server
+# location:
+#
 sync-us-web:
-	@echo " Synchronising US-Web in $(WEB_SRV)"
-	@rsync -avz -e "ssh -p $$SSH_PORT" src/*.erl $(WEB_SRV):$(US_NATIVE_DEPLOY_ROOT)/us_web/src/
+	@cd $(MYRIAD_TOP) && $(MAKE) -s sync-to-server
+	@cd $(WOOPER_TOP) && $(MAKE) -s sync-to-server
+	@cd $(TRACES_TOP) && $(MAKE) -s sync-to-server
+	@cd $(LEEC_TOP) && $(MAKE) -s sync-to-server
+	@cd $(US_COMMON_TOP) && $(MAKE) -s sync-to-server
+	@$(MAKE) -s sync-to-server
 
 
 # Not used anymore, as the simple_bridge configuration file does not seem to be

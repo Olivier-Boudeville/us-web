@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Note: relying on the master branch for all clones.
+# Note: unless specified, relying on the master branch for all clones.
 
 
 # Deactivations useful for testing:
@@ -13,11 +13,13 @@ do_build=0
 
 do_launch=0
 
+no_launch_opt="--no-launch"
 
 checkout_opt="--checkout"
 
 # To avoid typos:
 checkout_dir="_checkouts"
+priv_dir="priv"
 
 base_us_dir="/opt/universal-server"
 
@@ -28,19 +30,19 @@ native_install_dir="us_web-native"
 
 
 usage="
-Usage: $(basename $0) [-h|--help] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it.
+Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
  Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
- - rebar3, for the prerequisites that relies on it (see http://myriad.esperide.org/#getting-rebar3)
+ - rebar3, for the prerequisites that rely on it (see http://myriad.esperide.org/#getting-rebar3)
  - [optional] Awstats (see http://www.awstats.org/)
 "
 github_base="https://github.com/Olivier-Boudeville"
 
 
 # See also the deploy-us-web-release.sh script to deploy OTP releases of US-Web
-# instead.
+# instead (we prefer and better support the current mode of operation, though).
 
 
 
@@ -48,8 +50,9 @@ github_base="https://github.com/Olivier-Boudeville"
 # itself, even if it used at least for some dependencies (ex: LEEC, so that its
 # own dependencies are automatically managed).
 #
-# This leads to duplications (ex: Myriad is built once in the context of LEEC
-# and also once for the other packages).
+# This could lead to duplications (ex: Myriad being built once in the context of
+# LEEC and also once for the other packages), yet we use checkout directories to
+# avoid that.
 
 if [ $# -eq 1 ]; then
 
@@ -57,6 +60,11 @@ if [ $# -eq 1 ]; then
 
 		echo "${usage}"
 		exit 0
+
+	elif [ "$1" = "${no_launch_opt}" ]; then
+
+		echo "(auto-launch disabled)"
+		do_launch=1
 
 	else
 
@@ -413,49 +421,10 @@ if [ ${do_build} -eq 0 ]; then
 		echo " Error, the build of US-Web failed." 1>&2
 		exit 75
 	fi
-	cd ..
 
-	echo
-	echo "Native US-Web built and ready in ${abs_native_install_dir}."
+	# Post-install: fixing permissions and all.
 
-fi
-
-
-# Not checking specifically the expected US and US-Web configuration files:
-# running US-Web will tell us whethe they exist and are legit.
-
-echo
-
-
-if [ $do_launch -eq 0 ]; then
-
-	# Not expecting here a previous native instance to run.
-
-	# Absolute path; typically in '/opt/universal-server/us_web-native/us_web':
-	if [ ! -d "${us_web_dir}" ]; then
-
-		echo " Error, the target US-Web directory, '${us_web_dir}', does not exist." 1>&2
-		exit 75
-
-	fi
-
-	echo "   Running US-Web native application (as '$(id -un)' initially)"
-
-	# Simplest: cd src && ${make} us_web_exec
-
-	cd "${abs_native_install_dir}/us_web" || exit 80
-
-	priv_dir="priv"
-
-	# Actual cookie managed there:
-	start_script="${priv_dir}/bin/start-us-web-native-build.sh"
-
-	if [ ! -x "${start_script}" ]; then
-
-		echo " Error, no start script found (no '${start_script}' found)." 1>&2
-		exit 30
-
-	fi
+	# This will also by useful for any next launch:
 
 	# Not wanting the files of that US-Web install to remain owned by the
 	# deploying user, so trying to apply a more proper user/group; for that we
@@ -474,7 +443,7 @@ if [ $do_launch -eq 0 ]; then
 
 	# Hint for the helper scripts:
 	us_launch_type="native"
-	us_web_install_root="$(pwd)"
+	us_web_install_root="${us_web_dir}"
 
 	#echo "Sourcing '${us_web_common_script}' from $(pwd)."
 	. "${us_web_common_script}" #1>/dev/null
@@ -484,7 +453,7 @@ if [ $do_launch -eq 0 ]; then
 	read_us_web_config_file #1>/dev/null
 
 
-	# First chmod, then chown:
+	# First permissions (chmod), then owner/group (chown):
 
 	dir_perms="770"
 
@@ -524,7 +493,7 @@ if [ $do_launch -eq 0 ]; then
 	fi
 
 
-	# Not leaving deployed content as initial user either:
+	# Now owner/group; not leaving deployed content as initial user:
 
 	if [ -n "${us_web_username}" ]; then
 
@@ -539,7 +508,7 @@ if [ $do_launch -eq 0 ]; then
 
 			echo "Error, changing recursively user/group owner (as ${chown_spec}) from '${abs_native_install_dir}' failed." 1>&2
 
-			exit 44
+			exit 45
 
 		fi
 
@@ -557,6 +526,48 @@ if [ $do_launch -eq 0 ]; then
 			fi
 
 		fi
+
+	fi
+
+
+	echo
+	echo "Native US-Web built and ready in ${abs_native_install_dir}."
+
+fi
+
+
+# Not checking specifically the expected US and US-Web configuration files:
+# running US-Web will tell us whethe they exist and are legit.
+
+echo
+
+
+if [ $do_launch -eq 0 ]; then
+
+	# Not expecting here a previous native instance to run.
+
+	# Absolute path; typically in '/opt/universal-server/us_web-native/us_web':
+	if [ ! -d "${us_web_dir}" ]; then
+
+		echo " Error, the target US-Web directory, '${us_web_dir}', does not exist." 1>&2
+		exit 75
+
+	fi
+
+	echo "   Running US-Web native application (as '$(id -un)' initially)"
+
+	# Simplest: cd src && ${make} us_web_exec
+
+	cd "${us_web_dir}" || exit 80
+
+
+	# Actual cookie managed there:
+	start_script="${priv_dir}/bin/start-us-web-native-build.sh"
+
+	if [ ! -x "${start_script}" ]; then
+
+		echo " Error, no start script found (no '${start_script}' found)." 1>&2
+		exit 30
 
 	fi
 

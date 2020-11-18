@@ -19,16 +19,16 @@ checkout_opt="--checkout"
 # To avoid typos:
 checkout_dir="_checkouts"
 
-base_install_dir="/opt/universal-server"
+base_us_dir="/opt/universal-server"
 
 # To be able to coexist with OTP releases (named as us_web-${archive_version});
-# relative to base_install_dir:
+# relative to base_us_dir:
 #
-install_dir="us_web-native"
+native_install_dir="us_web-native"
 
 
 usage="
-Usage: $(basename $0) [-h|--help] [BASE_INSTALL_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_install_dir}' directory), as '${install_dir}', then launches it.
+Usage: $(basename $0) [-h|--help] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it.
  Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
@@ -61,10 +61,10 @@ if [ $# -eq 1 ]; then
 	else
 
 		# If specified, must exist:
-		base_install_dir="$1"
-		if [ ! -d "${base_install_dir}" ]; then
+		base_us_dir="$1"
+		if [ ! -d "${base_us_dir}" ]; then
 
-			echo "  Error, specified installation directory, '${base_install_dir}', does not exist." 1>&2
+			echo "  Error, specified installation directory, '${base_us_dir}', does not exist." 1>&2
 			exit 4
 
 
@@ -134,14 +134,14 @@ fi
 echo "Requesting sudoer rights for the operations that require it:"
 sudo echo
 
-base_install_dir_created=1
+base_us_dir_created=1
 
-if [ ! -d "${base_install_dir}" ]; then
+if [ ! -d "${base_us_dir}" ]; then
 
-	echo " Creating base directory '${base_install_dir}'."
+	echo " Creating US base directory '${base_us_dir}'."
 	# Most permissive, will be updated later in the installation:
-	sudo /bin/mkdir --mode=777 "${base_install_dir}"
-	base_install_dir_created=0
+	sudo /bin/mkdir --mode=777 "${base_us_dir}"
+	base_us_dir_created=0
 
 fi
 
@@ -149,14 +149,14 @@ fi
 # Typically a release-like '/opt/universal-server/us_web-native', containing all
 # dependencies:
 #
-abs_install_dir="${base_install_dir}/${install_dir}"
+abs_native_install_dir="${base_us_dir}/${native_install_dir}"
 
 # The US-Web tree itself:
-us_web_dir="${abs_install_dir}/us_web"
+us_web_dir="${abs_native_install_dir}/us_web"
 
 
 echo
-echo "   Installing US-Web in '${abs_install_dir}'..."
+echo "   Installing US-Web in '${abs_native_install_dir}'..."
 echo
 
 
@@ -166,11 +166,11 @@ echo
 
 if [ $do_clone -eq 0 ]; then
 
-	cd "${base_install_dir}"
+	cd "${base_us_dir}"
 
-	if [ -d "${install_dir}" ]; then
+	if [ -d "${native_install_dir}" ]; then
 
-		echo "  Error, target installation directory, '${base_install_dir}/${install_dir}', already exists. Remove it first." 1>&2
+		echo "  Error, target installation directory, '${base_us_dir}/${native_install_dir}', already exists. Remove it first." 1>&2
 
 		exit 20
 
@@ -179,7 +179,7 @@ if [ $do_clone -eq 0 ]; then
 	# Parent already exists by design; ensuring any normal user can write the
 	# content to install next:
 	#
-	( sudo mkdir --mode=777 "${install_dir}" ) && cd "${install_dir}"
+	( sudo mkdir --mode=777 "${native_install_dir}" ) && cd "${native_install_dir}"
 
 	clone_opts="--quiet"
 
@@ -295,7 +295,7 @@ if [ $do_clone -eq 0 ]; then
 
 	ln -sf us_web/conf/GNUmakefile-for-native-root GNUmakefile
 
-	# Back in ${base_install_dir}:
+	# Back in ${base_us_dir}:
 	cd ..
 
 	# Designates this install as the latest one then.
@@ -303,7 +303,7 @@ if [ $do_clone -eq 0 ]; then
 	# Rare option needed, otherwise apparently mistook for a directory resulting
 	# in an incorrect link:
 	#
-	sudo /bin/ln -sf --no-target-directory "${install_dir}" us_web-latest
+	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-latest
 
 fi
 
@@ -311,7 +311,7 @@ fi
 
 if [ ${do_build} -eq 0 ]; then
 
-	cd "${abs_install_dir}"
+	cd "${abs_native_install_dir}"
 
 	echo
 	echo "Building these packages (as $(id -un)):"
@@ -416,7 +416,7 @@ if [ ${do_build} -eq 0 ]; then
 	cd ..
 
 	echo
-	echo "Native US-Web built and ready in ${abs_install_dir}."
+	echo "Native US-Web built and ready in ${abs_native_install_dir}."
 
 fi
 
@@ -443,7 +443,7 @@ if [ $do_launch -eq 0 ]; then
 
 	# Simplest: cd src && ${make} us_web_exec
 
-	cd "${abs_install_dir}/us_web" || exit 80
+	cd "${abs_native_install_dir}/us_web" || exit 80
 
 	priv_dir="priv"
 
@@ -484,42 +484,75 @@ if [ $do_launch -eq 0 ]; then
 	read_us_web_config_file #1>/dev/null
 
 
+	# First chmod, then chown:
+
+	dir_perms="770"
+
+	# abs_native_install_dir/* rather than only us_web_dir, as the dependencies
+	# shall also have their permissions updated:
+
+	echo " Changing the permissions of deployed roots in '${abs_native_install_dir}' to ${dir_perms}."
+	if ! sudo chmod ${dir_perms} ${abs_native_install_dir}/*; then
+
+		echo "Error, changing permissions of deployed roots in '${abs_native_install_dir}' to ${dir_perms} failed." 1>&2
+
+		exit 40
+
+	fi
+
+	echo " Changing the permissions of deployed root '${abs_native_install_dir}' itself to ${dir_perms}."
+	if ! sudo chmod ${dir_perms} ${abs_native_install_dir}; then
+
+		echo "Error, changing permissions of deployed root '${abs_native_install_dir}' itself to ${dir_perms} failed." 1>&2
+
+		exit 41
+
+	fi
+
+	if [ ${base_us_dir_created} -eq 0 ]; then
+
+		echo " Changing the permissions of base US install directory '${base_us_dir}' to ${dir_perms}."
+
+		if ! sudo chmod ${dir_perms} "${base_us_dir}"; then
+
+			echo "Error, changing permissions of '${base_us_dir}' failed." 1>&2
+
+			exit 42
+
+		fi
+
+	fi
+
+
+	# Not leaving deployed content as initial user either:
+
 	if [ -n "${us_web_username}" ]; then
+
 		chown_spec="${us_web_username}"
 
 		if [ -n "${us_groupname}" ]; then
-
 			chown_spec="${chown_spec}:${us_groupname}"
+		fi
 
-			# abs_install_dir rather than us_web_dir, as the dependencies shall
-			# also have their permissions updated:
-			#
-			echo " Changing the owner of release files to '${us_web_username}' and their group to '${us_groupname}' (as ${chown_spec}) in '${abs_install_dir}'."
+		echo " Changing recursively owner/group of all deployed elements as ${chown_spec} from '${abs_native_install_dir}'."
+		if ! sudo chown --recursive "${chown_spec}" "${abs_native_install_dir}"; then
 
-		else
+			echo "Error, changing recursively user/group owner (as ${chown_spec}) from '${abs_native_install_dir}' failed." 1>&2
 
-			echo " Changing the owner of deployed files with '${chown_spec}' in '${abs_install_dir}'."
+			exit 44
 
 		fi
 
-		if ! sudo chown --recursive "${chown_spec}" "${abs_install_dir}"; then
+		if [ ${base_us_dir_created} -eq 0 ]; then
 
-			echo "Error, changing user/group owner from '${abs_install_dir}' failed." 1>&2
+			echo " Changing also the owner/group of base US install directory '${base_us_dir}' as '${chown_spec}'."
 
-			exit 40
-
-		fi
-
-		# Not leaving it as initial user either:
-		if [ ${base_install_dir_created} -eq 0 ]; then
-
-			echo " Changing the owner of base install directory '${base_install_dir}' with '${chown_spec}'."
 			# This one is not recursive:
-			if ! sudo chown "${chown_spec}" "${base_install_dir}"; then
+			if ! sudo chown "${chown_spec}" "${base_us_dir}"; then
 
-				echo "Error, changing user/group owner of '${base_install_dir}' failed." 1>&2
+				echo "Error, changing owner/group owner of '${base_us_dir}' (as '${chown_spec}') failed." 1>&2
 
-				exit 45
+				exit 46
 
 			fi
 
@@ -527,7 +560,8 @@ if [ $do_launch -eq 0 ]; then
 
 	fi
 
-	cd "${base_install_dir}"
+
+	cd "${base_us_dir}"
 
 	# Automatic shutdown (that was deferred as much as possible) of any prior
 	# US-Web release running:
@@ -545,9 +579,9 @@ if [ $do_launch -eq 0 ]; then
 
 	done
 
-	echo "### Launching US-Web release now"
+	echo "### Launching US-Web native build now"
 
-	cd "${abs_install_dir}/us_web" || exit 81
+	cd "${abs_native_install_dir}/us_web" || exit 81
 
 	# Will switch to the US-Web configured user:
 	sudo ${start_script}

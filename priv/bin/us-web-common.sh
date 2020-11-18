@@ -470,7 +470,7 @@ prepare_us_web_launch()
 	echo "Removing any '${trace_file}' trace file."
 	/bin/rm -f "${trace_file}" 2>/dev/null
 
-	echo "Fixing permissions."
+	echo "Fixing permissions to ${us_web_username}:${us_groupname} (as $(id))."
 
 	# So that the VM can write its logs despite authbind:
 	chown ${us_web_username}:${us_groupname} ${us_web_vm_log_dir}

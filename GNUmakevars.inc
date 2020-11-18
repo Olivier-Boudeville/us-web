@@ -79,6 +79,11 @@ endif
 US_WEB_BEAM_DIRS := $(US_WEB_BEAM)
 
 
+# The default path where a US-Web native build is to be deployed on a server:
+# (useful to synchronise sources)
+#
+US_NATIVE_DEPLOY_ROOT := /opt/universal-server/us_web-native
+
 # For later reuse in the next layer of the software stack:
 US_WEB_PLT_FILE := $(US_WEB_TOP)/us_web.plt
 

@@ -7,6 +7,7 @@ US_WEB_TOP = .
 		ensure-dev-release ensure-prod-release                                 \
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
+		sync-us sync-us-common sync-us-web                                     \
 		start debug debug-as-release start-as-release status                   \
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability                            \
@@ -205,6 +206,18 @@ just-export-release:
 #
 upgrade-us-common:
 	@$(REBAR3_EXEC) upgrade us_common
+
+
+# Synchronises the US-related sources on any remote server:
+sync-us: sync-us-common sync-us-web
+
+sync-us-common:
+	@echo " Synchronising US-Common in $(WEB_SRV)"
+	@rsync -avz -e "ssh -p $$SSH_PORT" $(US_COMMON_TOP)/src/*.erl $(WEB_SRV):$(US_NATIVE_DEPLOY_ROOT)/us_common/src/
+
+sync-us-web:
+	@echo " Synchronising US-Web in $(WEB_SRV)"
+	@rsync -avz -e "ssh -p $$SSH_PORT" src/*.erl $(WEB_SRV):$(US_NATIVE_DEPLOY_ROOT)/us_web/src/
 
 
 # Not used anymore, as the simple_bridge configuration file does not seem to be

@@ -747,7 +747,9 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% Creates if relevant a certificate manager for the specified virtual host.
+% Creates, if relevant (nothing done for catch-alls) a certificate manager for
+% the specified virtual host.
+%
 -spec handle_certificate_manager_for( vhost_id(), domain_id(), cert_support(),
 		cert_mode(), bin_directory_path(), bin_directory_path(),
 		scheduler_pid() ) -> maybe( cert_manager_pid() ).
@@ -1090,6 +1092,9 @@ build_vhost_table( DomainId,
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
 		AccRoutes, CertSupport, CertMode, BinCertDir, SchedulerPid, State ) ->
 
+	?debug_fmt( "Managing static configuration for virtual host '~s' in "
+				"domain '~s'.", [ VHostId, DomainId ] ),
+
 	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
 									   VHostId, DomainId, State ),
 
@@ -1196,7 +1201,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 			  CertSupport, CertMode, BinCertDir, SchedulerPid,
 			  _MaybeWebAnalysisInfo=undefined ) ->
 
-	% Now, we do not use anymore a scheduler for web looging, we prefer a task
+	% Now, we do not use anymore a scheduler for web logging, we prefer a task
 	% ring in order to avoid any possible concurrent runs of any analysis tool:
 	%
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinLogDir,
@@ -1442,7 +1447,7 @@ describe_host( VHostId, BinDomainName ) ->
 % Returns a static dispatch route corresponding to the specified virtual host
 % identifier, domain identifier and content root.
 %
-% See https://ninenines.eu/docs/en/cowboy/2.7/guide/routing/ for more details.
+% See https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/ for more details.
 %
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
 		logger_pid(), cert_support(), maybe( cert_manager_pid() ) ) ->
@@ -1561,14 +1566,16 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 					   InitialState#{ type => directory,
 									  path => BinContentRoot } },
 
-	PathMatches = case CertSupport of
+	% MaybeCertManagerPid is undefined in the case of a catch-all:
+	PathMatches = case CertSupport =:= renew_certificates
+					  andalso MaybeCertManagerPid =/= undefined of
 
-		renew_certificates ->
+		true ->
 			% Be able to answer Let's Encrypt ACME challenges:
 			[ NoPagePathMatch, get_challenge_path_match( MaybeCertManagerPid ),
 			  OtherPathsMatch ];
 
-		_ ->
+		false ->
 			[ NoPagePathMatch, OtherPathsMatch ]
 
 	end,

@@ -23,10 +23,25 @@ update:
 	@for r in $(ALL_REPOSITORIES); do ( echo " - updating $$r" ; cd $$r && git pull ) || exit 5 ; done
 
 
+# Note that, after a sync done through the 'sync-us-web' target, on the server,
+# for a module X, X.erl and X.beam are likely to bear the same timestamp, so a
+# mere 'build' may not attempt to recreate the transferred X.beam, whereas it
+# might be obsolete from the start, compared to the X.erl.
+#
+# So 'rebuild' is a safer target than 'build', and BEAM files shall not be
+# rsync'ed. However, as the target tree is generally owned by a different user
+# then the user performing, on the client side, the rsync, the timestamps of the
+# rsync'ed files are not updated anymore (as otherwise that operation is bound
+# to fail) and thus shall not be relied upon.
+#
+# As a consequence, prefer rebuilding to building, or ensure to rsync'ed BEAM
+#  files that are up-to-date (which the sync targets try to do).
+#
 rebuild: clean build
 
 
-# We do not clean/build cowboy anymore as a version thereof is not supposed to change.
+# We do not clean/build cowboy anymore as a version thereof is not supposed to
+# change.
 
 # (unset is for Cowboy, if even included, as it is potentially troubled by an
 # unrelated define)

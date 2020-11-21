@@ -377,6 +377,10 @@ if [ ${do_build} -eq 0 ]; then
 	# a checkout) rather than on its own version (as a _build dependency;
 	# removed to avoid a possibly cause of confusion):
 	#
+	# Note that rebar3 will still create a leec/_build/default/checkouts/myriad
+	# directory with its own BEAMs, that may become obsolete. This directory
+	# should simply remain out of the code path.
+	#
 	cd leec && /bin/rm -rf _build/default/lib/myriad/ && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
 
 	if [ ! $? -eq 0 ]; then

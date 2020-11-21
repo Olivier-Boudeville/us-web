@@ -1,5 +1,6 @@
 # This makefile is to be available (as a symlink) at the root of a native US-Web
-# installation (hence typically in the 'us_web-native' root directory.
+# installation (hence typically in the 'us_web-native' root directory), whereas
+# it is defined in us_web/conf/GNUmakefile-for-native-root.
 
 
 .PHONY: all update rebuild clean build
@@ -14,13 +15,13 @@ OUR_REPOSITORIES := $(CEYLAN_REPOSITORIES) $(US_REPOSITORIES)
 ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
 
 
-all: update rebuild
+all: pull rebuild
 
 
 # Updates all repositories involved:
-update:
-	@echo "  Updating sources of all repositories involved"
-	@for r in $(ALL_REPOSITORIES); do ( echo " - updating $$r" ; cd $$r && git pull ) || exit 5 ; done
+pull:
+	@echo "  Updating (pulling) sources from all repositories involved"
+	@for r in $(ALL_REPOSITORIES); do ( echo " - pulling $$r" ; cd $$r && git pull ) || exit 5 ; done
 
 
 # Note that, after a sync done through the 'sync-us-web' target, on the server,

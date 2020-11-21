@@ -14,7 +14,7 @@ US_WEB_TOP = .
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive                                       \
 		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
-		info info-local
+		info info-local info-conditionals
 
 
 MODULES_DIRS = src doc conf priv test
@@ -414,11 +414,17 @@ info-local:
 	@echo "VM_LOG_FILES = $(VM_LOG_FILES)"
 	@echo "RELEASE_PATH = $(RELEASE_PATH)"
 	@echo "US_COMMON_TOP = $(US_COMMON_TOP)"
+	@echo "LEEC_TOP = $(LEEC_TOP)"
 	@echo "TRACES_TOP = $(TRACES_TOP)"
 	@echo "WOOPER_TOP = $(WOOPER_TOP)"
 	@echo "MYRIAD_TOP = $(MYRIAD_TOP)"
 	@echo "REBAR3_EXEC = $(REBAR3_EXEC)"
 	@echo "REBAR_INCS = $(REBAR_INCS)"
+
+
+info-conditionals:
+	@echo "US_WEB_DEBUG_FLAGS = $(US_WEB_DEBUG_FLAGS)"
+	@echo "US_WEB_CHECK_FLAGS = $(US_WEB_CHECK_FLAGS)"
 
 
 include $(US_WEB_TOP)/GNUmakesettings.inc

@@ -1,6 +1,66 @@
 # Prerequisite: US_WEB_TOP must be set.
 
 
+# To understand why taking into account such conditionals requires to specify
+# them first, and in each layer, rather than at the end of the last one, refer
+# to the section about conditionals at the top of the GNUmakevars.inc of Myriad.
+
+
+# Overall settings section.
+
+#EXECUTION_TARGET = production
+
+ifndef EXECUTION_TARGET
+
+	# Other possible value: production
+	EXECUTION_TARGET = development
+
+endif
+
+
+ifeq ($(EXECUTION_TARGET),development)
+
+	#$(info Execution target is development)
+
+	ENABLE_DEBUG = true
+
+else ifeq ($(EXECUTION_TARGET),production)
+
+	#$(info Execution target is production)
+
+	ENABLE_DEBUG = false
+
+else
+
+	$(error Invalid US-Web execution target '$(EXECUTION_TARGET)'; expecting either 'development' or 'production')
+
+endif
+
+
+# Enforce default values:
+
+
+# Defining (optional) layer-specific flags, typically used by in-code
+# conditional compilation primitives (see cond_utils for their management):
+
+# Topics covered by flags:
+#  - xx (none yet)
+
+# Defining debug flags (at least the most verbose are by default commented-out):
+ifeq ($(ENABLE_DEBUG),true)
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_xx
+endif
+
+# Defining check flags:
+ifeq ($(EXECUTION_TARGET),development)
+	# Does not exist: US_WEB_CHECK_FLAGS += -Dus_web_check_xx
+endif
+
+ERLANG_COMPILER_OPT_BASE += $(US_WEB_DEBUG_FLAGS) \
+							$(US_WEB_CHECK_FLAGS)
+
+
+
 # Useful to target for example the root of the current layer (ex: to locate the
 # relevant, layer-local '_build' directory):
 #
@@ -99,10 +159,12 @@ endif
 # We define the path to the US-Common layer (possibly available as a symbolic
 # link).
 #
-# For the sake of these build-related makefiles, dependencies may be found
-# either in a local _checkouts child directory (if checkout directories are used
-# and if the top-level package of interest is the current one), or in sibling
-# directories (i.e. whose build root is at the same level as this one).
+# For the sake of these build-related makefiles, dependencies will be searched
+# (in that order, the one enforced in otp_utils) in a local _checkouts child
+# directory (if checkout directories are used and if the top-level package of
+# interest is the current one), otherwise in sibling directories (i.e. whose
+# build root is at the same level as this one).
+#
 # This last case happens notably if not using checkout directories, or if using
 # them and if all the packages mentioned here are themselves dependencies (in
 # which case they are all sitting together in the _checkouts child directory).
@@ -110,44 +172,28 @@ endif
 # Note also we rely on the names of build roots (ex: myriad) as opposed to
 # project/repository names (ex: Ceylan-Myriad):
 #
-ifneq ($(wildcard $(US_WEB_TOP)/../us_common),)
-
-	# By default, expect sibling directories:
-	US_COMMON_TOP = $(US_WEB_TOP)/../us_common
-
+# First priority is an existing checkout directory:
+ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/us_common/.),)
+	US_COMMON_TOP = $(US_WEB_TOP)/_checkouts/us_common
 else
-
-	# Otherwise assume a checkout one:
-	ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/us_common),)
-
-		US_COMMON_TOP = $(US_WEB_TOP)/_checkouts/us_common
-
+	# Otherwise a sibling one is searched for:
+	ifneq ($(wildcard $(US_WEB_TOP)/../us_common/.),)
+		US_COMMON_TOP = $(US_WEB_TOP)/../us_common
    else
-
 		FORCE_EVAL := $(error Unable to find the build root of US-Common)
-
 	endif
-
 endif
 
 
 # We do the same for LEEC:
-ifneq ($(wildcard $(US_WEB_TOP)/../leec),)
-
-	# By default, expect sibling directories:
-	LEEC_TOP = $(US_WEB_TOP)/../leec
-
+ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec/.),)
+	# By default, expect a checkout directory:
+	LEEC_TOP = $(US_WEB_TOP)/_checkouts/leec
 else
-
-	# Otherwise assume a checkout one:
-	ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec),)
-
-		LEEC_TOP = $(US_WEB_TOP)/_checkouts/leec
-
+	# Otherwise assume a sibling one:
+	ifneq ($(wildcard $(US_WEB_TOP)/../leec/.),)
+		LEEC_TOP = $(US_WEB_TOP)/../leec
    else
-
 		FORCE_EVAL := $(error Unable to find the build root of LEEC)
-
 	endif
-
 endif

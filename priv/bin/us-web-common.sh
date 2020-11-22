@@ -472,7 +472,7 @@ prepare_us_web_launch()
 	echo "Removing any LEEC key files in '${us_cert_dir}'."
 
 	# Covers two patterns of such files:
-	/bin/rm -rf "${us_cert_dir}"/"leec-agent*.key*" 2>/dev/null
+	/bin/rm -rf "${us_cert_dir}/leec-agent-private*.key*" 2>/dev/null
 
 	# Needed as a sign that any future start succeeded:
 	trace_file="${us_web_vm_log_dir}/us_web.traces"

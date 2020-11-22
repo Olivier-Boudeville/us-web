@@ -18,10 +18,10 @@ ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
 all: pull rebuild
 
 
-# Updates all repositories involved:
+# Updates all repositories involved (any local change being then lost):
 pull:
-	@echo "  Updating (pulling) sources from all repositories involved"
-	@for r in $(ALL_REPOSITORIES); do ( echo " - pulling $$r" ; cd $$r && git pull ) || exit 5 ; done
+	@echo "  Updating (force-pulling) sources from all repositories involved"
+	@for r in $(ALL_REPOSITORIES); do ( echo " - pulling $$r" ; cd $$r && git fetch && git reset --hard HEAD && git merge '@{u}' ) || exit 5 ; done
 
 
 # Note that, after a sync done through the 'sync-us-web' target, on the server,

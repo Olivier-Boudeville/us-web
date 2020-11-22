@@ -206,8 +206,8 @@ construct( State, BinFQDN, BinCertDir, BinWebrootDir, MaybeSchedulerPid ) ->
 -spec construct( wooper:state(), bin_fqdn(), cert_mode(), bin_directory_path(),
 				 bin_directory_path(), maybe( scheduler_pid() ), boolean() ) ->
 					   wooper:state().
-construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir, MaybeSchedulerPid,
-		   _IsSingleton=true ) ->
+construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
+		   MaybeSchedulerPid, _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
 	InitState = construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
@@ -302,7 +302,10 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 		+ round( JitterMaxSecs * random_utils:get_random_value() ),
 
 	% Let's start LEEC now, enabling first the integration of its traces:
-	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ BinFQDN ] ),
+
+	% Otherwise opens subcategories in traces, as an emitter:
+	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
+	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ DotlessFQDN ] ),
 
 	trace_bridge:register( TraceEmitterName, ?trace_emitter_categorization,
 						   ?getAttr(trace_aggregator_pid) ),
@@ -493,7 +496,7 @@ requestCertificate( State ) ->
 
 					% A bit of interleaving:
 					SchedPid ! { registerOneshotTask, [ _Cmd=requestCertificate,
-									_Delay=RenewDelay, _ActPid=self() ], self() },
+								_Delay=RenewDelay, _ActPid=self() ], self() },
 
 					NextTimestamp = time_utils:offset_timestamp(
 						time_utils:get_timestamp(), RenewDelay ),
@@ -658,8 +661,9 @@ get_vh_sni_infos_for( _Hostname, _VirtualHostPairs=[], _BinCertDir, Acc ) ->
 	lists:reverse( Acc );
 
 % No host-level wildcard certificate:
-get_vh_sni_infos_for( Hostname, _VirtualHostPairs=[ { _VH=default_vhost_catch_all,
-					_ContentRoot } | T ], BinCertDir, Acc ) ->
+get_vh_sni_infos_for( Hostname,
+		_VirtualHostPairs=[ { _VH=default_vhost_catch_all, _ContentRoot } | T ],
+		BinCertDir, Acc ) ->
 	get_vh_sni_infos_for( Hostname, T, BinCertDir, Acc );
 
 get_vh_sni_infos_for( Hostname,

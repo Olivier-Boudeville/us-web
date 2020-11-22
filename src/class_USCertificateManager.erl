@@ -307,8 +307,8 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
 	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ DotlessFQDN ] ),
 
-	trace_bridge:register( TraceEmitterName, ?trace_emitter_categorization,
-						   ?getAttr(trace_aggregator_pid) ),
+	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
+		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
 
 	% Refer to https://github.com/Olivier-Boudeville/letsencrypt-erlang#api.
 
@@ -339,7 +339,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 
 	end,
 
-	LEECPid = case letsencrypt:start( StartOpts ) of
+	LEECPid = case letsencrypt:start_bridged( StartOpts, BridgeSpec ) of
 
 		{ ok, FsmPid } ->
 			?trace_fmt( "LEEC initialized, using FSM of PID ~w, based on "

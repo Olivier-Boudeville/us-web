@@ -301,14 +301,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 	RenewPeriodSecs = BaseRenewPeriodSecs
 		+ round( JitterMaxSecs * random_utils:get_random_value() ),
 
-	% Let's start LEEC now, enabling first the integration of its traces:
-
-	% Otherwise opens subcategories in traces, as an emitter:
-	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
-	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ DotlessFQDN ] ),
-
-	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
-		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
+	% Let's start LEEC now:
 
 	% Refer to https://github.com/Olivier-Boudeville/letsencrypt-erlang#api.
 
@@ -339,7 +332,17 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 
 	end,
 
-	LEECPid = case letsencrypt:start_bridged( StartOpts, BridgeSpec ) of
+	% Enabling the integration of its traces:
+
+	% Otherwise opens subcategories in traces, as an emitter:
+	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
+	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ DotlessFQDN ] ),
+
+	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
+		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
+
+
+	LEECPid = case letsencrypt:start( StartOpts, BridgeSpec ) of
 
 		{ ok, FsmPid } ->
 			?trace_fmt( "LEEC initialized, using FSM of PID ~w, based on "
@@ -674,8 +677,10 @@ get_vh_sni_infos_for( Hostname,
 	CertFilename = FQDN ++ ".pem",
 	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
 	VHPair = { FQDN, [ { certfile, CertFilePath } ] },
-	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] ).
+	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
 
+get_vh_sni_infos_for( Hostname, [ Unexpected | _T ], _BinCertDir, _Acc ) ->
+	throw( { unexpected_vhost_info_for_snis, Unexpected, Hostname } ).
 
 
 

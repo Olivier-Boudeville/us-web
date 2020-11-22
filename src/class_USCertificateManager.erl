@@ -618,7 +618,7 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 	% For https with SNI, a default host is defined, distinct from the SNI ones;
 	% by convention it is the first one found in the user-defined dispatch
 	% routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
-	% not something.foobar.org): (plain string required, apparently)
+	% not something.foobar.org); a plain string is required, apparently.
 	%
 	DefaultCertFilename = FirstHostname ++ ".pem",
 
@@ -646,41 +646,49 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 
 % No domain-level wildcard certificate:
 get_virtual_host_sni_infos( _Hostname=default_domain_catch_all,
-					   _VirtualHostPairs, _BinCertDir ) ->
+							_VHostInfos, _BinCertDir ) ->
 	[];
 
-get_virtual_host_sni_infos( _Hostname="localhost", _VirtualHostPairs,
-							_BinCertDir ) ->
+get_virtual_host_sni_infos( _Hostname="localhost", _VHostInfos, _BinCertDir ) ->
 	[];
 
-get_virtual_host_sni_infos( Hostname, VirtualHostPairs, BinCertDir ) ->
-	get_vh_sni_infos_for( Hostname, VirtualHostPairs, BinCertDir, _Acc=[] ).
+get_virtual_host_sni_infos( Hostname, VHostInfos, BinCertDir ) ->
+	get_vh_sni_infos_for( Hostname, VHostInfos, BinCertDir, _Acc=[] ).
 
 
 
 % (helper)
-get_vh_sni_infos_for( _Hostname, _VirtualHostPairs=[], _BinCertDir, Acc ) ->
+get_vh_sni_infos_for( _Hostname, _VHostInfos=[], _BinCertDir, Acc ) ->
 	% Preferring to respect the order from the user rules:
 	lists:reverse( Acc );
 
 % No host-level wildcard certificate:
 get_vh_sni_infos_for( Hostname,
-		_VirtualHostPairs=[ { _VH=default_vhost_catch_all, _ContentRoot } | T ],
+		_VHostInfos=[ { _VH=default_vhost_catch_all, _ContentRoot } | T ],
 		BinCertDir, Acc ) ->
 	get_vh_sni_infos_for( Hostname, T, BinCertDir, Acc );
 
 get_vh_sni_infos_for( Hostname,
-		_VirtualHostPairs=[ { VHostname, _ContentRoot } | T ], BinCertDir,
-		Acc ) ->
+		_VHostInfos=[ { VHostname, _ContentRoot } | T ], BinCertDir, Acc ) ->
+	VHPair = get_vh_pair( Hostname, VHostname, BinCertDir ),
+	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
 
-	FQDN = VHostname ++ Hostname,
-	CertFilename = FQDN ++ ".pem",
-	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
-	VHPair = { FQDN, [ { certfile, CertFilePath } ] },
+get_vh_sni_infos_for( Hostname,
+		_VHostInfos=[ { VHostname, _ContentRoot, _WebKind } | T ], BinCertDir,
+		Acc ) ->
+	VHPair = get_vh_pair( Hostname, VHostname, BinCertDir ),
 	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
 
 get_vh_sni_infos_for( Hostname, [ Unexpected | _T ], _BinCertDir, _Acc ) ->
 	throw( { unexpected_vhost_info_for_snis, Unexpected, Hostname } ).
+
+
+% (helper)
+get_vh_pair( Hostname, VHostname, BinCertDir ) ->
+	FQDN = VHostname ++ [ $. | Hostname ],
+	CertFilename = FQDN ++ ".pem",
+	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
+	{ FQDN, [ { certfile, CertFilePath } ] }.
 
 
 

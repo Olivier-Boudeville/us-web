@@ -465,6 +465,15 @@ prepare_us_web_launch()
 
 	/bin/rm -f ${us_web_vm_log_dir}/erlang.log.* ${us_web_vm_log_dir}/run_erl.log 2>/dev/null
 
+	# Avoiding warnings about keys being overwritten:
+
+	us_cert_dir="${us_web_app_base_dir}/certificates"
+
+	echo "Removing any LEEC key files in '${us_cert_dir}'."
+
+	# Covers two patterns of such files:
+	/bin/rm -rf "${us_cert_dir}"/"leec-agent*.key*" 2>/dev/null
+
 	# Needed as a sign that any future start succeeded:
 	trace_file="${us_web_vm_log_dir}/us_web.traces"
 	echo "Removing any '${trace_file}' trace file."

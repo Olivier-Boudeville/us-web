@@ -3,7 +3,7 @@
 # it is defined in us_web/conf/GNUmakefile-for-native-root.
 
 
-.PHONY: all update rebuild clean build
+.PHONY: all pull build update rebuild clean
 
 
 CEYLAN_REPOSITORIES := myriad leec wooper traces
@@ -15,13 +15,26 @@ OUR_REPOSITORIES := $(CEYLAN_REPOSITORIES) $(US_REPOSITORIES)
 ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
 
 
-all: pull rebuild
+all:
+	@echo "Select target in: pull build update rebuild clean"
 
 
 # Updates all repositories involved (any local change being then lost):
 pull:
 	@echo "  Updating (force-pulling) sources from all repositories involved"
 	@for r in $(ALL_REPOSITORIES); do ( echo " - pulling $$r" ; cd $$r && git fetch && git reset --hard HEAD && git merge '@{u}' ) || exit 5 ; done
+
+
+# (unset is for Cowboy, if even included, as it is potentially troubled by an
+# unrelated define)
+#
+build:
+	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
+	@for r in $(OUR_REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
+
+
+# Lightweight rebuild (no prior cleaning)
+update: pull build
 
 
 # Note that, after a sync done through the 'sync-us-web' target, on the server,
@@ -50,11 +63,3 @@ rebuild: clean build
 clean:
 	@echo "  Cleaning all our (Ceylan and US) repositories involved"
 	@for r in $(OUR_REPOSITORIES) $(); do ( unset SP ; echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done
-
-
-# (unset is for Cowboy, if even included, as it is potentially troubled by an
-# unrelated define)
-#
-build:
-	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
-	@for r in $(OUR_REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done

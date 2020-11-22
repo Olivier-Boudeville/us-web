@@ -44,11 +44,11 @@ endif
 # conditional compilation primitives (see cond_utils for their management):
 
 # Topics covered by flags:
-#  - xx (none yet)
+#  - execution: for example code paths
 
 # Defining debug flags (at least the most verbose are by default commented-out):
 ifeq ($(ENABLE_DEBUG),true)
-	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_xx
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_execution
 endif
 
 # Defining check flags:

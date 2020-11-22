@@ -64,6 +64,10 @@ exec() ->
 	trace_utils:info(
 	  "Starting the US-Web application natively (not as a release)." ),
 
+	cond_utils:if_defined( us_web_debug_execution,
+		trace_utils:debug_fmt( "Initially, the ~s",
+							   [ code_utils:get_code_path_as_string() ] ) ),
+
 	% Not in an OTP context here, yet we need OTP applications (Cowboy, LEEC,
 	% etc.) to be available (ex: w.r.t. their .app and BEAMs being found, their
 	% starting to be done, etc.); we just not want US-Web to be launched the

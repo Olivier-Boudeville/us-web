@@ -44,11 +44,13 @@ endif
 # conditional compilation primitives (see cond_utils for their management):
 
 # Topics covered by flags:
-#  - execution: for example code paths
-
+#  - sni: regarding Server Name Indication
+#
 # Defining debug flags (at least the most verbose are by default commented-out):
 ifeq ($(ENABLE_DEBUG),true)
-	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_execution
+	# Could imply leec_debug_sni:
+	US_WEB_DEBUG_FLAGS += -Dus_web_debug_sni
+
 endif
 
 # Defining check flags:

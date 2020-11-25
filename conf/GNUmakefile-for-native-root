@@ -15,8 +15,10 @@ OUR_REPOSITORIES := $(CEYLAN_REPOSITORIES) $(US_REPOSITORIES)
 ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
 
 
-all:
-	@echo "Select target in: pull build update rebuild clean"
+# Default (most useful):
+all: update
+
+#	@echo "  Please select target among: pull build update rebuild clean"
 
 
 # Updates all repositories involved (any local change being then lost):

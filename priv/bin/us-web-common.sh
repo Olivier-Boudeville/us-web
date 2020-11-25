@@ -512,7 +512,7 @@ prepare_us_web_launch()
 	echo "Removing any LEEC key files in '${us_cert_dir}'."
 
 	# Covers two patterns of such files:
-	/bin/rm -rf "${us_cert_dir}/leec-agent-private*.key*" 2>/dev/null
+	/bin/rm -f ${us_cert_dir}/leec-agent-private*.key* 2>/dev/null
 
 	# Not removing the state files of a log analyzer, to keep history.
 

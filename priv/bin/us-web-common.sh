@@ -196,6 +196,46 @@ read_us_web_config_file()
 
 	fi
 
+	us_web_data_dir=$(echo "${us_web_base_content}" | grep us_web_data_dir | sed 's|^{[[:space:]]*us_web_data_dir,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
+
+	if [ -z "${us_web_data_dir}" ]; then
+
+		# Maybe as an environment variable:
+		if [ -z "${US_WEB_DATA_DIR}" ]; then
+
+			# Then default is:
+			us_web_data_dir="${us_web_app_base_dir}/us-web-data"
+
+			if [ ! -d "${us_web_data_dir}" ]; then
+
+				echo "Creating US-Web data directory '${us_web_data_dir}'."
+				mkdir "${us_web_data_dir}"
+
+			fi
+
+		else
+
+			us_web_data_dir="${US_WEB_DATA_DIR}"
+			if [ ! -d "${us_web_data_dir}" ]; then
+
+				echo "  Error, the US-Web data directory specified through the US_WEB_DATA_DIR environment variable (as '${us_web_data_dir}') is not an existing directory." 1>&2
+				exit 135
+
+			fi
+
+		fi
+
+	else
+
+		if [ ! -d "${us_web_data_dir}" ]; then
+
+			echo "  Error, the US-Web data directory specified in the US-Web configuration file (as '${us_web_data_dir}') is not an existing directory." 1>&2
+			exit 140
+
+		fi
+
+	fi
+
 
 	# VM-level logs (not based on us_web_log_dir - which is dedicated to the
 	# web-related ones):
@@ -467,19 +507,21 @@ prepare_us_web_launch()
 
 	# Avoiding warnings about keys being overwritten:
 
-	us_cert_dir="${us_web_app_base_dir}/certificates"
+	us_cert_dir="${us_web_data_dir}/certificates"
 
 	echo "Removing any LEEC key files in '${us_cert_dir}'."
 
 	# Covers two patterns of such files:
 	/bin/rm -rf "${us_cert_dir}/leec-agent-private*.key*" 2>/dev/null
 
+	# Not removing the state files of a log analyzer, to keep history.
+
 	# Needed as a sign that any future start succeeded:
 	trace_file="${us_web_vm_log_dir}/us_web.traces"
 	echo "Removing any '${trace_file}' trace file."
 	/bin/rm -f "${trace_file}" 2>/dev/null
 
-	echo "Fixing permissions to ${us_web_username}:${us_groupname} (as $(id))."
+	echo "Fixing permissions to ${us_web_username}:${us_groupname} (as $(id -un))."
 
 	# So that the VM can write its logs despite authbind:
 	chown ${us_web_username}:${us_groupname} ${us_web_vm_log_dir}

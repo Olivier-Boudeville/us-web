@@ -58,13 +58,27 @@ start_link( AppRunContext ) ->
 
 % Initialization of this OTP supervisor.
 -spec init( [ application_run_context() ] ) ->
-				  { 'ok', { supervisor:sup_flags(), supervisor:child_spec() } }.
+				{ 'ok', { supervisor:sup_flags(), supervisor:child_spec() } }.
 init( _Args=[ AppRunContext ] ) ->
 
 	otp_utils:check_application_run_context( AppRunContext ),
 
-	trace_utils:trace_fmt( "Starting us_web supervisor (run context: ~s)...",
-						   [ AppRunContext ] ),
+	% Preparing a trace bridge to collect traces and errors:
+	% (could be a trace emitter instead)
+
+	BinTraceEmitterName = <<"US-Web supervisor">>,
+
+	BinTraceCategory = <<"US.USWebSupervisor">>,
+
+	AggregatorPid = class_TraceAggregator:get_aggregator(
+					  _LaunchAggregator=false ),
+
+	BridgeSpec = { BinTraceEmitterName, BinTraceCategory, AggregatorPid },
+
+	trace_bridge:register( BridgeSpec ),
+
+	trace_bridge:trace_fmt( "Starting us_web supervisor (run context: ~s)...",
+							[ AppRunContext ] ),
 
 	% The logic below shall better be in a (single) supervised child, for a
 	% better logic separation.
@@ -86,7 +100,7 @@ init( _Args=[ AppRunContext ] ) ->
 
 	end,
 
-	trace_utils:debug( "Starting Cowboy webserver..." ),
+	trace_bridge:debug( "Starting Cowboy webserver..." ),
 
 	ProtoOpts = #{ env => #{ dispatch => DispatchRules } },
 
@@ -95,11 +109,11 @@ init( _Args=[ AppRunContext ] ) ->
 	case MaybeHttpTCPPort of
 
 		undefined ->
-			trace_utils:trace( "No HTTP listening enabled." );
+			trace_bridge:trace( "No HTTP listening enabled." );
 
 		HttpTCPPort ->
-			trace_utils:debug_fmt( "Listening for the HTTP scheme "
-								   "at port #~B.", [ HttpTCPPort ] ),
+			trace_bridge:debug_fmt( "Listening for the HTTP scheme "
+									"at port #~B.", [ HttpTCPPort ] ),
 
 			% At least currently, the cowboy application is considered to be an
 			% external dependency, and as such we rely on its using of its
@@ -116,7 +130,7 @@ init( _Args=[ AppRunContext ] ) ->
 
 				{ error, HttpError } ->
 
-					trace_utils:error_fmt( "Unable to start a cowboy HTTP "
+					trace_bridge:error_fmt( "Unable to start a cowboy HTTP "
 						"listener at TCP port #~B, error being: ~p.~n"
 						"(protocol options were ~p).",
 						[ HttpTCPPort, HttpError, ProtoOpts ] ),
@@ -128,16 +142,15 @@ init( _Args=[ AppRunContext ] ) ->
 
 	end,
 
-	%case undefined of
 	case MaybeHttpsTCPPort of
 
 		undefined ->
-			trace_utils:trace( "No HTTPS listening enabled." );
+			trace_bridge:trace( "No HTTPS listening enabled." );
 
 	   % Using TLS here:
 		HttpsTCPPort ->
 
-			trace_utils:debug_fmt( "Listening for the HTTPS scheme "
+			trace_bridge:debug_fmt( "Listening for the HTTPS scheme "
 								   "at port #~B.", [ HttpsTCPPort ] ),
 
 			{ PEMCertFilePath, SNIVhInfos } = MaybeSNIHostsInfo,
@@ -160,7 +173,7 @@ init( _Args=[ AppRunContext ] ) ->
 				% Server Name Indication (virtual) hosts:
 				{ sni_hosts, SNIVhInfos } ],
 
-			trace_utils:debug_fmt( "https transport options: ~p~n"
+			trace_bridge:debug_fmt( "https transport options: ~p~n"
 				"protocol options: ~p", [ HttpsTransportOpts, ProtoOpts ] ),
 
 			case cowboy:start_tls( us_web_https_listener, HttpsTransportOpts,
@@ -171,7 +184,7 @@ init( _Args=[ AppRunContext ] ) ->
 
 				{ error, HttpsError } ->
 
-					trace_utils:error_fmt( "Unable to start a cowboy HTTPS"
+					trace_bridge:error_fmt( "Unable to start a cowboy HTTPS"
 						"listener at TCP port #~B, error being: ~p.~n"
 						"(transport options were ~p, while protocol "
 						"options were ~p).",
@@ -211,8 +224,8 @@ init( _Args=[ AppRunContext ] ) ->
 			ok;
 
 		SomeHttpTCPPort ->
-			trace_utils:info_fmt( "One may test this server running at "
-								  "http://localhost:~p", [ SomeHttpTCPPort ] )
+			trace_bridge:info_fmt( "One may test this server running at "
+				"http://localhost:~p", [ SomeHttpTCPPort ] )
 
 	end,
 
@@ -222,8 +235,8 @@ init( _Args=[ AppRunContext ] ) ->
 			ok;
 
 		SomeHttpsTCPPort ->
-			trace_utils:info_fmt( "One may test this server running at "
-								  "https://localhost:~p", [ SomeHttpsTCPPort ] )
+			trace_bridge:info_fmt( "One may test this server running at "
+				"https://localhost:~p", [ SomeHttpsTCPPort ] )
 
 	end,
 

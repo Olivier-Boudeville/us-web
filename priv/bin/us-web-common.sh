@@ -538,27 +538,41 @@ inspect_us_web_log()
 
 	# (run_erl.log not that useful)
 
+	# A bit of waiting to let log file be created and written:
+	sleep 1
+
 	# See https://erlang.org/doc/embedded/embedded_solaris.html to understand
 	# the naming logic of erlang.log.* files.
 	#
-	# The goal here is only to select the latest-produced of these rotated log files:
+	# The goal here is only to select the latest-produced of these rotated log
+	# files:
 	#
 	us_web_vm_log_file=$(/bin/ls -t ${us_web_vm_log_dir}/erlang.log.* 2>/dev/null | head -n 1)
+	# Apparently a log file may vanish/be replaced, so:
+	attempts=1
+	max_attempts=8
+
+	while [ ! ${attempts} -eq ${max_attempts} ] && [ ! -f "${us_web_vm_log_file}" ]; do
+
+		if [ -z "${us_web_vm_log_file}" ]; then
+			echo "(no VM log file found, attempt ${attempts}/${max_attempts})"
+		else
+			# Might happen:
+			echo "(VM log file '${us_web_vm_log_file}' not found, attempt ${attempts}/${max_attempts})"
+		fi
+
+		sleep 1
+		attempts=$(expr ${attempts} + 1)
+		us_web_vm_log_file=$(/bin/ls -t ${us_web_vm_log_dir}/erlang.log.* 2>/dev/null | head -n 1)
+
+	done
 
 	# A common problem is: "Protocol 'inet_tcp': the name xxx@yyy seems to be in
 	# use by another Erlang node". This may not even be true (no VM running),
 	# just a lingering EPMD believing this node still exists.
 
-
-	# Waits a bit if necessary while any writing takes place:
-	if [ ! -f "${us_web_vm_log_file}" ]; then
-		sleep 1
-	fi
-
-	# Re-evaluate then:
-	us_web_vm_log_file=$(/bin/ls -t ${us_web_vm_log_dir}/erlang.log.* 2>/dev/null | head -n 1)
-
 	echo
+
 	if [ -f "${us_web_vm_log_file}" ]; then
 
 		echo "EPMD names output:"
@@ -567,21 +581,15 @@ inspect_us_web_log()
 		echo
 		echo "Displaying the end of '${us_web_vm_log_file}':"
 
-		# Still a bit of waiting, otherwise any error may not have been reported
-		# yet:
-		#
-		sleep 1
-
 		# A sufficient height is *necessary*:
 		tail --lines=80 "${us_web_vm_log_file}"
-
-	else
-
-		echo "  Error, no US-Web VM log file found (no erlang.log.* found, even after some delay, while searching in '${us_web_vm_log_dir}')." 1>&2
 
 		# Extra information might be gathered from traces_via_otp.traces and/or
 		# us_web.traces.
 
+	else
+
+		echo "No VM log file found, aborting." 1>&2
 		exit 200
 
 	fi

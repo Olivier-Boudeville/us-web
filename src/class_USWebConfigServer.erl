@@ -873,7 +873,7 @@ prepare_web_analysis(
 	LogAnalysisStateDir = file_utils:join( ?getAttr(data_directory),
 										   "log-analysis-state" ),
 
-	case file_utils:is_directory_or_link( LogAnalysisStateDir ) of
+	case file_utils:is_existing_directory_or_link( LogAnalysisStateDir ) of
 
 		true ->
 			ok;

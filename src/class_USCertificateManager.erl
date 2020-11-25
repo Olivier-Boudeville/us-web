@@ -336,11 +336,10 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 
 	% Otherwise opens subcategories in traces, as an emitter:
 	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
-	TraceEmitterName = text_utils:format( "LEEC for '~s'", [ DotlessFQDN ] ),
+	TraceEmitterName = text_utils:format( "LEEC for ~s", [ DotlessFQDN ] ),
 
 	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
 		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
-
 
 	LEECPid = case letsencrypt:start( StartOpts, BridgeSpec ) of
 
@@ -444,12 +443,7 @@ requestCertificate( State ) ->
 	%
 	{ MaybeRenewDelay, MaybeCertPath } =
 			case letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
-											 _OptionMap=#{ async => false } ) of
-
-		%{ ok, #{ cert := BinCertPath, key := BinCertKey } } ->
-		%	?trace_fmt( "Certificate generation success for '~s': "
-		%		"certificate file is '~s' and certificate key is '~s'.",
-		%		[ FQDN, BinCertPath, BinCertKey ] ),
+											_OptionMap=#{ async => false } ) of
 
 		{ certificate_ready, BinCertFilePath } ->
 			?info_fmt( "Certificate generation success for '~s', "
@@ -499,7 +493,7 @@ requestCertificate( State ) ->
 
 					% A bit of interleaving:
 					SchedPid ! { registerOneshotTask, [ _Cmd=requestCertificate,
-								_Delay=RenewDelay, _ActPid=self() ], self() },
+								 _Delay=RenewDelay, _ActPid=self() ], self() },
 
 					NextTimestamp = time_utils:offset_timestamp(
 						time_utils:get_timestamp(), RenewDelay ),
@@ -714,7 +708,7 @@ to_string( State ) ->
 			"no LEEC FSM";
 
 		LeecPid ->
-			text_utils:format( "LEEC FSM of PID ~s", [ LeecPid ] )
+			text_utils:format( "LEEC FSM of PID ~w", [ LeecPid ] )
 
 	end,
 

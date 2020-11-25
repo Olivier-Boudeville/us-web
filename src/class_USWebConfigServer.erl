@@ -110,6 +110,12 @@
 -define( default_log_base_dir, "/var/log" ).
 
 
+% The subdirectory of the US-Web log directory storing all web logs (access and
+% error logs notably).
+%
+-define( web_log_subdir, "web-logs" ).
+
+
 % Design notes:
 %
 % This US-Web configuration server will ensure that an overall US configuration
@@ -234,6 +240,7 @@
 
 -type directory_path() :: file_utils:directory_path().
 -type bin_directory_path() :: file_utils:bin_directory_path().
+-type any_directory_path() :: file_utils:any_directory_path().
 
 -type bin_file_path() :: file_utils:bin_file_path().
 
@@ -323,13 +330,12 @@
 	  "the US-Web internal configuration directory, 'us_web/priv/conf'" },
 
 	{ data_directory, bin_directory_path(),
-	  "the directory where working data (ex: the database state of a log tool) "
-	  "is to be stored" },
+	  "the directory where working data (ex: the database state of a log tool, "
+	  "or temporary TLS keys) is to be stored" },
 
-	{ log_directory, bin_directory_path(),
-	  "the directory where (non-VM) US-Web logs shall be written, "
-	  "notably access and error logs for websites; traces are stored there "
-	  "as well" },
+	{ log_directory, bin_directory_path(), "the directory where (non-VM) US-Web
+	  logs shall be written, notably access and error logs for websites (in its
+	  ?web_log_subdir directory); traces are stored there as well" },
 
 	{ cert_support, cert_support(),
 	  "tells whether the use and possibly generation/renewal of X.509 "
@@ -365,7 +371,7 @@
 -define( default_registration_scope, global_only ).
 
 
--define( app_subdir, us-web ).
+-define( app_subdir, "us-web" ).
 
 
 % Exported helpers:
@@ -450,6 +456,9 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	NewBinTraceFilePath = text_utils:string_to_binary(
 			file_utils:join( getAttribute( CfgState, log_directory ),
 							 "us_web.traces" ) ),
+
+	?send_trace_fmt( CfgState, "Requesting the renaming of trace file to '~s'.",
+					 [ NewBinTraceFilePath ] ),
 
 	getAttribute( CfgState, trace_aggregator_pid) !
 		{ renameTraceFile, NewBinTraceFilePath },
@@ -861,13 +870,28 @@ prepare_web_analysis(
 
 	end,
 
-	% Quite similar to a collective file_utils:update_with_keywords/3:
+	LogAnalysisStateDir = file_utils:join( ?getAttr(data_directory),
+										   "log-analysis-state" ),
 
-	TemplateBaseContent = file_utils:read_whole( ConfTemplatePath ),
+	case file_utils:is_directory_or_link( LogAnalysisStateDir ) of
+
+		true ->
+			ok;
+
+		false ->
+			?trace_fmt( "Creating the directory to store the state of "
+				"the log analysis tool, '~s'.", [ LogAnalysisStateDir ] ),
+			file_utils:create_directory( LogAnalysisStateDir )
+
+	end,
 
 	% Common to all virtual hosts:
 	BaseTranslationTable = table:new(
-		[ { "US_WEB_LOG_ANALYSIS_DATA_DIR", ?getAttr(data_directory) } ] ),
+		[ { "US_WEB_LOG_ANALYSIS_DATA_DIR", LogAnalysisStateDir } ] ),
+
+	% Quite similar to a collective file_utils:update_with_keywords/3:
+
+	TemplateBaseContent = file_utils:read_whole( ConfTemplatePath ),
 
 	% Done once, for all virtual hosts:
 	TemplateContent = text_utils:update_with_keywords( TemplateBaseContent,
@@ -902,7 +926,6 @@ prepare_web_analysis(
 			throw( { awstats_helper_executable_not_found, HelperPath } )
 
 	end,
-
 
 	% The directory in which the per-vhost configuration files for the web log
 	% tool (Awstats here) will be generated:
@@ -945,7 +968,8 @@ prepare_web_analysis(
 						% generated:
 						%
 						conf_dir=text_utils:string_to_binary( GenAwCfgDir ),
-
+						state_dir=text_utils:string_to_binary(
+									LogAnalysisStateDir ),
 						web_content_dir=BinMetaWebRoot }.
 
 
@@ -1201,10 +1225,12 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 			  CertSupport, CertMode, BinCertDir, SchedulerPid,
 			  _MaybeWebAnalysisInfo=undefined ) ->
 
+	BinWebLogDir = get_web_log_dir( BinLogDir ),
+
 	% Now, we do not use anymore a scheduler for web logging, we prefer a task
 	% ring in order to avoid any possible concurrent runs of any analysis tool:
 	%
-	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinLogDir,
+	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
 			_MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
 
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
@@ -1246,10 +1272,12 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 
 	end,
 
+	BinWebLogDir = get_web_log_dir( BinLogDir ),
+
 	{ BinAccessLogFilename, _BinErrorLogFilename } =
 		class_USWebLogger:get_log_paths( VHostId, DomainId ),
 
-	AccessLogFilePath = file_utils:join( BinLogDir, BinAccessLogFilename ),
+	AccessLogFilePath = file_utils:join( BinWebLogDir, BinAccessLogFilename ),
 
 	BaseAlias = "localhost 127.0.0.1",
 
@@ -1299,7 +1327,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 
 	% As we must create that logger *after* the configuration file it relies on:
 	% (see previous clause about scheduler)
-	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinLogDir,
+	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
 					_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
@@ -1313,7 +1341,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 									  cert_manager_pid=MaybeCertManagerPid },
 
 	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-								  LoggerPid, CertSupport, MaybeCertManagerPid ),
+								LoggerPid, CertSupport, MaybeCertManagerPid ),
 
 	{ VHostEntry, VHostRoute }.
 
@@ -2066,11 +2094,21 @@ manage_log_directory( ConfigTable, State ) ->
 
 	end,
 
-	% Would lead to inconvenient paths, at least if defined as relative:
-	%LogDir = file_utils:join( BaseDir, ?app_subdir ),
-	LogDir = BaseDir,
+	% Longer paths if defined as relative, yet finally preferred as
+	% '/var/log/universal-server/us-web' (rather than
+	% '/var/log/universal-server') allows to separate US-Web from any other US-*
+	% services:
+	%
+	LogDir = file_utils:join( BaseDir, ?app_subdir ),
+	%LogDir = BaseDir,
 
 	file_utils:create_directory_if_not_existing( LogDir ),
+
+	% In addition to this US-Web log directory, we create a subdirectory thereof
+	% to store all web logs (access and error logs ):
+	%
+	BinWebLogDir = get_web_log_dir( LogDir ),
+	file_utils:create_directory_if_not_existing( BinWebLogDir ),
 
 	% Enforce security in all cases ("chmod 700"); if it fails here, the
 	% combined path/user configuration must be incorrect; however we might not
@@ -2084,9 +2122,12 @@ manage_log_directory( ConfigTable, State ) ->
 	case file_utils:get_owner_of( LogDir ) of
 
 		CurrentUserId ->
-			file_utils:change_permissions( LogDir,
-			  [ owner_read, owner_write, owner_execute,
-				group_read, group_write, group_execute ] );
+
+			Perms = [ owner_read, owner_write, owner_execute,
+					  group_read, group_write, group_execute ],
+
+			file_utils:change_permissions( LogDir, Perms ),
+			file_utils:change_permissions( BinWebLogDir, Perms );
 
 		% Not owned, do nothing:
 		_OtherId ->
@@ -2097,6 +2138,12 @@ manage_log_directory( ConfigTable, State ) ->
 	BinLogDir = text_utils:string_to_binary( LogDir ),
 
 	setAttribute( State, log_directory, BinLogDir ).
+
+
+% To centralise the definition of the directory where to store all web logs:
+-spec get_web_log_dir( any_directory_path() ) -> bin_directory_path().
+get_web_log_dir( LogDir ) ->
+	text_utils:string_to_binary( file_utils:join( LogDir, ?web_log_subdir ) ).
 
 
 

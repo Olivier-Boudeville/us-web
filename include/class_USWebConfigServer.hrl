@@ -73,5 +73,8 @@
 		   % Where the configuration file shall be generated:
 		   conf_dir :: file_utils:bin_directory_path(),
 
+		   % Where the state files of the log analyzer will be stored:
+		   state_dir :: file_utils:bin_directory_path(),
+
 		   % Where the HTML reports will be generated:
 		   web_content_dir :: file_utils:bin_directory_path() } ).

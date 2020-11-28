@@ -22,11 +22,13 @@
 
 % Cowboy-compliant handler for US-Web:
 %
-% - provides static dispatches so that the websites corresponding to the virtual
-% hosts can be appropriately served; see conf/us_web_vhosts.config, which holds
-% the data relative to virtual hosts
+% - provides static dispatches so that the (static) websites corresponding to
+% the virtual hosts can be appropriately served; see the US-Web configuration
+% file (ex: priv/for-testing/us-web-for-tests.config), which holds the data
+% relative to virtual hosts
 %
-% - handles HTTP errors (notably 404 ones, thanks to a specific web page)
+% - handles HTTP errors (notably 404 ones, thanks to a specifically-generated
+% web page)
 %
 -module(us_web_handler).
 
@@ -45,7 +47,7 @@
 -type handler_state() :: maps:map().
 
 
-% A US-specialised web handler, a map which may notably contain entries with
+% A US-Web specialised handler, a map which may notably contain entries with
 % following keys:
 %
 % - css_path: file_utils:bin_file_path(), a path relative to the content root of
@@ -63,18 +65,19 @@
 % The (binary) path for a web content:
 -type bin_content_path() :: file_utils:bin_file_path().
 
-% See https://en.wikipedia.org/wiki/List_of_HTTP_status_codes:
--type http_status_code() :: non_neg_integer().
 
-
-% See https://ninenines.eu/docs/en/cowboy/2.7/manual/cowboy_handler/:
+% See https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/:
 -type handler_return() :: { 'ok' | handler_module(), cowboy_req:req(),
 							handler_state() | 'error' }.
 
 
 -export_type([ handler_module/0, handler_state/0, us_handler_state/0,
-			   bin_content_path/0, http_status_code/0, handler_return/0 ]).
+			   bin_content_path/0, handler_return/0 ]).
 
+
+% Shorthands:
+
+-type http_status_code() :: web_utils:http_status_code().
 
 -type log_line() :: class_USWebLogger:log_line().
 
@@ -145,8 +148,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 				   [ ".." || _PathElem <- tl( PathInfo ) ], ImagePath ),
 
 			text_utils:format( "<td><center><img src=\"~s\" border=\"0\" "
-							   "width=\"50%\"></center></td>",
-							   [ RootRelImgPath ] )
+				"width=\"50%\"></center></td>", [ RootRelImgPath ] )
 
 	end,
 
@@ -177,7 +179,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 	ReplyHeaders = get_http_headers( ReplyBody ),
 
-	HttpStatusCode = 404,
+	HttpStatusCode = _NotFound = 404,
 
 	ReplyReq = cowboy_req:reply( HttpStatusCode, ReplyHeaders, ReplyBody, Req ),
 
@@ -262,7 +264,7 @@ get_http_headers( Body ) ->
 % Test handler possibly called through routing.
 
 
-% Typically called because a dispatch rules mentioned that module as a (debug)
+% Typically called because a dispatch rule mentioned that module as a (debug)
 % handler:
 %
 -spec init( cowboy_req:req(), handler_state() ) -> handler_return().
@@ -272,7 +274,7 @@ init( Req, HandlerState ) ->
 						   "is ~p...", [ Req, HandlerState ] ),
 
 	Reply = cowboy_req:reply( 200, #{ <<"content-type">> => <<"text/plain">> },
-							  <<"Hello from Universal web server!">>, Req ),
+							  <<"Hello from the US-Web server!">>, Req ),
 
 	{ ok, Reply, HandlerState }.
 
@@ -437,5 +439,5 @@ request_to_string( Req ) ->
 	{ Headers, ShrunkReq } = table:extract_entry( headers, Req ),
 
 	text_utils:format( "request corresponding without the headers to a ~s~n"
-					   "Request headers corresponding to a ~s",
-		  [ table:to_string( ShrunkReq ), table:to_string( Headers ) ] ).
+		"Request headers corresponding to a ~s",
+		[ table:to_string( ShrunkReq ), table:to_string( Headers ) ] ).

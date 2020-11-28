@@ -524,26 +524,30 @@ requestCertificate( State ) ->
 
 
 
-% Requests this manager to return the current thumprint challenges.
+% Requests this manager to return the current thumbprint challenges.
 %
-% Typically called from a web handler whenever the ACME well-known URL is read
-% by an ACME server.
+% Typically called from a web handler (see us_web_letsencrypt_handler) whenever
+% the ACME well-known URL is read by an ACME server.
 %
 -spec getChallenge( wooper:state() ) ->
-						  const_request_return( thumbprint_map() ).
+						const_request_return( thumbprint_map() ).
 getChallenge( State ) ->
 
 	FSMPid = ?getAttr(leec_pid),
 
-	?trace_fmt( "Requested to return the current thumprint challenges from ~w.",
-				[ FSMPid ] ),
+	?trace_fmt( "Requested to return the current thumbprint challenges "
+				"from ~w.", [ FSMPid ] ),
 
 	case letsencrypt:get_ongoing_challenges( FSMPid ) of
 
 		error ->
+			?error_fmt( "No thumbprint challenge could be obtained "
+						"from FSM ~w.", [ FSMPid ] ),
 			throw( { no_thumbprint_obtained_from, FSMPid } );
 
 		Thumbprints ->
+			?debug_fmt( "Returning following thumbprints:~n  ~p",
+						[ Thumbprints ] ),
 			wooper:const_return_result( Thumbprints )
 
 	end.
@@ -599,7 +603,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % other (virtual) hosts (ex: baz.foobar.org, aa.buz.net), etc.
 %
 -spec get_sni_info( dispatch_routes(), bin_directory_path() ) ->
-		  static_return( sni_info() ).
+		static_return( sni_info() ).
 get_sni_info( _UserRoutes, _BinCertDir=undefined ) ->
 	throw( no_certificate_directory_for_sni );
 

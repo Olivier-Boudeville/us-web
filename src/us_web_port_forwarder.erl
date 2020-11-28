@@ -30,7 +30,7 @@
 -export([ init/2 ]).
 
 
-% Inspired from rabbit_cowboy_redirect.erl in 
+% Inspired from rabbit_cowboy_redirect.erl in
 % https://github.com/rabbitmq/rabbitmq-web-dispatch/blob/master/src/.
 
 
@@ -38,9 +38,9 @@
 -type handler_state() :: net_utils:tcp_port().
 
 
-% Performs the TCP port redirection.
--spec init( cowboy_req:req(), handler_state() ) -> 
-		  us_web_handler:handler_return().
+% This handler initialisation performs the wanted TCP port redirection.
+-spec init( cowboy_req:req(), handler_state() ) ->
+				  us_web_handler:handler_return().
 init( Req, HandlerState=TargetTCPPort ) ->
 
 	trace_utils:debug_fmt( "Request ~p to be handled, while handler state "

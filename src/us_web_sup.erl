@@ -42,14 +42,14 @@
 %
 % (function probably useless)
 %
--spec start_link() -> pid().
+-spec start_link() -> otp_utils:supervisor_pid().
 start_link() ->
 	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
 						   _Default=[ as_otp_release ] ).
 
 
 % OTP or not conventions:
--spec start_link( application_run_context() ) -> pid().
+-spec start_link( application_run_context() ) -> otp_utils:supervisor_pid().
 start_link( AppRunContext ) ->
 	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
 						   _Default=[ AppRunContext ] ).
@@ -86,8 +86,8 @@ init( _Args=[ AppRunContext ] ) ->
 	% The overall US (not US-Web) configuration server will be either found or
 	% created by the US-Web configuration one:
 	%
-	USWebCfgServerPid = class_USWebConfigServer:new_link( self(),
-														  AppRunContext ),
+	USWebCfgServerPid =
+		class_USWebConfigServer:new_link( self(), AppRunContext ),
 
 	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
@@ -96,7 +96,14 @@ init( _Args=[ AppRunContext ] ) ->
 			receive
 
 		{ wooper_result, WebSettings } ->
+				trace_bridge:debug_fmt( "Received web settings:~n  ~p",
+										[ WebSettings ] ),
 			WebSettings
+
+			%after 15000 ->
+			%	trace_bridge:error(
+			%	  "Time-out while waiting for web settings." ),
+			%	throw( us_web_sup_settings_time_out )
 
 	end,
 

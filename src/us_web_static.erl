@@ -16,7 +16,7 @@
 
 
 
-% This is a us-web custom, derived version of cowboy_static.erl, modified
+% This is a US-Web custom, derived version of cowboy_static.erl, modified
 % (mostly stripped-down) in order to comply with the conventions of Universal
 % Server and to support 404 errors and logging.
 %
@@ -72,6 +72,7 @@
 		{ access_type(), file_info() } | basic_utils:error_term(), extra() }.
 
 
+% See our web_utils module:
 -define( internal_server_error, 500 ).
 
 
@@ -132,8 +133,8 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 			HReturn = { cowboy_rest, Req, RestHandlerState },
 
 			% We now take advantage of this process to perform logging:
-			us_web_handler:manage_access_log( HReturn, _HttpStatusCode=200,
-											  HState ),
+			us_web_handler:manage_access_log( HReturn,
+				_HttpSuccessStatusCode=200, HState ),
 
 			HReturn;
 
@@ -266,17 +267,17 @@ fullpath( Path ) ->
 fullpath( [], Acc ) ->
 	filename:join( lists:reverse( Acc ) );
 
-fullpath( [<<".">>|T], Acc ) ->
+fullpath( [ <<".">> | T ], Acc ) ->
 	fullpath( T, Acc );
 
-fullpath( [<<"..">>|T], Acc=[_] ) ->
+fullpath( [ <<"..">> | T ], Acc=[ _ ] ) ->
 	fullpath( T, Acc );
 
-fullpath( [<<"..">>|T], [_|Acc] ) ->
+fullpath( [ <<"..">> | T ], [ _ | Acc ] ) ->
 	fullpath( T, Acc );
 
-fullpath( [Segment|T], Acc ) ->
-	fullpath( T, [Segment|Acc] ).
+fullpath( [ Segment | T ], Acc ) ->
+	fullpath( T, [ Segment | Acc ] ).
 
 
 
@@ -285,106 +286,110 @@ fullpath( [Segment|T], Acc ) ->
 % Reject requests that tried to access a file outside the target directory, or
 % used reserved characters.
 %
--spec malformed_request(Req, State) -> {boolean(), Req, State}.
-malformed_request(Req, State) ->
-	{State =:= error, Req, State}.
+-spec malformed_request( Req, State ) -> { boolean(), Req, State }.
+malformed_request( Req, State ) ->
+	{ State =:= error, Req, State }.
 
 
-% Directories, files that can't be accessed at all and files with no read flag
+
+% Directories, files that cannot be accessed at all, and files with no read flag
 % are forbidden.
 %
--spec forbidden(Req, State)
-	-> {boolean(), Req, State}
-	when State::rest_handler_state().
-forbidden(Req, State={_, {_, #file_info{type=directory}}, _}) ->
-	{true, Req, State};
+-spec forbidden( Req, State  ) -> { boolean( ), Req, State  }
+	when State::rest_handler_state(  ).
+forbidden( Req, State={ _, { _, #file_info{ type=directory } }, _ } ) ->
+	{ true, Req, State };
 
-forbidden(Req, State={_, {error, eacces}, _}) ->
-	{true, Req, State};
+forbidden( Req, State={ _, { error, eacces }, _ } ) ->
+	{ true, Req, State };
 
-forbidden(Req, State={_, {_, #file_info{access=Access}}, _})
-		when Access =:= write; Access =:= none ->
-	{true, Req, State};
+forbidden( Req, State={ _, { _, #file_info{ access=Access } }, _ } )
+		when Access =:= write orelse Access =:= none ->
+	{ true, Req, State };
 
-forbidden(Req, State) ->
-	{false, Req, State}.
+forbidden( Req, State ) ->
+	{ false, Req, State }.
+
+
 
 
 % Detects the mimetype of the file.
--spec content_types_provided(Req, State) -> {[{binary(), get_file}], Req, State}
+-spec content_types_provided( Req, State ) ->
+							{ [ { binary(), get_file } ], Req, State }
 	when State::rest_handler_state().
-content_types_provided(Req, State={Path, _, Extra}) when is_list(Extra) ->
+content_types_provided( Req, State={ Path, _, Extra } ) when is_list( Extra ) ->
 
-	case lists:keyfind(mimetypes, 1, Extra) of
+	case lists:keyfind( mimetypes, 1, Extra ) of
 
 		false ->
-			{[{cow_mimetypes:web(Path), get_file}], Req, State};
+			{ [ { cow_mimetypes:web( Path ), get_file } ], Req, State };
 
-		{mimetypes, Module, Function} ->
-			{[{Module:Function(Path), get_file}], Req, State};
+		{ mimetypes, Module, Function } ->
+			{ [ { Module:Function( Path ), get_file } ], Req, State };
 
-		{mimetypes, Type} ->
-			{[{Type, get_file}], Req, State}
+		{ mimetypes, Type } ->
+			{ [ { Type, get_file } ], Req, State }
 
 	end.
 
 
 % Detects the charset of the file.
--spec charsets_provided(Req, State)	-> {[binary()], Req, State}
+-spec charsets_provided( Req, State ) -> { [ binary() ], Req, State }
 	when State::rest_handler_state().
-charsets_provided(Req, State={Path, _, Extra}) ->
+charsets_provided( Req, State={ Path, _, Extra } ) ->
 
-	case lists:keyfind(charset, 1, Extra) of
+	case lists:keyfind( charset, 1, Extra ) of
 
 		% We simulate the callback not being exported:
 		false ->
 			no_call;
 
-		{charset, Module, Function} ->
-			{[Module:Function(Path)], Req, State};
+		{ charset, Module, Function } ->
+			{ [ Module:Function( Path ) ], Req, State };
 
-		{charset, Charset} when is_binary(Charset) ->
-			{[Charset], Req, State}
+		{ charset, Charset } when is_binary( Charset ) ->
+			{ [ Charset ], Req, State }
 
 	end.
 
 
 % Enables support for range requests.
--spec ranges_provided(Req, State) -> {[{binary(), auto}], Req, State}
+-spec ranges_provided( Req, State ) -> { [ { binary(), auto } ], Req, State }
 	when State::rest_handler_state().
-ranges_provided(Req, State) ->
-	{[{<<"bytes">>, auto}], Req, State}.
+ranges_provided( Req, State ) ->
+	{ [ { <<"bytes">>, auto } ], Req, State }.
 
 
 % Assumes the resource doesn't exist if it's not a regular file.
--spec resource_exists(Req, State) -> {boolean(), Req, State}
+-spec resource_exists( Req, State ) -> { boolean(), Req, State }
 										 when State::rest_handler_state().
-resource_exists(Req, State={_, {_, #file_info{type=regular}}, _}) ->
-	{true, Req, State};
+resource_exists( Req, State={ _, { _, #file_info{ type=regular } }, _ } ) ->
+	{ true, Req, State };
 
-resource_exists(Req, State) ->
-	{false, Req, State}.
+resource_exists( Req, State ) ->
+	{ false, Req, State }.
 
 
 
 % Generates an etag for the handler-referenced file.
--spec generate_etag(Req, State) -> {{strong | weak, binary()}, Req, State}
+-spec generate_etag( Req, State ) -> { { strong | weak, binary() }, Req, State }
 									   when State::rest_handler_state().
-generate_etag(Req, State={Path, {_, #file_info{size=Size, mtime=Mtime}},
-		Extra}) ->
+generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
+		Extra } ) ->
 
-	case lists:keyfind(etag, 1, Extra) of
+	case lists:keyfind( etag, 1, Extra ) of
 
 		false ->
-			{generate_default_etag(Size, Mtime), Req, State};
+			{ generate_default_etag( Size, Mtime ), Req, State };
 
-		{etag, Module, Function} ->
-			{Module:Function(Path, Size, Mtime), Req, State};
+		{ etag, Module, Function } ->
+			{ Module:Function( Path, Size, Mtime ), Req, State };
 
-		{etag, false} ->
-			{undefined, Req, State}
+		{ etag, false } ->
+			{ undefined, Req, State }
 
 	end.
+
 
 
 % Generates a default etag.

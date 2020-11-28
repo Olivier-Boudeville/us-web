@@ -44,7 +44,7 @@
 %  Ceylan make system
 %  - the OTP release-based one (generally based on rebar3)
 
-% Calls to io:format/{1,2} shall not be replaced typically by trace_utils ones,
+% Calls to io:format/{1,2} shall not be replaced typically by trace_bridge ones,
 % in order to better diagnose problems with dependencies (typically should
 % Myriad not be found).
 
@@ -61,11 +61,11 @@
 exec() ->
 
 	% Expecting Myriad to be already available in this branch:
-	trace_utils:info(
+	trace_bridge:info(
 	  "Starting the US-Web application natively (not as a release)." ),
 
 	cond_utils:if_defined( us_web_debug_execution,
-		trace_utils:debug_fmt( "Initially, the ~s",
+		trace_bridge:debug_fmt( "Initially, the ~s",
 							   [ code_utils:get_code_path_as_string() ] ) ),
 
 	% Not in an OTP context here, yet we need OTP applications (Cowboy, LEEC,
@@ -92,8 +92,8 @@ exec() ->
 	{ us_web, PrereqAppNames } =
 		list_utils:extract_last_element( OrderedAppNames ),
 
-	trace_utils:info_fmt( "Resulting prerequisite applications to start, "
-						  "in order: ~w.", [ OrderedAppNames ] ),
+	trace_bridge:info_fmt( "Resulting prerequisite applications to start, "
+						   "in order: ~w.", [ OrderedAppNames ] ),
 
 	otp_utils:start_applications( PrereqAppNames ),
 
@@ -102,7 +102,7 @@ exec() ->
 	%
 	us_web_sup:start_link( as_native ),
 
-	trace_utils:debug( "US-Web started (as native)." ).
+	trace_bridge:debug( "US-Web started (as native)." ).
 
 
 
@@ -149,16 +149,16 @@ stop( _State ) ->
 -spec start_application( application_name() ) -> void().
 start_application( simple_bridge ) ->
 
-	trace_utils:info_fmt( "Starting 'simple_bridge'..." ),
+	trace_bridge:info_fmt( "Starting 'simple_bridge'..." ),
 
 	case simple_bridge:start( _Backend=cowboy, _Handler=us_web ) of
 
 		ok ->
-			trace_utils:debug_fmt( "(simple_bridge started)" );
+			trace_bridge:debug_fmt( "(simple_bridge started)" );
 
 		Other ->
-			trace_utils:error_fmt( "simple_bridge failed to start:~n~p",
-								   [ Other ] ),
+			trace_bridge:error_fmt( "simple_bridge failed to start:~n~p",
+									[ Other ] ),
 			throw( { app_start_failed, simple_bridge, Other } )
 
 	end;

@@ -520,8 +520,13 @@ getWebConfigSettings( State ) ->
 
 	end,
 
-	wooper:const_return_result( { ?getAttr(dispatch_rules),
-		?getAttr(http_tcp_port), MaybeHTTPSTCPPort, ?getAttr(sni_info) } ).
+	WebSettings = { ?getAttr(dispatch_rules), ?getAttr(http_tcp_port),
+					MaybeHTTPSTCPPort, ?getAttr(sni_info) },
+
+	?debug_fmt( "Returning the web configuration settings:~n ~p",
+				[ WebSettings ] ),
+
+	wooper:const_return_result( WebSettings ).
 
 
 

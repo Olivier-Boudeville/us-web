@@ -98,8 +98,8 @@
 %  BinFullFilepath, #{ image_404 := MaybeImage404 }=HState ) ->
 return_404( Req, BinFullFilepath, HState ) ->
 
-	%trace_utils:debug_fmt( "Returning 404 for full path '~s' and request:~n~p",
-	%					   [ BinFullFilepath, Req ] ),
+	%trace_bridge:debug_fmt( "Returning 404 for full path '~s' and "
+	%                       "request:~n~p", [ BinFullFilepath, Req ] ),
 
 	[ VHost, TCPPort, PathInfo ] =
 		[ maps:get( K, Req ) || K <- [ host, port, path_info ] ],
@@ -270,8 +270,8 @@ get_http_headers( Body ) ->
 -spec init( cowboy_req:req(), handler_state() ) -> handler_return().
 init( Req, HandlerState ) ->
 
-	trace_utils:debug_fmt( "Request ~p to be handled, while handler state "
-						   "is ~p...", [ Req, HandlerState ] ),
+	trace_bridge:debug_fmt( "Request ~p to be handled, while handler state "
+							"is ~p...", [ Req, HandlerState ] ),
 
 	Reply = cowboy_req:reply( 200, #{ <<"content-type">> => <<"text/plain">> },
 							  <<"Hello from the US-Web server!">>, Req ),
@@ -293,7 +293,7 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 	case maps:get( logger_pid, HState ) of
 
 		undefined ->
-			%trace_utils:debug_fmt( "[~w] Request served (code: ~B), "
+			%trace_bridge:debug_fmt( "[~w] Request served (code: ~B), "
 			%   "no logger.", [ self(), HttpStatusCode ] );
 			ok;
 
@@ -304,7 +304,7 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 			% Oneway call:
 			LoggerPid ! { reportAccess, [ BinLog ] }
 
-			%trace_utils:debug_fmt(
+			%trace_bridge:debug_fmt(
 			%  "[~w] Request served (code: ~B), logger ~w notified.",
 			%  [ self(), HttpStatusCode, LoggerPid ] )
 
@@ -316,7 +316,7 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 -spec generate_access_log( handler_return(), http_status_code() ) -> log_line().
 generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
-	%trace_utils:debug_fmt( "Generating access log for following handler "
+	%trace_bridge:debug_fmt( "Generating access log for following handler "
 	%                       "return:~n~p", [ HandlerReturn ] ),
 
 	% We target here the "NCSA combined with several virtualhostname sharing
@@ -401,7 +401,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 				bin_content_path(), handler_state() ) -> void().
 manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
-	%trace_utils:debug_fmt( "Logging error for full path '~s' and "
+	%trace_bridge:debug_fmt( "Logging error for full path '~s' and "
 	%					   "request:~n~p", [ BinFullFilePath, Req ] ),
 
 	% Unlike accesses, no specific log format seems to apply here:
@@ -416,15 +416,15 @@ manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 	case maps:get( logger_pid, HState ) of
 
 		undefined ->
-			trace_utils:error_fmt( "[~w] No logger to record ~s",
-								   [ self(), BinErrorMsg ] );
+			trace_bridge:error_fmt( "[~w] No logger to record ~s",
+									[ self(), BinErrorMsg ] );
 
 		LoggerPid ->
 
 			% Oneway call:
 			LoggerPid ! { reportError, [ BinErrorMsg ] }
 
-			%trace_utils:debug_fmt( "[~w] reported ~s.",
+			%trace_bridge:debug_fmt( "[~w] reported ~s.",
 			%					   [ self(), BinErrorMsg ] )
 
 	end.

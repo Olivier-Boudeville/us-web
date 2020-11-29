@@ -38,6 +38,22 @@
 -type application_run_context() :: otp_utils:application_run_context().
 
 
+% Implementation notes:
+%
+% X.509 certificates may have to be generated (thanks to LEEC), but for that a
+% HTTP webserver must be up and running.
+%
+% So the order of operations is:
+% 1. read the configuration settings
+% 2. start a corresponding HTTP server, and LEEC itself
+% 3. when webserver is running, initiate (if appropriate) the certificate
+% generation
+% 4. be notified (through the US-Web Let's Encrypt handler) that certificates
+% are ready
+% 5. starts the corresponding HTTPS server
+
+
+
 % OTP conventions:
 %
 % (function probably useless)
@@ -64,7 +80,6 @@ init( _Args=[ AppRunContext ] ) ->
 	otp_utils:check_application_run_context( AppRunContext ),
 
 	% Preparing a trace bridge to collect traces and errors:
-	% (could be a trace emitter instead)
 
 	BinTraceEmitterName = <<"US-Web supervisor">>,
 
@@ -92,13 +107,13 @@ init( _Args=[ AppRunContext ] ) ->
 	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
 
-	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort, MaybeSNIHostsInfo } =
-			receive
+	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort, CertSupport,
+	  MaybeSNIHostsInfo } = receive
 
-		{ wooper_result, WebSettings } ->
-				trace_bridge:debug_fmt( "Received web settings:~n  ~p",
-										[ WebSettings ] ),
-			WebSettings
+		{ wooper_result, GenWebSettings } ->
+				trace_bridge:debug_fmt( "Received general web settings:~n  ~p",
+										[ GenWebSettings ] ),
+				GenWebSettings
 
 			%after 15000 ->
 			%	trace_bridge:error(
@@ -119,6 +134,7 @@ init( _Args=[ AppRunContext ] ) ->
 			trace_bridge:trace( "No HTTP listening enabled." );
 
 		HttpTCPPort ->
+
 			trace_bridge:debug_fmt( "Listening for the HTTP scheme "
 									"at port #~B.", [ HttpTCPPort ] ),
 
@@ -146,6 +162,35 @@ init( _Args=[ AppRunContext ] ) ->
 							 HttpTCPPort, HttpError } )
 
 			end
+
+	end,
+
+	% Now that an HTTP webserver is running (hopefully), we can trigger the
+	% generation of any needed X.509 certificates (as a webserver is needed to
+	% validate challenges sent by the ACME server); main objective is proper
+	% synchronisation:
+	%
+	case CertSupport of
+
+		renew_certificates ->
+
+			trace_bridge:debug(
+			  "Requesting the renewal of the X.509 certificates." ),
+
+			USWebCfgServerPid ! { renewCertificates, [], self() },
+
+			receive
+
+				% Note the plural; does not imply that all certificates could be
+				% immediately obtained:
+				%
+				{ wooper_result, certificate_renewals_over } ->
+					trace_bridge:debug( "Certificates renewed." )
+
+			end;
+
+		_ ->
+			ok
 
 	end,
 

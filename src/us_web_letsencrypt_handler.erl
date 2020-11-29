@@ -21,9 +21,10 @@
 
 
 % Let's Encrypt-compliant handler for US-Web, in order to answer ACME
-% challenges.
+% challenges thanks to LEEC.
 %
-% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave
+% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave and
+% http://leec.esperide.org.
 %
 -module(us_web_letsencrypt_handler).
 

@@ -43,8 +43,8 @@
 				  us_web_handler:handler_return().
 init( Req, HandlerState=TargetTCPPort ) ->
 
-	trace_utils:debug_fmt( "Request ~p to be handled, while handler state "
-						   "is ~p...", [ Req, HandlerState ] ),
+	trace_bridge:debug_fmt( "Request ~p to be handled, while handler state "
+							"is ~p...", [ Req, HandlerState ] ),
 
 	% Typically redirecting from TCP port #80 (http) to #443 (https):
 	FixedURI = cowboy_req:uri( Req, #{ port => TargetTCPPort } ),

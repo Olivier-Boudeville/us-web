@@ -62,6 +62,21 @@
 % In addition to TCP for http (generally port 80), the TCP for https port
 % (generally 443) must be opened.
 
+% For certificate renewals, rather than relying on a periodic scheduling defined
+% a priori, each renewal will just plan the next one, to better account for any
+% failed attempts / delay introduced (and certificates shall be created directly
+% when starting up).
+%
+% Previously for each certificate generation for each virtual host a throwaway
+% Let's Encrypt account was created, yet it led to hitting quicly their rate
+% limits. So now we create first a (unique) TLS private key, generate a (single)
+% ACME account that all certificate managers will use to order their
+% certificate. SAN information and wildcard certificates could also be used for
+% that.
+
+
+% Not trapping exits, any crash is to propagate to the US-Web config server.
+
 -type manager_pid() :: class_UniversalServer:server_pid().
 
 
@@ -116,13 +131,17 @@
 	{ cert_path, maybe( bin_file_path() ),
 	  "the full path where the final certificate file (if any) is located" },
 
+	{ private_key_path, bin_file_path(), "the (absolute) path to the TLS "
+	  "private key to be used by the LEEC agent driven by this certificate "
+	  "manager" },
+
 	{ cert_renewal_period, maybe( unit_utils:seconds() ),
 	  "the base delay between two successful certificate renewals" },
 
 	{ webroot_dir, bin_directory_path(),
 	  "the base directory served by the webserver" },
 
-	{ leec_pid, leec_pid(), "the PID of the LEEC FSM" },
+	{ leec_pid, leec_pid(), "the PID of our private LEEC FSM" },
 
 	{ scheduler_pid, scheduler_pid(),
 	  "the PID of the scheduler used by this manager" },
@@ -190,9 +209,11 @@
 % renewal.
 %
 -spec construct( wooper:state(), bin_fqdn(), bin_directory_path(),
-		 bin_directory_path(), maybe( scheduler_pid() ) ) -> wooper:state().
-construct( State, BinFQDN, BinCertDir, BinWebrootDir, MaybeSchedulerPid ) ->
-	construct( State, BinFQDN, _CertMode=production, BinCertDir,
+		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
+					   wooper:state().
+construct( State, BinFQDN, BinCertDir, BinKeyPath, BinWebrootDir,
+		   MaybeSchedulerPid ) ->
+	construct( State, BinFQDN, _CertMode=production, BinCertDir, BinKeyPath,
 			   BinWebrootDir, MaybeSchedulerPid, _IsSingleton=false ).
 
 
@@ -204,14 +225,14 @@ construct( State, BinFQDN, BinCertDir, BinWebrootDir, MaybeSchedulerPid ) ->
 % (most complete constructor)
 %
 -spec construct( wooper:state(), bin_fqdn(), cert_mode(), bin_directory_path(),
-				 bin_directory_path(), maybe( scheduler_pid() ), boolean() ) ->
-					   wooper:state().
-construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
+			bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ),
+			boolean() ) -> wooper:state().
+construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		   MaybeSchedulerPid, _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
-	InitState = construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
-						   MaybeSchedulerPid, _Sing=false ),
+	InitState = construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath,
+						   BinWebrootDir, MaybeSchedulerPid, _Sing=false ),
 
 	% Then self-registering:
 	RegName = ?registration_name,
@@ -224,7 +245,7 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
 
 
 % No self-registering here:
-construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
+construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		   MaybeSchedulerPid, _IsSingleton=false ) ->
 
 	ServerName =
@@ -234,10 +255,14 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
 	TraceState = class_USServer:construct( State,
 										   ?trace_categorize(ServerName) ),
 
-	{ LEECPid, RenewPeriodSecs } =
-		init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, TraceState ),
+	% Just a start thereof (LEEC plus its associated, linked, FSM; no
+	% certificate request issued yet):
+	%
+	{ LEECFsmPid, RenewPeriodSecs } =
+		init_leec( BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
+				   TraceState ),
 
-	% Registration to scheduler to happen in next (first) requestCertificate/1
+	% Registration to scheduler to happen in next (first) renewCertificate/1
 	% call.
 
 	ReadyState = setAttributes( TraceState, [
@@ -245,28 +270,28 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinWebrootDir,
 		{ cert_mode, CertMode },
 		{ cert_dir, BinCertDir },
 		{ cert_path, undefined },
+		{ private_key_path, BinKeyPath },
 		{ cert_renewal_period, RenewPeriodSecs },
 		{ webroot_dir, BinWebrootDir },
-		{ leec_pid, LEECPid },
+		{ leec_pid, LEECFsmPid },
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
 	?send_info( ReadyState, "Just created: " ++ to_string( ReadyState ) ),
 
-	% Rather than relying on a periodic scheduling, each renewal will just plan
-	% the next one, to better account for any failed attempts / delay introduced
-	% (and certificates shall be created directly when starting up):
+	% Would be too early, as the HTTP webserver needed to validate the ACME
+	% challenges is not launched yet:
 	%
-	self() ! requestCertificate,
+	% self() ! renewCertificate,
 
 	ReadyState.
 
 
 
 % Initializes our LEEC private instance.
--spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(),
+-spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(), bin_file_path(),
 				 bin_directory_path(), wooper:state() ) -> leec_pid().
-init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
+init_leec( BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir, State ) ->
 
 	case file_utils:is_existing_directory( BinCertDir ) of
 
@@ -316,6 +341,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 	HttpQueryTimeoutMs = 30000,
 
 	StartBaseOpts = [ { mode, slave },
+					  { agent_key_file_path, BinKeyPath },
 					  { cert_dir_path, BinCertDir },
 					  { webroot_dir_path, BinWebrootDir },
 					  { http_timeout, HttpQueryTimeoutMs } ],
@@ -341,7 +367,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
 		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
 
-	LEECPid = case letsencrypt:start( StartOpts, BridgeSpec ) of
+	LEECFsmPid = case letsencrypt:start( StartOpts, BridgeSpec ) of
 
 		{ ok, FsmPid } ->
 			?trace_fmt( "LEEC initialized, using FSM of PID ~w, based on "
@@ -355,7 +381,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinWebrootDir, State ) ->
 
 	end,
 
-	{ LEECPid, RenewPeriodSecs }.
+	{ LEECFsmPid, RenewPeriodSecs }.
 
 
 
@@ -426,9 +452,46 @@ destruct( State ) ->
 % Method section.
 
 
-% Requests synchronously a certificate for the management hostname.
--spec requestCertificate( wooper:state() ) -> oneway_return().
-requestCertificate( State ) ->
+% Renews asynchronously a certificate for the managed hostname.
+-spec renewCertificate( wooper:state() ) -> oneway_return().
+renewCertificate( State ) ->
+
+	% MaybeBinCertPath mostly ignored, as oneway:
+	{ ReqState, MaybeBinCertPath } = request_certificate( State ),
+
+	?debug_fmt( "Renew certificate (async): obtained '~s'.",
+				[ MaybeBinCertPath ] ),
+
+	wooper:return_state( ReqState ).
+
+
+
+% Renews synchronously a certificate for the managed hostname, and returns its
+% path (in case of success).
+%
+-spec renewCertificateSync( wooper:state() ) ->
+								%request_return( maybe( file_bin_path() ) ).
+								request_return( 'certificate_renewal_over' ).
+renewCertificateSync( State ) ->
+
+	% Returns now an ack atom to take advantage of WOOPER multi-request
+	% primitives:
+
+	{ ReqState, MaybeBinCertPath } = request_certificate( State ),
+
+	?debug_fmt( "Renew certificate (sync): obtained '~s'.",
+				[ MaybeBinCertPath ] ),
+
+	% Does not imply it succeeded:
+	wooper:return_state_result( ReqState,
+		{ _AckAtom=certificate_renewal_over, self() } ).
+
+
+
+% (helper)
+-spec request_certificate( wooper:state() ) ->
+								 { wooper:state(), maybe( bin_file_path() ) }.
+request_certificate( State ) ->
 
 	% The task_id attribute may or may not be defined.
 
@@ -441,7 +504,7 @@ requestCertificate( State ) ->
 	% next certificate renewal (quickly if having just failed, normally if
 	% having succeeded):
 	%
-	{ MaybeRenewDelay, MaybeCertPath } =
+	{ MaybeRenewDelay, MaybeBinCertPath } =
 			case letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
 											_OptionMap=#{ async => false } ) of
 
@@ -492,7 +555,7 @@ requestCertificate( State ) ->
 				RenewDelay ->
 
 					% A bit of interleaving:
-					SchedPid ! { registerOneshotTask, [ _Cmd=requestCertificate,
+					SchedPid ! { registerOneshotTask, [ _Cmd=renewCertificate,
 								 _Delay=RenewDelay, _ActPid=self() ], self() },
 
 					NextTimestamp = time_utils:offset_timestamp(
@@ -518,9 +581,9 @@ requestCertificate( State ) ->
 
 	end,
 
-	CertState = setAttribute( NewState, cert_path, MaybeCertPath ),
+	CertState = setAttribute( NewState, cert_path, MaybeBinCertPath ),
 
-	wooper:return_state( CertState ).
+	{ CertState, MaybeBinCertPath }.
 
 
 
@@ -579,13 +642,13 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	{ LEECPid, _RenewPeriodSecs } =
 		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
-				   ?getAttr(webroot_dir), State ),
+				   ?getAttr(private_key_path), ?getAttr(webroot_dir), State ),
 
 	?info_fmt( "New LEEC instance started for '~s': ~w; requesting new "
 			   "certificate.", [ FQDN, LEECPid ] ),
 
 	% Immediately retries:
-	self() ! requestCertificate,
+	self() ! renewCertificate,
 
 	RestartState = setAttribute( State, leec_pid, LEECPid ),
 

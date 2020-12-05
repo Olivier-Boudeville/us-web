@@ -439,7 +439,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	% directly from this instance process to plug to the same (trace aggregator)
 	% bridge, with the same settings:
 	%
-	class_TraceEmitter:register_as_bridge( TraceState ),
+	class_TraceEmitter:register_bridge( TraceState ),
 
 	?send_info_fmt( TraceState, "Creating a US-Web configuration server, "
 		"running ~s.",
@@ -495,7 +495,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 			file_utils:join( getAttribute( CfgState, log_directory ),
 							 "us_web.traces" ) ),
 
-	?send_trace_fmt( CfgState, "Requesting the renaming of trace file to '~s'.",
+	?send_debug_fmt( CfgState, "Requesting the renaming of trace file to '~s'.",
 					 [ NewBinTraceFilePath ] ),
 
 	getAttribute( CfgState, trace_aggregator_pid) !
@@ -509,7 +509,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
-	?trace( "Deletion initiated." ),
+	?debug( "Deletion initiated." ),
 
 	% Now web loggers are not registered directly to the scheduler, so we just
 	% have to take care of the task ring:
@@ -964,7 +964,7 @@ prepare_web_analysis(
 			ok;
 
 		false ->
-			?trace_fmt( "Creating the directory to store the state of "
+			?debug_fmt( "Creating the directory to store the state of "
 				"the log analysis tool, '~s'.", [ LogAnalysisStateDir ] ),
 			file_utils:create_directory( LogAnalysisStateDir )
 
@@ -2484,7 +2484,7 @@ manage_certificates( ConfigTable, State ) ->
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
 
-			?trace_fmt( "Certificates are to be generated in '~s'.",
+			?debug_fmt( "Certificates are to be generated in '~s'.",
 						[ CertDir ] ),
 
 			% A LEEC instance will be started by each (independent) certificate
@@ -2498,14 +2498,14 @@ manage_certificates( ConfigTable, State ) ->
 								 TargetKeyPath ) of
 
 				true ->
-					?trace_fmt( "A pre-existing TLS private key for the US-Web "
+					?debug_fmt( "A pre-existing TLS private key for the US-Web "
 						"LEEC agent has been found (as '~s'), it will be "
 						"re-used.", [ TargetKeyPath ] ),
 					text_utils:string_to_binary( TargetKeyPath );
 
 				false ->
 
-					?trace_fmt( "No pre-existing TLS private key for the US-Web"
+					?debug_fmt( "No pre-existing TLS private key for the US-Web"
 						" LEEC agent has been found (searched for '~s'), "
 						"generating it now.", [ TargetKeyPath ] ),
 
@@ -2582,7 +2582,7 @@ manage_routes( ConfigTable, State ) ->
 			SNIInfo = { DefaultHostnameCertPath, SNIHostInfos } =
 				class_USCertificateManager:get_sni_info( UserRoutes, CertDir ),
 
-			?trace_fmt( "SNI information: certificate path for the default "
+			?debug_fmt( "SNI information: certificate path for the default "
 				"hostname is '~s', virtual host options are:~n~p",
 				[ DefaultHostnameCertPath, SNIHostInfos ] ),
 
@@ -2676,7 +2676,7 @@ manage_post_meta( State ) ->
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 			   LogAnalysisEnabled, Port, DomainCfgTable, State ) ->
 
-	?trace_fmt( "Generating meta website in '~s'.", [ BinMetaContentRoot ] ),
+	?debug_fmt( "Generating meta website in '~s'.", [ BinMetaContentRoot ] ),
 
 	IndexPath = file_utils:join( BinMetaContentRoot, "index.html" ),
 

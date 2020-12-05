@@ -36,11 +36,17 @@
 -type handler_state() :: cert_manager_pid().
 
 
-% This handler initialisation performs the wanted TCP port redirection.
+% This handler initialisation tries to serve the relevant challenge tokens to
+% requesting ACME servers.
 
 -spec init( cowboy_req:req(), handler_state() ) ->
 				us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
+
+	cond_utils:if_defined( us_web_debug_handlers,
+		class_TraceEmitter:register_as_bridge(
+		  _Name=text_utils:format( "LEEC handler corresponding to certificate "
+			  "manager ~w", [ CertManagerPid ] ), _Categ="LEEC handler" ) ),
 
 	% A bit of interleaving:
 	CertManagerPid ! { getChallenge, [], self() },
@@ -103,11 +109,11 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 
 handle( Req, HandlerState ) ->
-	trace_bridge:trace_fmt( "Handle called for request ~p.", [ Req ] ),
+	trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
 
 
 terminate( Reason, Req, _HandlerState ) ->
-	trace_bridge:trace_fmt( "Terminate called for request ~p; reason: ~p.",
-						   [ Req, Reason ] ),
+	trace_bridge:debug_fmt( "Terminate called for request ~p; reason: ~p.",
+							[ Req, Reason ] ),
 	ok.

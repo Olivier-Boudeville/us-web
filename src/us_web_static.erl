@@ -76,10 +76,10 @@
 -define( internal_server_error, 500 ).
 
 
-% Resolve the file that will be sent and get its file information.
+% Resolves the file that will be sent, and gets its file information.
 %
-% If the handler is configured to manage a directory, check that the
-% requested file is inside the configured directory.
+% If the handler is configured to manage a directory, checks that the requested
+% file is inside the configured directory.
 %
 -spec init( cowboy_req:req(), handler_state() ) -> handler_return().
 % Apparently pattern-matching maps directly in heads is not supported (R22:
@@ -88,27 +88,31 @@
 %init( Req, HState=#{ type := Type } ) ->
 init( Req, HState ) ->
 
+	BinPath = maps:get( path, HState ),
+
+	cond_utils:if_defined( us_web_debug_handlers,
+		class_TraceEmitter:register_as_bridge(
+		  _Name=text_utils:format( "Static handler corresponding to path '~p'.",
+								   [ BinPath ] ),
+		  _Categ="Static handler" ) ),
+
 	%trace_utils:debug_fmt(
 	%  "[~s:~w] Serving request as a ~s~nInitial handler state being ~s",
 	%  [ ?MODULE, self(), table:to_string( Req ), table:to_string( HState ) ] ),
 
+	CowboyOpts = maps:get( cowboy_opts, HState ),
+
 	HReturn = case maps:get( _Key=type, HState ) of
 
 		file ->
-			BinIndex = maps:get( path, HState ),
-			CowboyOpts = maps:get( cowboy_opts, HState ),
-			init_info( Req, BinIndex, CowboyOpts, HState );
-
+			init_info( Req, _BinIndex=BinPath, CowboyOpts, HState );
 
 		directory ->
-			BinContentRoot = maps:get( path, HState ),
-			CowboyOpts = maps:get( cowboy_opts, HState ),
-			init_dir( Req, BinContentRoot, CowboyOpts, HState )
+			init_dir( Req, _BinContentRoot=BinPath, CowboyOpts, HState )
 
 	end,
 
-
-	% Logging already done in the nit_* functions above.
+	% Logging already done in the init_* functions above.
 
 	%trace_utils:debug_fmt( "[~s:~w] Returning:~n~p",
 	%                       [ ?MODULE, self(), HReturn ] ),
@@ -186,17 +190,17 @@ init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
 					case fullpath( BinFullFilepath ) of
 
 						<< BinContentRoot:Len/binary, $/, _/binary >> ->
-							%trace_utils:trace( "init_dir: case A." ),
+							%trace_utils:debug( "init_dir: case A." ),
 							init_info( Req, BinFullFilepath, CowboyOpts,
 									   HState );
 
 						<< BinContentRoot:Len/binary >> ->
-							%trace_utils:trace( "init_dir: case B." ),
+							%trace_utils:debug( "init_dir: case B." ),
 							init_info( Req, BinFullFilepath, CowboyOpts,
 									   HState );
 
 						_ ->
-							%trace_utils:trace( "init_dir: case C." ),
+							%trace_utils:debug( "init_dir: case C." ),
 							us_web_handler:manage_error_log(
 							  _Error={ no_full_path_for, PathInfo }, Req,
 							  BinContentRoot, HState ),
@@ -206,7 +210,7 @@ init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
 
 
 				error ->
-					%trace_utils:trace( "init_dir: case D." ),
+					%trace_utils:debug( "init_dir: case D." ),
 					us_web_handler:manage_error_log(
 					  _Error={ invalid_path_info, PathInfo }, Req,
 					  BinContentRoot, HState ),

@@ -255,6 +255,9 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 	TraceState = class_USServer:construct( State,
 										   ?trace_categorize(ServerName) ),
 
+	% Ex: for any stateless helper:
+	class_TraceEmitter:register_bridge( TraceState ),
+
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
 	%
@@ -370,7 +373,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir, State ) ->
 	LEECFsmPid = case letsencrypt:start( StartOpts, BridgeSpec ) of
 
 		{ ok, FsmPid } ->
-			?trace_fmt( "LEEC initialized, using FSM of PID ~w, based on "
+			?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
 				"following start options:~n  ~p", [ FsmPid, StartOpts ] ),
 			FsmPid;
 
@@ -402,7 +405,7 @@ destruct( State ) ->
 			ok;
 
 		_ ->
-			?trace( "Being destructed, unregistering from schedule." ),
+			?debug( "Being destructed, unregistering from schedule." ),
 
 			% Any extra schedule trigger sent will be lost; not a problem as it
 			% is a oneway:
@@ -417,7 +420,7 @@ destruct( State ) ->
 			ok;
 
 		LeecPid ->
-			?trace( "Shutting down LEEC." ),
+			?debug( "Shutting down LEEC." ),
 			letsencrypt:stop( LeecPid )
 
 	end,
@@ -497,7 +500,7 @@ request_certificate( State ) ->
 
 	FQDN = ?getAttr(fqdn),
 
-	?trace_fmt( "Requesting certificate for '~s'.", [ FQDN ] ),
+	?debug_fmt( "Requesting certificate for '~s'.", [ FQDN ] ),
 
 	% Synchronous (blocking) call (no callback used); this clause also returns
 	% (after some delay, like 30 seconds) the delay (with some jitter) until the
@@ -598,7 +601,7 @@ getChallenge( State ) ->
 
 	FSMPid = ?getAttr(leec_pid),
 
-	?trace_fmt( "Requested to return the current thumbprint challenges "
+	?debug_fmt( "Requested to return the current thumbprint challenges "
 				"from ~w.", [ FSMPid ] ),
 
 	case letsencrypt:get_ongoing_challenges( FSMPid ) of

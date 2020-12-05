@@ -92,7 +92,7 @@ init( _Args=[ AppRunContext ] ) ->
 
 	trace_bridge:register( BridgeSpec ),
 
-	trace_bridge:trace_fmt( "Starting us_web supervisor (run context: ~s)...",
+	trace_bridge:debug_fmt( "Starting us_web supervisor (run context: ~s)...",
 							[ AppRunContext ] ),
 
 	% The logic below shall better be in a (single) supervised child, for a
@@ -131,7 +131,7 @@ init( _Args=[ AppRunContext ] ) ->
 	case MaybeHttpTCPPort of
 
 		undefined ->
-			trace_bridge:trace( "No HTTP listening enabled." );
+			trace_bridge:debug( "No HTTP listening enabled." );
 
 		HttpTCPPort ->
 
@@ -197,13 +197,13 @@ init( _Args=[ AppRunContext ] ) ->
 	case MaybeHttpsTCPPort of
 
 		undefined ->
-			trace_bridge:trace( "No HTTPS listening enabled." );
+			trace_bridge:debug( "No HTTPS listening enabled." );
 
 	   % Using TLS here:
 		HttpsTCPPort ->
 
 			trace_bridge:debug_fmt( "Listening for the HTTPS scheme "
-								   "at port #~B.", [ HttpsTCPPort ] ),
+									"at port #~B.", [ HttpsTCPPort ] ),
 
 			{ PEMCertFilePath, SNIVhInfos } = MaybeSNIHostsInfo,
 

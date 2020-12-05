@@ -138,7 +138,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:trace_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
+	%trace_utils:debug_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
 

@@ -20,7 +20,7 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% Cowboy-compliant handler for US-Web:
+% Generic, cowboy-compliant handler for US-Web:
 %
 % - provides static dispatches so that the (static) websites corresponding to
 % the virtual hosts can be appropriately served; see the US-Web configuration
@@ -29,6 +29,10 @@
 %
 % - handles HTTP errors (notably 404 ones, thanks to a specifically-generated
 % web page)
+%
+% Note that this handler is mostly a library (a toolbox centralising helpers on
+% behalf of the other handlers), knowing that its sole purpose as an handler is
+% to act as a placeholder.
 %
 -module(us_web_handler).
 

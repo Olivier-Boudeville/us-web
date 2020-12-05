@@ -23,8 +23,8 @@
 -module(class_USWebLogger).
 
 
--define( class_description,
-		 "Server in charge of the logging for the US-Web framework." ).
+-define( class_description, "Server in charge of the web logging "
+		 "(accesses and errors) for the US-Web framework." ).
 
 
 % Determines what are the direct mother classes of this class (if any):
@@ -78,6 +78,7 @@
 
 -type ustring() :: text_utils:ustring().
 
+-type file_name() :: file_utils:file_name().
 -type bin_directory_path() :: file_utils:bin_directory_path().
 -type bin_file_name() :: file_utils:bin_file_name().
 
@@ -126,14 +127,14 @@
 	{ access_log_file_path, bin_file_path(),
 	  "the (absolute) path of the (current) access log file being written" },
 
-	{ access_log_file, file_utils:file(),
+	{ access_log_file, file(),
 	  "the handle of the actual access file being written" },
 
 
 	{ error_log_file_path, bin_file_name(),
 	  "the (absolute) path of the (current) error log file being written" },
 
-	{ error_log_file, file_utils:file(),
+	{ error_log_file, file(),
 	  "the handle of the actual error file being written" },
 
 
@@ -193,8 +194,7 @@
 % (i.e. not set to 'undefined').
 %
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
-				 maybe( scheduler_pid() ), maybe( web_analysis_info() ) ) ->
-					   wooper:state().
+	 maybe( scheduler_pid() ), maybe( web_analysis_info() ) ) -> wooper:state().
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   MaybeWebAnalysisInfo ) ->
 	construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
@@ -401,11 +401,11 @@ destruct( State ) ->
 	case MaybeSchedPid of
 
 		undefined ->
-			?trace( "Being destructed, performing a last rotation of the "
+			?debug( "Being destructed, performing a last rotation of the "
 					"log files." );
 
 		_ ->
-			?trace( "Being destructed, unregistering from scheduler and "
+			?debug( "Being destructed, unregistering from scheduler and "
 					"performing a last rotation of the log files." ),
 
 			% Any extra schedule trigger sent will be lost; not a problem as it
@@ -634,7 +634,7 @@ get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
 
 % Returns the default period of log rotation.
 -spec get_default_log_rotation_period() ->
-							 static_return( time_utils:dhms_duration() ).
+							static_return( time_utils:dhms_duration() ).
 get_default_log_rotation_period() ->
 	wooper:return_static( ?default_dhms_log_rotation_period ).
 
@@ -823,16 +823,15 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 
 		{ _ReturnCode=0, CmdOutput } ->
 			?warning_fmt( "Awstats execution prior to log rotation "
-						  "succeeded for report type '~s', yet returned following "
-						  "message: '~s'.",
-						  [ ReportType, CmdOutput ] );
+				"succeeded for report type '~s', yet returned following "
+				"message: '~s'.", [ ReportType, CmdOutput ] );
 
 		% An error here shall not kill this logger as a whole:
 		{ ReturnCode, CmdOutput } ->
 			?error_fmt( "Awstats execution prior to log rotation failed "
-						"(return code: ~w) for report type '~s', and returned "
-						"following message: '~s' (command was: '~s').",
-						[ ReturnCode, ReportType, CmdOutput, Cmd ] )
+				"(return code: ~w) for report type '~s', and returned "
+				"following message: '~s' (command was: '~s').",
+				[ ReturnCode, ReportType, CmdOutput, Cmd ] )
 
 	end,
 
@@ -847,13 +846,13 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 % handle forgotten beforehand if necessary); and it will not be reopened here.
 %
 -spec rotate_basic_log_file( file_utils:any_file_path(), wooper:state() ) ->
-								   bin_file_path().
+								bin_file_path().
 rotate_basic_log_file( FilePath, _State ) ->
 
 	ArchiveFilePath = text_utils:format( "~s.~s",
 		  [ FilePath, time_utils:get_textual_timestamp_for_path() ] ),
 
-	%?trace_fmt( "Rotating '~s' to a compressed version of '~s'.",
+	%?debug_fmt( "Rotating '~s' to a compressed version of '~s'.",
 	%			[ FilePath, ArchiveFilePath ] ),
 
 	file_utils:move_file( FilePath, ArchiveFilePath ),
@@ -878,14 +877,13 @@ rotate_basic_log_file( FilePath, _State ) ->
 % Much like get_log_paths/2.
 %
 -spec get_file_prefix_for( domain_id(), vhost_id(), log_analysis_tool() ) ->
-								 static_return( file_utils:file_name() ).
+								static_return( file_name() ).
 get_file_prefix_for( DomainId, VHostId, _Tool=awstats ) ->
 
 	% Works in all cases, including default_vhost_catch_all and/or
 	% default_domain_catch_all:
 	%
-	Filename = text_utils:format( "awstats.~s.~s",
-								  [ VHostId, DomainId ] ),
+	Filename = text_utils:format( "awstats.~s.~s", [ VHostId, DomainId ] ),
 	wooper:return_static( Filename );
 
 get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
@@ -907,7 +905,7 @@ get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
 % awstats.conf .
 %
 -spec get_conf_filename_for( domain_id(), vhost_id(), log_analysis_tool() ) ->
-								   static_return( file_utils:file_name() ).
+								static_return( file_name() ).
 get_conf_filename_for( DomainId, VHostId, _Tool=awstats ) ->
 	Filename = text_utils:format( "awstats.~s.conf",
 				   [ get_host_description_for( VHostId, DomainId, awstats ) ] ),

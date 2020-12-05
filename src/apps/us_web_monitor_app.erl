@@ -186,7 +186,7 @@ init_from_command_line() ->
 
 	end,
 
-	trace_utils:trace_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
+	trace_utils:debug_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
 
@@ -210,7 +210,7 @@ get_target_node_name( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
 
-	%trace_utils:trace_fmt( "Remote host: '~s'.", [ RemoteHostname ] ),
+	%trace_utils:debug_fmt( "Remote host: '~s'.", [ RemoteHostname ] ),
 
 	%NodeStringName =
 	case net_utils:localnode() of
@@ -235,6 +235,6 @@ get_tcp_port_range( Cfg ) ->
 	MaybePortRange = list_table:get_value_with_defaults( _K=tcp_port_range,
 												 _Default=undefined, Cfg ),
 
-	%trace_utils:trace_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
+	%trace_utils:debug_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
 
 	MaybePortRange.

@@ -40,8 +40,14 @@
 
 % This handler initialisation performs the wanted TCP port redirection.
 -spec init( cowboy_req:req(), handler_state() ) ->
-				  us_web_handler:handler_return().
+				us_web_handler:handler_return().
 init( Req, HandlerState=TargetTCPPort ) ->
+
+	cond_utils:if_defined( us_web_debug_handlers,
+		class_TraceEmitter:register_as_bridge(
+		  _Name=text_utils:format( "Port forward handler for port #~B",
+								   [ TargetTCPPort ] ),
+		  _Categ="Port forwarder handler" ) ),
 
 	trace_bridge:debug_fmt( "Request ~p to be handled, while handler state "
 							"is ~p...", [ Req, HandlerState ] ),

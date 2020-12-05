@@ -45,11 +45,14 @@ endif
 
 # Topics covered by flags:
 #  - sni: regarding Server Name Indication
+# - handlers: regarding the web handlers spawned per request (thus which must
+# remain efficient)
 #
 # Defining debug flags (at least the most verbose are by default commented-out):
 ifeq ($(ENABLE_DEBUG),true)
 	# Could imply leec_debug_sni:
 	US_WEB_DEBUG_FLAGS += -Dus_web_debug_sni
+	US_WEB_DEBUG_FLAGS += -Dus_web_debug_handlers
 
 endif
 

@@ -696,10 +696,11 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 				  [ get_virtual_host_sni_infos( H, VH, BinCertDir )
 					|| { H, VH } <- UserRoutes ] ),
 
-	cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
-		"SNI information: certificate path for the default "
-		"hostname is '~s', virtual host options are:~n~p",
-		[ DefaultHostnameCertPath, SNIHostInfos ] ) ),
+	% Redundant:
+	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
+	%	"SNI information: certificate path for the default "
+	%	"hostname is '~s', virtual host options are:~n~p",
+	%	[ DefaultHostnameCertPath, SNIHostInfos ] ) ),
 
 	wooper:return_static( { DefaultHostnameCertPath, SNIHostInfos } ).
 

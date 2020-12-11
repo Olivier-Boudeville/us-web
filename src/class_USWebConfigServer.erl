@@ -430,7 +430,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 
 	StartTimestamp = time_utils:get_timestamp(),
 
-	TraceCateg = ?trace_categorize("USWebServer"),
+	TraceCateg = ?trace_categorize("US-Web Server"),
 
 	% First the direct mother classes, then this class-specific actions:
 	TraceState = class_USServer:construct( State, TraceCateg ),
@@ -1803,7 +1803,7 @@ manage_registrations( ConfigTable, State ) ->
 	end,
 
 	% Relatively private to this node:
-	SchedPid = class_USScheduler:new_link( "USWebScheduler", SchedRegName,
+	SchedPid = class_USScheduler:new_link( "US-Web Scheduler", SchedRegName,
 										   _SchedRegScope=local_only ),
 
 	?info_fmt( "This US-Web configuration server was registered as '~s' "
@@ -2599,7 +2599,7 @@ manage_routes( ConfigTable, State ) ->
 
 	TaskPeriod = class_USWebLogger:get_default_log_rotation_period(),
 
-	TaskRingPid = class_USTaskRing:new_link( _RingName="USWebLoggerRing",
+	TaskRingPid = class_USTaskRing:new_link( _RingName="US-Web Logger Ring",
 		_Actuators=AllLoggerPids, _TaskRequestName=rotateLogsSynch,
 		_TaskRequestArgs=[], TaskPeriod, _ScheduleCount=unlimited,
 		SchedulerPid ),

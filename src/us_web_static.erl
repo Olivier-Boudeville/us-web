@@ -28,24 +28,25 @@
 %
 -module(us_web_static).
 
--export([ init/2,malformed_request/2, forbidden/2, content_types_provided/2,
+-export([ init/2, malformed_request/2, forbidden/2, content_types_provided/2,
 		  charsets_provided/2, ranges_provided/2, resource_exists/2,
 		  last_modified/2, generate_etag/2, get_file/2 ]).
 
 
--type extra_charset() :: {charset, module(), function()} | {charset, binary()}.
+-type extra_charset() :: { charset, module(), function() }
+					   | { charset, binary() }.
 
--type extra_etag() :: {etag, module(), function()} | {etag, false}.
+-type extra_etag() :: { etag, module(), function() } | { etag, false }.
 
--type extra_mimetypes() :: {mimetypes, module(), function()}
-	| {mimetypes, binary() | {binary(), binary(), [{binary(), binary()}]}}.
+-type extra_mimetypes() :: { mimetypes, module(), function() }
+ | { mimetypes, binary() | { binary(), binary(), [ { binary(), binary() } ] } }.
 
 -type extra() :: [ extra_charset() | extra_etag() | extra_mimetypes() ].
 
--type opts() :: {file | dir, string() | binary()}
-	| {file | dir, string() | binary(), extra()}
-	| {priv_file | priv_dir, atom(), string() | binary()}
-	| {priv_file | priv_dir, atom(), string() | binary(), extra()}.
+-type opts() :: { file | dir, string() | binary() }
+	| { file | dir, string() | binary(), extra() }
+	| { priv_file | priv_dir, atom(), string() | binary() }
+	| { priv_file | priv_dir, atom(), string() | binary(), extra() }.
 
 -export_type([ opts/0 ]).
 
@@ -76,6 +77,7 @@
 -define( internal_server_error, 500 ).
 
 
+
 % Resolves the file that will be sent, and gets its file information.
 %
 % If the handler is configured to manage a directory, checks that the requested
@@ -92,9 +94,9 @@ init( Req, HState ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-		  _Name=text_utils:format( "Static handler corresponding to path '~p'.",
+		  _Name=text_utils:format( "Static handler for path ~s",
 								   [ BinPath ] ),
-		  _Categ="Static handler" ) ),
+		  _Categ="US.Web.StaticHandler" ) ),
 
 	%trace_utils:debug_fmt(
 	%  "[~s:~w] Serving request as a ~s~nInitial handler state being ~s",

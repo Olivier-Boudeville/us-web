@@ -47,7 +47,7 @@
 %
 % - an overall instance thereof may also possibly be created (as a singleton),
 % however its uses may overlap with the Traces file (typically in
-% us_web/_build/default/rel/us_web/traces_via_otp.traces)
+% traces_via_otp.traces)
 
 % Note that a web logger may be driven (typically for log rotation) either
 % directly by a scheduler or by a task ring (for proper inter-logger
@@ -59,6 +59,22 @@
 % registered by a third party (that by default it does not know - it does not
 % need to know the ring either, thus it does not store its PID), and is to be
 % unregistered the same way.
+
+
+% Using Awstats, two different, mostly unrelated actions shall be considered:
+%
+% - updating the Awstats database: it shall be done when rotating (access) logs
+% (typically to be best done by being scheduled regularly for that),
+% sequentially, per virtual host, with up to one instance running at any time
+% (to avoid concurrent accesses to the Awstats database), thus typically based
+% on a task ring
+%
+% - generating reports: either done statically/periodically (ex: if inserted in
+% the task ring among access rotations, to avoid possible read/write concurrent
+% accesses) or when explicitly requested by the user (ex: through a dedicated
+% user console command, or through an interactive, control page, possibly
+% Nitrogen-based)
+
 
 
 -type server_pid() :: class_UniversalServer:server_pid().
@@ -267,9 +283,19 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		undefined ->
 			undefined;
 
+		% Note that both tool_path and helper_path deal with the generation of
+		% HTML reports (reflecting the current state of the Awstats database),
+		% not the update of that database. So currently this database is *never*
+		% updated (fixme).
+		%
 		#web_analysis_info{ tool=ToolName=awstats,
+
+							% Typically XXX/awstats_buildstaticpages.pl:
 							tool_path=BinToolPath,
+
+							% Typically YYY/awstats.pl:
 							helper_path=BinHelperPath,
+
 							conf_dir=BinConfDir,
 							web_content_dir=BinWbContDir } ->
 
@@ -308,6 +334,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			% (normal outputs such as "Build alldomains page: [...] and al of no
 			% real interest, thus not wanted)
 			%
+			% Note that this command
 			text_utils:format( "nice -n ~B ~s -update -config=~s -dir=~s "
 				"-awstatsprog=~s 1>/dev/null",
 				[ Niceness, BinToolPath, HostCfgDesc, BinWbContDir,
@@ -687,7 +714,7 @@ get_domain_description( DomainName ) ->
 % necessary); it will not be reopened here.
 %
 % Notes: operates only on access logs, not error ones, as web analyzers do not
-% care about the latters.
+% care about the latters, whose processing is thus more direct.
 %
 -spec rotate_access_log_file( wooper:state() ) -> bin_file_path().
 rotate_access_log_file( State ) ->

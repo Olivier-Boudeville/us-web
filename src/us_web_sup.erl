@@ -81,9 +81,9 @@ init( _Args=[ AppRunContext ] ) ->
 
 	% Preparing a trace bridge to collect traces and errors:
 
-	BinTraceEmitterName = <<"US-Web supervisor">>,
+	BinTraceEmitterName = <<"Supervisor">>,
 
-	BinTraceCategory = <<"US.USWebSupervisor">>,
+	BinTraceCategory = <<"US.US-Web.Supervision">>,
 
 	AggregatorPid = class_TraceAggregator:get_aggregator(
 					  _LaunchAggregator=false ),

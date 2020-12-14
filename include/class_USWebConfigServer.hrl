@@ -34,7 +34,8 @@
 	% The kind of virtual host (ex: 'static'):
 	kind :: class_USWebConfigServer:web_kind(),
 
-	% The content (absolute) directory (as a binary) associated to :
+	% The content (absolute) directory (as a binary) associated to this virtual
+	% host:
 	%
 	content_root :: file_utils:bin_directory_path(),
 
@@ -51,20 +52,26 @@
 % Information about the analysis of web access logs:
 -record( web_analysis_info, {
 
-		   % Ex: 'awstats':
+		   % Ex: 'awstats'.
 		   tool :: class_USWebConfigServer:log_analysis_tool_name(),
 
-		   % Full path to the analyzer main executable:
-		   %
-		   % (typically awstats_buildstaticpages.pl)
-		   %
-		   tool_path :: file_utils:bin_executable_path(),
 
-		   % Full path to nay analyzer helper:
+		   % Full path to the main analyzer of access logs, to update the
+		   % database thereof:
 		   %
-		   % (typically awstats.pl)
+		   % (typically awstats.pl, possibly in
+		   % /usr/share/webapps/awstats/cgi-bin/)
 		   %
-		   helper_path :: maybe( file_utils:bin_executable_path() ),
+		   update_tool_path :: maybe( file_utils:bin_executable_path() ),
+
+
+		   % Full path to the executable in charge of the generation of HTML
+		   % reports:
+		   %
+		   % (typically awstats_buildstaticpages.pl, possibly in
+		   % /usr/share/awstats/tools)
+		   %
+		   report_tool_path :: file_utils:bin_executable_path(),
 
 
 		   % As read from template configuration file:

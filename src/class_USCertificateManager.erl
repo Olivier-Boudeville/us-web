@@ -152,8 +152,7 @@
 
 
 % Used by the trace_categorize/1 macro to use the right emitter:
--define( trace_emitter_categorization,
-		 "US.Configuration.USCertificateManager" ).
+-define( trace_emitter_categorization, "US.Certificate Management" ).
 
 
 -define( registration_name, us_web_certificate_manager ).

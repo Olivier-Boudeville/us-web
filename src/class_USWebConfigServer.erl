@@ -167,6 +167,15 @@
 %
 % As a result, now these web loggers all belong to the same task ring, in charge
 % of pacing them uniformly and of ensuring they cannot overlap.
+%
+% Two separate actions are to be considered, at least for Awstats:
+%
+% - updating its database based on access logs: done when rotating them, using
+% awstats.pl (and not requesting the generation of a report)
+%
+% - generating HTML reports from the current state of the database: now done
+% only on request, as a whole, through awstats_buildstaticpages.pl (no database
+% update requested then)
 
 
 
@@ -386,7 +395,7 @@
 
 
 % Used by the trace_categorize/1 macro to use the right emitter:
--define( trace_emitter_categorization, "US.Configuration.USWebConfigServer" ).
+-define( trace_emitter_categorization, "US.US-Web.Configuration" ).
 
 
 -define( default_us_web_config_server_registration_name, us_web_config_server ).
@@ -430,7 +439,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 
 	StartTimestamp = time_utils:get_timestamp(),
 
-	TraceCateg = ?trace_categorize("US-Web Server"),
+	TraceCateg = ?trace_categorize("Configuration Server"),
 
 	% First the direct mother classes, then this class-specific actions:
 	TraceState = class_USServer:construct( State, TraceCateg ),
@@ -925,8 +934,8 @@ prepare_web_analysis( _MaybeLogAnalysisSettings=undefined, _UserRoutes,
 	undefined;
 
 prepare_web_analysis(
-  _MaybeLogAnalysisSettings={ _ToolName=awstats, BinAnalysisToolRoot,
-							  BinAnalysisHelperRoot },
+  _MaybeLogAnalysisSettings={ _ToolName=awstats, BinAnalysisUpdateToolRoot,
+							  BinAnalysisReportToolRoot },
   UserRoutes, MaybeBinDefaultWebRoot, State ) ->
 
 	% First verifications done in manage_pre_meta/2.
@@ -982,35 +991,38 @@ prepare_web_analysis(
 	TemplateContent = text_utils:update_with_keywords( TemplateBaseContent,
 													   BaseTranslationTable ),
 
-	% Validates the target Awstats script. Previously the main tool was
-	% "awstats.pl" and no helper was used, now building all report pages in one
-	% go with (using the former as its helper):
+	% Validates the target Awstats scripts:
 
-	ToolPath = file_utils:join(
-		[ BinAnalysisToolRoot, "awstats_buildstaticpages.pl" ] ),
+	UpdateToolPath =
+	  file_utils:join( [ BinAnalysisUpdateToolRoot, "cgi-bin", "awstats.pl" ] ),
 
-	BinToolPath = case file_utils:is_executable( ToolPath ) of
+	BinUpdateToolPath = case file_utils:is_executable( UpdateToolPath ) of
 
 		true ->
-			text_utils:string_to_binary( ToolPath );
+			text_utils:string_to_binary( UpdateToolPath );
 
 		false ->
-			throw( { awstats_main_executable_not_found, ToolPath } )
+			throw( { awstats_update_executable_not_found, UpdateToolPath } )
 
 	end,
 
-	HelperPath =
-		file_utils:join( [ BinAnalysisHelperRoot, "cgi-bin", "awstats.pl" ] ),
 
-	BinHelperPath = case file_utils:is_executable( HelperPath ) of
+	% Previously the main tool was "awstats.pl" and no helper was used, now
+	% building all report pages in one go with (using the former as its helper):
+
+	ReportToolPath = file_utils:join(
+		[ BinAnalysisReportToolRoot, "awstats_buildstaticpages.pl" ] ),
+
+	BinReportToolPath = case file_utils:is_executable( ReportToolPath ) of
 
 		true ->
-			text_utils:string_to_binary( HelperPath );
+			text_utils:string_to_binary( ReportToolPath );
 
 		false ->
-			throw( { awstats_helper_executable_not_found, HelperPath } )
+			throw( { awstats_report_executable_not_found, ReportToolPath } )
 
 	end,
+
 
 	% The directory in which the per-vhost configuration files for the web log
 	% tool (Awstats here) will be generated:
@@ -1045,8 +1057,8 @@ prepare_web_analysis(
 
 	% Expanded from log_analysis_settings and returned;
 	#web_analysis_info{ tool=awstats,
-						tool_path=BinToolPath,
-						helper_path=BinHelperPath,
+						update_tool_path=BinUpdateToolPath,
+						report_tool_path=BinReportToolPath,
 						template_content=TemplateContent,
 
 						% Where per-vhost configuration files shall be
@@ -1676,7 +1688,7 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 					  logger_pid => LoggerPid },
 
 	BinIndex = text_utils:string_to_binary(
-				 text_utils:format( "~s/index.html", [ BinContentRoot ] ) ),
+				text_utils:format( "~s/index.html", [ BinContentRoot ] ) ),
 
 	% Allows to expand a requested 'http://foobar.org' into
 	% 'http://foobar.org/index.html':
@@ -2348,7 +2360,7 @@ manage_ports( ConfigTable, State ) ->
 
 % Prepares the meta support.
 -spec manage_pre_meta( us_web_config_table(), wooper:state() ) ->
-							 wooper:state().
+							wooper:state().
 manage_pre_meta( ConfigTable, State ) ->
 
 	case table:lookup_entry( ?log_analysis_key, ConfigTable ) of
@@ -2370,50 +2382,56 @@ set_log_tool_settings( undefined, State ) ->
 	set_log_tool_settings( _DefaultToolName=awstats, State );
 
 set_log_tool_settings( ToolName, State ) when is_atom( ToolName ) ->
-	set_log_tool_settings( { ToolName, _DefaultAnalysisToolRoot=undefined,
-							 _DefaultAnalysisHelperRoot=undefined },
+	set_log_tool_settings( { ToolName, _DefaultAnalysisUpdateToolRoot=undefined,
+							 _DefaultAnalysisReportToolRoot=undefined },
 						   State );
 
 % At least Arch Linux defaults:
-set_log_tool_settings( { awstats, _MaybeAnalysisToolRoot=undefined,
-					   _MaybeAnalysisHelperRoot=undefined }, State ) ->
-	set_log_tool_settings( { awstats, _ToolRoot="/usr/share/awstats/tools",
-					 _HelperRoot="/usr/share/webapps/awstats" }, State );
+set_log_tool_settings( { awstats, _MaybeAnalysisUpdateToolRoot=undefined,
+					   _MaybeAnalysisReportToolRoot=undefined }, State ) ->
+	set_log_tool_settings( { awstats,
+		_UpdateToolRoot="/usr/share/awstats/tools",
+		_ReportToolRoot="/usr/share/webapps/awstats" }, State );
 
-% Supposing both are defined or not:
-set_log_tool_settings( { ToolName, AnalysisToolRoot, AnalysisHelperRoot },
-					   State ) when is_list( AnalysisToolRoot )
-									andalso  is_list( AnalysisHelperRoot ) ->
+% Supposing both are defined or neither:
+set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
+						 AnalysisReportToolRoot }, State )
+  when is_list( AnalysisUpdateToolRoot )
+	   andalso is_list( AnalysisReportToolRoot ) ->
 
-	BinAnToolRoot =
-			case file_utils:is_existing_directory_or_link( AnalysisToolRoot ) of
+	BinUpdateToolRoot =
+			case file_utils:is_existing_directory_or_link(
+				   AnalysisUpdateToolRoot ) of
 
 		true ->
-			text_utils:string_to_binary( AnalysisToolRoot );
+			text_utils:string_to_binary( AnalysisUpdateToolRoot );
 
 		false ->
-			?error_fmt( "Root directory '~s' for web log analysis tool ('~s') "
-						"not found.", [ AnalysisToolRoot, ToolName ] ),
-			throw( { root_of_log_tool_not_found, ToolName, AnalysisToolRoot } )
+			?error_fmt( "Root directory '~s' for web log analysis update "
+				"tool ('~s') not found.",
+				[ AnalysisUpdateToolRoot, ToolName ] ),
+			throw( { root_of_log_update_tool_not_found, ToolName,
+					 AnalysisUpdateToolRoot } )
 
 	end,
 
-	BinAnHelperRoot = case file_utils:is_existing_directory_or_link(
-							 AnalysisHelperRoot ) of
+	BinReportToolRoot = case file_utils:is_existing_directory_or_link(
+							   AnalysisReportToolRoot ) of
 
 		true ->
-			text_utils:string_to_binary( AnalysisHelperRoot );
+			text_utils:string_to_binary( AnalysisReportToolRoot );
 
 		false ->
-			?error_fmt( "Root directory '~s' for web log analysis helper "
-				"('~s') not found.", [ AnalysisHelperRoot, ToolName ] ),
-			throw( { root_of_log_helper_not_found, ToolName,
-					 AnalysisHelperRoot } )
+			?error_fmt( "Root directory '~s' for web log analysis report "
+				"tool ('~s') not found.",
+				[ AnalysisReportToolRoot, ToolName ] ),
+			throw( { root_of_log_report_tool_not_found, ToolName,
+					 AnalysisReportToolRoot } )
 
 	end,
 
 	setAttribute( State, log_analysis_settings,
-				  { ToolName, BinAnToolRoot, BinAnHelperRoot } );
+				  { ToolName, BinUpdateToolRoot, BinReportToolRoot } );
 
 
 set_log_tool_settings( Unexpected, State ) ->
@@ -2605,6 +2623,10 @@ manage_routes( ConfigTable, State ) ->
 		SchedulerPid ),
 
 	DispatchRules = cowboy_router:compile( DispatchRoutes ),
+
+	?debug_fmt( "The US-Web specified dispatch routes are:~n  ~p~n"
+	  "They correspond, once compiled, to the following dispatch rules:~n  ~p",
+	  [ DispatchRoutes, DispatchRules ] ),
 
 	setAttributes( ProcessState, [ { domain_config_table, DomainTable },
 								   { dispatch_rules, DispatchRules },

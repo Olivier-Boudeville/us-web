@@ -107,7 +107,6 @@
 -type vhost_id() :: class_USWebConfigServer:vhost_id().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
-%-type task_id() :: c2149lass_USScheduler:task_id().
 -type user_period() :: class_USScheduler:user_period().
 
 -type log_analysis_tool() :: class_USWebConfigServer:log_analysis_tool().
@@ -163,20 +162,19 @@
 	  "the identifier of this task for log rotation, as assigned by the "
 	  "scheduler (if any)" },
 
-	% In log_analysis_command:
-	%{ analysis_tool_path, maybe( bin_executable_path() ),
-	%  "a path (if any) to the web log analysis tool (expected to have been "
-	%  "validated beforehand)" },
-
 	{ web_analysis_info, maybe( web_analysis_info() ),
 	  "settings about web analysis (if any)" },
 
-	{ log_analysis_command, maybe( ustring() ), "the prebuilt command to "
-	  "run in order to generate the log analysis report" } ] ).
+	{ log_analysis_update_cmd, maybe( ustring() ), "the prebuilt command to "
+	  "run in order to update the log analysis database" },
+
+	{ log_analysis_report_gen_cmd, maybe( ustring() ),
+	  "the prebuilt command to run in order to generate the log analysis "
+	  "reports" } ] ).
 
 
 % Used by the trace_categorize/1 macro to use the right emitter:
--define( trace_emitter_categorization, "US.Configuration.USWebLogger" ).
+-define( trace_emitter_categorization, "US.US-Web.Logging" ).
 
 
 -define( registration_name, us_web_logger ).
@@ -214,8 +212,8 @@
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   MaybeWebAnalysisInfo ) ->
 	construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
-			   ?default_dhms_log_rotation_period, MaybeWebAnalysisInfo,
-			   _IsSingleton=false ).
+		?default_dhms_log_rotation_period, MaybeWebAnalysisInfo,
+		_IsSingleton=false ).
 
 
 
@@ -278,10 +276,10 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		{ file_utils:join( BinLogDir, BinAccessLogFilename ),
 		  file_utils:join( BinLogDir, BinErrorLogFilename ) },
 
-	MaybeLogAnalysisCmd = case MaybeWebAnalysisInfo of
+	{ MaybeLogUpdateCmd, MaybeLogReportCmd } = case MaybeWebAnalysisInfo of
 
 		undefined ->
-			undefined;
+			{ undefined, undefined };
 
 		% Note that both tool_path and helper_path deal with the generation of
 		% HTML reports (reflecting the current state of the Awstats database),
@@ -291,10 +289,10 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		#web_analysis_info{ tool=ToolName=awstats,
 
 							% Typically XXX/awstats_buildstaticpages.pl:
-							tool_path=BinToolPath,
+							update_tool_path=BinUpdateToolPath,
 
 							% Typically YYY/awstats.pl:
-							helper_path=BinHelperPath,
+							report_tool_path=BinReportToolPath,
 
 							conf_dir=BinConfDir,
 							web_content_dir=BinWbContDir } ->
@@ -329,16 +327,30 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			HostCfgDesc = get_host_description_for( BinHostId, DomainId,
 													ToolName ),
 
-			% Returning said command:
+			% Returning said command to (only) update database:
+
+			% Additional possible commands:
+			ExtraOpts = "-showsteps -showcorrupted -showdropped "
+				"-showunknownorigin -showdirectorigin",
+
+			UpdateCmd = text_utils:format( "nice -n ~B ~s " ++ ExtraOpts
+				++ "-config=~s", % 1>/dev/null",
+				[ Niceness, BinUpdateToolPath, HostCfgDesc ] ),
+
+			% Command to generate reports:
 			%
 			% (normal outputs such as "Build alldomains page: [...] and al of no
 			% real interest, thus not wanted)
 			%
-			% Note that this command
-			text_utils:format( "nice -n ~B ~s -update -config=~s -dir=~s "
-				"-awstatsprog=~s 1>/dev/null",
-				[ Niceness, BinToolPath, HostCfgDesc, BinWbContDir,
-				  BinHelperPath ] )
+			% Note that this command does not include '-update' anymore, it just
+			% generates (all) reports:
+			%
+			ReportCmd =text_utils:format( "nice -n ~B ~s -config=~s -dir=~s "
+				"-awstatsprog=~s", % 1>/dev/null",
+				[ Niceness, BinReportToolPath, HostCfgDesc, BinWbContDir,
+				  BinUpdateToolPath ] ),
+
+			{ UpdateCmd, ReportCmd }
 
 	end,
 
@@ -352,7 +364,8 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ log_task_id, undefined },
 		{ web_analysis_info, MaybeWebAnalysisInfo },
-		{ log_analysis_command, MaybeLogAnalysisCmd } ] ),
+		{ log_analysis_update_cmd, MaybeLogUpdateCmd },
+		{ log_analysis_report_gen_cmd, MaybeLogReportCmd } ] ),
 
 	% Now taking into account any past, not yet rotated log file, even though it
 	% may create a delay and a resource spike at start-up (as web loggers are
@@ -532,6 +545,118 @@ rotateLogsSynch( State, CalledPid ) ->
 	CalledPid ! { notifyTaskDone, self() },
 
 	wooper:return_state( RotateState ).
+
+
+
+% Generates the report for the managed host, based on the current database
+% state.
+%
+-spec generateReport( wooper:state() ) -> const_oneway_return().
+generateReport( State ) ->
+
+	case ?getAttr(log_analysis_report_cmd) of
+
+		undefined ->
+			?error( "Generation of report request, yet no corresponding "
+					"command was defined." ),
+			wooper:const_return();
+
+		% Supposing Awstats here:
+		LogReportGenCmd ->
+
+			?debug_fmt( "Generating HTML Awstats access report based on "
+						"command '~s'.", [ LogReportGenCmd ] ),
+
+			%?debug_fmt( "Generating HTML access report in '~s' with Awstats.",
+			%			[ HTMLReportPath ] ),
+
+			%file_utils:remove_file_if_existing( HTMLReportPath ),
+
+
+			% We trigger the generation of the corresponding HTML pages.
+			%
+			% First, the main HTML report:
+
+			%CfgDesc = get_host_description_for( ?getAttr(vhost_id),
+			%									?getAttr(domain_id), awstats ),
+
+			% Note: awstats_buildstaticpages.pl is now preferred to the
+			% following, less efficient, multi-exec approach.
+
+			% No more '-update':
+			%Cmd = text_utils:format(
+			%  "nice -n ~B ~s -config=~s -output -staticlinks > ~s",
+			%  [ Niceness, BinToolPath, CfgDesc, HTMLReportPath ] ),
+			%
+			%case system_utils:run_executable( Cmd ) of
+			%
+			%	{ _ReturnCode=0, _CmdOutput="" } ->
+			%		ok;
+			%
+			%	{ _ReturnCode=0, CmdOutput } ->
+			%		?warning_fmt( "Awstats main report generation succeeded, "
+			%           "yet returned following message: '~s'.",
+			%           [ CmdOutput ] );
+			%
+			%	% An error here shall not kill this logger as a whole:
+			%	{ ReturnCode, CmdOutput } ->
+			%		?error_fmt( "Awstats main report generation failed "
+			%           "(return code: ~w), and returned following message: "
+			%           "'~s' (command was: '~s').",
+			%			[ ReturnCode, CmdOutput, Cmd ] )
+			%
+			%end,
+
+			% Then create also the other report pages:
+			% (list via /usr/share/webapps/awstats/cgi-bin/awstats.pl -h)
+			%
+			% (not retaining mail logs and matching filters)
+			%
+			%ReportTypes = [ "alldomains", "allhosts", "lasthosts", "unknownip",
+			%				"alllogins", "lastlogins", "allrobots",
+			%				"lastrobots", "urldetail", "urlentry", "urlexit",
+			%				"osdetail", "browserdetail", "unknownbrowser",
+			%				"unknownos", "refererse", "refererpages",
+			%				"keyphrases", "keywords", "errors404" ],
+			%
+			% Targeting ultimately for example
+			% "awstats.foo.bar.org.browserdetail.html":
+			%
+			%BaseGenFile = file_utils:join( ?getAttr(web_content_dir),
+			%							   "awstats" ),
+			%
+			% No more '-update':
+			%CmdFormatString = text_utils:format( "nice -n ~B ~s -config=~s "
+			%	"-output=~~s -staticlinks > ~s.~s.~~s.html",
+			%	[ Niceness, BinToolPath, CfgDesc, BaseGenFile, CfgDesc ] ),
+			%
+			%generate_other_report_pages( ReportTypes, CmdFormatString, State )
+
+			% Newer approach builds all report pages in one go:
+			case system_utils:run_executable( LogReportGenCmd ) of
+
+				{ _ReturnCode=0, _CmdOutput="" } ->
+					ok;
+
+				{ _ReturnCode=0, CmdOutput } ->
+					?warning_fmt( "Awstats HTML report generation "
+						"succeeded, yet returned following message: '~s'.",
+						[ CmdOutput ] );
+
+				% An error here shall not kill this logger as a whole:
+				{ ReturnCode, CmdOutput } ->
+					?error_fmt( "Awstats HTML report generation failed "
+						"(return code: ~w), and returned following "
+						"message: '~s' (command was: '~s').",
+						[ ReturnCode, CmdOutput, LogReportGenCmd ] )
+
+			end,
+
+			wooper:const_return()
+
+	end.
+
+
 
 
 
@@ -721,104 +846,35 @@ rotate_access_log_file( State ) ->
 
 	BinFilePath = ?getAttr(access_log_file_path),
 
-	%?debug_fmt( "Rotating access log file '~s'.", [ BinFilePath ] ),
+	?debug_fmt( "Rotating access log file '~s'.", [ BinFilePath ] ),
 
-	case ?getAttr(log_analysis_command) of
+	case ?getAttr(log_analysis_update_cmd) of
 
 		undefined ->
 			ok;
 
 		% Supposing Awstats here:
-		LogAnalysisCmd ->
+		LogAnalysisUpdateCmd ->
 
-			%?debug( "Generating HTML access report with Awstats." ),
+			?debug_fmt( "Updating Awstats database now based on command '~s'.",
+						[ LogAnalysisUpdateCmd ] ),
 
-			?debug_fmt( "Generating HTML Awstats access report based on "
-						"command '~s'.", [ LogAnalysisCmd ] ),
-
-			%?debug_fmt( "Generating HTML access report in '~s' with Awstats.",
-			%			[ HTMLReportPath ] ),
-
-			%file_utils:remove_file_if_existing( HTMLReportPath ),
-
-
-			% We trigger the reading of the access logs and the generation of
-			% the corresponding HTML page at the same time.
-			%
-			% First, the main HTML report:
-
-			%CfgDesc = get_host_description_for( ?getAttr(vhost_id),
-			%									?getAttr(domain_id), awstats ),
-
-			% Note: awstats_buildstaticpages.pl is preferred to the following,
-			% less efficient, multi-exec approach.
-
-			%Cmd = text_utils:format(
-			%  "nice -n ~B ~s -config=~s -update -output -staticlinks > ~s",
-			%  [ Niceness, BinToolPath, CfgDesc, HTMLReportPath ] ),
-			%
-			%case system_utils:run_executable( Cmd ) of
-			%
-			%	{ _ReturnCode=0, _CmdOutput="" } ->
-			%		ok;
-			%
-			%	{ _ReturnCode=0, CmdOutput } ->
-			%		?warning_fmt( "Awstats execution prior to log rotation "
-			%			"succeeded for main report, yet returned following "
-			%			"message: '~s'.",
-			%			[ CmdOutput ] );
-			%
-			%	% An error here shall not kill this logger as a whole:
-			%	{ ReturnCode, CmdOutput } ->
-			%		?error_fmt( "Awstats execution prior to log rotation "
-			%			"failed (return code: ~w) for main report, and "
-			%			"returned following message: '~s' "
-			%			"(command was: '~s').",
-			%			[ ReturnCode, CmdOutput, Cmd ] )
-			%
-			%end,
-
-			% Then create also the other report pages:
-			% (list via /usr/share/webapps/awstats/cgi-bin/awstats.pl -h)
-			%
-			% (not retaining mail logs and matching filters)
-			%
-			%ReportTypes = [ "alldomains", "allhosts", "lasthosts", "unknownip",
-			%				"alllogins", "lastlogins", "allrobots",
-			%				"lastrobots", "urldetail", "urlentry", "urlexit",
-			%				"osdetail", "browserdetail", "unknownbrowser",
-			%				"unknownos", "refererse", "refererpages",
-			%				"keyphrases", "keywords", "errors404" ],
-			%
-			% Targeting ultimately for example
-			% "awstats.foo.bar.org.browserdetail.html":
-			%
-			%BaseGenFile = file_utils:join( ?getAttr(web_content_dir),
-			%							   "awstats" ),
-			%
-			%CmdFormatString = text_utils:format( "nice -n ~B ~s -config=~s "
-			%	"-update -output=~~s -staticlinks > ~s.~s.~~s.html",
-			%	[ Niceness, BinToolPath, CfgDesc, BaseGenFile, CfgDesc ] ),
-			%
-			%generate_other_report_pages( ReportTypes, CmdFormatString, State )
-
-			% Newer approach builds all report pages in one go:
-			case system_utils:run_executable( LogAnalysisCmd ) of
+			case system_utils:run_executable( LogAnalysisUpdateCmd ) of
 
 				{ _ReturnCode=0, _CmdOutput="" } ->
 					ok;
 
 				{ _ReturnCode=0, CmdOutput } ->
-					?warning_fmt( "Awstats execution prior to log rotation "
-						"succeeded, yet returned following message: '~s'.",
-						[ CmdOutput ] );
+					?warning_fmt( "Awstats database update prior to log "
+						"rotation succeeded for main report, yet returned "
+						"following message: '~s'.", [ CmdOutput ] );
 
 				% An error here shall not kill this logger as a whole:
 				{ ReturnCode, CmdOutput } ->
-					?error_fmt( "Awstats execution prior to log rotation "
+					?error_fmt( "Awstats database update prior to log rotation "
 						"failed (return code: ~w), and returned following "
 						"message: '~s' (command was: '~s').",
-						[ ReturnCode, CmdOutput, LogAnalysisCmd ] )
+						[ ReturnCode, CmdOutput, LogAnalysisUpdateCmd ] )
 
 			end
 
@@ -935,7 +991,7 @@ get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
 								static_return( file_name() ).
 get_conf_filename_for( DomainId, VHostId, _Tool=awstats ) ->
 	Filename = text_utils:format( "awstats.~s.conf",
-				   [ get_host_description_for( VHostId, DomainId, awstats ) ] ),
+				[ get_host_description_for( VHostId, DomainId, awstats ) ] ),
 	wooper:return_static( Filename );
 
 get_conf_filename_for( _DomainId, _VHostId, Tool ) ->
@@ -955,14 +1011,15 @@ to_string( State ) ->
 			"no web analysis enabled";
 
 		#web_analysis_info{ tool=ToolName,
-							tool_path=BinToolPath,
-							helper_path=BinHelperPath,
+							update_tool_path=BinUpdateToolPath,
+							report_tool_path=BinReportToolPath,
 							conf_dir=BinConfDir,
 							web_content_dir=BinWbContDir } ->
 			text_utils:format( "web analysis enabled, based on '~s' "
-				"(path: '~s', helper: '~s'), with as configuration directory "
-				"'~s' and as web content directory '~s'",
-				[ ToolName, BinToolPath, BinHelperPath, BinConfDir,
+				"(update path: '~s', report generation path: '~s'), with, as "
+				"configuration directory '~s', and as web content "
+				"directory '~s'",
+				[ ToolName, BinUpdateToolPath, BinReportToolPath, BinConfDir,
 				  BinWbContDir ] )
 
 	end,

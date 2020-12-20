@@ -1400,7 +1400,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 			RegexStr = text_utils:format( " REGEX[~s$]", [
 				% So that "baz.foobar.org" becomes "baz\.foobar\.org":
 				text_utils:escape_with( CfgDomainStr, _CharsToEscape=[ $. ],
-										_EscapingChar=$\ ) ] ),
+										_EscapingChar=$\\ ) ] ),
 
 			{ CfgDomainStr, BaseAlias ++ RegexStr };
 
@@ -1728,7 +1728,8 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 %
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
-	{ <<"/.well-known/acme-challenge/:token">>, us_web_letsencrypt_handler,
+	%{ <<"/.well-known/acme-challenge/:token">>, us_web_letsencrypt_handler,
+	{ "/.well-known/acme-challenge/:token", us_web_letsencrypt_handler,
 	  _InitialState=CertManagerPid };
 
 get_challenge_path_match( Unexpected ) ->
@@ -2390,8 +2391,8 @@ set_log_tool_settings( ToolName, State ) when is_atom( ToolName ) ->
 set_log_tool_settings( { awstats, _MaybeAnalysisUpdateToolRoot=undefined,
 					   _MaybeAnalysisReportToolRoot=undefined }, State ) ->
 	set_log_tool_settings( { awstats,
-		_UpdateToolRoot="/usr/share/awstats/tools",
-		_ReportToolRoot="/usr/share/webapps/awstats" }, State );
+		_UpdateToolRoot="/usr/share/webapps/awstats",
+		_ReportToolRoot="/usr/share/awstats/tools" }, State );
 
 % Supposing both are defined or neither:
 set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
@@ -2653,13 +2654,13 @@ manage_post_meta( State ) ->
 				undefined ->
 					false;
 
-				{ _ToolName=awstats, _BinAnalysisToolRoot,
-				  BinAnalysisHelperRoot } ->
+				{ _ToolName=awstats, BinAnalysisToolRoot,
+				  _BinAnalysisHelperRoot } ->
 
 					% Copies first, in meta web root (now known), the icons to
 					% be used by the generated pages:
 					%
-					IconDir = file_utils:join( BinAnalysisHelperRoot, "icon" ),
+					IconDir = file_utils:join( BinAnalysisToolRoot, "icon" ),
 
 					true = file_utils:is_existing_directory_or_link( IconDir ),
 

@@ -331,10 +331,10 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 			% Additional possible commands:
 			ExtraOpts = "-showsteps -showcorrupted -showdropped "
-				"-showunknownorigin -showdirectorigin",
+				"-showunknownorigin -showdirectorigin ",
 
 			UpdateCmd = text_utils:format( "nice -n ~B ~s " ++ ExtraOpts
-				++ "-config=~s", % 1>/dev/null",
+				++ "-config=~s 1>/dev/null",
 				[ Niceness, BinUpdateToolPath, HostCfgDesc ] ),
 
 			% Command to generate reports:
@@ -346,7 +346,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			% generates (all) reports:
 			%
 			ReportCmd =text_utils:format( "nice -n ~B ~s -config=~s -dir=~s "
-				"-awstatsprog=~s", % 1>/dev/null",
+				"-awstatsprog=~s 1>/dev/null",
 				[ Niceness, BinReportToolPath, HostCfgDesc, BinWbContDir,
 				  BinUpdateToolPath ] ),
 

@@ -57,16 +57,19 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 	BinHost = cowboy_req:host( Req ),
 
+	%trace_bridge:debug_fmt( "BinHost: ~p.", [ BinHost ] ),
+
 	% Corresponds to "/.well-known/acme-challenge/:token":
 	% (returns undefined is token not set in URI)
 	%
-	Token = case cowboy_req:binding( _Name=token, Req ) of
+	Token = case cowboy_req:binding( _BindingName=token, Req ) of
 
 		undefined ->
 			trace_bridge:error_fmt( "No ACME token set in: ~p.", [ Req ] ),
 			throw( { no_token_defined, Req } );
 
 		Tk ->
+			%trace_bridge:debug_fmt( "Token: ~p.", [ Tk ] ),
 			Tk
 
 	end,
@@ -82,6 +85,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 			throw( { no_challenge_obtained, FailedAtom } );
 
 		{ wooper_result, Thmbprnts } ->
+			trace_bridge:debug_fmt( "Received thumbprints: ~p.", [ Thmbprnts ] ),
 			Thmbprnts
 
 	end,

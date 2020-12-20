@@ -68,11 +68,18 @@
 % when starting up).
 %
 % Previously for each certificate generation for each virtual host a throwaway
-% Let's Encrypt account was created, yet it led to hitting quicly their rate
-% limits. So now we create first a (unique) TLS private key, generate a (single)
+% Let's Encrypt account was created, yet it led to hitting quickly their rate
+% limits. So now we generate first a (unique) TLS private key, create a (single)
 % ACME account that all certificate managers will use to order their
 % certificate. SAN information and wildcard certificates could also be used for
 % that.
+%
+% Initially, the call to letsencrypt:obtain_certificate_for/2 below was
+% synchronous (blocking), however then the corresponding LEEC handler process
+% that would be spawned whenever the ACME server requested the token would lead
+% to this LEEC handler process requesting the challenge from the current
+% certificate manager - whereas it was blocked by design. So now certificate
+% managers use non-blocking calls to obtain their certificate.
 
 
 % Not trapping exits, any crash is to propagate to the US-Web config server.
@@ -492,7 +499,7 @@ renewCertificateSync( State ) ->
 
 % (helper)
 -spec request_certificate( wooper:state() ) ->
-								 { wooper:state(), maybe( bin_file_path() ) }.
+								{ wooper:state(), maybe( bin_file_path() ) }.
 request_certificate( State ) ->
 
 	% The task_id attribute may or may not be defined.
@@ -501,14 +508,40 @@ request_certificate( State ) ->
 
 	?debug_fmt( "Requesting certificate for '~s'.", [ FQDN ] ),
 
-	% Synchronous (blocking) call (no callback used); this clause also returns
-	% (after some delay, like 30 seconds) the delay (with some jitter) until the
-	% next certificate renewal (quickly if having just failed, normally if
-	% having succeeded):
+	% We use to rely on a synchronous (blocking) call (no callback used), which
+	% was a mistake (see implementation notes). Now using an asynchronous call
+	% instead.
 	%
+	% This clause also returns (after some delay, like 30 seconds) the delay
+	% (with some jitter) until the next certificate renewal (quickly if having
+	% just failed, normally if having succeeded).
+
+	% Closure:
+	Self = self(),
+
+	Callback = fun( CertCreationOutcome ) ->
+				   Self ! { onCertificateRequestOutcome, [ CertCreationOutcome ] }
+			   end,
+
+	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
+							_OptionMap=#{ async => true,
+										  callback => Callback } ),
+
+
+
+-spec onCertificateRequestOutcome( wooper:state(), letsencrypt:cert_creation_outcome() ) ->
+	
+onCertificateRequestOutcome( State, CertCreationOutcome{ certificate_ready, BinCertFilePath } ) ->
+xxx
+
+onCertificateRequestOutcome( State, _CertCreationOutcome={ error, ErrorTerm } ) ->
+
+onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
+
+
 	{ MaybeRenewDelay, MaybeBinCertPath } =
 			case letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
-											_OptionMap=#{ async => false } ) of
+											_OptionMap=#{ async => true } ) of
 
 		{ certificate_ready, BinCertFilePath } ->
 			?info_fmt( "Certificate generation success for '~s', "

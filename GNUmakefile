@@ -7,7 +7,7 @@ US_WEB_TOP = .
 		ensure-dev-release ensure-prod-release                                 \
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
-		sync-us-web                                                            \
+		sync-full-us-web                                                       \
 		start debug debug-as-release start-as-release status                   \
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability                            \
@@ -211,7 +211,7 @@ upgrade-us-common:
 # Synchronises all {Ceylan,US}-related sources of US-Web to the specified server
 # location:
 #
-sync-us-web:
+sync-full-us-web:
 	@cd $(MYRIAD_TOP) && $(MAKE) -s sync-to-server
 	@cd $(WOOPER_TOP) && $(MAKE) -s sync-to-server
 	@cd $(TRACES_TOP) && $(MAKE) -s sync-to-server

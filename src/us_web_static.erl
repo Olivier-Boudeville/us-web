@@ -96,7 +96,7 @@ init( Req, HState ) ->
 		class_TraceEmitter:register_as_bridge(
 		  _Name=text_utils:format( "Static handler for path ~s",
 								   [ BinPath ] ),
-		  _Categ="US.Web.StaticHandler" ) ),
+		  _Categ="US.US-Web.Static Handler" ) ),
 
 	%trace_utils:debug_fmt(
 	%  "[~s:~w] Serving request as a ~s~nInitial handler state being ~s",

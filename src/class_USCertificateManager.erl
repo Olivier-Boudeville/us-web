@@ -75,11 +75,11 @@
 % that.
 %
 % Initially, the call to letsencrypt:obtain_certificate_for/2 below was
-% synchronous (blocking), however then the corresponding LEEC handler process
-% that would be spawned whenever the ACME server requested the token would lead
-% to this LEEC handler process requesting the challenge from the current
-% certificate manager - whereas it was blocked by design. So now certificate
-% managers use non-blocking calls to obtain their certificate.
+% synchronous (blocking), however then the corresponding LEEC web handler
+% process that would be spawned whenever the ACME server requested the token
+% would lead to this LEEC handler process requesting the challenge from the
+% current certificate manager - whereas this one was blocked by design. So now
+% certificate managers use non-blocking calls to obtain their certificate.
 
 
 % Not trapping exits, any crash is to propagate to the US-Web config server.
@@ -110,6 +110,8 @@
 
 -type bin_fqdn() :: net_utils:bin_fqdn().
 
+-type seconds() :: unit_utils:seconds().
+
 -type bin_directory_path() :: file_utils:bin_directory_path().
 -type bin_file_path() :: file_utils:bin_file_path().
 
@@ -120,7 +122,7 @@
 -type cert_mode() :: class_USWebConfigServer:cert_mode().
 
 -type leec_pid() :: letsencrypt:fsm_pid().
--type thumbprint_map() :: letsencrypt:thumbprint_map().
+
 
 
 
@@ -142,7 +144,7 @@
 	  "private key to be used by the LEEC agent driven by this certificate "
 	  "manager" },
 
-	{ cert_renewal_period, maybe( unit_utils:seconds() ),
+	{ cert_renewal_period, maybe( seconds() ),
 	  "the base delay between two successful certificate renewals" },
 
 	{ webroot_dir, bin_directory_path(),
@@ -216,7 +218,7 @@
 %
 -spec construct( wooper:state(), bin_fqdn(), bin_directory_path(),
 		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
-					   wooper:state().
+					wooper:state().
 construct( State, BinFQDN, BinCertDir, BinKeyPath, BinWebrootDir,
 		   MaybeSchedulerPid ) ->
 	construct( State, BinFQDN, _CertMode=production, BinCertDir, BinKeyPath,
@@ -462,44 +464,45 @@ destruct( State ) ->
 
 
 % Renews asynchronously a certificate for the managed hostname.
--spec renewCertificate( wooper:state() ) -> oneway_return().
+-spec renewCertificate( wooper:state() ) -> const_oneway_return().
 renewCertificate( State ) ->
 
-	% MaybeBinCertPath mostly ignored, as oneway:
-	{ ReqState, MaybeBinCertPath } = request_certificate( State ),
+	request_certificate( State ),
 
-	?debug_fmt( "Renew certificate (async): obtained '~s'.",
-				[ MaybeBinCertPath ] ),
+	% onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	wooper:return_state( ReqState ).
+	wooper:const_return().
 
 
 
-% Renews synchronously a certificate for the managed hostname, and returns its
-% path (in case of success).
-%
+% Renews synchronously a certificate for the managed hostname.
 -spec renewCertificateSync( wooper:state() ) ->
-								%request_return( maybe( file_bin_path() ) ).
-								request_return( 'certificate_renewal_over' ).
+			request_return( { 'certificate_renewal_over', manager_pid() } ).
 renewCertificateSync( State ) ->
 
-	% Returns now an ack atom to take advantage of WOOPER multi-request
-	% primitives:
+	request_certificate( State ),
 
-	{ ReqState, MaybeBinCertPath } = request_certificate( State ),
+	% Waits directly for the callback to be triggered:
+	{ CertState, MaybeBinCertPath } = receive
+
+		{ onCertificateRequestOutcome, [ CertCreationOutcome ] } ->
+			onCertificateRequestOutcome( State, CertCreationOutcome )
+
+	end,
 
 	?debug_fmt( "Renew certificate (sync): obtained '~s'.",
 				[ MaybeBinCertPath ] ),
 
-	% Does not imply it succeeded:
-	wooper:return_state_result( ReqState,
+	% Returns now an ack atom to take advantage of WOOPER multi-request
+	% primitives. This return does not imply the renewal succeeded:
+	%
+	wooper:return_state_result( CertState,
 		{ _AckAtom=certificate_renewal_over, self() } ).
 
 
 
 % (helper)
--spec request_certificate( wooper:state() ) ->
-								{ wooper:state(), maybe( bin_file_path() ) }.
+-spec request_certificate( wooper:state() ) -> void().
 request_certificate( State ) ->
 
 	% The task_id attribute may or may not be defined.
@@ -508,68 +511,78 @@ request_certificate( State ) ->
 
 	?debug_fmt( "Requesting certificate for '~s'.", [ FQDN ] ),
 
-	% We use to rely on a synchronous (blocking) call (no callback used), which
-	% was a mistake (see implementation notes). Now using an asynchronous call
-	% instead.
-	%
-	% This clause also returns (after some delay, like 30 seconds) the delay
-	% (with some jitter) until the next certificate renewal (quickly if having
-	% just failed, normally if having succeeded).
+	% We used to rely on a synchronous (blocking) call (no callback was used),
+	% which was a mistake (see implementation notes). Now using an asynchronous
+	% call instead.
 
 	% Closure:
 	Self = self(),
 
 	Callback = fun( CertCreationOutcome ) ->
-				   Self ! { onCertificateRequestOutcome, [ CertCreationOutcome ] }
+				Self ! { onCertificateRequestOutcome, [ CertCreationOutcome ] }
 			   end,
 
 	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
 							_OptionMap=#{ async => true,
-										  callback => Callback } ),
+										  callback => Callback } ).
 
 
 
--spec onCertificateRequestOutcome( wooper:state(), letsencrypt:cert_creation_outcome() ) ->
-	
-onCertificateRequestOutcome( State, CertCreationOutcome{ certificate_ready, BinCertFilePath } ) ->
-xxx
+% Method to be called back whenever a certificate was requested.
+-spec onCertificateRequestOutcome( wooper:state(),
+								   letsencrypt:cert_creation_outcome() ) ->
+		request_return( maybe( bin_file_path() ) ).
+onCertificateRequestOutcome( State,
+			 _CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
 
-onCertificateRequestOutcome( State, _CertCreationOutcome={ error, ErrorTerm } ) ->
+	FQDN = ?getAttr(fqdn),
 
-onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
+	?info_fmt( "Certificate generation success for '~s', "
+			   "certificate stored in '~s'.", [ FQDN, BinCertFilePath ] ),
 
+	NewState = manage_renewal( _RenewDelay=?getAttr(cert_renewal_period),
+							   BinCertFilePath, State ),
 
-	{ MaybeRenewDelay, MaybeBinCertPath } =
-			case letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
-											_OptionMap=#{ async => true } ) of
-
-		{ certificate_ready, BinCertFilePath } ->
-			?info_fmt( "Certificate generation success for '~s', "
-				"certificate stored in '~s'.", [ FQDN, BinCertFilePath ] ),
-
-			{ ?getAttr(cert_renewal_period), BinCertFilePath };
+	wooper:return_state_result( NewState, BinCertFilePath );
 
 
-		{ error, Reason } ->
+onCertificateRequestOutcome( State,
+							 _CertCreationOutcome={ error, ErrorTerm } ) ->
 
-			?error_fmt( "Certificate generation failed for '~s': ~p.",
-						[ Reason ] ),
+	FQDN = ?getAttr(fqdn),
 
-			% Reasonable offset for next attempt:
-			Dur = case ?getAttr(cert_mode) of
+	?error_fmt( "Certificate generation failed for '~s': ~p.",
+				[ FQDN, ErrorTerm ] ),
 
-				development ->
-					time_utils:dhms_to_seconds(
-					  ?dhms_cert_renewal_delay_after_failure_development );
+	% Reasonable offset for next attempt:
+	RenewDelay = case ?getAttr(cert_mode) of
 
-				production ->
-					time_utils:dhms_to_seconds(
-					  ?dhms_cert_renewal_delay_after_failure_production )
+		development ->
+			time_utils:dhms_to_seconds(
+			  ?dhms_cert_renewal_delay_after_failure_development );
 
-			end,
-			{ Dur, undefined }
+		production ->
+			time_utils:dhms_to_seconds(
+				?dhms_cert_renewal_delay_after_failure_production )
 
 	end,
+
+	MaybeBinCertFilePath = undefined,
+
+	NewState = manage_renewal( RenewDelay, MaybeBinCertFilePath, State ),
+
+	wooper:return_state_result( NewState, MaybeBinCertFilePath );
+
+
+onCertificateRequestOutcome( _State, _CertCreationOutcome=UnexpectedError ) ->
+	throw( { unexpected_cert_creation_error, UnexpectedError } ).
+
+
+
+% (helper)
+-spec manage_renewal( maybe( seconds() ), maybe( bin_file_path() ),
+					  wooper:state() ) -> wooper:state().
+manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 	NewState = case ?getAttr(scheduler_pid) of
 
@@ -616,39 +629,30 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 
 	end,
 
-	CertState = setAttribute( NewState, cert_path, MaybeBinCertPath ),
-
-	{ CertState, MaybeBinCertPath }.
+	setAttribute( NewState, cert_path, MaybeBinCertFilePath ).
 
 
 
-% Requests this manager to return the current thumbprint challenges.
+
+% Requests this manager to return (indirectly, through the current LEEC FSM) the
+% current thumbprint challenges to specified target process.
 %
-% Typically called from a web handler (see us_web_letsencrypt_handler) whenever
-% the ACME well-known URL is read by an ACME server.
+% Typically called from a web handler (see us_web_letsencrypt_handler,
+% specifying its PID as target one) whenever the ACME well-known URL is read by
+% an ACME server, to check that the returned challenges match the expected ones.
 %
--spec getChallenge( wooper:state() ) ->
-						const_request_return( thumbprint_map() ).
-getChallenge( State ) ->
+-spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
+getChallenge( State, TargetPid ) ->
 
 	FSMPid = ?getAttr(leec_pid),
 
 	?debug_fmt( "Requested to return the current thumbprint challenges "
-				"from ~w.", [ FSMPid ] ),
+		"from LEEC FSM ~w, on behalf of (and to) ~w.", [ FSMPid, TargetPid ] ),
 
-	case letsencrypt:get_ongoing_challenges( FSMPid ) of
+	letsencrypt:send_ongoing_challenges( FSMPid, TargetPid ),
 
-		error ->
-			?error_fmt( "No thumbprint challenge could be obtained "
-						"from FSM ~w.", [ FSMPid ] ),
-			throw( { no_thumbprint_obtained_from, FSMPid } );
+	wooper:const_return().
 
-		Thumbprints ->
-			?debug_fmt( "Returning following thumbprints:~n  ~p",
-						[ Thumbprints ] ),
-			wooper:const_return_result( Thumbprints )
-
-	end.
 
 
 

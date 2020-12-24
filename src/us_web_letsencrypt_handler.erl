@@ -20,8 +20,8 @@
 % Creation date: Monday, August 3, 2020.
 
 
-% Let's Encrypt-compliant handler for US-Web, in order to answer ACME
-% challenges thanks to LEEC.
+% Let's Encrypt-compliant handler for US-Web, in order to answer ACME challenges
+% thanks to LEEC, in order to complete the verification procedure.
 %
 % See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave and
 % http://leec.esperide.org.
@@ -36,9 +36,11 @@
 -type handler_state() :: cert_manager_pid().
 
 
-% This handler initialisation tries to serve the relevant challenge tokens to
-% requesting ACME servers.
 
+% This handler initialisation tries to serve the relevant challenge tokens to
+% the requesting http client (supposed to be an ACME server currently trying to
+% read the thumbprints from the well-known ACME URL).
+%
 -spec init( cowboy_req:req(), handler_state() ) ->
 				us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
@@ -48,8 +50,16 @@ init( Req, _HandlerState=CertManagerPid ) ->
 		  _Name=text_utils:format( "LEEC handler corresponding to certificate "
 			  "manager ~w", [ CertManagerPid ] ), _Categ="LEEC handler" ) ),
 
-	% A bit of interleaving:
-	CertManagerPid ! { getChallenge, [], self() },
+	% We request the corresponding challenge to the associated (stable, fixed)
+	% certificate manager, which will send in turn a corresponding request to the
+	% (current, possibly respawning) LEEC FSM that will answer directly to this
+	% handler (rather than to the certification manager) to avoid useless
+	% message exchanges.
+	%
+	% A bit of interleaving (note that it is a oneway, not a request, as the
+	% answer will come directly from the corresponding LEEC FSM):
+	%
+	CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
 
 	trace_bridge:debug_fmt( "Request ~p to be handled for letsencrypt, while "
 		"handler state is the PID of the associated certificate manager: ~w.",
@@ -74,19 +84,22 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 	end,
 
+	Timeout = 30000,
+
 	% Returns 'error' if token+thumbprint are not available, or 'no_challenge'
 	% if being in 'idle' state:
 	%
 	Thumbprints = receive
 
-		{ wooper_result, FailedAtom } when is_atom( FailedAtom ) ->
-			trace_bridge:error_fmt( "No challenge obtained from certificate "
-				"manager: ~s.", [ FailedAtom ] ),
-			throw( { no_challenge_obtained, FailedAtom } );
-
-		{ wooper_result, Thmbprnts } ->
+		{ leec_result, Thmbprnts } ->
 			trace_bridge:debug_fmt( "Received thumbprints: ~p.", [ Thmbprnts ] ),
 			Thmbprnts
+
+	after Timeout ->
+		trace_bridge:error_fmt( "Time-out, no challenge received after ~B ms.",
+								[ Timeout ] ),
+
+		throw( challenge_timeout )
 
 	end,
 

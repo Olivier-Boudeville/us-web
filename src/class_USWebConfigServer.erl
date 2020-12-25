@@ -113,7 +113,7 @@
 -define( app_subdir, "us-web" ).
 
 
--define( default_log_base_dir, "/var/log" ).
+-define( default_log_base_dir, "/var/log/universal-server/us-web" ).
 
 
 % The subdirectory of the US-Web log directory storing all web logs (access and
@@ -434,7 +434,9 @@
 				 application_run_context() ) -> wooper:state().
 construct( State, SupervisorPid, AppRunContext ) ->
 
-	% Wanting a better control by resisting to exit messages being received:
+	% Wanting a better control by resisting to exit messages being received (see
+	% the onWOOPERExitReceived/3 callback):
+	%
 	erlang:process_flag( trap_exit, true ),
 
 	StartTimestamp = time_utils:get_timestamp(),
@@ -888,6 +890,29 @@ renewCertificate( State, DomainId, VHostId ) ->
 			   "domain '~s' requested.", [ VHostId, DomainId ] ),
 
 	?error( "Not implemented yet." ),
+
+	wooper:const_return().
+
+
+
+% Callback triggered, as we trap exits, whenever a linked process stops
+% (typically should a certificate manager, a web logger, the scheduler, the task
+% ring, etc. crash).
+%
+-spec onWOOPERExitReceived( wooper:state(), pid(),
+							basic_utils:exit_reason() ) -> const_oneway_return().
+onWOOPERExitReceived( State, StopPid, _ExitType=normal ) ->
+	?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+	wooper:const_return();
+
+onWOOPERExitReceived( State, CrashPid, ExitType ) ->
+
+	% Typically: "Received exit message '{{nocatch,
+	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
+	%							FunName,Arity,Args,AtomCause}}, [...]}"
+
+	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
+				[ ExitType, CrashPid ] ),
 
 	wooper:const_return().
 
@@ -2176,7 +2201,12 @@ manage_data_directory( ConfigTable, State ) ->
 							   wooper:state().
 manage_log_directory( ConfigTable, State ) ->
 
-	BaseDir = case table:lookup_entry( ?us_web_log_dir_key, ConfigTable ) of
+	% Longer paths if defined as relative, yet finally preferred as
+	% '/var/log/universal-server/us-web' (rather than
+	% '/var/log/universal-server') allows to separate US-Web from any other US-*
+	% services:
+	%
+	LogDir = case table:lookup_entry( ?us_web_log_dir_key, ConfigTable ) of
 
 		key_not_found ->
 			?default_log_base_dir;
@@ -2192,27 +2222,25 @@ manage_log_directory( ConfigTable, State ) ->
 
 	end,
 
-	case file_utils:is_existing_directory( BaseDir ) of
+	case file_utils:is_existing_directory( LogDir ) of
 
 		true ->
 			ok;
 
 		false ->
-			?error_fmt( "The base log directory '~s' does not exist.",
-						[ BaseDir ] ),
-			throw( { non_existing_base_log_directory, BaseDir } )
+
+			%throw( { non_existing_base_us_web_log_directory, LogDir } )
+
+			?warning_fmt( "The base US-Web log directory '~s' does not exist, "
+						  "creating it.", [ LogDir ] ),
+
+			% As for example the default path would require to create
+			% /var/log/universal-server/us-web:
+			%
+			file_utils:create_directory_if_not_existing( LogDir,
+														 create_parents )
 
 	end,
-
-	% Longer paths if defined as relative, yet finally preferred as
-	% '/var/log/universal-server/us-web' (rather than
-	% '/var/log/universal-server') allows to separate US-Web from any other US-*
-	% services:
-	%
-	LogDir = file_utils:join( BaseDir, ?app_subdir ),
-	%LogDir = BaseDir,
-
-	file_utils:create_directory_if_not_existing( LogDir ),
 
 	% In addition to this US-Web log directory, we create a subdirectory thereof
 	% to store all web logs (access and error logs ):

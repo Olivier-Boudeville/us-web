@@ -3,7 +3,8 @@
 # it is defined in us_web/conf/GNUmakefile-for-native-root.
 
 
-.PHONY: all pull build update rebuild clean
+.PHONY: all pull build update rebuild run-debug kill clean
+
 
 
 CEYLAN_REPOSITORIES := myriad leec wooper traces
@@ -13,6 +14,7 @@ OUR_REPOSITORIES := $(CEYLAN_REPOSITORIES) $(US_REPOSITORIES)
 
 # Preferred in-order:
 ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
+
 
 
 # Default (most useful):
@@ -54,6 +56,16 @@ update: pull build
 #  files that are up-to-date (which the sync targets try to do).
 #
 rebuild: clean build
+
+
+run-debug: build kill
+	@echo "   Running a debug US-Web instance with default settings"
+	@us_web/priv/bin/start-us-web-native-build.sh
+
+
+kill:
+	@echo "  Removing (for debug) any prior US-Web instance by killing EPMD and any Erlang VM"
+	@killall epmd beam.smp
 
 
 # We do not clean/build cowboy anymore as a version thereof is not supposed to

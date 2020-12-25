@@ -267,7 +267,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 	% First the direct mother classes, then this class-specific actions:
 	TraceState = class_USServer:construct( State,
-										   ?trace_categorize(ServerName) ),
+						   ?trace_categorize(ServerName), _TrapExits=true ),
 
 	{ BinAccessLogFilename, BinErrorLogFilename } =
 		get_log_paths( BinHostId, DomainId ),
@@ -656,6 +656,31 @@ generateReport( State ) ->
 
 	end.
 
+
+
+% Callback triggered whenever a linked process stops.
+-spec onWOOPERExitReceived( wooper:state(), pid(),
+							basic_utils:exit_reason() ) -> const_oneway_return().
+onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
+
+	% Not even a trace sent for that, as running a log report tool will trigger
+	% a normal exit for three ports (such as #Port<0.119>), probably one input,
+	% one normal output and one error output channel.
+	%
+	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+
+	wooper:const_return();
+
+onWOOPERExitReceived( State, CrashPid, ExitType ) ->
+
+	% Typically: "Received exit message '{{nocatch,
+	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
+	%							FunName,Arity,Args,AtomCause}}, [...]}"
+
+	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
+				[ ExitType, CrashPid ] ),
+
+	wooper:const_return().
 
 
 

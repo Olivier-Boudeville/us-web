@@ -340,7 +340,7 @@ read_us_web_config_file()
 
 	if [ -z "${us_web_log_dir}" ]; then
 
-		us_web_log_dir="/var/log"
+		us_web_log_dir="/var/log/universal-server/us-web"
 		echo "No base directory specified for web logs (no 'us_web_log_dir' entry in the US-Web configuration file '${us_web_config_file}'), trying default log directory '${us_web_log_dir}'."
 
 	else

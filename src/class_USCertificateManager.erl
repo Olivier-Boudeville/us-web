@@ -260,15 +260,16 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		   MaybeSchedulerPid, _IsSingleton=false ) ->
 
-	% To detect any crash of a LEEC FSM, calling then onWOOPERExitReceived/3:
-	erlang:process_flag( trap_exit, true ),
-
 	ServerName =
 		text_utils:format( "Certificate manager for ~s", [ BinFQDN ] ),
 
 	% First the direct mother classes, then this class-specific actions:
+	%
+	% (trapping EXITs, as wanting to detect any crash of a LEEC FSM, calling
+	% then onWOOPERExitReceived/3)
+	%
 	TraceState = class_USServer:construct( State,
-										   ?trace_categorize(ServerName) ),
+						?trace_categorize(ServerName), _TrapExits=true ),
 
 	% Ex: for any stateless helper:
 	class_TraceEmitter:register_bridge( TraceState ),

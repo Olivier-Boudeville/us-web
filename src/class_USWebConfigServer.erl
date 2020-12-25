@@ -434,17 +434,12 @@
 				 application_run_context() ) -> wooper:state().
 construct( State, SupervisorPid, AppRunContext ) ->
 
-	% Wanting a better control by resisting to exit messages being received (see
-	% the onWOOPERExitReceived/3 callback):
-	%
-	erlang:process_flag( trap_exit, true ),
-
 	StartTimestamp = time_utils:get_timestamp(),
 
 	TraceCateg = ?trace_categorize("Configuration Server"),
 
 	% First the direct mother classes, then this class-specific actions:
-	TraceState = class_USServer:construct( State, TraceCateg ),
+	TraceState = class_USServer:construct( State, TraceCateg, _TrapExits=true ),
 
 	% Allows functions provided by lower-level libraries (ex: LEEC) called
 	% directly from this instance process to plug to the same (trace aggregator)
@@ -890,29 +885,6 @@ renewCertificate( State, DomainId, VHostId ) ->
 			   "domain '~s' requested.", [ VHostId, DomainId ] ),
 
 	?error( "Not implemented yet." ),
-
-	wooper:const_return().
-
-
-
-% Callback triggered, as we trap exits, whenever a linked process stops
-% (typically should a certificate manager, a web logger, the scheduler, the task
-% ring, etc. crash).
-%
--spec onWOOPERExitReceived( wooper:state(), pid(),
-							basic_utils:exit_reason() ) -> const_oneway_return().
-onWOOPERExitReceived( State, StopPid, _ExitType=normal ) ->
-	?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
-	wooper:const_return();
-
-onWOOPERExitReceived( State, CrashPid, ExitType ) ->
-
-	% Typically: "Received exit message '{{nocatch,
-	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
-	%							FunName,Arity,Args,AtomCause}}, [...]}"
-
-	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
-				[ ExitType, CrashPid ] ),
 
 	wooper:const_return().
 

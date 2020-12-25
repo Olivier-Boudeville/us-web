@@ -96,9 +96,7 @@ init( _Args=[ AppRunContext ] ) ->
 							[ AppRunContext ] ),
 
 	% Watchdog check every 15 minutes:
-	%AggregatorPid ! { enableWatchdog, [ _PeriodInSec=15*60 ] },
-	AggregatorPid ! { enableWatchdog, [ _PeriodInSec=5 ] },
-
+	AggregatorPid ! { enableWatchdog, [ _PeriodInSec=15*60 ] },
 
 	% The logic below shall better be in a (single) supervised child, for a
 	% better logic separation.

@@ -82,7 +82,11 @@
 % certificate managers use non-blocking calls to obtain their certificate.
 
 
-% Not trapping exits, any crash is to propagate to the US-Web config server.
+% Initially a certificate manager was not trapping exits, so that any crash was
+% to propagate to the US-Web config server; now trapping them to detect for
+% example the crash of the associated LEEC FSM, and manage it (resisting and
+% relaunching it).
+
 
 -type manager_pid() :: class_UniversalServer:server_pid().
 
@@ -252,9 +256,12 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 								{ registration_scope, RegScope } ] );
 
 
-% No self-registering here:
+% Main constructor; no self-registering here:
 construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		   MaybeSchedulerPid, _IsSingleton=false ) ->
+
+	% To detect any crash of a LEEC FSM, calling then onWOOPERExitReceived/3:
+	erlang:process_flag( trap_exit, true ),
 
 	ServerName =
 		text_utils:format( "Certificate manager for ~s", [ BinFQDN ] ),
@@ -661,6 +668,10 @@ getChallenge( State, TargetPid ) ->
 %
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 							basic_utils:exit_reason() ) -> oneway_return().
+onWOOPERExitReceived( State, StopPid, _ExitType=normal ) ->
+	?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+	wooper:const_return();
+
 onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	% Typically: "Received exit message '{{nocatch,

@@ -95,6 +95,11 @@ init( _Args=[ AppRunContext ] ) ->
 	trace_bridge:debug_fmt( "Starting us_web supervisor (run context: ~s)...",
 							[ AppRunContext ] ),
 
+	% Watchdog check every 15 minutes:
+	%AggregatorPid ! { enableWatchdog, [ _PeriodInSec=15*60 ] },
+	AggregatorPid ! { enableWatchdog, [ _PeriodInSec=5 ] },
+
+
 	% The logic below shall better be in a (single) supervised child, for a
 	% better logic separation.
 

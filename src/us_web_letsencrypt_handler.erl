@@ -96,10 +96,10 @@ init( Req, _HandlerState=CertManagerPid ) ->
 			Thmbprnts
 
 	after Timeout ->
-		trace_bridge:error_fmt( "Time-out, no challenge received after ~B ms.",
-								[ Timeout ] ),
+		trace_bridge:error_fmt( "Time-out, no challenge received for host '~s' "
+								"after ~B ms.", [ BinHost, Timeout ] ),
 
-		throw( challenge_timeout )
+		throw( { challenge_timeout_for, BinHost, Timeout } )
 
 	end,
 

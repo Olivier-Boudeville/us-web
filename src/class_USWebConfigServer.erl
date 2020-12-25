@@ -488,8 +488,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	CfgState = load_and_apply_configuration( BinCfgDir, SupState ),
 
 
-	?send_info( CfgState, to_string( CfgState ) ),
-
+	?send_info( CfgState, "Constructed: " ++ to_string( CfgState ) ),
 
 	% Done rather late on purpose, so that the existence of that file can be
 	% seen as a sign that the initialisation went well (used by start-us-web.sh)
@@ -504,7 +503,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	?send_debug_fmt( CfgState, "Requesting the renaming of trace file to '~s'.",
 					 [ NewBinTraceFilePath ] ),
 
-	getAttribute( CfgState, trace_aggregator_pid) !
+	getAttribute( CfgState, trace_aggregator_pid ) !
 		{ renameTraceFile, NewBinTraceFilePath },
 
 	CfgState.

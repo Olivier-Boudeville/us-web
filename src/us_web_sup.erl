@@ -170,8 +170,8 @@ init( _Args=[ AppRunContext ] ) ->
 
 	% Now that an HTTP webserver is running (hopefully), we can trigger the
 	% generation of any needed X.509 certificates (as a webserver is needed to
-	% validate challenges sent by the ACME server); main objective is proper
-	% synchronisation:
+	% validate challenges sent by the ACME server); the main objective here is
+	% proper synchronisation:
 	%
 	case CertSupport of
 

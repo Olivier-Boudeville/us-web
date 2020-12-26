@@ -849,8 +849,8 @@ handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
 % Method section.
 
 
-% Triggers and waits for a certificate renewals from all known certificate
-% managers (may be done for example at server startup).
+% Triggers and waits for a parallel certificate renewal from all known
+% certificate managers (may be done for example at server startup).
 %
 -spec renewCertificates( wooper:state() ) ->
 					const_request_return( 'certificate_renewals_over' ).
@@ -858,16 +858,16 @@ renewCertificates( State ) ->
 
 	CertManagers = get_all_certificate_manager_pids( State ),
 
-	% Synchronously:
-	Req = { renewCertificateSync, [], self() },
+	Oneway = { renewCertificateSynchronisable, [ self() ] },
 
-	[ CMPid ! Req || CMPid <- CertManagers ],
+	[ CMPid ! Oneway || CMPid <- CertManagers ],
 
 	?info_fmt( "Renewing all certificates, through their ~B managers.",
 			   [ length( CertManagers ) ] ),
 
-	wooper:wait_for_request_answers( CertManagers,
-									 _AckAtom=certificate_renewal_over ),
+	basic_utils:wait_for_acks( CertManagers, _MaxDurationInSecs=5*60,
+		_AckAtom=certificate_renewal_over,
+		_ThrowAtom=no_certificate_renewal_confirmation_from ),
 
 	% Note the plural in atom:
 	wooper:const_return_result( certificate_renewals_over ).
@@ -2214,7 +2214,7 @@ manage_log_directory( ConfigTable, State ) ->
 	end,
 
 	% In addition to this US-Web log directory, we create a subdirectory thereof
-	% to store all web logs (access and error logs ):
+	% to store all web logs (access and error logs):
 	%
 	BinWebLogDir = get_web_log_dir( LogDir ),
 	file_utils:create_directory_if_not_existing( BinWebLogDir ),

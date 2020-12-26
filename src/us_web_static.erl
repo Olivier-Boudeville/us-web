@@ -127,7 +127,7 @@ init( Req, HState ) ->
 init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
 	%trace_utils:debug_fmt( "init_info for file '~s' (opts: ~p)",
-	%                     [ BinFullFilePath, CowboyOpts ] ),
+	%                       [ BinFullFilePath, CowboyOpts ] ),
 
 	case file:read_file_info( BinFullFilePath, [ { time, universal } ] ) of
 
@@ -168,7 +168,7 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
 
 	%trace_utils:debug_fmt( "init_dir for directory '~s'.",
-	%                      [ BinContentRoot ] ),
+	%                       [ BinContentRoot ] ),
 
 	case cowboy_req:path_info( Req ) of
 

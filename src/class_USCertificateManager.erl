@@ -151,6 +151,10 @@
 	{ cert_renewal_period, maybe( seconds() ),
 	  "the base delay between two successful certificate renewals" },
 
+	{ renew_listener, maybe( pid() ),
+	  "the PID of the process (if any) to notify once the next certificate is "
+	  "obtained" },
+
 	{ webroot_dir, bin_directory_path(),
 	  "the base directory served by the webserver" },
 
@@ -252,6 +256,7 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 
 	naming_utils:register_as( RegName, RegScope ),
 
+	% Inherited attributes:
 	setAttributes( InitState, [ { registration_name, RegName },
 								{ registration_scope, RegScope } ] );
 
@@ -291,12 +296,13 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		{ cert_path, undefined },
 		{ private_key_path, BinKeyPath },
 		{ cert_renewal_period, RenewPeriodSecs },
+		{ renew_listener, undefined },
 		{ webroot_dir, BinWebrootDir },
 		{ leec_pid, LEECFsmPid },
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
-	?send_info( ReadyState, "Just created: " ++ to_string( ReadyState ) ),
+	?send_info_fmt( ReadyState, "Just created: ~s.", [ to_string( ReadyState ) ] ),
 
 	% Would be too early, as the HTTP webserver needed to validate the ACME
 	% challenges is not launched yet:
@@ -475,6 +481,8 @@ destruct( State ) ->
 -spec renewCertificate( wooper:state() ) -> const_oneway_return().
 renewCertificate( State ) ->
 
+	?debug( "Requested to renew certificate asynchronously." ),
+
 	request_certificate( State ),
 
 	% onCertificateRequestOutcome/2 callback to be triggered soon.
@@ -483,29 +491,32 @@ renewCertificate( State ) ->
 
 
 
-% Renews synchronously a certificate for the managed hostname.
--spec renewCertificateSync( wooper:state() ) ->
-			request_return( { 'certificate_renewal_over', manager_pid() } ).
-renewCertificateSync( State ) ->
+% Renews a certificate for the managed hostname on a synchronisable manner.
+%
+% The specified listener is typically the US-Web configuration server, so that
+% HTTPS support can be triggered only when certificates are ready.
+%
+-spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
+			const_oneway_return().
+renewCertificateSynchronisable( State, ListenerPid ) ->
 
-	request_certificate( State ),
+	% Note that these managers must not be frozen here in the waiting of a
+	% onCertificateRequestOutcome message, as they have to remain responsive to
+	% branch the US-Web Letsencrypt handler to the corresponding LEEC FSM, so
+	% that the challenges can be returned to the ACME server for this procedure
+	% to complete.
 
-	% Waits directly for the callback to be triggered:
-	{ CertState, MaybeBinCertPath } = receive
+	?debug( "Requested to renew certificate in a synchronisable manner." ),
 
-		{ onCertificateRequestOutcome, [ CertCreationOutcome ] } ->
-			onCertificateRequestOutcome( State, CertCreationOutcome )
+	% Also a check:
+	{ ListenState, undefined } = swapInAttribute( State, renew_listener,
+												  ListenerPid ),
 
-	end,
+	request_certificate( ListenState ),
 
-	?debug_fmt( "Renew certificate (sync): obtained '~s'.",
-				[ MaybeBinCertPath ] ),
+	% onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	% Returns now an ack atom to take advantage of WOOPER multi-request
-	% primitives. This return does not imply the renewal succeeded:
-	%
-	wooper:return_state_result( CertState,
-		{ _AckAtom=certificate_renewal_over, self() } ).
+	wooper:const_return().
 
 
 
@@ -532,14 +543,15 @@ request_certificate( State ) ->
 
 	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
 							_OptionMap=#{ async => true,
-										  callback => Callback } ).
+										  callback => Callback } ),
+
+	?debug( "Certificate creation request initiated." ).
 
 
 
 % Method to be called back whenever a certificate was requested.
 -spec onCertificateRequestOutcome( wooper:state(),
-								   letsencrypt:cert_creation_outcome() ) ->
-		request_return( maybe( bin_file_path() ) ).
+			letsencrypt:cert_creation_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
 			 _CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
 
@@ -548,10 +560,22 @@ onCertificateRequestOutcome( State,
 	?info_fmt( "Certificate generation success for '~s', "
 			   "certificate stored in '~s'.", [ FQDN, BinCertFilePath ] ),
 
-	NewState = manage_renewal( _RenewDelay=?getAttr(cert_renewal_period),
-							   BinCertFilePath, State ),
+	SetState = case ?getAttr(renew_listener) of
 
-	wooper:return_state_result( NewState, BinCertFilePath );
+		undefined ->
+			State;
+
+		ListenerPid ->
+			% Most probably the US-Web server waiting in renewCertificates/1:
+			ListenerPid ! { _AckAtom=certificate_renewal_over, self() },
+			setAttribute( State, renew_listener, undefined )
+
+	end,
+
+	NewState = manage_renewal( _RenewDelay=?getAttr(cert_renewal_period),
+							   BinCertFilePath, SetState ),
+
+	wooper:return_state( NewState );
 
 
 onCertificateRequestOutcome( State,
@@ -567,7 +591,7 @@ onCertificateRequestOutcome( State,
 
 		development ->
 			time_utils:dhms_to_seconds(
-			  ?dhms_cert_renewal_delay_after_failure_development );
+				?dhms_cert_renewal_delay_after_failure_development );
 
 		production ->
 			time_utils:dhms_to_seconds(
@@ -579,10 +603,14 @@ onCertificateRequestOutcome( State,
 
 	NewState = manage_renewal( RenewDelay, MaybeBinCertFilePath, State ),
 
-	wooper:return_state_result( NewState, MaybeBinCertFilePath );
+	wooper:return_state( NewState );
 
 
-onCertificateRequestOutcome( _State, _CertCreationOutcome=UnexpectedError ) ->
+onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
+
+	?error_fmt( "Unexpected certificate creation error: ~p.",
+				[ UnexpectedError ] ),
+
 	throw( { unexpected_cert_creation_error, UnexpectedError } ).
 
 
@@ -669,8 +697,11 @@ getChallenge( State, TargetPid ) ->
 %
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 							basic_utils:exit_reason() ) -> oneway_return().
-onWOOPERExitReceived( State, StopPid, _ExitType=normal ) ->
-	?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
+
+	% Executables triggering useless messages:
+	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+
 	wooper:const_return();
 
 onWOOPERExitReceived( State, CrashPid, ExitType ) ->

@@ -51,9 +51,9 @@ init( Req, _HandlerState=CertManagerPid ) ->
 			  "manager ~w", [ CertManagerPid ] ), _Categ="LEEC handler" ) ),
 
 	% We request the corresponding challenge to the associated (stable, fixed)
-	% certificate manager, which will send in turn a corresponding request to the
-	% (current, possibly respawning) LEEC FSM that will answer directly to this
-	% handler (rather than to the certification manager) to avoid useless
+	% certificate manager, which will send in turn a corresponding request to
+	% the (current, possibly respawning) LEEC FSM that will answer directly to
+	% this handler (rather than to the certification manager) to avoid useless
 	% message exchanges.
 	%
 	% A bit of interleaving (note that it is a oneway, not a request, as the
@@ -61,9 +61,10 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	%
 	CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
 
-	trace_bridge:debug_fmt( "Request ~p to be handled for letsencrypt, while "
+	cond_utils:if_defined( us_web_debug_handlers, trace_bridge:debug_fmt(
+		"Request ~p to be handled for letsencrypt, while "
 		"handler state is the PID of the associated certificate manager: ~w.",
-		[ Req, CertManagerPid ] ),
+		[ Req, CertManagerPid ] ) ),
 
 	BinHost = cowboy_req:host( Req ),
 
@@ -84,7 +85,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 	end,
 
-	Timeout = 30000,
+	ChallengeTimeout = 30000,
 
 	% Returns 'error' if token+thumbprint are not available, or 'no_challenge'
 	% if being in 'idle' state:
@@ -92,14 +93,23 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	Thumbprints = receive
 
 		{ leec_result, Thmbprnts } ->
-			trace_bridge:debug_fmt( "Received thumbprints: ~p.", [ Thmbprnts ] ),
+			cond_utils:if_defined( us_web_debug_handlers,
+				trace_bridge:debug_fmt( "Received thumbprints: ~p.",
+										[ Thmbprnts ] ) ),
 			Thmbprnts
 
-	after Timeout ->
-		trace_bridge:error_fmt( "Time-out, no challenge received for host '~s' "
-								"after ~B ms.", [ BinHost, Timeout ] ),
+		% Just for debugging:
+		%Other ->
+		%	trace_bridge:error_fmt( "Unexpected answer while waiting for "
+		%		"thumbprints: ~p.", [ Other ] ),
+		%	throw( { unexpected_thumbprint_answer, Other } )
 
-		throw( { challenge_timeout_for, BinHost, Timeout } )
+	after ChallengeTimeout ->
+		trace_bridge:error_fmt( "Time-out, no challenge received for host '~s' "
+			"after ~s.",
+			[ BinHost, time_utils:duration_to_string( ChallengeTimeout ) ] ),
+
+		throw( { challenge_timeout_for, BinHost, ChallengeTimeout } )
 
 	end,
 
@@ -111,9 +121,11 @@ init( Req, _HandlerState=CertManagerPid ) ->
 			cowboy_req:reply( 404, Req );
 
 		TokenThumbprint ->
-			trace_bridge:debug_fmt( "For host '~s', token '~p' found "
-				"associated to '~p', among thumbprints '~p'.",
-				[ BinHost, Token, TokenThumbprint, Thumbprints ] ),
+
+			cond_utils:if_defined( us_web_debug_handlers,
+			  trace_bridge:debug_fmt( "For host '~s', token '~p' found "
+					"associated to '~p', among thumbprints '~p'.",
+					[ BinHost, Token, TokenThumbprint, Thumbprints ] ) ),
 
 			cowboy_req:reply( 200,
 				#{ <<"content-type">> => <<"text/plain">> },

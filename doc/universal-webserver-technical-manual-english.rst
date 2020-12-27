@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2020 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, November 15, 2020
+:Lastly updated: Saturday, December 26, 2020
 :Status: Work in progress
-:Version: 0.0.11
+:Version: 0.0.12
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -113,7 +113,25 @@ The shorthand for the ``Universal Webserver`` (a.k.a. ``US-Web``) is ``uw``.
 Server Deployment
 -----------------
 
-For that, the ``prod`` profile defined in the context of ``rebar3`` shall be used.
+
+Native Deployment
+=================
+
+This procedure relies on our native build/run system, which is the only one that is supported in the context of US-Web.
+
+It mostly boils down to running our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script and creating a ``/etc/xdg/universal-server`` directory, in which an overall US configuration file (``us.config``) will have to be set, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) in the same directory.
+
+The installation itself will be located by default in ``/opt/universal-server/us_web-native``.
+
+
+
+
+Deployment based on rebar3
+==========================
+
+Note that we currently do not recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.
+
+If wanting nevertheless to rely on rebar3, the ``prod`` profile defined in the context of ``rebar3`` shall be used.
 
 Currently we prefer re-using the (supposedly already installed) local Erlang environment on the server (to be shared across multiple services), so by default ERTS is *not* included in a US-Web release.
 
@@ -276,6 +294,27 @@ As the US-related configuration files are heavily commented, proceeding based on
 Refer for that at this (US) `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and at this `US-Web counterpart example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
 
 
+
+Operating System Settings
+=========================
+
+.. _`authbind`:
+
+Regarding ``authbind``
+----------------------
+
+
+Many distributions will parameter ``authbind`` so that only the TCP port 80 will be available to "authbound" programs.
+
+If wanting to run an HTTPS server, the TCP port 443 will be most probably needed and thus must be specifically enabled.
+
+For that, relying on the same user/group conventions as before, one may enter, as root::
+
+ $ cd /etc/authbind/byport
+ $ cp 80 443
+ $ chown us-web-user:us-group 443
+
+Otherwise an exception will be raised (about ``eperm`` / ``not owner``) when US-Web will try to create its HTTPS listening socket.
 
 
 -------------------------------
@@ -576,6 +615,7 @@ Based on that, devising one's version of them should allow to have one's US-Web 
 
 .. _`otp-build`:
 
+
 OTP Considerations
 ==================
 
@@ -603,9 +643,11 @@ It should return some appropriate information.
 
 Most common sources of failures are:
 
-- there is **already a program listening at the target TCP port** (typically port 80) designated for US-Web; one may check for example with ``lsof -i:80``, otherwise with ``netstat --tcp --all --program | grep ':80'``
-- there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf |grep us_web``
+- there is **already a program listening at the target TCP port** (typically port 80) designated for US-Web; one may check for example with ``lsof -i:80``, otherwise with ``netstat -ltpn | grep ':80'``; of course use the same for TCP port ``443`` if having enable ``https`` on its standard port
+- check that no firewall is in the way (ex: thanks to ``iptables -nL | gr ':80'``)
+- there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf | grep us_web``
 - the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd``
+- check your ``authbind`` local configuration (refer to `this section <#authbind>`_)
 
 If the problem remains, time to perform some investigation, refer to the `Local Monitoring`_ section.
 

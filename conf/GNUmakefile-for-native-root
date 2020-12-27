@@ -3,7 +3,7 @@
 # it is defined in us_web/conf/GNUmakefile-for-native-root.
 
 
-.PHONY: all pull build update rebuild run-debug kill clean
+.PHONY: all pull build build-cowboy update rebuild run-debug kill clean
 
 
 
@@ -32,9 +32,15 @@ pull:
 # (unset is for Cowboy, if even included, as it is potentially troubled by an
 # unrelated define)
 #
-build:
+build: build-cowboy
 	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
 	@for r in $(OUR_REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
+
+
+build-cowboy
+	@echo "  Building cowboy"
+	@cd cowboy && rebar3 compile
+
 
 
 # Lightweight rebuild (no prior cleaning)
@@ -65,7 +71,7 @@ run-debug: build kill
 
 kill:
 	@echo "  Removing (for debug) any prior US-Web instance by killing EPMD and any Erlang VM"
-	@killall epmd beam.smp
+	@killall epmd beam.smp 2>/dev/null || true
 
 
 # We do not clean/build cowboy anymore as a version thereof is not supposed to

@@ -86,7 +86,7 @@ init( _Args=[ AppRunContext ] ) ->
 	BinTraceCategory = <<"US.US-Web.Supervision">>,
 
 	AggregatorPid = class_TraceAggregator:get_aggregator(
-					  _LaunchAggregator=false ),
+						_LaunchAggregator=false ),
 
 	BridgeSpec = { BinTraceEmitterName, BinTraceCategory, AggregatorPid },
 
@@ -111,7 +111,7 @@ init( _Args=[ AppRunContext ] ) ->
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
 
 	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort, CertSupport,
-	  MaybeSNIHostsInfo } = receive
+	  MaybeHttpsTranspOpts, MaybeBinDHKeyPath, MaybeBinCaKeyPath } = receive
 
 		{ wooper_result, GenWebSettings } ->
 				trace_bridge:debug_fmt( "Received general web settings:~n  ~p",
@@ -127,7 +127,8 @@ init( _Args=[ AppRunContext ] ) ->
 
 	trace_bridge:debug( "Starting Cowboy webserver..." ),
 
-	ProtoOpts = #{ env => #{ dispatch => DispatchRules } },
+	ProtoOpts = #{ max_keepalive => 1024,
+				   env => #{ dispatch => DispatchRules } },
 
 	HttpProtoOpts = ProtoOpts,
 
@@ -157,9 +158,11 @@ init( _Args=[ AppRunContext ] ) ->
 				{ error, HttpError } ->
 
 					trace_bridge:error_fmt( "Unable to start a cowboy HTTP "
-						"listener at TCP port #~B, error being: ~p.~n"
-						"(protocol options were ~p).",
-						[ HttpTCPPort, HttpError, ProtoOpts ] ),
+						"listener at TCP port #~B, error being: ~p.~n~n"
+						"Transport options were:~n  ~p.~n~n"
+						"Protocol options were: ~n  ~p.~n",
+						[ HttpTCPPort, HttpError, HttpTransportOpts,
+						  HttpProtoOpts ] ),
 
 					throw( { webserver_launch_failed, http_scheme,
 							 HttpTCPPort, HttpError } )
@@ -208,25 +211,68 @@ init( _Args=[ AppRunContext ] ) ->
 			trace_bridge:debug_fmt( "Listening for the HTTPS scheme "
 									"at port #~B.", [ HttpsTCPPort ] ),
 
-			{ PEMCertFilePath, SNIVhInfos } = MaybeSNIHostsInfo,
-
-			% Refer to https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/:
-			% (currently we do not include {key, CertKeyPath} entries short of
-			% knowing the interest of it)
+			% Transport options for the main, default host (ex: "foobar.org"),
+			% containing notably the path to its PEM certificate and to its
+			% private key, and related SNI information.
 			%
-			HttpsTransportOpts = [
+			% Useful if the hostname is not received in the SSL handshake,
+			% e.g. if the browser does not support SNI.
+			%
+			% Refer to https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/.
+			%
+			{ MainTranspOpts, SNIVhInfos } = case MaybeHttpsTranspOpts of
 
+				undefined ->
+					throw( no_main_https_transport_options );
+
+				MTOpts ->
+					MTOpts
+
+			end,
+
+			Ciphers = class_USCertificateManager:get_recommended_ciphers(),
+
+			% Inspired from
+			% http://ezgr.net/increasing-security-erlang-ssl-cowboy/:
+			%
+			GenericHttpsOpts = [
 				{ port, HttpsTCPPort },
-
-				% Path to the PEM certificate corresponding to the default host
-				% (ex: "foobar.org"), if the hostname is not received in the SSL
-				% handshake, e.g. if the browser does not support SNI:
-				% (ex: "foobar.org.crt")
-				%
-				{ certfile, PEMCertFilePath },
+				{ versions, [ 'tlsv1.2', 'tlsv1.1', 'tlsv1' ] },
 
 				% Server Name Indication (virtual) hosts:
-				{ sni_hosts, SNIVhInfos } ],
+				{ sni_hosts, SNIVhInfos },
+
+				{ ciphers, Ciphers },
+				{ secure_renegotiate, true },
+				{ reuse_sessions, true },
+				{ honor_cipher_order, true },
+				{ max_connections, infinity } ],
+
+			BaseHttpsOpts = case MaybeBinDHKeyPath of
+
+				undefined ->
+					GenericHttpsOpts;
+
+				BinDHKeyFilePath ->
+					[ { dhfile,
+						text_utils:binary_to_string( BinDHKeyFilePath ) }
+					  | GenericHttpsOpts ]
+
+			end,
+
+			WithCaHttpsOpts = case MaybeBinCaKeyPath of
+
+				undefined ->
+					BaseHttpsOpts;
+
+				BinCaKeyPath ->
+					[ { cacertfile,
+						text_utils:binary_to_string( BinCaKeyPath ) }
+					  | BaseHttpsOpts ]
+
+			end,
+
+			HttpsTransportOpts = MainTranspOpts ++ WithCaHttpsOpts,
 
 			trace_bridge:debug_fmt( "The https transport options are:~n ~p~n"
 				"~nThe protocol options are:~n  ~p",

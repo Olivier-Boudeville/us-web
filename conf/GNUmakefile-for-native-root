@@ -37,7 +37,7 @@ build: build-cowboy
 	@for r in $(OUR_REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
 
 
-build-cowboy
+build-cowboy:
 	@echo "  Building cowboy"
 	@cd cowboy && rebar3 compile
 

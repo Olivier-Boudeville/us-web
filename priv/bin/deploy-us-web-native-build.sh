@@ -215,7 +215,8 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A specific branch might be selected:
-	target_branch="certificate-support"
+	#target_branch="certificate-support"
+	target_branch="master"
 	cd us_web && ${git} checkout ${target_branch} 1>/dev/null && cd ..
 	if [ ! $? -eq 0 ]; then
 

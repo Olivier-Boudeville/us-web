@@ -29,12 +29,9 @@ pull:
 	@for r in $(ALL_REPOSITORIES); do ( echo " - pulling $$r" ; cd $$r && git fetch && git reset --hard HEAD && git merge '@{u}' ) || exit 5 ; done
 
 
-# (unset is for Cowboy, if even included, as it is potentially troubled by an
-# unrelated define)
-#
-build: build-cowboy
+build:
 	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
-	@for r in $(OUR_REPOSITORIES); do ( unset SP ; echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
+	@for r in $(OUR_REPOSITORIES); do ( echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
 
 
 build-cowboy:
@@ -61,7 +58,7 @@ update: pull build
 # As a consequence, prefer rebuilding to building, or ensure to rsync'ed BEAM
 #  files that are up-to-date (which the sync targets try to do).
 #
-rebuild: clean build
+rebuild: clean build build-cowboy
 
 
 run-debug: build kill
@@ -82,4 +79,4 @@ kill:
 #
 clean:
 	@echo "  Cleaning all our (Ceylan and US) repositories involved"
-	@for r in $(OUR_REPOSITORIES) $(); do ( unset SP ; echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done
+	@for r in $(OUR_REPOSITORIES); do ( echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done

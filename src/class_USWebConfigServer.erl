@@ -805,19 +805,19 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% Creates, if relevant (nothing done for catch-alls) a certificate manager for
-% the specified virtual host.
+% Creates a certificate manager for the specified virtual host (ex:
+% baz.foobar.org) or for the main host itself (ex: foobar.org), which must have
+% a dedicated certificate as well.
 %
 -spec handle_certificate_manager_for( vhost_id(), domain_id(), cert_support(),
 		cert_mode(), bin_directory_path(), maybe( bin_file_path() ),
 		bin_directory_path(), scheduler_pid() ) -> maybe( cert_manager_pid() ).
-% Nothing done for catch-alls:
-handle_certificate_manager_for( VHostId, DomainId,
-		_CertSupport=renew_certificates, CertMode, BinCertDir, MaybeBinKeyPath,
-		BinWebrootDir, SchedulerPid )
-  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
+handle_certificate_manager_for( _VHostId=default_vhost_catch_all,
+		DomainId, _CertSupport=renew_certificates, CertMode, BinCertDir,
+		MaybeBinKeyPath, BinWebrootDir, SchedulerPid )
+	  when is_binary( DomainId ) -> % To exclude default_domain_catch_all
 
-	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
+	BinFQDN = DomainId,
 
 	BinKeyPath = case MaybeBinKeyPath of
 
@@ -838,11 +838,32 @@ handle_certificate_manager_for( VHostId, DomainId,
 	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
 		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
 
+
+handle_certificate_manager_for( VHostId, DomainId,
+		_CertSupport=renew_certificates, CertMode, BinCertDir, MaybeBinKeyPath,
+		BinWebrootDir, SchedulerPid )
+  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
+
+	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
+
+	BinKeyPath = case MaybeBinKeyPath of
+
+		undefined ->
+			throw( no_leec_agents_key_file );
+
+		KP ->
+			KP
+
+	end,
+
+	% See comment above:
+	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
+		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
+
 handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
 		_CertMode, _BinCertDir, _MaybeBinKeyPath, _BinWebrootDir,
 		_SchedulerPid ) ->
 	undefined.
-
 
 
 
@@ -868,6 +889,8 @@ renewCertificates( State ) ->
 	basic_utils:wait_for_acks( CertManagers, _MaxDurationInSecs=5*60,
 		_AckAtom=certificate_renewal_over,
 		_ThrowAtom=no_certificate_renewal_confirmation_from ),
+
+	?debug( "All certificates ready." ),
 
 	% Note the plural in atom:
 	wooper:const_return_result( certificate_renewals_over ).
@@ -924,7 +947,7 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 %
 -spec prepare_web_analysis( maybe( log_analysis_settings() ), list(),
 							maybe( bin_directory_path() ), wooper:state() ) ->
-								  maybe( web_analysis_info() ).
+								maybe( web_analysis_info() ).
 prepare_web_analysis( _MaybeLogAnalysisSettings=undefined, _UserRoutes,
 					  _MaybeBinDefaultWebRoot, _State ) ->
 	undefined;

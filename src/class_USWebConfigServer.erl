@@ -215,7 +215,7 @@
 % General web settings, typically useful for the us_web supervisor:
 -type general_web_settings() :: { dispatch_rules(), maybe( tcp_port() ),
 		maybe( tcp_port() ), cert_support(), maybe( sni_info() ),
-		maybe( bin_file_path() ) }.
+		maybe( bin_file_path() ), maybe( bin_file_path() ) }.
 
 
 % Notably for us_web_meta:

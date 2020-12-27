@@ -96,7 +96,7 @@ init( _Args=[ AppRunContext ] ) ->
 							[ AppRunContext ] ),
 
 	% Watchdog check every 15 minutes:
-	AggregatorPid ! { enableWatchdog, [ _PeriodInSec=15*60 ] },
+	AggregatorPid ! { enableWatchdog, [ _PeriodInSecs=15*60 ] },
 
 	% The logic below shall better be in a (single) supervised child, for a
 	% better logic separation.
@@ -220,16 +220,17 @@ init( _Args=[ AppRunContext ] ) ->
 
 				% Path to the PEM certificate corresponding to the default host
 				% (ex: "foobar.org"), if the hostname is not received in the SSL
-				% handshake, e.g. if the browser does not support SNI: (ex:
-				% "foobar.org.crt")
+				% handshake, e.g. if the browser does not support SNI:
+				% (ex: "foobar.org.crt")
 				%
 				{ certfile, PEMCertFilePath },
 
 				% Server Name Indication (virtual) hosts:
 				{ sni_hosts, SNIVhInfos } ],
 
-			trace_bridge:debug_fmt( "https transport options: ~p~n"
-				"protocol options: ~p", [ HttpsTransportOpts, ProtoOpts ] ),
+			trace_bridge:debug_fmt( "The https transport options are:~n ~p~n"
+				"~nThe protocol options are:~n  ~p",
+				[ HttpsTransportOpts, ProtoOpts ] ),
 
 			case cowboy:start_tls( us_web_https_listener, HttpsTransportOpts,
 								   ProtoOpts ) of
@@ -238,11 +239,10 @@ init( _Args=[ AppRunContext ] ) ->
 					ok;
 
 				{ error, HttpsError } ->
-
 					trace_bridge:error_fmt( "Unable to start a cowboy HTTPS"
-						"listener at TCP port #~B, error being: ~p.~n"
-						"(transport options were ~p, while protocol "
-						"options were ~p).",
+						"listener at TCP port #~B, error being:~n  ~p~n~n"
+						"Transport options were:~n  ~p~n"
+						"Protocol options were:~n  ~p.",
 						[ HttpsTCPPort, HttpsError, HttpsTransportOpts,
 						  ProtoOpts ] ),
 

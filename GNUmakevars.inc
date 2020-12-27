@@ -52,7 +52,7 @@ endif
 ifeq ($(ENABLE_DEBUG),true)
 	# Could imply leec_debug_sni:
 	US_WEB_DEBUG_FLAGS += -Dus_web_debug_sni
-	US_WEB_DEBUG_FLAGS += -Dus_web_debug_handlers
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_handlers
 
 endif
 

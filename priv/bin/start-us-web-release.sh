@@ -96,12 +96,11 @@ else
 	cookie_env=""
 fi
 
-# Previously the '--deep' authbind option was used, yet apparently the default
-# '--depth 1' is sufficient:
+# Previously the '--deep' authbind option was used; apparently the minimal depth is 6:
 
-#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 1 ${us_web_exec} daemon
+#echo /bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 ${us_web_exec} daemon
 
-/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 1 ${us_web_exec} daemon
+/bin/sudo -u ${us_web_username} US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 ${us_web_exec} daemon
 
 res=$?
 

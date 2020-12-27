@@ -91,20 +91,24 @@
 -type manager_pid() :: class_UniversalServer:server_pid().
 
 
-% Per-virtual-host SNI (SSL-related) option:
--type sni_option() :: ssl:server_option() | ssl:common_option().
+% Per-virtual-host SNI (SSL-related) option (ranch_ssl:opts()):
+-type ssl_option() :: ssl:server_option() | ssl:common_option().
 
 % Virtual-host pair storing SNI-related certificate information:
--type sni_host_info() :: { net_utils:string_host_name(), [ sni_option() ] }.
+-type sni_host_info() :: { net_utils:string_host_name(), [ ssl_option() ] }.
 
 
-% Information regarding Server Name Indication: certificate path for the default
-% hostname, and per-virtual host information.
+% Information regarding Server Name Indication: transport information for the
+% main, default hostname, and per-virtual host information.
 %
--type sni_info() :: { BinCertDefaultHostname :: bin_file_path(),
-					  [ sni_host_info() ] }.
+-type sni_info() :: { [ ssl_option() ], [ sni_host_info() ] }.
 
--export_type([ manager_pid/0, sni_option/0, sni_host_info/0, sni_info/0 ]).
+
+% Identifier of a cipher (ex: 'AES128-SHA').
+-type cipher_name() :: atom().
+
+-export_type([ manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
+			   cipher_name/0 ]).
 
 
 
@@ -212,6 +216,10 @@
 
 % Public (PEM) certificate extension (could have been ".pem"):
 -define( cert_extension, ".crt" ).
+
+% Private key extension:
+-define( priv_key_extension, ".key" ).
+
 
 
 % Allows to define WOOPER base variables and methods for that class:
@@ -722,7 +730,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~s'), "
 		"starting a new LEEC instance after a delay of ~s.",
 		[ ExitType, CrashPid, FQDN,
-		  text_utils:duration_to_string( WaitDurationMs ) ] ),
+		  time_utils:duration_to_string( WaitDurationMs ) ] ),
 
 	timer:sleep( WaitDurationMs ),
 
@@ -746,8 +754,9 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 
 % Returns SNI information suitable for https-enabled virtual hosts, i.e. the
-% path to the PEM certificate for the main, default host (ex: foobar.org),
-% together with SNI (Server Name Indication, see
+% transport options for the main host - i.e. the path to the PEM certificate for
+% the main, default host (ex: foobar.org) and to its private key), together with
+% SNI (Server Name Indication, see
 % https://erlang.org/doc/man/ssl.html#type-sni_hosts) host information for the
 % other (virtual) hosts (ex: baz.foobar.org, aa.buz.net), etc.
 %
@@ -769,26 +778,52 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 	% routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
 	% not something.foobar.org); a plain string is required, apparently.
 	%
-	DefaultCertFilename = FirstHostname ++ ?cert_extension,
-
-	DefaultHostnameCertPath =
-		file_utils:join( BinCertDir, DefaultCertFilename ),
+	MainTranspOpts = class_USCertificateManager:get_transport_opts_for(
+						FirstHostname, BinCertDir ),
 
 	% Options to apply for the host that matches what the client requested with
 	% Server Name Indication:
 	%
 	SNIHostInfos = list_utils:flatten_once(
-				  [ get_virtual_host_sni_infos( H, VH, BinCertDir )
-					|| { H, VH } <- UserRoutes ] ),
+					[ get_virtual_host_sni_infos( H, VH, BinCertDir )
+						|| { H, VH } <- UserRoutes ] ),
 
 	% Redundant:
 	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
-	%	"SNI information: certificate path for the default "
-	%	"hostname is '~s', virtual host options are:~n~p",
-	%	[ DefaultHostnameCertPath, SNIHostInfos ] ) ),
+	%	"SNI information: transport options for the default "
+	%	"hostname are: ~p.~nVirtual host options are:~n~p",
+	%	[ MainTranspOpts, SNIHostInfos ] ) ),
 
-	wooper:return_static( { DefaultHostnameCertPath, SNIHostInfos } ).
+	wooper:return_static( { MainTranspOpts, SNIHostInfos } ).
 
+
+
+% Returns an (ordered) list of the recommended ciphers for a webserver.
+%
+% An important security setting is to force the cipher to be set based on the
+% server-specified order instead of the client-specified oner, hence enforcing
+% the (usually more properly configured) security ordering of the server
+% administrator.
+%
+-spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
+get_recommended_ciphers() ->
+	wooper:return_static( [ "ECDHE-ECDSA-AES256-GCM-SHA384",
+	  "ECDHE-RSA-AES256-GCM-SHA384",
+	  "ECDHE-ECDSA-AES256-SHA384", "ECDHE-RSA-AES256-SHA384",
+	  "ECDHE-ECDSA-DES-CBC3-SHA", "ECDH-ECDSA-AES256-GCM-SHA384",
+	  "ECDH-RSA-AES256-GCM-SHA384", "ECDH-ECDSA-AES256-SHA384",
+	  "ECDH-RSA-AES256-SHA384", "DHE-DSS-AES256-GCM-SHA384",
+	  "DHE-DSS-AES256-SHA256", "AES256-GCM-SHA384", "AES256-SHA256",
+	  "ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256",
+	  "ECDHE-ECDSA-AES128-SHA256", "ECDHE-RSA-AES128-SHA256",
+	  "ECDH-ECDSA-AES128-GCM-SHA256", "ECDH-RSA-AES128-GCM-SHA256",
+	  "ECDH-ECDSA-AES128-SHA256", "ECDH-RSA-AES128-SHA256",
+	  "DHE-DSS-AES128-GCM-SHA256", "DHE-DSS-AES128-SHA256",
+	  "AES128-GCM-SHA256", "AES128-SHA256", "ECDHE-ECDSA-AES256-SHA",
+	  "ECDHE-RSA-AES256-SHA", "DHE-DSS-AES256-SHA", "ECDH-ECDSA-AES256-SHA",
+	  "ECDH-RSA-AES256-SHA", "AES256-SHA", "ECDHE-ECDSA-AES128-SHA",
+	  "ECDHE-RSA-AES128-SHA", "DHE-DSS-AES128-SHA", "ECDH-ECDSA-AES128-SHA",
+	  "ECDH-RSA-AES128-SHA", "AES128-SHA" ] ).
 
 
 
@@ -834,12 +869,28 @@ get_vh_sni_infos_for( Hostname, [ Unexpected | _T ], _BinCertDir, _Acc ) ->
 	throw( { unexpected_vhost_info_for_snis, Unexpected, Hostname } ).
 
 
+
 % (helper)
 get_vh_pair( Hostname, VHostname, BinCertDir ) ->
 	FQDN = VHostname ++ [ $. | Hostname ],
+	TranspOpts = get_transport_opts_for( FQDN, BinCertDir ),
+	{ FQDN, TranspOpts }.
+
+
+
+% Returns transport options suitable for specified FQDN.
+-spec get_transport_opts_for( net_utils:string_fqdn(), bin_directory_path() ) ->
+								static_return( [ ssl_option() ] ).
+get_transport_opts_for( FQDN, BinCertDir ) ->
+
 	CertFilename = FQDN ++ ?cert_extension,
 	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
-	{ FQDN, [ { certfile, CertFilePath } ] }.
+
+	PrivKeyFilename = FQDN ++ ?priv_key_extension,
+	PrivKeyFilePath = file_utils:join( BinCertDir, PrivKeyFilename ),
+
+	wooper:return_static(
+	  [ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
 
 
 

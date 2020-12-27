@@ -184,8 +184,8 @@
 % Let’s Encrypt certificate lifetime is 90 days (cf. duration in
 % https://letsencrypt.org/docs/faq/); we trigger a renewal with some margin:
 
-% Every 4 minutes (for development):
--define( dhms_cert_renewal_period_development, { 0, 0, 4, 0 } ).
+% Every 15 minutes (for development):
+-define( dhms_cert_renewal_period_development, { 0, 0, 15, 0 } ).
 
 % Every 75 days (minimum being 60 days, as lasting for 90 days and only renewed
 % in the last 30 days), for production:
@@ -200,7 +200,7 @@
 -define( max_dhms_cert_renewal_jitter_development, { 0, 0, 0, 30 } ).
 
 % 1-day max jitter, for production:
--define( max_dhms_cert_renewal_jitter_production, { 0, 23, 59, 59 } ).
+-define( max_dhms_cert_renewal_jitter_production, { 1, 0, 0, 0 } ).
 
 
 % 50-second delay, for testing:
@@ -209,6 +209,9 @@
 % A bit more than 26-hour delay, for production:
 -define( dhms_cert_renewal_delay_after_failure_production, { 0, 26, 17, 45 } ).
 
+
+% Public (PEM) certificate extension (could have been ".pem"):
+-define( cert_extension, ".crt" ).
 
 
 % Allows to define WOOPER base variables and methods for that class:
@@ -302,7 +305,8 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
-	?send_info_fmt( ReadyState, "Just created: ~s.", [ to_string( ReadyState ) ] ),
+	?send_info_fmt( ReadyState, "Constructed: ~s.",
+					[ to_string( ReadyState ) ] ),
 
 	% Would be too early, as the HTTP webserver needed to validate the ACME
 	% challenges is not launched yet:
@@ -497,7 +501,7 @@ renewCertificate( State ) ->
 % HTTPS support can be triggered only when certificates are ready.
 %
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
-			const_oneway_return().
+			oneway_return().
 renewCertificateSynchronisable( State, ListenerPid ) ->
 
 	% Note that these managers must not be frozen here in the waiting of a
@@ -516,7 +520,7 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 
 	% onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	wooper:const_return().
+	wooper:return_state( ListenState ).
 
 
 
@@ -747,6 +751,8 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % https://erlang.org/doc/man/ssl.html#type-sni_hosts) host information for the
 % other (virtual) hosts (ex: baz.foobar.org, aa.buz.net), etc.
 %
+% See also https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/.
+%
 -spec get_sni_info( dispatch_routes(), bin_directory_path() ) ->
 		static_return( sni_info() ).
 get_sni_info( _UserRoutes, _BinCertDir=undefined ) ->
@@ -763,7 +769,7 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 	% routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
 	% not something.foobar.org); a plain string is required, apparently.
 	%
-	DefaultCertFilename = FirstHostname ++ ".pem",
+	DefaultCertFilename = FirstHostname ++ ?cert_extension,
 
 	DefaultHostnameCertPath =
 		file_utils:join( BinCertDir, DefaultCertFilename ),
@@ -831,7 +837,7 @@ get_vh_sni_infos_for( Hostname, [ Unexpected | _T ], _BinCertDir, _Acc ) ->
 % (helper)
 get_vh_pair( Hostname, VHostname, BinCertDir ) ->
 	FQDN = VHostname ++ [ $. | Hostname ],
-	CertFilename = FQDN ++ ".pem",
+	CertFilename = FQDN ++ ?cert_extension,
 	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
 	{ FQDN, [ { certfile, CertFilePath } ] }.
 

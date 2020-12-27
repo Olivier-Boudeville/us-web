@@ -112,9 +112,12 @@ echo
 echo " -- Starting US-Web natively-built application as user '${us_web_username}' (EPMD port: ${erl_epmd_port})..."
 
 
-#echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep make us_web_exec_service
+# Previously the '--deep' authbind option was used, yet apparently the default
+# '--depth 1' is sufficient:
 
-/bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --deep make -s us_web_exec_service
+#echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 1 make us_web_exec_service
+
+/bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 1 make -s us_web_exec_service
 
 res=$?
 

@@ -214,7 +214,8 @@
 
 % General web settings, typically useful for the us_web supervisor:
 -type general_web_settings() :: { dispatch_rules(), maybe( tcp_port() ),
-		maybe( tcp_port() ), cert_support(), maybe( sni_info() ) }.
+		maybe( tcp_port() ), cert_support(), maybe( sni_info() ),
+		maybe( bin_file_path() ) }.
 
 
 % Notably for us_web_meta:
@@ -380,6 +381,14 @@
 	  "the common ACME account to be used by all the LEEC agents driven by "
 	  "the certificate managers" },
 
+	{ dh_key_path, maybe( bin_file_path() ),
+	  "the absolute path to the Diffie-Helman key file (if any) to ensure "
+	  "a very secure key exchange with Forward Secrecy" },
+
+	{ ca_cert_key_path, maybe( bin_file_path() ),
+	  "the absolute path to the certificate authority PEM file (if any) "
+	  "for the chain of trust" },
+
 	{ sni_info, maybe( sni_info() ),
 	  "information regarding Server Name Indication, so that virtual hosts "
 	  "can be supported with https" },
@@ -483,7 +492,9 @@ construct( State, SupervisorPid, AppRunContext ) ->
 					{ us_web_supervisor_pid, SupervisorPid },
 					{ start_timestamp, StartTimestamp },
 					{ cert_directory, undefined },
-					{ leec_agents_key_path, undefined } ] ),
+					{ leec_agents_key_path, undefined },
+					{ dh_key_path, undefined },
+					{ ca_cert_key_path, undefined } ] ),
 
 	CfgState = load_and_apply_configuration( BinCfgDir, SupState ),
 
@@ -547,7 +558,7 @@ destruct( State ) ->
 % supervisor).
 %
 -spec getWebConfigSettings( wooper:state() ) ->
-							  const_request_return( general_web_settings() ).
+								const_request_return( general_web_settings() ).
 getWebConfigSettings( State ) ->
 
 	CertSupport = ?getAttr(cert_support),
@@ -565,7 +576,8 @@ getWebConfigSettings( State ) ->
 	end,
 
 	GenWebSettings = { ?getAttr(dispatch_rules), ?getAttr(http_tcp_port),
-					   MaybeHTTPSTCPPort, CertSupport, ?getAttr(sni_info) },
+		MaybeHTTPSTCPPort, CertSupport, ?getAttr(sni_info),
+		?getAttr(dh_key_path), ?getAttr(ca_cert_key_path) },
 
 	?debug_fmt( "Returning the general web configuration settings:~n  ~p",
 				[ GenWebSettings ] ),
@@ -2466,7 +2478,7 @@ set_log_tool_settings( Unexpected, State ) ->
 
 % Manages how X.509 certificates shall be handled.
 -spec manage_certificates( us_web_config_table(), wooper:state() ) ->
-								 wooper:state().
+									wooper:state().
 manage_certificates( ConfigTable, State ) ->
 
 	CertSupport = case table:lookup_entry( ?certificate_support_key,
@@ -2496,9 +2508,11 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
-	{ MaybeCertMode, MaybeCertDir, MaybeBinKeyPath } = case CertSupport of
+	CertDir = file_utils:join( ?getAttr(data_directory), "certificates" ),
 
-		% Only mode relevant here:
+	{ MaybeCertMode, MaybeCertDir, MaybeBinKeyPath, MaybeDHKeyPath,
+	  MaybeBinCaKeyPath } = case CertSupport of
+
 		renew_certificates ->
 
 			CertMode = case table:lookup_entry( ?certificate_mode_key,
@@ -2518,9 +2532,6 @@ manage_certificates( ConfigTable, State ) ->
 					production
 
 			end,
-
-			CertDir = file_utils:join( ?getAttr(data_directory),
-									   "certificates" ),
 
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
@@ -2557,19 +2568,37 @@ manage_certificates( ConfigTable, State ) ->
 
 			end,
 
-			{ CertMode, CertDir, BinKeyPath };
+			BinDHKeyPath = letsencrypt_tls:obtain_dh_key( CertDir ),
+
+			BinCAKeyPath =
+				letsencrypt_tls:obtain_ca_cert_file( CertDir ),
+
+			{ CertMode, CertDir, BinKeyPath, BinDHKeyPath, BinCAKeyPath };
 
 
-		% All modes not requiring to generate certificates:
-		_ ->
-			{ undefined, undefined, undefined }
+		use_existing_certificates ->
+
+			% A DH file is still needed, for key exchanges:
+			BinDHKeyPath = letsencrypt_tls:obtain_dh_key( CertDir ),
+
+			% Not sure relevant here:
+			BinCAKeyPath =
+				letsencrypt_tls:obtain_ca_cert_file( CertDir ),
+
+			{ undefined, undefined, undefined, BinDHKeyPath, BinCAKeyPath };
+
+
+		no_certificates ->
+			{ undefined, undefined, undefined, undefined, undefined }
 
 	end,
 
 	setAttributes( State, [ { cert_support, CertSupport },
 							{ cert_mode, MaybeCertMode },
 							{ cert_directory, MaybeCertDir },
-							{ leec_agents_key_path, MaybeBinKeyPath } ] ).
+							{ leec_agents_key_path, MaybeBinKeyPath },
+							{ dh_key_path, MaybeDHKeyPath },
+							{ ca_cert_key_path, MaybeBinCaKeyPath } ] ).
 
 
 
@@ -2620,12 +2649,10 @@ manage_routes( ConfigTable, State ) ->
 			undefined;
 
 		_ ->
-			SNIInfo = { DefaultHostnameCertPath, SNIHostInfos } =
-				class_USCertificateManager:get_sni_info( UserRoutes, CertDir ),
+			SNIInfo = class_USCertificateManager:get_sni_info( UserRoutes,
+															   CertDir ),
 
-			?debug_fmt( "SNI information: certificate path for the default "
-				"hostname is '~s', virtual host options are:~n~p",
-				[ DefaultHostnameCertPath, SNIHostInfos ] ),
+			?debug_fmt( "SNI information are:~n  ~p.", [ SNIInfo ] ),
 
 			SNIInfo
 

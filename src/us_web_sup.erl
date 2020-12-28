@@ -127,10 +127,11 @@ init( _Args=[ AppRunContext ] ) ->
 
 	trace_bridge:debug( "Starting Cowboy webserver..." ),
 
-	ProtoOpts = #{ max_keepalive => 1024,
-				   env => #{ dispatch => DispatchRules } },
+	ProtoOptMap = #{ max_keepalive => 1024,
+					 max_connections => infinity,
+					 env => #{ dispatch => DispatchRules } },
 
-	HttpProtoOpts = ProtoOpts,
+	HttpProtoOptMap = ProtoOptMap,
 
 	case MaybeHttpTCPPort of
 
@@ -150,7 +151,7 @@ init( _Args=[ AppRunContext ] ) ->
 			HttpTransportOpts = [ { port, HttpTCPPort } ],
 
 			case cowboy:start_clear( us_web_http_listener, HttpTransportOpts,
-									 HttpProtoOpts ) of
+									 ProtoOptMap ) of
 
 				{ ok, _HttpRanchListenerSupPid } ->
 					ok;
@@ -162,10 +163,10 @@ init( _Args=[ AppRunContext ] ) ->
 						"Transport options were:~n  ~p.~n~n"
 						"Protocol options were: ~n  ~p.~n",
 						[ HttpTCPPort, HttpError, HttpTransportOpts,
-						  HttpProtoOpts ] ),
+						  HttpProtoOptMap ] ),
 
-					throw( { webserver_launch_failed, http_scheme,
-							 HttpTCPPort, HttpError } )
+					throw( { webserver_launch_failed, http_scheme, HttpTCPPort,
+							 HttpError } )
 
 			end
 
@@ -245,8 +246,7 @@ init( _Args=[ AppRunContext ] ) ->
 				{ ciphers, Ciphers },
 				{ secure_renegotiate, true },
 				{ reuse_sessions, true },
-				{ honor_cipher_order, true },
-				{ max_connections, infinity } ],
+				{ honor_cipher_order, true } ],
 
 			BaseHttpsOpts = case MaybeBinDHKeyPath of
 
@@ -276,10 +276,10 @@ init( _Args=[ AppRunContext ] ) ->
 
 			trace_bridge:debug_fmt( "The https transport options are:~n ~p~n"
 				"~nThe protocol options are:~n  ~p",
-				[ HttpsTransportOpts, ProtoOpts ] ),
+				[ HttpsTransportOpts, ProtoOptMap ] ),
 
 			case cowboy:start_tls( us_web_https_listener, HttpsTransportOpts,
-								   ProtoOpts ) of
+								   ProtoOptMap ) of
 
 				{ ok, _HttpsRanchListenerSupPid } ->
 					ok;
@@ -290,7 +290,7 @@ init( _Args=[ AppRunContext ] ) ->
 						"Transport options were:~n  ~p~n"
 						"Protocol options were:~n  ~p.",
 						[ HttpsTCPPort, HttpsError, HttpsTransportOpts,
-						  ProtoOpts ] ),
+						  ProtoOptMap ] ),
 
 					throw( { webserver_launch_failed, https_scheme,
 							 HttpsTCPPort, HttpsError } )

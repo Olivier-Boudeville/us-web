@@ -727,6 +727,19 @@ As a result, should an application location (ex: US-Web) not be specified in the
 
 
 
+System-related Hints
+--------------------
+
+Besides the use of specific, unprivileged user/group thanks to the use of authbind (set with a minimal depth level), the system resources (notably the maximum number of file descriptors) are reported (among the traces; search for ``System description``) at the startup of the US-Web server.
+
+Moreover the launch scripts (namely ``start-us-web-native-build.sh`` and ``start-us-web-release.sh``) raise the limit in terms of maximum number of file descriptors opened by the US-Web process, so that the connection acceptor does not have to reduce its accept rate (typically because of rogue bots performing pseudo-denials of service).
+
+Finally, any webserver shall rely preferably on:
+- a sufficiently paranoid firewall (see section in `Execution Hints`_)
+- an uninterruptible power supply (UPS), protecting the server and the telecom appliances involved
+
+
+
 Web-related hints
 -----------------
 

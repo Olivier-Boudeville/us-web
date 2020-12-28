@@ -49,8 +49,8 @@ init( Req, HandlerState=TargetTCPPort ) ->
 								   [ TargetTCPPort ] ),
 		  _Categ="Port forwarder handler" ) ),
 
-	trace_bridge:debug_fmt( "Request ~p to be handled, while handler state "
-							"is ~p...", [ Req, HandlerState ] ),
+	trace_bridge:debug_fmt( "Request ~p to be redirected to port #~B.",
+							[ Req, TargetTCPPort ] ),
 
 	% Typically redirecting from TCP port #80 (http) to #443 (https):
 	FixedURI = cowboy_req:uri( Req, #{ port => TargetTCPPort } ),

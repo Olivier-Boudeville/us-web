@@ -460,9 +460,11 @@ construct( State, SupervisorPid, AppRunContext ) ->
 		"running ~s.",
 		[ otp_utils:application_run_context_to_string( AppRunContext ) ] ),
 
-	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s",
+	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s.~n"
+		"System description:~n  ~s",
 		[ system_utils:get_interpreter_version(),
-		  code_utils:get_code_path_as_string() ] ),
+		  code_utils:get_code_path_as_string(),
+		  system_utils:get_system_description() ] ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:

@@ -526,6 +526,9 @@ prepare_us_web_launch()
 	# So that the VM can write its logs despite authbind:
 	chown ${us_web_username}:${us_groupname} ${us_web_vm_log_dir}
 
+	# Raising the maximum number of opened file descriptors:
+	ulimit -n 64000
+
 }
 
 

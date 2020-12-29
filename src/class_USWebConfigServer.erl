@@ -35,10 +35,12 @@
 
 % The various kinds of websites:
 % - static: a basic, static website to be served (the default)
+% - meta: a website generated, if requested, by US-Web, to browse conveniently
+% all the other hosted websites
 % - nitrogen: a Nitrogen-based, dynamic website (see
 % http://nitrogenproject.com/)
 %
--type web_kind() :: 'static' | 'nitrogen'.
+-type web_kind() :: 'static' | 'meta' | 'nitrogen'.
 
 
 % For example <<"bar">>:
@@ -264,6 +266,11 @@
 			   cert_support/0, cert_mode/0 ]).
 
 
+% User-specified tuple for a virtual host in the context of a domain:
+-type vhost_info() :: { vhost_id(), directory_path() }
+					| { vhost_id(), directory_path(), web_kind() }.
+
+
 % Shorthands:
 
 -type directory_path() :: file_utils:directory_path().
@@ -292,6 +299,8 @@
 -type sni_info() :: class_USCertificateManager:sni_info().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
+
+-type bin_san() :: letsencrypt:bin_san().
 
 
 
@@ -460,11 +469,12 @@ construct( State, SupervisorPid, AppRunContext ) ->
 		"running ~s.",
 		[ otp_utils:application_run_context_to_string( AppRunContext ) ] ),
 
-	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s.~n"
-		"System description:~n  ~s",
+	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s",
 		[ system_utils:get_interpreter_version(),
-		  code_utils:get_code_path_as_string(),
-		  system_utils:get_system_description() ] ),
+		  code_utils:get_code_path_as_string() ] ),
+
+	?send_debug_fmt( TraceState, "System description: ~s",
+		[ system_utils:get_system_description() ] ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
@@ -825,10 +835,11 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 %
 -spec handle_certificate_manager_for( vhost_id(), domain_id(), cert_support(),
 		cert_mode(), bin_directory_path(), maybe( bin_file_path() ),
-		bin_directory_path(), scheduler_pid() ) -> maybe( cert_manager_pid() ).
+		bin_directory_path(), maybe( [ bin_san() ] ), scheduler_pid() ) ->
+			maybe( cert_manager_pid() ).
 handle_certificate_manager_for( _VHostId=default_vhost_catch_all,
 		DomainId, _CertSupport=renew_certificates, CertMode, BinCertDir,
-		MaybeBinKeyPath, BinWebrootDir, SchedulerPid )
+		MaybeBinKeyPath, BinWebrootDir, MaybeBinSANs, SchedulerPid )
 	  when is_binary( DomainId ) -> % To exclude default_domain_catch_all
 
 	BinFQDN = DomainId,
@@ -850,33 +861,40 @@ handle_certificate_manager_for( _VHostId=default_vhost_catch_all,
 	% is better:
 	%
 	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
-		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
+		BinKeyPath, BinWebrootDir, MaybeBinSANs, SchedulerPid,
+		_IsSingleton=false );
 
 
-handle_certificate_manager_for( VHostId, DomainId,
-		_CertSupport=renew_certificates, CertMode, BinCertDir, MaybeBinKeyPath,
-		BinWebrootDir, SchedulerPid )
-  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
-
-	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
-
-	BinKeyPath = case MaybeBinKeyPath of
-
-		undefined ->
-			throw( no_leec_agents_key_file );
-
-		KP ->
-			KP
-
-	end,
-
-	% See comment above:
-	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
-		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
+% We used to create one certificate per virtual host, yet the Let's Encrypt rate
+% limits (see https://letsencrypt.org/docs/rate-limits/) could quite easily be
+% hit. So now we create only certificates for the default_vhost_catch_all, which
+% lists all actual virtual hosts as SANs, and the following clause has been
+% disabled.
+%
+%handle_certificate_manager_for( VHostId, DomainId,
+%		_CertSupport=renew_certificates, CertMode, BinCertDir, MaybeBinKeyPath,
+%		BinWebrootDir, MaybeBinSANs, SchedulerPid )
+%  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
+%
+%	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
+%
+%	BinKeyPath = case MaybeBinKeyPath of
+%
+%		undefined ->
+%			throw( no_leec_agents_key_file );
+%
+%		KP ->
+%			KP
+%
+%	end,
+%
+%	% (see also comment above)
+%	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
+%		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
 
 handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
 		_CertMode, _BinCertDir, _MaybeBinKeyPath, _BinWebrootDir,
-		_SchedulerPid ) ->
+		_MaybeBinSANs, _SchedulerPid ) ->
 	undefined.
 
 
@@ -932,7 +950,7 @@ renewCertificate( State, DomainId, VHostId ) ->
 % Returns a domain table and dispatch routes corresponding to the specified
 % domain information list, and a possibly updated state.
 %
--spec process_domain_info( [ { domain_name(), [ term() ] } ],
+-spec process_domain_info( [ { domain_name(), [ vhost_info() ] } ],
 	bin_directory_path(), maybe( bin_directory_path() ),
 	maybe( web_analysis_info() ), cert_support(), cert_mode(),
 	bin_directory_path(), maybe( bin_file_path() ), scheduler_pid(),
@@ -1156,17 +1174,19 @@ process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
 
 
 % Explicit domain:
-process_domain_routes( _UserRoutes=[ { DomainName, VHostInfo } | T ], BinLogDir,
-		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, SchedulerPid,
-		State ) when is_list( DomainName ) ->
+process_domain_routes( _UserRoutes=[ { DomainName, VHostInfos } | T ],
+		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
+		AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinKeyPath,
+		SchedulerPid, State ) when is_list( DomainName ) ->
+
+	SANs = get_san_list( VHostInfos, DomainName ),
 
 	BinDomainName = text_utils:string_to_binary( DomainName ),
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
-		VHostInfo, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
+		VHostInfos, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
 		_AccVtable=table:new(), _AccRoutes=[], CertSupport, CertMode,
-		BinCertDir, MaybeBinKeyPath, SchedulerPid, State ),
+		BinCertDir, MaybeBinKeyPath, SANs, SchedulerPid, State ),
 
 	NewAccVTable = table:add_new_entry( _K=BinDomainName, _V=VHostTable,
 										AccVTable ),
@@ -1181,15 +1201,16 @@ process_domain_routes( _UserRoutes=[ { DomainName, VHostInfo } | T ], BinLogDir,
 
 % Domain catch-all:
 process_domain_routes(
-  _UserRoutes=[ { DomainId=default_domain_catch_all, VHostInfo } | T ],
+  _UserRoutes=[ { DomainId=default_domain_catch_all, VHostInfos } | T ],
   BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
   AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinKeyPath,
   SchedulerPid, State ) ->
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( DomainId,
-		VHostInfo, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
+		VHostInfos, BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo,
 		_AccVtable=table:new(), _AccRoutes=[], CertSupport, CertMode,
-		BinCertDir, MaybeBinKeyPath, SchedulerPid, State ),
+		BinCertDir, MaybeBinKeyPath, _MaybeSANs=undefined, SchedulerPid,
+		State ),
 
 	NewAccVTable = table:add_new_entry( _K=DomainId, _V=VHostTable, AccVTable ),
 
@@ -1220,30 +1241,32 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 %
 % (helper)
 %
--spec build_vhost_table( domain_id(), [ term() ], bin_directory_path(),
+-spec build_vhost_table( domain_id(), [ vhost_info() ], bin_directory_path(),
 	maybe( bin_directory_path() ), maybe( web_analysis_info() ),
-	list(), dispatch_routes(), cert_support(), cert_mode(),
-		bin_directory_path(), maybe( bin_file_path() ), scheduler_pid(),
-		wooper:state() ) ->
+	vhost_config_table(), dispatch_routes(), cert_support(), cert_mode(),
+		bin_directory_path(), maybe( bin_file_path() ), maybe( [ bin_san() ] ),
+		scheduler_pid(), wooper:state() ) ->
 		  { vhost_config_table(), dispatch_routes(), wooper:state() }.
 build_vhost_table( _DomainId, _VHostInfos=[], _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		_CertSupport, _CertMode, _BinCertDir, _MaybeBinKeyPath, _SchedulerPid,
-		State ) ->
+		_CertSupport, _CertMode, _BinCertDir, _MaybeBinKeyPath, _MaybeBinSANs,
+		_SchedulerPid, State ) ->
+
 	% Restores user-defined order (ex: default route to come last):
 	{ AccVTable, lists:reverse( AccRoutes ), State };
 
 
-% No kind specified, upgrading to static:
+% No kind specified, upgrading to the default: static.
 build_vhost_table( DomainId, _VHostInfos=[ { VHostId, ContentRoot } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
 		AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinKeyPath,
-		SchedulerPid, State ) ->
+		MaybeBinSANs, SchedulerPid, State ) ->
+
 	build_vhost_table( DomainId,
 		_FullVHostInfos=[ { VHostId, ContentRoot, _DefaultKind=static } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
 		AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinKeyPath,
-		SchedulerPid, State );
+		MaybeBinSANs, SchedulerPid, State );
 
 
 % Static - actual or catch-all - vhost specified here:
@@ -1251,7 +1274,7 @@ build_vhost_table( DomainId,
 		_VHostInfos=[ { VHostId, ContentRoot, WebKind=static } | T ],
 		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
 		AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinKeyPath,
-		SchedulerPid, State ) ->
+		MaybeBinSANs, SchedulerPid, State ) ->
 
 	?debug_fmt( "Managing static configuration for virtual host '~s' in "
 				"domain '~s'.", [ VHostId, DomainId ] ),
@@ -1271,16 +1294,19 @@ build_vhost_table( DomainId,
 
 	end,
 
+	% We do not generate certificates for individual virtual hosts anymore (too
+	% many of them), we rely on SANs instead:
+	%
 	{ VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
 		DomainId, BinVHostId, BinLogDir, CertSupport, CertMode, BinCertDir,
-		MaybeBinKeyPath, SchedulerPid, MaybeWebAnalysisInfo ),
+		MaybeBinKeyPath, MaybeBinSANs, SchedulerPid, MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
 
 	build_vhost_table( DomainId, T, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, NewAccVTable, [ VHostRoute | AccRoutes ],
-		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, SchedulerPid,
-		State );
+		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, MaybeBinSANs,
+		SchedulerPid, State );
 
 
 % Meta kind here:
@@ -1288,7 +1314,7 @@ build_vhost_table( DomainId,
 	   _VHostInfos=[ { VHost, _ContentRoot, WebKind=meta } | T ],
 	   BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
 	   AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinKeyPath,
-	   SchedulerPid, State ) ->
+	   MaybeBinSANs, SchedulerPid, State ) ->
 
 	% Quite similar to 'static', even if a logger and a web analysis
 	% organisation are not that useful:
@@ -1315,19 +1341,19 @@ build_vhost_table( DomainId,
 	undefined = ?getAttr(meta_web_settings),
 
 	SetState = setAttribute( State, meta_web_settings,
-					  { DomainId, BinVHost, BinMetaContentRoot } ),
+					{ DomainId, BinVHost, BinMetaContentRoot } ),
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
 			DomainId, BinVHost, BinLogDir, CertSupport, CertMode, BinCertDir,
-			MaybeBinKeyPath, SchedulerPid, MaybeWebAnalysisInfo ),
+			MaybeBinKeyPath, MaybeBinSANs, SchedulerPid, MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHost, VHostEntry, AccVTable ),
 
 	% Certificate setting used here as well:
 	build_vhost_table( DomainId, T, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, NewAccVTable, [ VHostRoute | AccRoutes ],
-		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, SchedulerPid,
-		SetState );
+		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, MaybeBinSANs,
+		SchedulerPid, SetState );
 
 
 % Nitrogen kind here:
@@ -1335,7 +1361,7 @@ build_vhost_table( _DomainId,
 		_VHostInfos=[ { _VHost, _ContentRoot, _WebKind=nitrogen } | _T ],
 		_BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
 		_AccRoutes, _CertSupport, _CertMode, _BinCertDir, _MaybeBinKeyPath,
-		_SchedulerPid, _State ) ->
+		_MaybeBinSANs, _SchedulerPid, _State ) ->
 	throw( not_implemented_yet );
 
 
@@ -1344,13 +1370,13 @@ build_vhost_table( _DomainId,
 		_VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
 		_BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
 		_AccRoutes, _CertSupport, _CertMode, _BinCertDir, _MaybeBinKeyPath,
-		_SchedulerPid, _State ) ->
+		_MaybeBinSANs, _SchedulerPid, _State ) ->
 	throw( { unknown_web_kind, UnknownWebKind } );
 
 build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 	   _BinLogDir, _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable,
 	   _AccRoutes, _CertSupport, _CertMode, _BinCertDir, _MaybeBinKeyPath,
-	   _SchedulerPid, _State ) ->
+	   _MaybeBinSANs, _SchedulerPid, _State ) ->
 	throw( { invalid_virtual_host_config, InvalidVHostConfig, DomainId } ).
 
 
@@ -1362,8 +1388,8 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 %
 % Here no web analysis is requested (yet log rotation is still useful):
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
-			  CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, SchedulerPid,
-			  _MaybeWebAnalysisInfo=undefined ) ->
+			  CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, MaybeBinSANs,
+			  SchedulerPid, _MaybeWebAnalysisInfo=undefined ) ->
 
 	BinWebLogDir = get_web_log_dir( BinLogDir ),
 
@@ -1375,7 +1401,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
 			CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, BinContentRoot,
-			SchedulerPid ),
+			MaybeBinSANs, SchedulerPid ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
@@ -1385,14 +1411,15 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 									  cert_manager_pid=MaybeCertManagerPid },
 
 	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-								  LoggerPid, CertSupport, MaybeCertManagerPid ),
+								LoggerPid, CertSupport, MaybeCertManagerPid ),
 
 	{ VHostEntry, VHostRoute };
 
 
 % Here web analysis is requested:
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
-		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, SchedulerPid,
+		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, MaybeBinSANs,
+		SchedulerPid,
 		WebAnalysisInfo=#web_analysis_info{ tool=LogAnalysisTool,
 											template_content=TemplateContent,
 											conf_dir=BinConfDir } ) ->
@@ -1473,7 +1500,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
 		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, BinContentRoot,
-		SchedulerPid ),
+		MaybeBinSANs, SchedulerPid ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
@@ -1542,7 +1569,7 @@ get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 %
 -spec ensure_meta_content_root_exists( directory_path(),
 	maybe( bin_directory_path() ), vhost_id(), domain_id(), wooper:state() ) ->
-											 bin_directory_path().
+											bin_directory_path().
 ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 								 DomainId, State ) ->
 
@@ -2116,7 +2143,7 @@ guess_app_dir( AppRunContext, State ) ->
 % necessary.
 %
 -spec manage_data_directory( us_web_config_table(), wooper:state() ) ->
-								   wooper:state().
+									wooper:state().
 manage_data_directory( ConfigTable, State ) ->
 
 	BaseDir = case table:lookup_entry( ?us_web_data_dir_key, ConfigTable ) of
@@ -2206,7 +2233,7 @@ manage_data_directory( ConfigTable, State ) ->
 % necessary.
 %
 -spec manage_log_directory( us_web_config_table(), wooper:state() ) ->
-							   wooper:state().
+								wooper:state().
 manage_log_directory( ConfigTable, State ) ->
 
 	% Longer paths if defined as relative, yet finally preferred as
@@ -2295,7 +2322,7 @@ get_web_log_dir( LogDir ) ->
 
 % Manages any user-configured default web root.
 -spec manage_web_root( us_web_config_table(), wooper:state() ) ->
-		  wooper:state().
+			wooper:state().
 manage_web_root( ConfigTable, State ) ->
 
 	MaybeBinDefWebRoot = case table:lookup_entry( ?default_web_root_key,
@@ -2307,7 +2334,7 @@ manage_web_root( ConfigTable, State ) ->
 
 		{ value, DefWebRoot } ->
 
-			AbsDefaultWebRoot =	file_utils:ensure_path_is_absolute(
+			AbsDefaultWebRoot = file_utils:ensure_path_is_absolute(
 				DefWebRoot,
 				otp_utils:get_priv_root( ?MODULE, _BeSilent=true ) ),
 
@@ -2762,6 +2789,53 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 	file_utils:write_whole( IndexPath, IndexContent ),
 
 	State.
+
+
+
+% Returns a list of the Subject Alternative Names for specified domain, based on
+% the specified information regarding its virtual hosts.
+%
+% Note that a per-virtual host list for SAN is preferred to a wildcard
+% certificate, as, at least currently, the latter can only be obtained from
+% Let's Encrypt with a DNS challenge, which is not supported by LEEC.
+%
+-spec get_san_list( [ vhost_info() ], domain_name() ) -> [ bin_san() ].
+get_san_list( VHostInfos, DomainName ) ->
+	% Now we pre-collect the names of all virtual hosts (ex: the *.foobar.org),
+	% so that the certificate for the corresponding domain (the vhost catch-all,
+	% ex: for foobar.org) can list them as SANs (Subject Alternative Names):
+	%
+	get_san_list( VHostInfos, DomainName, _Acc=[] ).
+
+
+% (helper)
+get_san_list( _VHostInfos=[], _DomainName, Acc ) ->
+	% Preferred order:
+	lists:reverse( Acc );
+
+get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
+
+	% All virtual hosts are tuples whose first element is their identifier,
+	% either a plain string or default_vhost_catch_all:
+	%
+	VHostId = element( 1, VHInfo ),
+
+	case VHostId of
+
+		default_vhost_catch_all ->
+			% We include the root domain by itself among the SANs as others do,
+			% although it shall be the reference name of the certificate, hence
+			% not a SAN:
+			%
+			BinSAN = text_utils:string_to_binary( DomainName ),
+			get_san_list( T, DomainName, [ BinSAN | Acc ] );
+
+		VHostname ->
+			BinSAN = text_utils:bin_format( "~s.~s",
+											[ VHostname, DomainName ] ),
+			get_san_list( T, DomainName, [ BinSAN | Acc ] )
+
+	end.
 
 
 

@@ -74,7 +74,7 @@
 % certificate. SAN information and wildcard certificates could also be used for
 % that.
 %
-% Initially, the call to letsencrypt:obtain_certificate_for/2 below was
+% Initially, the call to letsencrypt:obtain_certificate_for/3 below was
 % synchronous (blocking), however then the corresponding LEEC web handler
 % process that would be spawned whenever the ACME server requested the token
 % would lead to this LEEC handler process requesting the challenge from the
@@ -131,6 +131,7 @@
 
 -type leec_pid() :: letsencrypt:fsm_pid().
 
+-type bin_san() :: letsencrypt:bin_san().
 
 
 
@@ -147,6 +148,10 @@
 
 	{ cert_path, maybe( bin_file_path() ),
 	  "the full path where the final certificate file (if any) is located" },
+
+	{ sans, maybe( [ bin_san() ] ),
+	  "the Subject Alternative Names to be included in the generated "
+	  "certificates" },
 
 	{ private_key_path, bin_file_path(), "the (absolute) path to the TLS "
 	  "private key to be used by the LEEC agent driven by this certificate "
@@ -236,12 +241,12 @@
 % renewal.
 %
 -spec construct( wooper:state(), bin_fqdn(), bin_directory_path(),
-		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
-					wooper:state().
+		bin_directory_path(), bin_file_path(), maybe( [ bin_san() ] ),
+		maybe( scheduler_pid() ) ) -> wooper:state().
 construct( State, BinFQDN, BinCertDir, BinKeyPath, BinWebrootDir,
-		   MaybeSchedulerPid ) ->
+		   MaybeBinSANs, MaybeSchedulerPid ) ->
 	construct( State, BinFQDN, _CertMode=production, BinCertDir, BinKeyPath,
-			   BinWebrootDir, MaybeSchedulerPid, _IsSingleton=false ).
+		BinWebrootDir, MaybeBinSANs, MaybeSchedulerPid, _IsSingleton=false ).
 
 
 
@@ -252,14 +257,14 @@ construct( State, BinFQDN, BinCertDir, BinKeyPath, BinWebrootDir,
 % (most complete constructor)
 %
 -spec construct( wooper:state(), bin_fqdn(), cert_mode(), bin_directory_path(),
-			bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ),
-			boolean() ) -> wooper:state().
+	bin_directory_path(), bin_file_path(), maybe( [ bin_san() ] ),
+	 maybe( scheduler_pid() ), boolean() ) -> wooper:state().
 construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
-		   MaybeSchedulerPid, _IsSingleton=true ) ->
+		   MaybeBinSANs, MaybeSchedulerPid, _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
 	InitState = construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath,
-						   BinWebrootDir, MaybeSchedulerPid, _Sing=false ),
+		BinWebrootDir, MaybeBinSANs, MaybeSchedulerPid, _Sing=false ),
 
 	% Then self-registering:
 	RegName = ?registration_name,
@@ -274,7 +279,7 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 
 % Main constructor; no self-registering here:
 construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
-		   MaybeSchedulerPid, _IsSingleton=false ) ->
+		   MaybeBinSANs, MaybeSchedulerPid, _IsSingleton=false ) ->
 
 	ServerName =
 		text_utils:format( "Certificate manager for ~s", [ BinFQDN ] ),
@@ -305,6 +310,7 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		{ cert_mode, CertMode },
 		{ cert_dir, BinCertDir },
 		{ cert_path, undefined },
+		{ sans, MaybeBinSANs },
 		{ private_key_path, BinKeyPath },
 		{ cert_renewal_period, RenewPeriodSecs },
 		{ renew_listener, undefined },
@@ -521,8 +527,8 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 	?debug( "Requested to renew certificate in a synchronisable manner." ),
 
 	% Also a check:
-	{ ListenState, undefined } = swapInAttribute( State, renew_listener,
-												  ListenerPid ),
+	{ ListenState, undefined } =
+		swapInAttribute( State, renew_listener, ListenerPid ),
 
 	request_certificate( ListenState ),
 
@@ -553,9 +559,20 @@ request_certificate( State ) ->
 				Self ! { onCertificateRequestOutcome, [ CertCreationOutcome ] }
 			   end,
 
+	ActualSans = case ?getAttr(sans) of
+
+		undefined ->
+			[];
+
+		S ->
+			S
+
+	end,
+
 	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
-							_OptionMap=#{ async => true,
-										  callback => Callback } ),
+		_CertReqOptionMap=#{ async => true,
+							 callback => Callback,
+							 sans => ActualSans } ),
 
 	?debug( "Certificate creation request initiated." ).
 

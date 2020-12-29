@@ -865,32 +865,37 @@ handle_certificate_manager_for( _VHostId=default_vhost_catch_all,
 		_IsSingleton=false );
 
 
-% We used to create one certificate per virtual host, yet the Let's Encrypt rate
-% limits (see https://letsencrypt.org/docs/rate-limits/) could quite easily be
-% hit. So now we create only certificates for the default_vhost_catch_all, which
-% lists all actual virtual hosts as SANs, and the following clause has been
-% disabled.
+% We used to create one single, standalone certificate per virtual host, yet the
+% Let's Encrypt rate limits (see https://letsencrypt.org/docs/rate-limits/)
+% could quite easily be hit (ex: if having more than 50 hosts).
 %
-%handle_certificate_manager_for( VHostId, DomainId,
-%		_CertSupport=renew_certificates, CertMode, BinCertDir, MaybeBinKeyPath,
-%		BinWebrootDir, MaybeBinSANs, SchedulerPid )
-%  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
+% So now we create only certificates for the default_vhost_catch_all, which
+% lists all actual virtual hosts as SANs; however a certificate manager must
+% still be created for each declared virtual host (even if declared just as a
+% SAN), as the ACME server will validate each of them with a dedicated
+% challenge: the ACME http access must be intercepted and the corresponding
+% token must then be returned.
 %
-%	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
-%
-%	BinKeyPath = case MaybeBinKeyPath of
-%
-%		undefined ->
-%			throw( no_leec_agents_key_file );
-%
-%		KP ->
-%			KP
-%
-%	end,
-%
-%	% (see also comment above)
-%	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
-%		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
+handle_certificate_manager_for( VHostId, DomainId,
+		_CertSupport=renew_certificates, CertMode, BinCertDir, MaybeBinKeyPath,
+		BinWebrootDir, MaybeBinSANs, SchedulerPid )
+  when is_binary( VHostId ) andalso is_binary( DomainId ) ->
+
+	BinFQDN = text_utils:bin_format( "~s.~s", [ VHostId, DomainId ] ),
+
+	BinKeyPath = case MaybeBinKeyPath of
+
+		undefined ->
+			throw( no_leec_agents_key_file );
+
+		KP ->
+			KP
+
+	end,
+
+	% (see also comment above)
+	class_USCertificateManager:new_link( BinFQDN, CertMode, BinCertDir,
+		BinKeyPath, BinWebrootDir, SchedulerPid, _IsSingleton=false );
 
 handle_certificate_manager_for( _VHostId, _DomainId, _CertSupport,
 		_CertMode, _BinCertDir, _MaybeBinKeyPath, _BinWebrootDir,
@@ -1498,6 +1503,8 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId, BinLogDir,
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
 					_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
+	% HERE we shall create one certificate manager *per main host* (not per
+	% virtual one)
 	MaybeCertManagerPid = handle_certificate_manager_for( VHostId, DomainId,
 		CertSupport, CertMode, BinCertDir, MaybeBinKeyPath, BinContentRoot,
 		MaybeBinSANs, SchedulerPid ),
@@ -2823,12 +2830,14 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 	case VHostId of
 
 		default_vhost_catch_all ->
-			% We include the root domain by itself among the SANs as others do,
-			% although it shall be the reference name of the certificate, hence
-			% not a SAN:
+			% We used to include the root domain by itself among the SANs as
+			% others do, although it shall be the reference name of the
+			% certificate, hence not a SAN; anyway if this operation is useful,
+			% it shall be done directly in LEEC, not here, so:
 			%
-			BinSAN = text_utils:string_to_binary( DomainName ),
-			get_san_list( T, DomainName, [ BinSAN | Acc ] );
+			%BinSAN = text_utils:string_to_binary( DomainName ),
+			%get_san_list( T, DomainName, [ BinSAN | Acc ] );
+			get_san_list( T, DomainName, Acc );
 
 		VHostname ->
 			BinSAN = text_utils:bin_format( "~s.~s",

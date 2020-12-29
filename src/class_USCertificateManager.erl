@@ -546,8 +546,6 @@ request_certificate( State ) ->
 
 	FQDN = ?getAttr(fqdn),
 
-	?debug_fmt( "Requesting certificate for '~s'.", [ FQDN ] ),
-
 	% We used to rely on a synchronous (blocking) call (no callback was used),
 	% which was a mistake (see implementation notes). Now using an asynchronous
 	% call instead.
@@ -569,6 +567,9 @@ request_certificate( State ) ->
 
 	end,
 
+	?debug_fmt( "Requesting certificate for '~s', with SAN information ~p.",
+				[ FQDN, ActualSans ] ),
+
 	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
 		_CertReqOptionMap=#{ async => true,
 							 callback => Callback,
@@ -582,7 +583,7 @@ request_certificate( State ) ->
 -spec onCertificateRequestOutcome( wooper:state(),
 			letsencrypt:cert_creation_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
-			 _CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
+			_CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
 
 	FQDN = ?getAttr(fqdn),
 
@@ -742,7 +743,8 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 	FQDN = ?getAttr(fqdn),
 
 	% No need to overwhelm the ACME server in case of permacrash:
-	WaitDurationMs = 15000,
+	%WaitDurationMs = 15000,
+	WaitDurationMs = 4*3600*1000,
 
 	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~s'), "
 		"starting a new LEEC instance after a delay of ~s.",

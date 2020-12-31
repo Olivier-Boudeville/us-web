@@ -165,7 +165,9 @@ get_page_body( Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 
 
 
-% Describes (in HTML) the current hosting.
+% Describes (in HTML) the current hosting, i.e. all the virtual hosts (except
+% the meta website itself) of all known domains.
+%
 describe_hosting( Port, DomainCfgTable,
 	  _MetaWebSettings={ MetaDomainId, MetaVhostId, _BinMetaContentRoot },
 	  LogAnalysisEnabled ) ->
@@ -186,30 +188,34 @@ describe_hosting( Port, DomainCfgTable,
 	% displaying recursively) the 'meta' website within itself, so we remove it
 	% first:
 
-	VHostsIncludingMeta = table:get_value( MetaDomainId, DomainCfgTable ),
+	{ _MetaDomainId, MaybeCertManagerPid, VHostsIncludingMeta } =
+		table:get_value( MetaDomainId, DomainCfgTable ),
 
 	VHostsWithoutMeta = table:remove_existing_entry( MetaVhostId,
 													 VHostsIncludingMeta ),
 
-	MetaLessCfgTable = table:add_entry( MetaDomainId, VHostsWithoutMeta,
+	NewMetaInfo = { MetaDomainId, MaybeCertManagerPid, VHostsWithoutMeta },
+
+	MetaLessCfgTable = table:add_entry( MetaDomainId, NewMetaInfo,
 										DomainCfgTable ),
 
-	case table:enumerate( MetaLessCfgTable ) of
+	case table:values( MetaLessCfgTable ) of
 
+		% Would be quite surprising:
 		[] ->
 			"no domain referenced";
 
-		SingleDomPair = [ { Domain, _VHostCfgTable } ] ->
+		SingleDomInfo=[ { DomainId, _MaybeCertManagerPid, _VHostCfgTable } ] ->
 			text_utils:format( "a single domain referenced, <b>~s</b>: ~s",
-				[ Domain,
-				  % Kept as we want to include the enclosing table:
-				  get_domain_descriptions( Port, SingleDomPair,
+				[ DomainId,
+				  % Kept as a list, as we want to include the enclosing table:
+				  get_domain_descriptions( Port, SingleDomInfo,
 										   MaybeMetaBaseURL ) ] );
 
-		DomPairs ->
+		DomInfos ->
 			text_utils:format( "~B domains referenced:~n~s",
-			  [ length( DomPairs ),
-				get_domain_descriptions( Port, DomPairs, MaybeMetaBaseURL ) ] )
+			  [ length( DomInfos ), get_domain_descriptions( Port, DomInfos,
+														MaybeMetaBaseURL ) ] )
 
 	end.
 
@@ -217,12 +223,12 @@ describe_hosting( Port, DomainCfgTable,
 
 % Returns the HTML description for the specified domains.
 -spec get_domain_descriptions( tcp_port(),
-   [ { domain_id(), vhost_config_table() } ], maybe_url() ) -> html_element().
-get_domain_descriptions( Port, DomPairs, MaybeMetaBaseURL ) ->
+	[ class_USWebConfigServer:domain_info() ], maybe_url() ) -> html_element().
+get_domain_descriptions( Port, DomainInfos, MaybeMetaBaseURL ) ->
 
 	DomStrings = lists:sort(
-		[ get_domain_description( Port, Dom, VCfgTable, MaybeMetaBaseURL )
-		  || { Dom, VCfgTable } <- DomPairs ] ),
+		[ get_domain_description( Port, DomId, VCfgTable, MaybeMetaBaseURL )
+		  || { DomId, _MaybeCertManagerPid, VCfgTable } <- DomainInfos ] ),
 
 	web_utils:get_unordered_list( DomStrings ).
 
@@ -230,17 +236,17 @@ get_domain_descriptions( Port, DomPairs, MaybeMetaBaseURL ) ->
 
 % Returns the HTML description for the specified domain.
 -spec get_domain_description( tcp_port(), domain_id(),
-					   vhost_config_table(), maybe_url() ) -> html_element().
-get_domain_description( Port, _Domain=default_domain_catch_all,
-						VCfgTable, MaybeMetaBaseURL ) ->
+				vhost_config_table(), maybe_url() ) -> html_element().
+get_domain_description( Port, _DomainId=default_domain_catch_all, VCfgTable,
+						MaybeMetaBaseURL ) ->
 	text_utils:format( "for the domain catch-all (note that the corresponding "
 		"URLs are likely not resolvable), ~s",
 		[ get_vhost_descriptions( Port, VCfgTable, MaybeMetaBaseURL ) ] );
 
-get_domain_description( Port, Domain, VCfgTable, MaybeMetaBaseURL ) ->
+get_domain_description( Port, DomainId, VCfgTable, MaybeMetaBaseURL ) ->
 	text_utils:format( "for domain <b>~s</b>, ~s",
-		[ Domain, get_vhost_descriptions( Port, VCfgTable,
-										  MaybeMetaBaseURL ) ] ).
+		[ DomainId, get_vhost_descriptions( Port, VCfgTable,
+											MaybeMetaBaseURL ) ] ).
 
 
 

@@ -149,9 +149,8 @@
 	{ cert_path, maybe( bin_file_path() ),
 	  "the full path where the final certificate file (if any) is located" },
 
-	{ sans, maybe( [ bin_san() ] ),
-	  "the Subject Alternative Names to be included in the generated "
-	  "certificates" },
+	{ sans, [ bin_san() ], "the Subject Alternative Names to be included "
+	  "in the generated certificates" },
 
 	{ private_key_path, bin_file_path(), "the (absolute) path to the TLS "
 	  "private key to be used by the LEEC agent driven by this certificate "
@@ -163,9 +162,6 @@
 	{ renew_listener, maybe( pid() ),
 	  "the PID of the process (if any) to notify once the next certificate is "
 	  "obtained" },
-
-	{ webroot_dir, bin_directory_path(),
-	  "the base directory served by the webserver" },
 
 	{ leec_pid, leec_pid(), "the PID of our private LEEC FSM" },
 
@@ -240,13 +236,13 @@
 % certificate information, and the specified scheduler for automatic certificate
 % renewal.
 %
--spec construct( wooper:state(), bin_fqdn(), bin_directory_path(),
-		bin_directory_path(), bin_file_path(), maybe( [ bin_san() ] ),
-		maybe( scheduler_pid() ) ) -> wooper:state().
-construct( State, BinFQDN, BinCertDir, BinKeyPath, BinWebrootDir,
-		   MaybeBinSANs, MaybeSchedulerPid ) ->
-	construct( State, BinFQDN, _CertMode=production, BinCertDir, BinKeyPath,
-		BinWebrootDir, MaybeBinSANs, MaybeSchedulerPid, _IsSingleton=false ).
+-spec construct( wooper:state(), bin_fqdn(), [ bin_san() ],
+		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
+					   wooper:state().
+construct( State, BinFQDN, BinSans, BinCertDir, BinAgentKeyPath,
+		   MaybeSchedulerPid ) ->
+	construct( State, BinFQDN, BinSans, _CertMode=production, BinCertDir,
+			   BinAgentKeyPath, MaybeSchedulerPid, _IsSingleton=false ).
 
 
 
@@ -256,15 +252,15 @@ construct( State, BinFQDN, BinCertDir, BinKeyPath, BinWebrootDir,
 %
 % (most complete constructor)
 %
--spec construct( wooper:state(), bin_fqdn(), cert_mode(), bin_directory_path(),
-	bin_directory_path(), bin_file_path(), maybe( [ bin_san() ] ),
-	 maybe( scheduler_pid() ), boolean() ) -> wooper:state().
-construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
-		   MaybeBinSANs, MaybeSchedulerPid, _IsSingleton=true ) ->
+-spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], cert_mode(),
+	bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ),
+	boolean() ) -> wooper:state().
+construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
+		   MaybeSchedulerPid, _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
-	InitState = construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath,
-		BinWebrootDir, MaybeBinSANs, MaybeSchedulerPid, _Sing=false ),
+	InitState = construct( State, BinFQDN, BinSans, CertMode, BinCertDir,
+						   BinAgentKeyPath, MaybeSchedulerPid, _Sing=false ),
 
 	% Then self-registering:
 	RegName = ?registration_name,
@@ -278,8 +274,8 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 
 
 % Main constructor; no self-registering here:
-construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
-		   MaybeBinSANs, MaybeSchedulerPid, _IsSingleton=false ) ->
+construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
+		   MaybeSchedulerPid, _IsSingleton=false ) ->
 
 	ServerName =
 		text_utils:format( "Certificate manager for ~s", [ BinFQDN ] ),
@@ -292,15 +288,14 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 	TraceState = class_USServer:construct( State,
 						?trace_categorize(ServerName), _TrapExits=true ),
 
-	% Ex: for any stateless helper:
+	% For example for any stateless helper:
 	class_TraceEmitter:register_bridge( TraceState ),
 
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
 	%
 	{ LEECFsmPid, RenewPeriodSecs } =
-		init_leec( BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
-				   TraceState ),
+		init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, TraceState ),
 
 	% Registration to scheduler to happen in next (first) renewCertificate/1
 	% call.
@@ -310,11 +305,10 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 		{ cert_mode, CertMode },
 		{ cert_dir, BinCertDir },
 		{ cert_path, undefined },
-		{ sans, MaybeBinSANs },
-		{ private_key_path, BinKeyPath },
+		{ sans, BinSans },
+		{ private_key_path, BinAgentKeyPath },
 		{ cert_renewal_period, RenewPeriodSecs },
 		{ renew_listener, undefined },
-		{ webroot_dir, BinWebrootDir },
 		{ leec_pid, LEECFsmPid },
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
@@ -333,8 +327,8 @@ construct( State, BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir,
 
 % Initializes our LEEC private instance.
 -spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(), bin_file_path(),
-				 bin_directory_path(), wooper:state() ) -> leec_pid().
-init_leec( BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir, State ) ->
+				 wooper:state() ) -> leec_pid().
+init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	case file_utils:is_existing_directory( BinCertDir ) of
 
@@ -384,9 +378,8 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinKeyPath, BinWebrootDir, State ) ->
 	HttpQueryTimeoutMs = 30000,
 
 	StartBaseOpts = [ { mode, slave },
-					  { agent_key_file_path, BinKeyPath },
+					  { agent_key_file_path, BinAgentKeyPath },
 					  { cert_dir_path, BinCertDir },
-					  { webroot_dir_path, BinWebrootDir },
 					  { http_timeout, HttpQueryTimeoutMs } ],
 
 	StartOpts = case CertMode of
@@ -755,7 +748,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	{ LEECPid, _RenewPeriodSecs } =
 		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
-				   ?getAttr(private_key_path), ?getAttr(webroot_dir), State ),
+				   ?getAttr(private_key_path), State ),
 
 	?info_fmt( "New LEEC instance started for '~s': ~w; requesting new "
 			   "certificate.", [ FQDN, LEECPid ] ),
@@ -773,17 +766,20 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 
 % Returns SNI information suitable for https-enabled virtual hosts, i.e. the
-% transport options for the main host - i.e. the path to the PEM certificate for
-% the main, default host (ex: foobar.org) and to its private key), together with
-% SNI (Server Name Indication, see
-% https://erlang.org/doc/man/ssl.html#type-sni_hosts) host information for the
-% other (virtual) hosts (ex: baz.foobar.org, aa.buz.net), etc.
+% transport options for the domain of interest - i.e. the path to the PEM
+% certificate for the main, default host (ex: foobar.org) and to its private
+% key, together with SNI (Server Name Indication, see
+% https://erlang.org/doc/man/ssl.html#type-sni_hosts) host information for all
+% virtual host of all hosts (ex: baz.foobar.org, aa.buz.net, etc.).
 %
 % See also https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/.
 %
+% Note: we rely on the user routes rather than on the domain table as we need to
+% determine the first hots listed as the main one.
+%
 -spec get_sni_info( dispatch_routes(), bin_directory_path() ) ->
-		static_return( sni_info() ).
-get_sni_info( _UserRoutes, _BinCertDir=undefined ) ->
+						  static_return( sni_info() ).
+get_sni_info( _, _BinCertDir=undefined ) ->
 	throw( no_certificate_directory_for_sni );
 
 get_sni_info( _UserRoutes=[], _BinCertDir ) ->
@@ -792,20 +788,23 @@ get_sni_info( _UserRoutes=[], _BinCertDir ) ->
 get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 			  BinCertDir ) ->
 
-	% For https with SNI, a default host is defined, distinct from the SNI ones;
-	% by convention it is the first one found in the user-defined dispatch
+	% For https with SNI, a default host must be defined, distinct from the SNI
+	% ones; by convention it is the first one found in the user-defined dispatch
 	% routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
 	% not something.foobar.org); a plain string is required, apparently.
 	%
-	MainTranspOpts = class_USCertificateManager:get_transport_opts_for(
-						FirstHostname, BinCertDir ),
+	MainTranspOpts = get_transport_opts_for( FirstHostname, BinCertDir ),
 
 	% Options to apply for the host that matches what the client requested with
-	% Server Name Indication:
+	% Server Name Indication (going through *all* the hosts listed by the user):
+	%
+	% Now that virtual hosts are listed as SANs in a single host-level
+	% certificate:
 	%
 	SNIHostInfos = list_utils:flatten_once(
 					[ get_virtual_host_sni_infos( H, VH, BinCertDir )
 						|| { H, VH } <- UserRoutes ] ),
+
 
 	% Redundant:
 	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
@@ -854,6 +853,7 @@ get_virtual_host_sni_infos( _Hostname=default_domain_catch_all,
 							_VHostInfos, _BinCertDir ) ->
 	[];
 
+% Not visible outside of the LAN:
 get_virtual_host_sni_infos( _Hostname="localhost", _VHostInfos, _BinCertDir ) ->
 	[];
 
@@ -867,11 +867,14 @@ get_vh_sni_infos_for( _Hostname, _VHostInfos=[], _BinCertDir, Acc ) ->
 	% Preferring to respect the order from the user rules:
 	lists:reverse( Acc );
 
-% No host-level wildcard certificate:
+% No host-level wildcard certificate, yet we list it as a SNI option (multiple
+% hostnames can be managed by a single server):
+%
 get_vh_sni_infos_for( Hostname,
 		_VHostInfos=[ { _VH=default_vhost_catch_all, _ContentRoot } | T ],
 		BinCertDir, Acc ) ->
-	get_vh_sni_infos_for( Hostname, T, BinCertDir, Acc );
+	HPair = { Hostname, get_transport_opts_for( Hostname, BinCertDir ) },
+	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ HPair | Acc ] );
 
 get_vh_sni_infos_for( Hostname,
 		_VHostInfos=[ { VHostname, _ContentRoot } | T ], BinCertDir, Acc ) ->
@@ -892,7 +895,13 @@ get_vh_sni_infos_for( Hostname, [ Unexpected | _T ], _BinCertDir, _Acc ) ->
 % (helper)
 get_vh_pair( Hostname, VHostname, BinCertDir ) ->
 	FQDN = VHostname ++ [ $. | Hostname ],
-	TranspOpts = get_transport_opts_for( FQDN, BinCertDir ),
+
+	% Now that SANs are used, we point to the corresponding global, host-level
+	% certificate information:
+	%
+	%TranspOpts = get_transport_opts_for( FQDN, BinCertDir ),
+	TranspOpts = get_transport_opts_for( Hostname, BinCertDir ),
+
 	{ FQDN, TranspOpts }.
 
 

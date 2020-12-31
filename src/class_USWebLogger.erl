@@ -421,7 +421,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		{ error_log_file, ErrorFile },
 		{ log_task_id, MaybeLogTaskId } ] ),
 
-	?send_info( ReadyState, "Just created: " ++ to_string( ReadyState ) ),
+	?send_info( ReadyState, "Constructed: " ++ to_string( ReadyState ) ),
 
 	ReadyState.
 
@@ -488,6 +488,7 @@ destruct( State ) ->
 	?info( "Deleted." ),
 
 	ClosedState.
+
 
 
 
@@ -660,7 +661,7 @@ generateReport( State ) ->
 
 % Callback triggered whenever a linked process stops.
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-							basic_utils:exit_reason() ) -> const_oneway_return().
+						basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
 
 	% Not even a trace sent for that, as running a log report tool will trigger
@@ -681,6 +682,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 				[ ExitType, CrashPid ] ),
 
 	wooper:const_return().
+
 
 
 
@@ -912,7 +914,7 @@ rotate_access_log_file( State ) ->
 % Generates the Awstats auxiliary (non-main, yet referenced by it) HTLM report
 % pages.
 %
--spec generate_other_report_pages( [ ustring() ],  ustring(),
+-spec generate_other_report_pages( [ ustring() ], ustring(),
 								   wooper:state() ) -> void().
 generate_other_report_pages( _ReportTypes=[], _CmdFormatString, _State ) ->
 	ok;

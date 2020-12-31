@@ -45,7 +45,7 @@ endif
 
 # Topics covered by flags:
 #  - sni: regarding Server Name Indication
-# - handlers: regarding the web handlers spawned per request (thus which must
+#  - handlers: regarding the web handlers spawned per request (thus which must
 # remain efficient)
 #
 # Defining debug flags (at least the most verbose are by default commented-out):

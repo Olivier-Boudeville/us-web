@@ -242,6 +242,21 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
+	# A lot safer than relying on the tip of the master branch:
+	cowboy_tag="2.8.0"
+
+	if [ -n "${cowboy_tag}" ]; then
+			echo " - setting Cowboy to tag '${cowboy_tag}'"
+			${git} checkout tags/${cowboy_tag}
+			if [ ! $? -eq 0 ]; then
+
+				echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
+				exit 36
+
+			fi
+	fi
+
+
 	echo " - cloning US-Common"
 
 	${git} clone ${clone_opts} ${github_base}/us-common us_common
@@ -358,6 +373,11 @@ if [ ${do_build} -eq 0 ]; then
 	# (implies cowlib and ranch)
 	#
 	echo " - building Cowboy"
+
+	# Beware, running just 'make all' will update cowboy/ebin but not
+	# _build/default/lib/cowboy/ebin - which is nevertheless the only one in the
+	# US-Web code path, so the only one that matters.
+	#
 	cd cowboy && ${rebar3} compile 1>/dev/null
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Cowboy failed." 1>&2

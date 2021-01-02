@@ -136,7 +136,7 @@ init( _Args=[ AppRunContext ] ) ->
 	case MaybeHttpTCPPort of
 
 		undefined ->
-			trace_bridge:debug( "No HTTP listening enabled." );
+			trace_bridge:info( "No HTTP listening enabled." );
 
 		HttpTCPPort ->
 
@@ -154,7 +154,8 @@ init( _Args=[ AppRunContext ] ) ->
 									 ProtoOptMap ) of
 
 				{ ok, _HttpRanchListenerSupPid } ->
-					ok;
+					trace_bridge:notice_fmt( "One may now access this server "
+						"running at http://localhost:~p.", [ HttpTCPPort ] );
 
 				{ error, HttpError } ->
 
@@ -204,7 +205,7 @@ init( _Args=[ AppRunContext ] ) ->
 	case MaybeHttpsTCPPort of
 
 		undefined ->
-			trace_bridge:debug( "No HTTPS listening enabled." );
+			trace_bridge:info( "No HTTPS listening enabled." );
 
 	   % Using TLS here:
 		HttpsTCPPort ->
@@ -282,7 +283,8 @@ init( _Args=[ AppRunContext ] ) ->
 								   ProtoOptMap ) of
 
 				{ ok, _HttpsRanchListenerSupPid } ->
-					ok;
+					trace_bridge:notice_fmt( "One may access this server "
+						"running at https://localhost:~p.", [ HttpsTCPPort ] );
 
 				{ error, HttpsError } ->
 					trace_bridge:error_fmt( "Unable to start a cowboy HTTPS"
@@ -318,27 +320,5 @@ init( _Args=[ AppRunContext ] ) ->
 
 	% Currently no worker or lower-level supervisor to supervise:
 	ChildSpecs = [],
-
-	case MaybeHttpTCPPort of
-
-		undefined ->
-			ok;
-
-		SomeHttpTCPPort ->
-			trace_bridge:info_fmt( "One may test this server running at "
-				"http://localhost:~p", [ SomeHttpTCPPort ] )
-
-	end,
-
-	case MaybeHttpsTCPPort of
-
-		undefined ->
-			ok;
-
-		SomeHttpsTCPPort ->
-			trace_bridge:info_fmt( "One may test this server running at "
-				"https://localhost:~p", [ SomeHttpsTCPPort ] )
-
-	end,
 
 	{ ok, { SupSettings, ChildSpecs } }.

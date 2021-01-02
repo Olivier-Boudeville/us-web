@@ -142,7 +142,13 @@ handle( Req, HandlerState ) ->
 	{ ok, Req, HandlerState }.
 
 
+
+terminate( _Reason=normal, _Req, _HandlerState ) ->
+	ok;
+
 terminate( Reason, Req, _HandlerState ) ->
-	trace_bridge:debug_fmt( "Terminate called for request ~p; reason: ~p.",
+
+	trace_bridge:error_fmt( "Terminate called for request ~p; reason: ~p.",
 							[ Req, Reason ] ),
+
 	ok.

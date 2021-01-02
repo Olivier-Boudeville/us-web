@@ -893,10 +893,15 @@ handle_certificate_manager_for( BinDomainName, BinSans,
 	% trigger a onCertificateReady/2 method - counterpart of the on_complete/1
 	% function of Let's Encrypt, when obtained), but now that concurrent FSMs
 	% can be managed thanks to our LEEC fork, it can be fully synchronous, which
-	% is better:
+	% is better.
 	%
-	class_USCertificateManager:new_link( BinDomainName, BinSans, CertMode,
-		BinCertDir, BinAgentKeyPath, SchedulerPid, _IsSingleton=false );
+	% A synchronous creation is now used, otherwise even these parallel
+	% creations could lead (through the initialisation of the LEEC FSM already
+	% interacting with the ACME server) in hitting rate limits:
+	%
+	class_USCertificateManager:synchronous_new_link( BinDomainName, BinSans,
+		CertMode, BinCertDir, BinAgentKeyPath, SchedulerPid,
+		_IsSingleton=false );
 
 
 % For CertSupport, either no_certificates or use_existing_certificates here, so
@@ -920,22 +925,41 @@ renewCertificates( State ) ->
 
 	CertManagers = get_all_certificate_manager_pids( State ),
 
-	Oneway = { renewCertificateSynchronisable, [ self() ] },
+	CertManagerCount = length( CertManagers ),
 
-	[ CMPid ! Oneway || CMPid <- CertManagers ],
+	% 1  minute and 30 seconds per manager:
+	MaxDurationInMs = 90*1000,
 
-	?info_fmt( "Renewing all certificates, through their ~B managers.",
-			   [ length( CertManagers ) ] ),
+	?info_fmt( "Renewing all certificates, through their ~B managers (~w); "
+		"setting a (large) ~s for each of them.", [ CertManagerCount,
+		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
 
-	basic_utils:wait_for_acks( CertManagers, _MaxDurationInSecs=5*60,
-		_AckAtom=certificate_renewal_over,
-		_ThrowAtom=no_certificate_renewal_confirmation_from ),
+	% We should not trigger all managers in parallel for a certificate renewal,
+	% lest we hit another Letsencrypt rate limit (see in
+	% https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit').
+	%
+	% So we iterate on certificate managers and for each of them in turn we send
+	% the following oneway and wait for its synchronisation ack before
+	% proceeding to the next one:
+	%
+	case wooper:send_acknowledged_oneway_in_turn(
+	  _OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
+	  _TargetInstancePIDs=CertManagers, MaxDurationInMs,
+	  _AckAtom=certificate_renewal_over ) of
 
-	?debug( "All certificates ready." ),
+		[] ->
+			?debug_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
+
+		FailedCertPids ->
+			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
+				"obtained by their respective managers: ~w.",
+				[ length( FailedCertPids ), CertManagerCount,
+				  FailedCertPids ] )
+
+	end,
 
 	% Note the plural in atom:
 	wooper:const_return_result( certificate_renewals_over ).
-
 
 
 

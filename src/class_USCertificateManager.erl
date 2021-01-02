@@ -71,8 +71,8 @@
 % Let's Encrypt account was created, yet it led to hitting quickly their rate
 % limits. So now we generate first a (unique) TLS private key, create a (single)
 % ACME account that all certificate managers will use to order their
-% certificate. SAN information and wildcard certificates could also be used for
-% that.
+% certificate. SAN information (and, possibly in the future with other challenge
+% types, wildcard certificates) are also useful for that.
 %
 % Initially, the call to letsencrypt:obtain_certificate_for/3 below was
 % synchronous (blocking), however then the corresponding LEEC web handler
@@ -81,11 +81,16 @@
 % current certificate manager - whereas this one was blocked by design. So now
 % certificate managers use non-blocking calls to obtain their certificate.
 
+% Note that just *creating* (even before requesting any certificate) multiple
+% certificate managers may already lead to hitting the rate limits of the ACME
+% server (because of the LEEC initialisation, resulting in its FSM getting
+% directory map, nonces, etc.). So the creation of certificate managers shall
+% preferably done with a synchronous new operator.
 
-% Initially a certificate manager was not trapping exits, so that any crash was
-% to propagate to the US-Web config server; now trapping them to detect for
-% example the crash of the associated LEEC FSM, and manage it (resisting and
-% relaunching it).
+% Initially certificate managers did not trapped exit messages, so that any
+% crash was to propagate to the US-Web config server; now managers trap them to
+% detect for example the crash of the associated LEEC FSM, and manage such a
+% crash (resisting and relaunching it).
 
 
 -type manager_pid() :: class_UniversalServer:server_pid().
@@ -189,23 +194,31 @@
 % Let’s Encrypt certificate lifetime is 90 days (cf. duration in
 % https://letsencrypt.org/docs/faq/); we trigger a renewal with some margin:
 
-% Every 15 minutes (for development):
--define( dhms_cert_renewal_period_development, { 0, 0, 15, 0 } ).
+% For development:
+-define( dhms_cert_renewal_period_development, { 0, 1, 0, 0 } ).
 
-% Every 75 days (minimum being 60 days, as lasting for 90 days and only renewed
-% in the last 30 days), for production:
+% Every 70 days (minimum being 60 days, as lasting for 90 days and only
+% renewable in the last 30 days), for production:
 %
--define( dhms_cert_renewal_period_production, { 75, 0, 0, 0 } ).
+-define( dhms_cert_renewal_period_production, { 70, 0, 0, 0 } ).
 
 
 % The maximum additional (positive) jitter introduced to smooth the load when
-% having multiple virtual hosts:
+% having multiple domains.
+%
+% A sufficiently large jitter is all the more welcome than for (post-creation)
+% renewals, the LEEC agents for the various domains of interest are not
+% specifically synchronised (ex: no task ring for them), and we do not want too
+% many of these renewals to possibly happen at the same time, lest we hit the
+% numerous rate limits enforced by the ACME letsencrypt servers.
 
-% 30-sec max jitter, for testing:
+% 30-sec max jitter, for testing (warning: concurrent requests may thus
+% happen and hit rate limits):
+%
 -define( max_dhms_cert_renewal_jitter_development, { 0, 0, 0, 30 } ).
 
-% 1-day max jitter, for production:
--define( max_dhms_cert_renewal_jitter_production, { 1, 0, 0, 0 } ).
+% 4-day max jitter, for production:
+-define( max_dhms_cert_renewal_jitter_production, { 4, 0, 0, 0 } ).
 
 
 % 50-second delay, for testing:
@@ -290,6 +303,8 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 
 	% For example for any stateless helper:
 	class_TraceEmitter:register_bridge( TraceState ),
+
+	%?send_info( TraceState, "Construction started." ),
 
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
@@ -440,7 +455,7 @@ destruct( State ) ->
 		_ ->
 			?debug( "Being destructed, unregistering from schedule." ),
 
-			% Any extra schedule trigger sent will be lost; not a problem as it
+			% Any extra schedule trigger sent will be lost; not a problem, as it
 			% is a oneway:
 			%
 			MaybeSchedPid ! { unregisterTask, [ CertTaskId ], self() }
@@ -505,7 +520,9 @@ renewCertificate( State ) ->
 % Renews a certificate for the managed hostname on a synchronisable manner.
 %
 % The specified listener is typically the US-Web configuration server, so that
-% HTTPS support can be triggered only when certificates are ready.
+% HTTPS support can be triggered only when certificates are ready and/or to
+% ensure no two certificate requests overlap (to avoid hitting a rate limit
+% regarding ACME servers).
 %
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
 			oneway_return().
@@ -540,8 +557,8 @@ request_certificate( State ) ->
 	FQDN = ?getAttr(fqdn),
 
 	% We used to rely on a synchronous (blocking) call (no callback was used),
-	% which was a mistake (see implementation notes). Now using an asynchronous
-	% call instead.
+	% which was a mistake (this certificate must remain responsive here; see
+	% implementation notes). Now using an asynchronous call instead.
 
 	% Closure:
 	Self = self(),
@@ -670,7 +687,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 					?debug_fmt( "Next attempt of certificate renewal to "
 					  "take place in ~s, i.e. at ~s.",
-					  [ time_utils:duration_to_string( RenewDelay ),
+					  [ time_utils:duration_to_string( 1000 * RenewDelay ),
 						time_utils:timestamp_to_string( NextTimestamp ) ] ),
 
 					receive
@@ -950,13 +967,27 @@ to_string( State ) ->
 	CertStr = case ?getAttr(cert_path) of
 
 		undefined ->
-			"no certificate generated";
+			"not having generated a certificate yet";
 
 		CertPath ->
-			text_utils:format( "a certificate generated in '~s'", [ CertPath ] )
+			text_utils:format( "having generated a certificate in '~s'",
+							   [ CertPath ] )
 
 	end,
 
-	text_utils:format( "US certificate manager for '~s', using "
-		"certificate directory '~s', with ~s, using ~s, with ~s",
-		[ ?getAttr(fqdn), ?getAttr(cert_dir), PeriodStr, FSMStr, CertStr ] ).
+	SansStr = case ?getAttr(sans) of
+
+		[] ->
+			"no Subject Alternative Names";
+
+		Sans ->
+			text_utils:format( "~B Subject Alternative Names: ~s",
+				[ length( Sans ), text_utils:binaries_to_string( Sans ) ] )
+
+	end,
+
+	text_utils:format( "US certificate manager for '~s' in ~s mode, "
+		"using certificate directory '~s', with ~s, using ~s, with ~s; "
+		"it is to specify ~s",
+		[ ?getAttr(fqdn), ?getAttr(cert_mode), ?getAttr(cert_dir), PeriodStr,
+		  FSMStr, CertStr, SansStr ] ).

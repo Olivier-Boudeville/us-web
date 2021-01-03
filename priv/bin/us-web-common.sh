@@ -236,6 +236,8 @@ read_us_web_config_file()
 
 	fi
 
+	us_cert_dir="${us_web_data_dir}/certificates"
+
 
 	# VM-level logs (not based on us_web_log_dir - which is dedicated to the
 	# web-related ones):
@@ -506,8 +508,6 @@ prepare_us_web_launch()
 	/bin/rm -f ${us_web_vm_log_dir}/erlang.log.* ${us_web_vm_log_dir}/run_erl.log 2>/dev/null
 
 	# Avoiding warnings about keys being overwritten:
-
-	us_cert_dir="${us_web_data_dir}/certificates"
 
 	echo "Removing any LEEC key files in '${us_cert_dir}'."
 

@@ -477,6 +477,24 @@ if [ ${do_build} -eq 0 ]; then
 
 	read_us_web_config_file #1>/dev/null
 
+	# Add a convenient certificate-related makefile:
+	if [ -n "${us_cert_dir}" ]; then
+
+		if [ ! -d "${us_cert_dir}" ]; then
+
+			mkdir -p "${us_cert_dir}"
+
+		fi
+
+		previous_dir="$(pwd)"
+
+		cd "${us_cert_dir}"
+
+		ln -s ${us_web_dir}/conf/GNUmakefile-for-certificates GNUmakefile
+
+		cd "${previous_dir}"
+
+	fi
 
 	# First permissions (chmod), then owner/group (chown):
 

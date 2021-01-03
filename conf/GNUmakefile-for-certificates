@@ -1,0 +1,8 @@
+
+# Typically to be available from the [...]/us-web-data/certificates directory.
+
+.PHONY: check-certs
+
+check-certs:
+	@echo "  Checking local certificates for issuer and end of validity:"
+	@for cert in *.crt; do echo "For $${cert}:" ; openssl x509 -text -noout -in "$${cert}" | grep 'Issuer:\|Not After' ; done

@@ -2469,7 +2469,8 @@ manage_ports( ConfigTable, State ) ->
 			DefaultHttpsPort;
 
 		{ value, TLSPort } when is_integer( TLSPort ) ->
-			?info_fmt( "The user-specified HTTPS TCP port is #~B.", [  ] ),
+			?info_fmt( "The user-specified HTTPS TCP port is #~B.",
+					   [ TLSPort ] ),
 			TLSPort;
 
 		{ value, undefined } ->
@@ -2606,28 +2607,27 @@ manage_certificates( ConfigTable, State ) ->
 
 	CertDir = file_utils:join( ?getAttr(data_directory), "certificates" ),
 
-	{ MaybeCertMode, MaybeCertDir, MaybeBinKeyPath, MaybeDHKeyPath,
-	  MaybeBinCaKeyPath } = case CertSupport of
+	CertMode = case table:lookup_entry( ?certificate_mode_key, ConfigTable ) of
+
+		key_not_found ->
+			% Default:
+			?info( "Certificate mode set by default to production." ),
+			production;
+
+		{ value, development } ->
+			?info( "Certificate mode set to development." ),
+			development;
+
+		{ value, production } ->
+			?info( "Certificate mode set to production." ),
+			production
+
+	end,
+
+	{ MaybeBinKeyPath, MaybeDHKeyPath, MaybeBinCaKeyPath } = case CertSupport of
 
 		renew_certificates ->
 
-			CertMode = case table:lookup_entry( ?certificate_mode_key,
-												ConfigTable ) of
-
-				key_not_found ->
-					% Default:
-					?info( "Certificate mode set by default to production." ),
-					production;
-
-				{ value, development } ->
-					?info( "Certificate mode set to development." ),
-					development;
-
-				{ value, production } ->
-					?info( "Certificate mode set to production." ),
-					production
-
-			end,
 
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
@@ -2673,7 +2673,7 @@ manage_certificates( ConfigTable, State ) ->
 				"CA (Certificate Authority) key path is '~s'.",
 				[ BinDHKeyPath, BinCAKeyPath ] ),
 
-			{ CertMode, CertDir, BinKeyPath, BinDHKeyPath, BinCAKeyPath };
+			{ BinKeyPath, BinDHKeyPath, BinCAKeyPath };
 
 
 		use_existing_certificates ->
@@ -2689,17 +2689,17 @@ manage_certificates( ConfigTable, State ) ->
 				"CA (Certificate Authority) key path is '~s'.",
 				[ BinDHKeyPath, BinCAKeyPath ] ),
 
-			{ undefined, undefined, undefined, BinDHKeyPath, BinCAKeyPath };
+			{ undefined, BinDHKeyPath, BinCAKeyPath };
 
 
 		no_certificates ->
-			{ undefined, undefined, undefined, undefined, undefined }
+			{ undefined, undefined, undefined }
 
 	end,
 
 	setAttributes( State, [ { cert_support, CertSupport },
-							{ cert_mode, MaybeCertMode },
-							{ cert_directory, MaybeCertDir },
+							{ cert_mode, CertMode },
+							{ cert_directory, CertDir },
 							{ leec_agents_key_path, MaybeBinKeyPath },
 							{ dh_key_path, MaybeDHKeyPath },
 							{ ca_cert_key_path, MaybeBinCaKeyPath } ] ).

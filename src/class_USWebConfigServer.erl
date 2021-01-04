@@ -1,4 +1,4 @@
-% Copyright (C) 2019-2020 Olivier Boudeville
+% Copyright (C) 2019-2021 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -527,7 +527,6 @@ construct( State, SupervisorPid, AppRunContext ) ->
 					{ ca_cert_key_path, undefined } ] ),
 
 	CfgState = load_and_apply_configuration( BinCfgDir, SupState ),
-
 
 	?send_info( CfgState, "Constructed: " ++ to_string( CfgState ) ),
 

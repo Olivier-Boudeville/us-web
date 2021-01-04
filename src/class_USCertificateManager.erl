@@ -1,4 +1,4 @@
-% Copyright (C) 2020-2020 Olivier Boudeville
+% Copyright (C) 2020-2021 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -577,8 +577,8 @@ request_certificate( State ) ->
 
 	end,
 
-	?debug_fmt( "Requesting certificate for '~s', with SAN information ~p.",
-				[ FQDN, ActualSans ] ),
+	?debug_fmt( "Requesting certificate for '~s', with following SAN "
+				"information:~n  ~p.", [ FQDN, ActualSans ] ),
 
 	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
 		_CertReqOptionMap=#{ async => true,

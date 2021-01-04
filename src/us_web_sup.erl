@@ -287,10 +287,10 @@ init( _Args=[ AppRunContext ] ) ->
 						"running at https://localhost:~p.", [ HttpsTCPPort ] );
 
 				{ error, HttpsError } ->
-					trace_bridge:error_fmt( "Unable to start a cowboy HTTPS"
-						"listener at TCP port #~B, error being:~n  ~p~n~n"
-						"Transport options were:~n  ~p~n"
-						"Protocol options were:~n  ~p.",
+					trace_bridge:error_fmt( "Unable to start a cowboy HTTPS "
+						"listener at TCP port #~B, error being:~n  ~p.~n~n"
+						"Transport options were:~n  ~p.~n~n"
+						"Protocol options were:~n  ~p.~n",
 						[ HttpsTCPPort, HttpsError, HttpsTransportOpts,
 						  ProtoOptMap ] ),
 

@@ -68,7 +68,7 @@ run-debug: build kill
 
 kill:
 	@echo "  Removing (for debug) any prior US-Web instance by killing EPMD and any Erlang VM"
-	@killall epmd beam.smp 2>/dev/null || true
+	@killall -9 epmd beam.smp 2>/dev/null || true
 
 
 # We do not clean/build cowboy anymore as a version thereof is not supposed to

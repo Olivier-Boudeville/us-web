@@ -504,6 +504,11 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	?send_debug_fmt( TraceState, "System description: ~s",
 		[ system_utils:get_system_description() ] ),
 
+	% Should a module be a problem:
+	%Module = cow_http2,
+	%?send_debug_fmt( TraceState, "For module '~s': ~p",
+	%	[ Module, code_utils:is_beam_in_path( Module ) ] ),
+
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
 	%

@@ -426,8 +426,8 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 			FsmPid;
 
 		{ error, Reason } ->
-			?error_fmt( "Initialization of LEEC failed: ~p; "
-				"start options were:~n  ~p", [ Reason, StartOpts ] ),
+			?error_fmt( "Initialization of LEEC failed: ~p.~n"
+				"Start options were:~n  ~p", [ Reason, StartOpts ] ),
 			throw( { leec_initialization_failed, Reason } )
 
 	end,
@@ -982,7 +982,8 @@ to_string( State ) ->
 
 		Sans ->
 			text_utils:format( "~B Subject Alternative Names: ~s",
-				[ length( Sans ), text_utils:binaries_to_string( Sans ) ] )
+				[ length( Sans ),
+				  text_utils:binaries_to_listed_string( Sans ) ] )
 
 	end,
 

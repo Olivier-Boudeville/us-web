@@ -236,9 +236,15 @@
 		maybe( bin_file_path() ), maybe( bin_file_path() ) }.
 
 
+% Tells whether the generation of a log analysis report succeeded.
+-type report_generation_outcome() :: 'report_generation_success'
+			   | { 'report_generation_failed', error_reason() }.
+
+
 % Notably for us_web_meta:
 -export_type([ domain_id/0, domain_config_table/0, vhost_config_table/0,
-			   vhost_config_entry/0, meta_web_settings/0 ]).
+			   vhost_config_entry/0, meta_web_settings/0,
+			   report_generation_outcome/0 ]).
 
 
 -type path_match() :: text_utils:any_string().
@@ -291,6 +297,8 @@
 
 -type ustring() :: text_utils:ustring().
 
+-type error_reason() :: basic_utils:error_reason().
+
 -type directory_path() :: file_utils:directory_path().
 -type bin_directory_path() :: file_utils:bin_directory_path().
 -type any_directory_path() :: file_utils:any_directory_path().
@@ -301,7 +309,9 @@
 -type bin_domain_name() :: net_utils:bin_domain_name().
 
 
-%-type bin_subdomain() :: net_utils:bin_subdomain().
+-type bin_fqdn() :: net_utils:bin_fqdn().
+-type string_fqdn() :: net_utils:string_fqdn().
+
 -type bin_host_name() :: net_utils:bin_host_name().
 -type tcp_port() :: net_utils:tcp_port().
 
@@ -610,6 +620,131 @@ getWebConfigSettings( State ) ->
 
 
 
+
+% Triggers and waits for a parallel certificate renewal from all known
+% certificate managers (may be done for example at server startup).
+%
+-spec renewCertificates( wooper:state() ) ->
+					const_request_return( 'certificate_renewals_over' ).
+renewCertificates( State ) ->
+
+	CertManagers = get_all_certificate_manager_pids( State ),
+
+	CertManagerCount = length( CertManagers ),
+
+	% 1  minute and 30 seconds per manager:
+	MaxDurationInMs = 90*1000,
+
+	?info_fmt( "Renewing all certificates, through their ~B managers (~w); "
+		"setting a (large) ~s for each of them.", [ CertManagerCount,
+		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
+
+	% We should not trigger all managers in parallel for a certificate renewal,
+	% lest we hit another Letsencrypt rate limit (see in
+	% https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit').
+	%
+	% So we iterate on certificate managers and for each of them in turn we send
+	% the following oneway and wait for its synchronisation ack before
+	% proceeding to the next one:
+	%
+	case wooper:send_acknowledged_oneway_in_turn(
+	  _OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
+	  _TargetInstancePIDs=CertManagers, MaxDurationInMs,
+	  _AckAtom=certificate_renewal_over ) of
+
+		[] ->
+			?debug_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
+
+		FailedCertPids ->
+			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
+				"obtained by their respective managers: ~w.",
+				[ length( FailedCertPids ), CertManagerCount,
+				  FailedCertPids ] )
+
+	end,
+
+	% Note the plural in atom:
+	wooper:const_return_result( certificate_renewals_over ).
+
+
+
+% Requests the TLS certificate of specified virtual host to be renewed.
+-spec renewCertificate( wooper:state(), domain_id(), vhost_id() ) ->
+							const_oneway_return().
+renewCertificate( State, DomainId, VHostId ) ->
+
+	?info_fmt( "Renewal of TLS certification for virtual host '~s' of "
+			   "domain '~s' requested.", [ VHostId, DomainId ] ),
+
+	?error( "Not implemented yet." ),
+
+	wooper:const_return().
+
+
+
+% Requests the access log analysis reports to be generated for all websites,
+% i.e. for all virtual hosts of all managed hosts.
+%
+-spec generateAllLogAnalysisReports( wooper:state() ) ->
+								request_return( report_generation_outcome() ).
+generateAllLogAnalysisReports( State ) ->
+
+	?info( "Requested to generate the access log analysis reports for all "
+		   "hosted websites." ),
+
+	ReportState = State,
+
+	wooper:return_state_result( ReportState, report_generation_success ).
+
+
+
+% Requests the access log analysis reports to be generated for specified website
+% (i.e. FQDN-specified virtual host).
+%
+% Ex: for "garfield.baz.foobar.org".
+
+-spec generateLogAnalysisReportFor( wooper:state(),
+  string_fqdn() | bin_fqdn()) -> request_return( report_generation_outcome() ).
+generateLogAnalysisReportFor( State, FQDN ) ->
+
+	{ Hostname, FullDomainName } = net_utils:split_fqdn( FQDN ),
+
+	?info_fmt( "Requested to generate the access log analysis reports for the "
+		"'~s' virtual host in the '~s' domain.", [ Hostname, FullDomainName ] ),
+
+	ReportState = State,
+
+	wooper:return_state_result( ReportState, report_generation_success ).
+
+
+
+% Callback triggered whenever a linked process stops.
+-spec onWOOPERExitReceived( wooper:state(), pid(),
+						basic_utils:exit_reason() ) -> const_oneway_return().
+onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
+
+	% Not even a trace sent for that, as too many of them.
+	%
+	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+
+	wooper:const_return();
+
+onWOOPERExitReceived( State, CrashPid, ExitType ) ->
+
+	% Typically: "Received exit message '{{nocatch,
+	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
+	%							FunName,Arity,Args,AtomCause}}, [...]}"
+
+	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
+				[ ExitType, CrashPid ] ),
+
+	wooper:const_return().
+
+
+
+
+
+
 % Helper section.
 
 
@@ -909,94 +1044,6 @@ handle_certificate_manager_for( BinDomainName, BinSans,
 handle_certificate_manager_for( _BinDomainName, _BinSans, _OtherCertSupport,
 		_CertMode, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid ) ->
 	undefined.
-
-
-
-% Method section.
-
-
-% Triggers and waits for a parallel certificate renewal from all known
-% certificate managers (may be done for example at server startup).
-%
--spec renewCertificates( wooper:state() ) ->
-					const_request_return( 'certificate_renewals_over' ).
-renewCertificates( State ) ->
-
-	CertManagers = get_all_certificate_manager_pids( State ),
-
-	CertManagerCount = length( CertManagers ),
-
-	% 1  minute and 30 seconds per manager:
-	MaxDurationInMs = 90*1000,
-
-	?info_fmt( "Renewing all certificates, through their ~B managers (~w); "
-		"setting a (large) ~s for each of them.", [ CertManagerCount,
-		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
-
-	% We should not trigger all managers in parallel for a certificate renewal,
-	% lest we hit another Letsencrypt rate limit (see in
-	% https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit').
-	%
-	% So we iterate on certificate managers and for each of them in turn we send
-	% the following oneway and wait for its synchronisation ack before
-	% proceeding to the next one:
-	%
-	case wooper:send_acknowledged_oneway_in_turn(
-	  _OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
-	  _TargetInstancePIDs=CertManagers, MaxDurationInMs,
-	  _AckAtom=certificate_renewal_over ) of
-
-		[] ->
-			?debug_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
-
-		FailedCertPids ->
-			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
-				"obtained by their respective managers: ~w.",
-				[ length( FailedCertPids ), CertManagerCount,
-				  FailedCertPids ] )
-
-	end,
-
-	% Note the plural in atom:
-	wooper:const_return_result( certificate_renewals_over ).
-
-
-
-% Requests the TLS certificate of specified virtual host to be renewed.
--spec renewCertificate( wooper:state(), domain_id(), vhost_id() ) ->
-							const_oneway_return().
-renewCertificate( State, DomainId, VHostId ) ->
-
-	?info_fmt( "Renewal of TLS certification for virtual host '~s' of "
-			   "domain '~s' requested.", [ VHostId, DomainId ] ),
-
-	?error( "Not implemented yet." ),
-
-	wooper:const_return().
-
-
-
-% Callback triggered whenever a linked process stops.
--spec onWOOPERExitReceived( wooper:state(), pid(),
-						basic_utils:exit_reason() ) -> const_oneway_return().
-onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
-
-	% Not even a trace sent for that, as too many of them.
-	%
-	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
-
-	wooper:const_return();
-
-onWOOPERExitReceived( State, CrashPid, ExitType ) ->
-
-	% Typically: "Received exit message '{{nocatch,
-	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
-	%							FunName,Arity,Args,AtomCause}}, [...]}"
-
-	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
-				[ ExitType, CrashPid ] ),
-
-	wooper:const_return().
 
 
 

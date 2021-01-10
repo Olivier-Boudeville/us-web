@@ -80,11 +80,21 @@ exec() ->
 
 	% For all (direct and indirect) OTP prerequisites: updating ebin paths so
 	% that the corresponding *.app and BEAM files are found, checking that
-	% applications are compiled and preparing their starting:
+	% applications are compiled and preparing their starting.
 	%
+	% We used to blacklist notably shotgun, as for this use case of LEEC we do
+	% not use it (the same applies for elli), moreover shotgun implies (its own
+	% version of) cowlib, which may clash with the one needed by cowboy; however
+	% as long as shotgun is listed in the 'applications' key of LEEC, having OTP
+	% start LEEC afterwards results in checking shotgun (and failing then); so
+	% now LEEC's .app file does not list shotgun (or elli) anymore, they are to
+	% be started explicitly only if needed.
+	%
+	%BlacklistedApps = [ shotgun, elli ],
+	BlacklistedApps = [],
 
 	OrderedAppNames = otp_utils:prepare_for_execution( _ThisApp=us_web,
-													   BuildRootDir ),
+											BuildRootDir, BlacklistedApps ),
 
 	% Retain all applications but US-Web itself, so that we can run US-Web as we
 	% want:
@@ -95,7 +105,8 @@ exec() ->
 	trace_bridge:info_fmt( "Resulting prerequisite applications to start, "
 						   "in order: ~w.", [ OrderedAppNames ] ),
 
-	otp_utils:start_applications( PrereqAppNames ),
+	otp_utils:start_applications( PrereqAppNames, _RestartType=temporary,
+								  BlacklistedApps ),
 
 	% So here the us_web application is not regarded as specifically started
 	% (start/2 below never called):
@@ -111,13 +122,24 @@ exec() ->
 %
 % The setup and dependency management shall have been done already by the OTP
 % release system. So here no ebin path to set or prerequisite applications to
-% start, we focus only on us_web itself.
+% start for applications listed in US-Web's .app file, we focus only on the
+% applications not listed whereas possibly useful in this context (shotgun,
+% elli) and on us_web itself.
+%
+% Note that it may easier/more reliable to add these applications directly in
 %
 start( StartType, StartArgs ) ->
 
 	% Myriad may be already available in this branch as well, though:
 	io:format( "Starting us_web application "
 		"(start type: ~p, arguments: ~p)...~n", [ StartType, StartArgs ] ),
+
+	% Location to check:
+	BuildRootDir = "..",
+
+	% They will be started by LEEC afterwards:
+	_OrderedAppNames = otp_utils:prepare_for_execution( [ shotgun, elli ],
+													   BuildRootDir ),
 
 	% To debug any dependency-related 'undef' problem, or to ensure
 	% concurrently-emitted messages can be seen (otherwise many outputs may be
@@ -137,7 +159,11 @@ start( StartType, StartArgs ) ->
 
 
 stop( _State ) ->
-	io:format( "Stopping us_web application.~n" ),
+	trace_bridge:info( "Stopping us_web application." ),
+
+	% In native context, explicit stopping should be done, with the same
+	% blacklisting.
+
 	ok.
 
 

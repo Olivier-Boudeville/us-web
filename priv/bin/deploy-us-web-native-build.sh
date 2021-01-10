@@ -409,8 +409,15 @@ if [ ${do_build} -eq 0 ]; then
 		exit 65
 	fi
 
-	# Relies on rebar3, so that prerequisites such as shotgun are managed:
-	${make} all-rebar3 1>/dev/null
+	# Relies either on rebar3, so that prerequisites such as shotgun are
+	# managed, or on our native build (preferred now, as not using extra
+	# dependencies):
+
+	#${make} all-rebar3 1>/dev/null
+
+	# Relying on Erlang-native httpc instead (through Myriad's web_utils):
+	${make} all USE_SHOTGUN=false 1>/dev/null
+
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of LEEC failed." 1>&2
 		exit 66

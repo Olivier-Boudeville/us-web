@@ -110,8 +110,9 @@ init( _Args=[ AppRunContext ] ) ->
 	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
 
-	{ DispatchRules, MaybeHttpTCPPort, MaybeHttpsTCPPort, CertSupport,
-	  MaybeHttpsTranspOpts, MaybeBinDHKeyPath, MaybeBinCaKeyPath } = receive
+	{ HttpDispatchRules, MaybeHttpTCPPort, MaybeHttpsDispatchRules,
+	  MaybeHttpsTCPPort, CertSupport, MaybeHttpsTranspOpts, MaybeBinDHKeyPath,
+	  MaybeBinCaKeyPath } = receive
 
 		{ wooper_result, GenWebSettings } ->
 				trace_bridge:debug_fmt( "Received general web settings:~n  ~p",
@@ -127,11 +128,9 @@ init( _Args=[ AppRunContext ] ) ->
 
 	trace_bridge:debug( "Starting Cowboy webserver..." ),
 
-	ProtoOptMap = #{ max_keepalive => 1024,
-					 max_connections => infinity,
-					 env => #{ dispatch => DispatchRules } },
-
-	HttpProtoOptMap = ProtoOptMap,
+	HttpProtoOptMap = #{ max_keepalive => 1024,
+						 max_connections => infinity,
+						 env => #{ dispatch => HttpDispatchRules } },
 
 	case MaybeHttpTCPPort of
 
@@ -151,7 +150,7 @@ init( _Args=[ AppRunContext ] ) ->
 			HttpTransportOpts = [ { port, HttpTCPPort } ],
 
 			case cowboy:start_clear( us_web_http_listener, HttpTransportOpts,
-									 ProtoOptMap ) of
+									 HttpProtoOptMap ) of
 
 				{ ok, _HttpRanchListenerSupPid } ->
 					trace_bridge:notice_fmt( "One may now access this server "
@@ -161,8 +160,8 @@ init( _Args=[ AppRunContext ] ) ->
 
 					trace_bridge:error_fmt( "Unable to start a cowboy HTTP "
 						"listener at TCP port #~B, error being: ~p.~n~n"
-						"Transport options were:~n  ~p.~n~n"
-						"Protocol options were: ~n  ~p.~n",
+						"The http transport options were:~n  ~p.~n~n"
+						"The http protocol options were: ~n  ~p.~n",
 						[ HttpTCPPort, HttpError, HttpTransportOpts,
 						  HttpProtoOptMap ] ),
 
@@ -212,6 +211,10 @@ init( _Args=[ AppRunContext ] ) ->
 
 			trace_bridge:debug_fmt( "Listening for the HTTPS scheme "
 									"at port #~B.", [ HttpsTCPPort ] ),
+
+			HttpsProtoOptMap = #{ max_keepalive => 1024,
+				max_connections => infinity,
+				env => #{ dispatch => MaybeHttpsDispatchRules } },
 
 			% Transport options for the main, default host (ex: "foobar.org"),
 			% containing notably the path to its PEM certificate and to its
@@ -276,11 +279,11 @@ init( _Args=[ AppRunContext ] ) ->
 			HttpsTransportOpts = MainTranspOpts ++ WithCaHttpsOpts,
 
 			trace_bridge:debug_fmt( "The https transport options are:~n ~p~n"
-				"~nThe protocol options are:~n  ~p",
-				[ HttpsTransportOpts, ProtoOptMap ] ),
+				"~nThe https protocol options are:~n  ~p",
+				[ HttpsTransportOpts, HttpsProtoOptMap ] ),
 
 			case cowboy:start_tls( us_web_https_listener, HttpsTransportOpts,
-								   ProtoOptMap ) of
+								   HttpsProtoOptMap ) of
 
 				{ ok, _HttpsRanchListenerSupPid } ->
 					trace_bridge:notice_fmt( "One may access this server "
@@ -292,7 +295,7 @@ init( _Args=[ AppRunContext ] ) ->
 						"Transport options were:~n  ~p.~n~n"
 						"Protocol options were:~n  ~p.~n",
 						[ HttpsTCPPort, HttpsError, HttpsTransportOpts,
-						  ProtoOptMap ] ),
+						  HttpsProtoOptMap ] ),
 
 					throw( { webserver_launch_failed, https_scheme,
 							 HttpsTCPPort, HttpsError } )

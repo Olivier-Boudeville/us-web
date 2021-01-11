@@ -53,7 +53,8 @@ init( Req, HandlerState=TargetTCPPort ) ->
 							[ Req, TargetTCPPort ] ),
 
 	% Typically redirecting from TCP port #80 (http) to #443 (https):
-	FixedURI = cowboy_req:uri( Req, #{ port => TargetTCPPort } ),
+	FixedURI = cowboy_req:uri( Req, #{ scheme => <<"https">>,
+									   port => TargetTCPPort } ),
 
 	% Using 301 ("Moved Permanently") is the best practice for upgrading users
 	% from HTTP to HTTPS (see https://en.wikipedia.org/wiki/HTTP_301):

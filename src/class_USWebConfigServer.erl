@@ -207,8 +207,8 @@
 				   %
 				   maybe( cert_manager_pid() ),
 
-				   %  The table storing the configuration of the virtual hosts
-				   %  within this domain:
+				   % The table storing the configuration of the virtual hosts
+				   % within this domain:
 				   %
 				   vhost_config_table() }.
 
@@ -232,13 +232,14 @@
 
 % General web settings, typically useful for the us_web supervisor:
 -type general_web_settings() :: { dispatch_rules(), maybe( tcp_port() ),
-		maybe( tcp_port() ), cert_support(), maybe( sni_info() ),
-		maybe( bin_file_path() ), maybe( bin_file_path() ) }.
+		maybe( dispatch_rules() ), maybe( tcp_port() ), cert_support(),
+		maybe( sni_info() ), maybe( bin_file_path() ),
+		maybe( bin_file_path() ) }.
 
 
 % Tells whether the generation of a log analysis report succeeded.
 -type report_generation_outcome() :: 'report_generation_success'
-			   | { 'report_generation_failed', error_reason() }.
+			| { 'report_generation_failed', error_reason() }.
 
 
 % Notably for us_web_meta:
@@ -321,12 +322,16 @@
 
 %-type server_pid() :: class_UniversalServer:server_pid().
 
+-type scheduler_pid() :: class_USScheduler:scheduler_pid().
+
 -type logger_pid() :: class_USWebLogger:logger_pid().
 
 -type cert_manager_pid() :: class_USCertificateManager:manager_pid().
 -type sni_info() :: class_USCertificateManager:sni_info().
 
--type scheduler_pid() :: class_USScheduler:scheduler_pid().
+-type handler_module() :: us_web_handler:handler_module().
+-type handler_state() :: us_web_handler:handler_state().
+
 
 -type bin_san() :: letsencrypt:bin_san().
 
@@ -381,8 +386,11 @@
 	{ us_web_supervisor_pid, supervisor_pid(),
 	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
 
-	{ dispatch_rules, dispatch_rules(),
-	  "the Cowboy dispatch rules corresponding to the configuration" },
+	{ dispatch_routes, dispatch_routes(), "the dispatch routes to decide "
+	  "by which handler URLs shall be processed" },
+
+	{ dispatch_rules, dispatch_rules(), "the Cowboy dispatch rules (compiled "
+	  "from dispatch routes) corresponding to the configuration" },
 
 	{ config_base_directory, bin_directory_path(),
 	  "the base directory where all US configuration is to be found "
@@ -535,6 +543,8 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	SupState = setAttributes( TraceState, [
 					{ app_run_context, AppRunContext },
 					{ us_web_supervisor_pid, SupervisorPid },
+					{ dispatch_routes, undefined },
+					{ dispatch_rules, undefined },
 					{ start_timestamp, StartTimestamp },
 					{ cert_directory, undefined },
 					{ leec_agents_key_path, undefined },
@@ -602,20 +612,36 @@ getWebConfigSettings( State ) ->
 
 	CertSupport = ?getAttr(cert_support),
 
-	% HTTPS port only returned if https enabled:
-	MaybeHTTPSTCPPort = case CertSupport of
+	BasicDispatchRules = ?getAttr(dispatch_rules),
+
+	% HTTPS port only returned if https enabled; if only in HTTP mode (no
+	% HTTPS), then we use the obtained dispatch rules as they are; if using
+	% HTTPS, then these dispatch rules will use for it, whereas HTTP rules will
+	% consist only on forwarding the requests from HTTP to said HTTPS:
+	%
+	{ HttpDispatchRules, MaybeHttpsDispatchRules, MaybeHttpsTCPPort } =
+			case CertSupport of
 
 		no_certificates ->
-			undefined;
+			{ BasicDispatchRules, undefined, undefined };
 
 		_ ->
-			% Maybe still undefined:
-			?getAttr(https_tcp_port)
+
+			HttpsPort = ?getAttr(https_tcp_port),
+
+			ForwardingDispatchRules = transform_handler_in_routes(
+				?getAttr(dispatch_routes),
+				_NewHandlerModule=us_web_port_forwarder,
+				_NewHandlerInitialState=HttpsPort ),
+
+			% Port maybe still undefined:
+			{ ForwardingDispatchRules, BasicDispatchRules, HttpsPort }
 
 	end,
 
-	GenWebSettings = { ?getAttr(dispatch_rules), ?getAttr(http_tcp_port),
-		MaybeHTTPSTCPPort, CertSupport, ?getAttr(sni_info),
+	GenWebSettings = { HttpDispatchRules, ?getAttr(http_tcp_port),
+		MaybeHttpsDispatchRules, MaybeHttpsTCPPort, CertSupport,
+		_MaybeHttpsTranspOpts=?getAttr(sni_info),
 		?getAttr(dh_key_path), ?getAttr(ca_cert_key_path) },
 
 	?debug_fmt( "Returning the general web configuration settings:~n  ~p",
@@ -1899,6 +1925,80 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 
+% Transforms specified dispatch routes into corresponding rules, i.e. replaces
+% the original handlers (name and initial state) with specified ones.
+%
+% Typically useful to mimic routes to be used for https into purely-forwarding
+% ones to be used as their http counterparts.
+%
+-spec transform_handler_in_routes( dispatch_routes(), handler_module(),
+								   handler_state() ) -> dispatch_rules().
+transform_handler_in_routes( DispatchRoutes, NewHandlerModule,
+							 NewHandlerInitialState ) ->
+
+	FwRoutes = set_as_forward_host( DispatchRoutes, NewHandlerModule,
+									NewHandlerInitialState, _Acc=[] ),
+
+	% Returning FWDispatchRules:
+	cowboy_router:compile( FwRoutes ).
+
+
+
+% (helper)
+set_as_forward_host( _DispatchRoutes=[], _NewHandlerModule,
+					 _NewHandlerInitialState, Acc ) ->
+	lists:reverse( Acc );
+
+set_as_forward_host( _DispatchRoutes=[ { HostMatch, PathsList } | T ],
+					 NewHandlerModule, NewHandlerInitialState, Acc ) ->
+
+	FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
+										NewHandlerInitialState, _PAcc=[] ),
+
+	set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
+						 [ { HostMatch, FWPathsList } | Acc ] );
+
+
+set_as_forward_host(
+  _DispatchRoutes=[ { HostMatch, Constraints, PathsList } | T ],
+  NewHandlerModule, NewHandlerInitialState, Acc ) ->
+
+	FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
+										NewHandlerInitialState, _PAcc=[] ),
+
+	set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
+						 [ { HostMatch, Constraints, FWPathsList } | Acc ] ).
+
+
+
+% (helper)
+set_as_forward_paths( _PathsList=[], _NewHandlerModule,
+					  _NewHandlerInitialState, Acc ) ->
+	lists:reverse( Acc );
+
+% Dropping/replacing current handler and its state:
+set_as_forward_paths(
+  _PathsList=[ { PathMatch, _Handler, _InitialState } | T ], NewHandlerModule,
+  NewHandlerInitialState, Acc ) ->
+
+	FWPath = { PathMatch, NewHandlerModule, NewHandlerInitialState },
+
+	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
+						  [ FWPath | Acc ] );
+
+
+set_as_forward_paths(
+  _PathsList=[ { PathMatch, Constraints, _Handler, _InitialState } | T ],
+  NewHandlerModule, NewHandlerInitialState, Acc ) ->
+
+	FWPath = { PathMatch, Constraints, NewHandlerModule,
+			   NewHandlerInitialState },
+
+	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
+						  [ FWPath | Acc ] ).
+
+
+
 % Returns the path match that shall be used in order to answer ACME challenges
 % from Let's Encrypt from a LEEC FSM.
 %
@@ -2834,6 +2934,7 @@ manage_routes( ConfigTable, State ) ->
 	  [ DispatchRoutes, DispatchRules ] ),
 
 	setAttributes( ProcessState, [ { domain_config_table, DomainCfgTable },
+								   { dispatch_routes, DispatchRoutes },
 								   { dispatch_rules, DispatchRules },
 								   { logger_task_ring, TaskRingPid },
 								   { sni_info, MaybeSNIInfo } ] ).

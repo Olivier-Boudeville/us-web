@@ -48,7 +48,7 @@
 
 
 % State carried by the process in charge of a request, for most handlers:
--type handler_state() :: maps:map().
+-type handler_state() :: maybe( maps:map() ).
 
 
 % A US-Web specialised handler, a map which may notably contain entries with

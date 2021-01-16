@@ -242,7 +242,7 @@ init( _Args=[ AppRunContext ] ) ->
 			%
 			GenericHttpsOpts = [
 				{ port, HttpsTCPPort },
-				{ versions, [ 'tlsv1.2', 'tlsv1.1', 'tlsv1' ] },
+				{ versions, class_USWebConfigServer:get_protocol_versions() },
 
 				% Server Name Indication (virtual) hosts:
 				{ sni_hosts, SNIVhInfos },

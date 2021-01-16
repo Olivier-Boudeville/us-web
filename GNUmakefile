@@ -426,8 +426,9 @@ info-deps:
 
 
 info-conditionals:
-	@echo "US_WEB_DEBUG_FLAGS = $(US_WEB_DEBUG_FLAGS)"
-	@echo "US_WEB_CHECK_FLAGS = $(US_WEB_CHECK_FLAGS)"
+	@echo "US_WEB_DEBUG_FLAGS    = $(US_WEB_DEBUG_FLAGS)"
+	@echo "US_WEB_CHECK_FLAGS    = $(US_WEB_CHECK_FLAGS)"
+	@echo "US_WEB_SECURITY_FLAGS = $(US_WEB_SECURITY_FLAGS)"
 
 
 include $(US_WEB_TOP)/GNUmakesettings.inc

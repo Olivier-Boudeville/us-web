@@ -44,6 +44,7 @@ endif
 # conditional compilation primitives (see cond_utils for their management):
 
 # Topics covered by flags:
+#  - execution: VM-level information, notably related to the code path
 #  - sni: regarding Server Name Indication
 #  - handlers: regarding the web handlers spawned per request (thus which must
 # remain efficient)
@@ -51,8 +52,9 @@ endif
 # Defining debug flags (at least the most verbose are by default commented-out):
 ifeq ($(ENABLE_DEBUG),true)
 	# Could imply leec_debug_sni:
-	US_WEB_DEBUG_FLAGS += -Dus_web_debug_sni
-	US_WEB_DEBUG_FLAGS += -Dus_web_debug_handlers
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_execution
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_sni
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_handlers
 
 endif
 
@@ -61,8 +63,21 @@ ifeq ($(EXECUTION_TARGET),development)
 	# Does not exist: US_WEB_CHECK_FLAGS += -Dus_web_check_xx
 endif
 
-ERLANG_COMPILER_OPT_BASE += $(US_WEB_DEBUG_FLAGS) \
-							$(US_WEB_CHECK_FLAGS)
+
+# We ensured that us_web_security must be set in order the compilation to
+# succeed:
+
+# Trade-off between accessibility/security:
+#US_WEB_SECURITY_FLAGS += -Dus_web_security=relaxed
+
+# Better security, at the expense of universality:
+US_WEB_SECURITY_FLAGS += -Dus_web_security=strict
+
+
+ERLANG_COMPILER_OPT_BASE += $(US_WEB_DEBUG_FLAGS)    \
+							$(US_WEB_CHECK_FLAGS)    \
+							$(US_WEB_SECURITY_FLAGS)
+
 
 
 

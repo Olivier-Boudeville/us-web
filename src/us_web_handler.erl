@@ -86,6 +86,10 @@
 -type log_line() :: class_USWebLogger:log_line().
 
 
+% For server_header_id:
+-include("us_web_defines.hrl").
+
+
 
 % Returns a suitable term to notify the request initiator that a 404 error was
 % triggered (meaning that the requested content could not be found).
@@ -261,7 +265,7 @@ get_http_headers( Body ) ->
 	#{ <<"content-type">> => <<"text/html">>,
 	   <<"content-length">> => integer_to_list( iolist_size( Body ) ),
 	   % A bit of obfuscation:
-	   <<"server">> => <<"Apache/2.4.1 (Unix)">> }.
+	   <<"server">> => ?server_header_id }.
 
 
 

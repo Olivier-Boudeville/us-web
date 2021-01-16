@@ -36,6 +36,9 @@
 -type handler_state() :: cert_manager_pid().
 
 
+% For server_header_id:
+-include("us_web_defines.hrl").
+
 
 % This handler initialisation tries to serve the relevant challenge tokens to
 % the requesting http client (supposed to be an ACME server currently trying to
@@ -118,7 +121,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 		undefined ->
 			trace_bridge:error_fmt( "For host '~s', token '~p' not found among "
 				"thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
-			cowboy_req:reply( 404, Req );
+			cowboy_req:reply( 404, Req#{ <<"server">> => ?server_header_id } );
 
 		TokenThumbprint ->
 
@@ -129,7 +132,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 			cowboy_req:reply( 200,
 				#{ <<"content-type">> => <<"text/plain">> },
-				TokenThumbprint, Req )
+				TokenThumbprint, Req#{ <<"server">> => ?server_header_id } )
 
 	end,
 

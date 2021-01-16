@@ -38,6 +38,10 @@
 -type handler_state() :: net_utils:tcp_port().
 
 
+% For server_header_id:
+-include("us_web_defines.hrl").
+
+
 % This handler initialisation performs the wanted TCP port redirection.
 -spec init( cowboy_req:req(), handler_state() ) ->
 				us_web_handler:handler_return().
@@ -59,7 +63,9 @@ init( Req, HandlerState=TargetTCPPort ) ->
 	% Using 301 ("Moved Permanently") is the best practice for upgrading users
 	% from HTTP to HTTPS (see https://en.wikipedia.org/wiki/HTTP_301):
 	%
-	RedirectedReq = cowboy_req:reply( 301, #{ <<"location">> => FixedURI },
+	RedirectedReq = cowboy_req:reply( 301,
+									  #{ <<"location">> => FixedURI,
+										 <<"server">> => ?server_header_id },
 									  Req ),
 
 	{ ok, RedirectedReq, HandlerState }.

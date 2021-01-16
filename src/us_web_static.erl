@@ -77,6 +77,10 @@
 -define( internal_server_error, 500 ).
 
 
+% For server_header_id:
+-include("us_web_defines.hrl").
+
+
 
 % Resolves the file that will be sent, and gets its file information.
 %
@@ -94,8 +98,7 @@ init( Req, HState ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-		  _Name=text_utils:format( "Static handler for path ~s",
-								   [ BinPath ] ),
+		  _Name=text_utils:format( "Static handler for path ~s", [ BinPath ] ),
 		  _Categ="US.US-Web.Static Handler" ) ),
 
 	%trace_utils:debug_fmt(
@@ -104,13 +107,16 @@ init( Req, HState ) ->
 
 	CowboyOpts = maps:get( cowboy_opts, HState ),
 
+	% To return such information:
+	SpoofedReq = Req#{ <<"server">> => ?server_header_id },
+
 	HReturn = case maps:get( _Key=type, HState ) of
 
 		file ->
-			init_info( Req, _BinIndex=BinPath, CowboyOpts, HState );
+			init_info( SpoofedReq, _BinIndex=BinPath, CowboyOpts, HState );
 
 		directory ->
-			init_dir( Req, _BinContentRoot=BinPath, CowboyOpts, HState )
+			init_dir( SpoofedReq, _BinContentRoot=BinPath, CowboyOpts, HState )
 
 	end,
 
@@ -134,7 +140,7 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 		{ ok, FileInfo } ->
 
 			RestHandlerState = { BinFullFilePath, { direct, FileInfo },
-								  CowboyOpts },
+								 CowboyOpts },
 
 			HReturn = { cowboy_rest, Req, RestHandlerState },
 
@@ -381,7 +387,7 @@ resource_exists( Req, State ) ->
 -spec generate_etag( Req, State ) -> { { strong | weak, binary() }, Req, State }
 									   when State::rest_handler_state().
 generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
-		Extra } ) ->
+							Extra } ) ->
 
 	case lists:keyfind( etag, 1, Extra ) of
 

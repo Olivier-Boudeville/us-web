@@ -43,8 +43,17 @@
 -type web_kind() :: 'static' | 'meta' | 'nitrogen'.
 
 
-% For example <<"bar">>:
--type vhost_id() :: bin_host_name() | 'default_vhost_catch_all'.
+
+-type vhost_id() ::
+
+		% For example <<"bar">>:
+		bin_host_name()
+
+		% To designate directly "foobar.org", not any "XXX.foobar.org":
+		| 'without_vhost'
+
+		% To match any non-explicitly matched "XXX.foobar.org":
+		|'default_vhost_catch_all'.
 
 
 % Ex: 'awstats'.
@@ -502,8 +511,10 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	class_TraceEmitter:register_bridge( TraceState ),
 
 	?send_info_fmt( TraceState, "Creating a US-Web configuration server, "
-		"running ~s.",
-		[ otp_utils:application_run_context_to_string( AppRunContext ) ] ),
+		"running ~s, in ~s security mode.",
+		[ otp_utils:application_run_context_to_string( AppRunContext ),
+		  cond_utils:switch_set_to( us_web_security,
+			[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ]),
 
 	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s",
 		[ system_utils:get_interpreter_version(),
@@ -1443,6 +1454,9 @@ build_vhost_table( DomainId,
 
 	BinVHostId = case VHostId of
 
+		without_vhost ->
+			without_vhost;
+
 		default_vhost_catch_all ->
 			default_vhost_catch_all;
 
@@ -1476,7 +1490,7 @@ build_vhost_table( DomainId,
 	% Quite similar to 'static', even if a logger and a web analysis
 	% organisation are not that useful:
 
-	% Not expected to be 'default_vhost_catch_all':
+	% Not expected to be 'without_vhost' or 'default_vhost_catch_all':
 	BinVHost = text_utils:string_to_binary( VHost ),
 
 	BinMetaContentRoot = case MaybeWebAnalysisInfo of
@@ -1600,7 +1614,9 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 	{ CfgFullVHostStr, AliasStr } = case VHostId of
 
-		default_vhost_catch_all ->
+		% The same rule is applied for both special cases:
+		SpecialVHostId when SpecialVHostId =:= without_vhost
+							orelse SpecialVHostId =:= default_vhost_catch_all ->
 
 			% No relevant "X.foobar.org" to specify here, so just relying on
 			% "foobar.org" for the domain, and a relevant regex for the alias to
@@ -1762,6 +1778,20 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 
 
 % Returns a description of specified vhost spec.
+describe_host( _VHostId=without_vhost, DomainId ) ->
+
+	DomainString = case DomainId of
+
+		default_domain_catch_all ->
+			"the domain catch-all";
+
+		BinDomainName ->
+			text_utils:format( "domain '~s'", [ BinDomainName ] )
+
+	end,
+
+	text_utils:format( "~s itself", [ DomainString ] );
+
 describe_host( _VHostId=default_vhost_catch_all, DomainId ) ->
 
 	DomainString = case DomainId of
@@ -1809,6 +1839,9 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 			case VHostId of
 
+				without_vhost ->
+					":_.:_";
+
 				default_vhost_catch_all ->
 					'_';
 
@@ -1823,6 +1856,9 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 		BinDomainName when is_binary( BinDomainName ) ->
 
 			case VHostId of
+
+				without_vhost ->
+					text_utils:binary_to_string( BinDomainName );
 
 				default_vhost_catch_all ->
 					% text_utils:format( ":_.~s", [ BinDomainName ] );
@@ -2779,7 +2815,6 @@ manage_certificates( ConfigTable, State ) ->
 
 		renew_certificates ->
 
-
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
 
@@ -3049,6 +3084,10 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 
 	case VHostId of
 
+		without_vhost ->
+			% See comment of next clause:
+			get_san_list( T, DomainName, Acc );
+
 		default_vhost_catch_all ->
 			% We used to include the root domain by itself among the SANs as
 			% others do, although it shall be the reference name of the
@@ -3065,6 +3104,19 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 			get_san_list( T, DomainName, [ BinSan | Acc ] )
 
 	end.
+
+
+
+% Returns the allowed protocol versions in the context of https.
+-spec get_protocol_versions() -> static_return( [ ssl:protocol_version() ] ).
+get_protocol_versions() ->
+
+	% No order in versions matters apparently.
+	% No default token value considered, to force an explicit choice:
+	%
+	wooper:return_static( cond_utils:switch_set_to( us_web_security,
+		[ { relaxed, [ 'tlsv1.3', 'tlsv1.2', 'tlsv1.1', 'tlsv1' ] },
+		  { strict,  [ 'tlsv1.3', 'tlsv1.2' ] } ] ) ).
 
 
 

@@ -23,5 +23,14 @@
 % Common US-Web defines.
 
 
+% Allows to spoof the webserver identity when sending back information (always
+% fun, yet not working currently):
+%
+% (typically instead of "Cowboy")
+%
+%-define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
+-define( server_header_id, <<"Apache">> ).
+
+
 % Same from the upper US-Common level:
--include_lib("us_common/include/us_defines.hrl").
+%-include_lib("us_common/include/us_common_defines.hrl").

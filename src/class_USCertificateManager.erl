@@ -840,25 +840,70 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 % the (usually more properly configured) security ordering of the server
 % administrator.
 %
+% Apparently Erlang (i.e. cowboy:start_tls/3, relying on ranch_ssl:opts(), which
+% corresponds roughly to ssl:erl_cipher_suite()) relies on cipher suites
+% expressed with IANA conventions, whereas sites such as SSL Labs uses OpenSSL
+% conventions. For conversions, see reference table in:
+% https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table
+%
 -spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
 get_recommended_ciphers() ->
-	wooper:return_static( [ "ECDHE-ECDSA-AES256-GCM-SHA384",
-	  "ECDHE-RSA-AES256-GCM-SHA384",
-	  "ECDHE-ECDSA-AES256-SHA384", "ECDHE-RSA-AES256-SHA384",
-	  "ECDHE-ECDSA-DES-CBC3-SHA", "ECDH-ECDSA-AES256-GCM-SHA384",
-	  "ECDH-RSA-AES256-GCM-SHA384", "ECDH-ECDSA-AES256-SHA384",
-	  "ECDH-RSA-AES256-SHA384", "DHE-DSS-AES256-GCM-SHA384",
-	  "DHE-DSS-AES256-SHA256", "AES256-GCM-SHA384", "AES256-SHA256",
-	  "ECDHE-ECDSA-AES128-GCM-SHA256", "ECDHE-RSA-AES128-GCM-SHA256",
-	  "ECDHE-ECDSA-AES128-SHA256", "ECDHE-RSA-AES128-SHA256",
-	  "ECDH-ECDSA-AES128-GCM-SHA256", "ECDH-RSA-AES128-GCM-SHA256",
-	  "ECDH-ECDSA-AES128-SHA256", "ECDH-RSA-AES128-SHA256",
-	  "DHE-DSS-AES128-GCM-SHA256", "DHE-DSS-AES128-SHA256",
-	  "AES128-GCM-SHA256", "AES128-SHA256", "ECDHE-ECDSA-AES256-SHA",
-	  "ECDHE-RSA-AES256-SHA", "DHE-DSS-AES256-SHA", "ECDH-ECDSA-AES256-SHA",
-	  "ECDH-RSA-AES256-SHA", "AES256-SHA", "ECDHE-ECDSA-AES128-SHA",
-	  "ECDHE-RSA-AES128-SHA", "DHE-DSS-AES128-SHA", "ECDH-ECDSA-AES128-SHA",
-	  "ECDH-RSA-AES128-SHA", "AES128-SHA" ] ).
+
+	% Recommended ciphers for TLS v.3 (source:
+	% https://wiki.mozilla.org/Security/Server_Side_TLS), only modern settings
+	% apply, namely, with OpenSSL conventions:
+	%
+	% - TLS_AES_128_GCM_SHA256
+	% - TLS_AES_256_GCM_SHA384
+	% - TLS_CHACHA20_POLY1305_SHA256
+	%
+	% We now use only ciphers designated with the OpenSSL conventions, that can
+	% be translated in their Erlang counterpart with the (unofficial)
+	% ssl:str_to_suite/1 function, like in:
+	%
+	% ssl:str_to_suite("TLS_AES_128_GCM_SHA256") =
+	%  #{cipher => aes_128_gcm,key_exchange => any,mac => aead,
+	%    prf => sha256}
+
+	BaseV1dot3Ciphers = [ "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384",
+						  "TLS_CHACHA20_POLY1305_SHA256" ],
+
+	% A priori non-TLV 1.3 recommended ciphers (source:
+	% https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices):
+	%
+	BaseOtherCiphers = [ "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+						 "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+						 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+						 "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+						 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+						 "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+						 "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+						 "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+						 "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+						 "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" ],
+
+	% To increase accessibility/client support:
+	WeakerCiphers = [ "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+					  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+					  "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+					  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+					  "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+					  "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+					  "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+					  "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256" ],
+
+
+	% No default token value to force a choice:
+	AllCiphers = cond_utils:switch_set_to( us_web_security,
+		[ { relaxed, BaseV1dot3Ciphers ++ BaseOtherCiphers ++ WeakerCiphers },
+		  { strict, begin
+						basic_utils:ignore_unused( WeakerCiphers ),
+						BaseV1dot3Ciphers ++ BaseOtherCiphers
+					end } ] ),
+
+	ErlCiphers = [ ssl:str_to_suite( C ) || C <- AllCiphers ],
+
+	wooper:return_static( ErlCiphers ).
 
 
 
@@ -883,6 +928,13 @@ get_virtual_host_sni_infos( Hostname, VHostInfos, BinCertDir ) ->
 get_vh_sni_infos_for( _Hostname, _VHostInfos=[], _BinCertDir, Acc ) ->
 	% Preferring to respect the order from the user rules:
 	lists:reverse( Acc );
+
+% See next clause (may result in having that hostname referenced twice):
+get_vh_sni_infos_for( Hostname,
+		_VHostInfos=[ { _VH=without_vhost, _ContentRoot } | T ],
+		BinCertDir, Acc ) ->
+	HPair = { Hostname, get_transport_opts_for( Hostname, BinCertDir ) },
+	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ HPair | Acc ] );
 
 % No host-level wildcard certificate, yet we list it as a SNI option (multiple
 % hostnames can be managed by a single server):

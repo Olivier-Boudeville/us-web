@@ -34,12 +34,12 @@ Technical Manual of the ``Universal Webserver``
 ===============================================
 
 
-:Organisation: Copyright (C) 2019-2020 Olivier Boudeville
+:Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, January 3, 2021
+:Lastly updated: Saturday, January 16, 2021
 :Status: Work in progress
-:Version: 0.0.13
+:Version: 0.0.15
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -293,6 +293,69 @@ As the US-related configuration files are heavily commented, proceeding based on
 
 Refer for that at this (US) `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and at this `US-Web counterpart example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
 
+In a nutshell, this US-Web configuration files allows unsurprisingly to specify all web-related settings, regarding users, directory locations, options such as ports, log analysis or certificate management and, most importantly, the routes.
+
+Defining routes allows to tell what it the web root directory [#]_ to serve for each given client-specified URL (in general, only the hostname part is of interest here), based on pattern-matching.
+
+.. [#] A web root directory is either specified as an absolute path, otherwise it is relative to a ``default_web_root`` entry to be specified in the US-Web configuration file.
+
+
+Such a route definition consists mostly on enumerating each hostname that is to manage (ex: ``"foobar.org"`` - knowing that the ``default_domain_catch_all`` atom designates all hostnames that could not be matched specifically otherwise) and enumerating then all the virtual hosts to manage for this domain (ex: the ``"hurricane"`` host, whose FQDN is thus ``hurricane.foobar.org`` - knowing that the ``default_vhost_catch_all`` atom designates all hostnames that could not be matched specifically otherwise, in the form ``*.foobar.org``, and that the ``without_vhost`` atom designates the hostname itself, i.e. ``foobar.org`` ).
+
+For example:
+
+.. code:: erlang
+
+  { default_web_root, "/var/web-storage/www" }.
+
+  %{ log_analysis, awstats }.
+
+  { certificate_support, use_existing_certificates }.
+  { certificate_mode, production }.
+
+  { routes, [
+
+	% Note that the first hostname listed will be, regarding
+	% https (SNI), the main, default one:
+
+	{ "foobar.org", [
+
+		% So any content requested regarding the www.foobar.org
+		% FQDN (ex: http://www.foobar.org/index.html) will be
+		% looked-up relatively to the
+		% /var/web-storage/www/Foobar-main directory:
+		%
+		{ "www", "Foobar-main" },
+		{ "club", "Foobar-club" },
+		{ "archives", "/var/web-storage/Archives-for-Foobar" },
+
+		% If just the domain is specified:
+		{ without_vhost, "Foobar" }
+
+		% With https, catch-all shall be best avoided:
+		%{ default_vhost_catch_all, "Foobar" }
+
+					] },
+
+	{ "foobar.net", [
+		% (similar rules may be defined)
+					] }
+
+	% Best avoided as well with https:
+	%{ default_domain_catch_all, [
+	%
+	%			{ default_vhost_catch_all, "Foobar" }
+	%
+	%				 ] }
+
+		  ]
+
+  }.
+
+
+Unless having wildcard certificates, defining catch-alls (host-level and/or domain-level) is not recommended if using https, as these unanticipated hostnames are by design absent from the corresponding certificates, and thus any user requesting them (possibly due to a typo) will have their browser report a security risk (such as ``SSL_ERROR_BAD_CERT_DOMAIN``).
+
+Similarly, wildcard DNS entries (such as ``* IN CNAME foobar.org.``) should be avoided as well (on the other hand, they allow not to advertise what are the precise virtual hostnames supported; note though that with https, unless again having wildcard certificates, these virtual hostnames will be visible in the SANs).
 
 
 Operating System Settings
@@ -501,7 +564,9 @@ Usage Recommendations
 
 In terms of security, we would advise:
 
-- to stick to the **latest stable version** of all software involved (including US-Web and all its stack, Erlang, and the operating system itself)
+- to stick to the **latest stable version** of all software involved (including US-Web and all its stack including Cowboy and LEEC, Erlang, and the operating system itself)
+
+- depending on the preferred trade-off between accessibility and security, to build US-Web either with the ``us_web_security`` flag set to ``strict`` (more security; the default) or to ``relaxed`` (more compatibility with various clients); typically they aim respectively a grade of A and at least B at the `SSL Labs server test <https://www.ssllabs.com/ssltest/index.html>`_; this build flag determines the versions of TLS supported (ex: only 1.3 and 1.2; or 1.1 and 1.0 as well), the accepted list of ciphers (including or not some that are becoming weak), possibly the RSA key length, Diffie-Hellman parameters, how Forward Secrecy is managed, etc.; as it is a bit fun, the US-Web server tries (yet with no luck) to spoof its server signature in the headers, pretending it is an Apache instance; `DNS CAA <https://letsencrypt.org/docs/caa/>`_ (*Certificate Authority Authorization*) is not specifically supported (as LEEC uses `throwaway accounts <https://leec.esperide.org/#caa>`_)
 
 - to apply a streamlined, reproducible **deployment process**, preferably based on our `deploy-us-web-release.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh>`_ script
 
@@ -745,9 +810,12 @@ Web-related hints
 
 - most paths (ex: ``default_web_root``, in the US-Web configuration) can be defined as **relative** ones (mostly useful for embedded tests; otherwise absolute paths shall be preferred); in this case they will be relative to the runtime current directory, typically ``[...]/us_web/_build/default/rel/us_web/`` in development mode
 - the ``default_domain_catch_all`` atom allows to designate any **domain-level host** (ex: ``foobar.org``) that did not match previous host rules
-- in the context of a given host (ex: ``foobar.org``), the ``default_vhost_catch_all`` atom allows to designate any of its **virtual hosts** (ex: ``bar``, to be understood as ``bar.foobar.org``) that did not match previous path rules
+- in the context of a given host (ex: ``foobar.org``), the ``default_vhost_catch_all`` atom allows to designate any of its **virtual hosts** (ex: ``bar``, to be understood as ``bar.foobar.org``) that did not match previous path rules [#]_
 - refer to ``us_web/priv/for-testing`` for an example setup and configuration files
 - the web roots shall be owned by the user running US-Web (ex: ``chown -R us-web-user:us-group /opt/www``)
+
+
+.. [#] When using https, configuring a catch-all might be ill-advised, as whenever an unanticipated virtual host is requested, a certificate warning (ex: ``SSL_ERROR_BAD_CERT_DOMAIN``) is triggered - as by design no certificate (direct or through SANs) will exist for this host (a "connection failed" error is then more desirable).
 
 
 .. comment Deprecated now that these settings are enforced through the US configuration files:
@@ -911,7 +979,7 @@ Then one may switch to the *Job control mode* (JCL) by pressing ``Ctrl-G`` then 
 Planned Enhancements
 --------------------
 
-- bullet-proof **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to our embedded scheduler)
+.. comment Done: - bullet-proof **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to our embedded scheduler)
 - **Nitrogen** and/or **Zotonic** support, in addition to static websites
 
 

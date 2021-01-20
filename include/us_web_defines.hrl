@@ -22,6 +22,11 @@
 
 % Common US-Web defines.
 
+-define( default_us_web_config_server_registration_name, us_web_config_server ).
+-define( default_us_web_scheduler_registration_name, us_web_scheduler ).
+
+-define( default_registration_scope, global_only ).
+
 
 % Allows to spoof the webserver identity when sending back information (always
 % fun, yet not working currently):

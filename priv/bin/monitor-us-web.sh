@@ -1,9 +1,10 @@
 #!/bin/sh
 
-us_monitor_config_filename="us-monitor.config"
+us_web_remote_access_config_filename="us-web-remote-access.config"
 
-usage="$(basename $0) [US_MONITOR_CONFIG_FILE]: monitors the traces emitted by a US-Web instance possibly running on a remote host based, unless specified otherwise, on a '${us_monitor_config_filename}' configuration file, found in a US configuration directory specified on the command-line, otherwise found through the default US search paths.
-Example of use: './monitor-us-web.sh us-monitor-for-development.config', this file being located in the ~/.config/universal-server directory."
+usage="$(basename $0) [US_WEB_REMOTE_ACCESS_CONFIG_FILE]: monitors the traces emitted by a US-Web instance (possibly running on a remote host), based either on a default '${us_web_remote_access_config_filename}' configuration filename or on a specified one, both looked-up in the US configuration directory found through the default US search paths.
+
+Example of use: './$(basename $0) us-web-remote-access-for-development.config', this configuration file being located in the standard US configuration search paths, for example in the ~/.config/universal-server directory/."
 
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -17,7 +18,7 @@ fi
 
 if [ -n "$1" ]; then
 
-	us_monitor_config_filename="$1"
+	us_web_remote_access_config_filename="$1"
 	shift
 
 fi
@@ -40,37 +41,33 @@ fi
 . "${us_web_common_script}" 1>/dev/null
 
 
-
 read_us_config_file $1 1>/dev/null
 
 
 # No specific update/check needs regarding vm.args, as the runtime cookie is
 # updated on the fly.
 
-
 #echo "us_config_dir = ${us_config_dir}"
 
+# Now that us_config_dir is known:
+uw_cfg_file="${us_config_dir}/${us_web_remote_access_config_filename}"
 
-us_monitor_config_file="${us_config_dir}/${us_monitor_config_filename}"
+if [ ! -f "${uw_cfg_file}" ]; then
 
-if [ ! -f "${us_monitor_config_file}" ]; then
-
-	echo "  Error, no us-monitor configuration file found (no '${us_monitor_config_file}')." 1>&2
+	echo "  Error, no US-Web configuration file found (no '${uw_cfg_file}')." 1>&2
 
 	exit 5
 
 fi
 
-#echo "Using us-monitor configuration file '${us_monitor_config_file}'."
+#echo "Using US-Web configuration file '${uw_cfg_file}'."
+
+# US-Web configuration content, read once for all, with comments (%) removed:
+
+uw_cfg_base_content=$(/bin/cat "${uw_cfg_file}" | sed 's|^[[:space:]]*%.*||1')
 
 
-# us-monitor configuration content, read once for all, with comments (%)
-# removed:
-
-us_monitor_base_content=$(/bin/cat "${us_monitor_config_file}" | sed 's|^[[:space:]]*%.*||1')
-
-
-us_web_hostname=$(echo "${us_monitor_base_content}" | grep us_web_hostname | sed 's|^[[:space:]]*{[[:space:]]*us_web_hostname,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
+us_web_hostname=$(echo "${uw_cfg_base_content}" | grep us_web_hostname | sed 's|^[[:space:]]*{[[:space:]]*us_web_hostname,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
 if [ -z "${us_web_hostname}" ]; then
 
@@ -96,7 +93,7 @@ fi
 #echo "Using '${us_web_hostname}' as remote US-Web hostname."
 
 # Could have been done in the Erlang part:
-remote_vm_cookie=$(echo "${us_monitor_base_content}" | grep remote_vm_cookie | sed 's|^[[:space:]]*{[[:space:]]remote_vm_cookie,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
+remote_vm_cookie=$(echo "${uw_cfg_base_content}" | grep remote_vm_cookie | sed 's|^[[:space:]]*{[[:space:]]remote_vm_cookie,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
 
 
 if [ -z "${remote_vm_cookie}" ]; then
@@ -143,4 +140,4 @@ cd ${app_dir}
 # Any argument(s) specified to this script shall be interpreted as a plain,
 # extra one:
 #
-make -s us_web_monitor_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --config-file ${us_monitor_config_file} --target-cookie ${remote_vm_cookie}"
+make -s us_web_monitor_exec EPMD_PORT=${erl_epmd_port} CMD_LINE_OPT="$* --config-file ${uw_cfg_file} --target-cookie ${remote_vm_cookie}"

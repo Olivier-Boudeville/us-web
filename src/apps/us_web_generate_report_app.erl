@@ -114,9 +114,9 @@ exec() ->
 			  "Log analysis report(s) successfully generated." ),
 			basic_utils:stop();
 
-		R={ report_generation_failed, ErrorReason } ->
-			trace_utils:error_fmt( "Log analysis report generation failed: ~p.",
-								   [ ErrorReason ] ),
+		{ wooper_result, R={ report_generation_failed, ErrorReason } } ->
+			trace_utils:error_fmt( "Log analysis report generation failed; "
+				"reason:~n  ~p", [ ErrorReason ] ),
 			throw( R )
 
 	end.

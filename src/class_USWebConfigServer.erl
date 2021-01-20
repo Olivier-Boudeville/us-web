@@ -364,7 +364,7 @@
 	{ default_web_root, maybe( bin_directory_path() ),
 	  "the default root (if any) for the website trees" },
 
-	{ meta_web_settings, meta_web_settings(),
+	{ meta_web_settings, maybe( meta_web_settings() ),
 	  "the domain, virtual host identifiers and web root of the auto-generated "
 	  "meta website (if any)" },
 
@@ -727,106 +727,161 @@ renewCertificate( State, DomainId, VHostId ) ->
 generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
 							_MaybeBinHostName=undefined ) ->
 
-	?debug( "Generation of all access log analysis reports requested." ),
+	Res = case ?getAttr(meta_web_settings) of
 
-	DomainCfgTable = ?getAttr(domain_config_table),
+		undefined ->
+			?error( "Generation of log analysis reports requested "
+					"whereas no (meta) web analysis is enabled." ),
+			{ report_generation_failed, web_analysis_not_enabled };
 
-	AllDomainInfos = table:values( DomainCfgTable ),
+		_ ->
 
-	AllVhCfgEntries = list_utils:flatten_once( [ table:values( VhCfgTable )
-						|| { _DomId, _Cert, VhCfgTable } <- AllDomainInfos ] ),
+			?debug( "Generation of all access log analysis reports "
+					"requested." ),
 
-   Result = case [ E#vhost_config_entry.logger_pid || E <-AllVhCfgEntries ] of
+			DomainCfgTable = ?getAttr(domain_config_table),
 
-		[] ->
-			?warning_fmt( "All access log analysis reports requested for "
-						  "all domains (~p), yet no virtual host was found.",
-						  [ table:keys( DomainCfgTable ) ] ),
+			AllDomainInfos = table:values( DomainCfgTable ),
 
-			% Not a failure per se:
-			report_generation_success;
+			AllVhCfgEntries = list_utils:flatten_once(
+				[ table:values( VhCfgTable )
+					|| { _DomId, _Cert, VhCfgTable } <- AllDomainInfos ] ),
 
-		AllLoggers ->
-			activate_loggers( AllLoggers )
+			case [ E#vhost_config_entry.logger_pid
+							|| E <-AllVhCfgEntries ] of
+
+				[] ->
+					?warning_fmt( "All access log analysis reports requested "
+						"for all domains (~p), yet no virtual host was found.",
+						[ table:keys( DomainCfgTable ) ] ),
+
+					% Not a failure per se:
+					report_generation_success;
+
+				AllLoggers ->
+					activate_loggers( AllLoggers )
+
+			end
 
 	end,
 
-	wooper:const_return_result( Result );
+	wooper:const_return_result( Res );
 
 
 generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
-							Hostname ) ->
+							BinHostname ) ->
 
 	% A single hostname cannot be specified if all domains are targeted:
 	wooper:const_return_result( { report_generation_failed,
-								  hostname_whereas_all_domains, Hostname } );
+								  hostname_whereas_all_domains, BinHostname } );
 
 
 generateLogAnalysisReports( State, BinDomainName,
 							_MaybeBinHostName=undefined ) ->
 
-	?debug_fmt( "Generation of access log analysis reports requested "
+	Res = case ?getAttr(meta_web_settings) of
+
+		undefined ->
+			?error( "Generation of log analysis reports requested "
+					"whereas no (meta) web analysis is enabled." ),
+			{ report_generation_failed, web_analysis_not_enabled };
+
+		_ ->
+			?debug_fmt( "Generation of access log analysis reports requested "
 				"for all virtual hosts of domain '~s'.", [ BinDomainName ] ),
 
-	Result = case table:lookup_entry( BinDomainName,
-									  ?getAttr(domain_config_table) ) of
+			case table:lookup_entry( BinDomainName,
+									 ?getAttr(domain_config_table) ) of
 
-		{ value, _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
-			case table:values( VHostCfgTable ) of
+				{ value,
+				  _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
 
-				[] ->
-					?warning_fmt( "Access log analysis reports requested for "
-						"all virtual hosts of domain '~s', yet none was found.",
-						[ BinDomainName ] ),
-					% Not a failure per se:
-					report_generation_success;
+					case table:values( VHostCfgTable ) of
 
-				VhCfgEntries ->
-					AllLoggers = [ VCE#vhost_config_entry.logger_pid
-								   || VCE <- VhCfgEntries ],
-					activate_loggers( AllLoggers )
+						[] ->
+							?warning_fmt( "Access log analysis reports "
+								"requested for all virtual hosts of domain "
+								"'~s', yet none was found.",
+								[ BinDomainName ] ),
+								% Not a failure per se:
+								report_generation_success;
 
-			end;
+						VhCfgEntries ->
+							AllLoggers = [ VCE#vhost_config_entry.logger_pid
+										   || VCE <- VhCfgEntries ],
+							activate_loggers( AllLoggers )
 
-		key_not_found ->
-			{ report_generation_failed,
-			  { domain_not_found, BinDomainName } }
+					end;
+
+				key_not_found ->
+					?error_fmt( "No entry found for domain '~s', no report "
+								"generated.", [ BinDomainName ] ),
+
+					Domain = text_utils:binary_to_string( BinDomainName ),
+
+					{ report_generation_failed, { domain_not_found, Domain } }
+
+			end
 
 	end,
 
-	wooper:const_return_result( Result );
+	wooper:const_return_result( Res );
 
 generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 
-	?debug_fmt( "Generation of access log analysis reports requested "
+	Res = case ?getAttr(meta_web_settings) of
+
+		undefined ->
+			?error( "Generation of log analysis report requested "
+					"whereas no (meta) web analysis is enabled." ),
+			{ report_generation_failed, web_analysis_not_enabled };
+
+		_ ->
+			?debug_fmt( "Generation of access log analysis reports requested "
 				"for virtual host '~s' of domain '~s'.",
 				[ BinHostName, BinDomainName ] ),
 
-	Result = case table:lookup_entry( BinDomainName,
-									  ?getAttr(domain_config_table) ) of
+			case table:lookup_entry( BinDomainName,
+									 ?getAttr(domain_config_table) ) of
 
-		{ value, _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
+				{ value,
+				  _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
 
-			case table:lookup_entry( BinHostName, VHostCfgTable ) of
+					case table:lookup_entry( BinHostName, VHostCfgTable ) of
 
-				{ value, VCE } ->
-					% Feeling lazy tonite:
-					activate_loggers( [ VCE#vhost_config_entry.logger_pid ] );
+						{ value, VCE } ->
+							% Feeling lazy tonite:
+							activate_loggers(
+								[ VCE#vhost_config_entry.logger_pid ] );
+
+						key_not_found ->
+							?error_fmt( "No entry found for virtual host '~s' "
+								"in domain '~s', no report generated.",
+								[ BinHostName, BinDomainName ] ),
+							Host = text_utils:binary_to_string( BinHostName ),
+							Domain = text_utils:binary_to_string(
+									   BinDomainName ),
+							{ report_generation_failed, {
+								{ host_not_found, Host }, { domain, Domain } } }
+
+					end;
 
 				key_not_found ->
-					{ report_generation_failed, {
-						{ host_not_found, BinHostName },
-						{ domain, BinDomainName } } }
+					?error_fmt( "No entry found for domain '~s' (requested "
+						"for virtual host '~s'), no report generated.",
+						[ BinDomainName, BinHostName ] ),
 
-			end;
+					Host = text_utils:binary_to_string( BinHostName ),
+					Domain = text_utils:binary_to_string( BinDomainName ),
 
-		key_not_found ->
-			{ report_generation_failed,
-			  { domain_not_found, BinDomainName } }
+					{ report_generation_failed, { domain_not_found, Domain },
+					  { host, Host } }
+
+			end
 
 	end,
 
-	wooper:const_return_result( Result ).
+	wooper:const_return_result( Res ).
 
 
 

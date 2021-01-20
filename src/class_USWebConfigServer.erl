@@ -63,6 +63,9 @@
 % For the vhost_config_entry and web_analysis_info records:
 -include("class_USWebConfigServer.hrl").
 
+% For default_us_web_config_server_registration_name:
+-include("us_web_defines.hrl").
+
 
 -type web_analysis_info() :: #web_analysis_info{}.
 
@@ -208,18 +211,18 @@
 % The domain-specific information kept by this server:
 -type domain_info() :: {
 
-				   % The identifier of this domain (intentional duplicate):
-				   domain_id(),
+	% The identifier of this domain (intentional duplicate):
+	domain_id(),
 
-				   % The certificate manager (if any) corresponding to this
-				   % domain:
-				   %
-				   maybe( cert_manager_pid() ),
+	% The certificate manager (if any) corresponding to this
+	% domain:
+	%
+	maybe( cert_manager_pid() ),
 
-				   % The table storing the configuration of the virtual hosts
-				   % within this domain:
-				   %
-				   vhost_config_table() }.
+	% The table storing the configuration of the virtual hosts
+	% within this domain:
+	%
+	vhost_config_table() }.
 
 
 % A table, associating to each domain name (ex: <<"foo.org">>), the
@@ -319,9 +322,6 @@
 -type bin_domain_name() :: net_utils:bin_domain_name().
 
 
--type bin_fqdn() :: net_utils:bin_fqdn().
--type string_fqdn() :: net_utils:string_fqdn().
-
 -type bin_host_name() :: net_utils:bin_host_name().
 -type tcp_port() :: net_utils:tcp_port().
 
@@ -358,8 +358,8 @@
 	  "or as an OTP release" },
 
 	{ domain_config_table, domain_config_table(),
-	  "a table containing all configuration information related to a given "
-	  "domain" },
+	  "a table containing all configuration information related to all "
+	  "domains, and their virtual hosts in turn" },
 
 	{ default_web_root, maybe( bin_directory_path() ),
 	  "the default root (if any) for the website trees" },
@@ -459,12 +459,6 @@
 
 % Used by the trace_categorize/1 macro to use the right emitter:
 -define( trace_emitter_categorization, "US.US-Web.Configuration" ).
-
-
--define( default_us_web_config_server_registration_name, us_web_config_server ).
--define( default_us_web_scheduler_registration_name, us_web_scheduler ).
-
--define( default_registration_scope, global_only ).
 
 
 
@@ -724,39 +718,138 @@ renewCertificate( State, DomainId, VHostId ) ->
 
 
 
-% Requests the access log analysis reports to be generated for all websites,
-% i.e. for all virtual hosts of all managed hosts.
+% Requests the access log analysis reports to be generated for the specified
+% domain(s) / virtual host(s).
 %
--spec generateAllLogAnalysisReports( wooper:state() ) ->
-								request_return( report_generation_outcome() ).
-generateAllLogAnalysisReports( State ) ->
+-spec generateLogAnalysisReports( wooper:state(), maybe( bin_domain_name() ),
+								  maybe( bin_host_name() ) ) ->
+							const_request_return( report_generation_outcome() ).
+generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
+							_MaybeBinHostName=undefined ) ->
 
-	?info( "Requested to generate the access log analysis reports for all "
-		   "hosted websites." ),
+	?debug( "Generation of all access log analysis reports requested." ),
 
-	ReportState = State,
+	DomainCfgTable = ?getAttr(domain_config_table),
 
-	wooper:return_state_result( ReportState, report_generation_success ).
+	AllDomainInfos = table:values( DomainCfgTable ),
+
+	AllVhCfgEntries = list_utils:flatten_once( [ table:values( VhCfgTable )
+						|| { _DomId, _Cert, VhCfgTable } <- AllDomainInfos ] ),
+
+   Result = case [ E#vhost_config_entry.logger_pid || E <-AllVhCfgEntries ] of
+
+		[] ->
+			?warning_fmt( "All access log analysis reports requested for "
+						  "all domains (~p), yet no virtual host was found.",
+						  [ table:keys( DomainCfgTable ) ] ),
+
+			% Not a failure per se:
+			report_generation_success;
+
+		AllLoggers ->
+			activate_loggers( AllLoggers )
+
+	end,
+
+	wooper:const_return_result( Result );
+
+
+generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
+							Hostname ) ->
+
+	% A single hostname cannot be specified if all domains are targeted:
+	wooper:const_return_result( { report_generation_failed,
+								  hostname_whereas_all_domains, Hostname } );
+
+
+generateLogAnalysisReports( State, BinDomainName,
+							_MaybeBinHostName=undefined ) ->
+
+	?debug_fmt( "Generation of access log analysis reports requested "
+				"for all virtual hosts of domain '~s'.", [ BinDomainName ] ),
+
+	Result = case table:lookup_entry( BinDomainName,
+									  ?getAttr(domain_config_table) ) of
+
+		{ value, _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
+			case table:values( VHostCfgTable ) of
+
+				[] ->
+					?warning_fmt( "Access log analysis reports requested for "
+						"all virtual hosts of domain '~s', yet none was found.",
+						[ BinDomainName ] ),
+					% Not a failure per se:
+					report_generation_success;
+
+				VhCfgEntries ->
+					AllLoggers = [ VCE#vhost_config_entry.logger_pid
+								   || VCE <- VhCfgEntries ],
+					activate_loggers( AllLoggers )
+
+			end;
+
+		key_not_found ->
+			{ report_generation_failed,
+			  { domain_not_found, BinDomainName } }
+
+	end,
+
+	wooper:const_return_result( Result );
+
+generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
+
+	?debug_fmt( "Generation of access log analysis reports requested "
+				"for virtual host '~s' of domain '~s'.",
+				[ BinHostName, BinDomainName ] ),
+
+	Result = case table:lookup_entry( BinDomainName,
+									  ?getAttr(domain_config_table) ) of
+
+		{ value, _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
+
+			case table:lookup_entry( BinHostName, VHostCfgTable ) of
+
+				{ value, VCE } ->
+					% Feeling lazy tonite:
+					activate_loggers( [ VCE#vhost_config_entry.logger_pid ] );
+
+				key_not_found ->
+					{ report_generation_failed, {
+						{ host_not_found, BinHostName },
+						{ domain, BinDomainName } } }
+
+			end;
+
+		key_not_found ->
+			{ report_generation_failed,
+			  { domain_not_found, BinDomainName } }
+
+	end,
+
+	wooper:const_return_result( Result ).
 
 
 
-% Requests the access log analysis reports to be generated for specified website
-% (i.e. FQDN-specified virtual host).
+% Activates the specified loggers in turn.
 %
-% Ex: for "garfield.baz.foobar.org".
+% (helper)
+%
+-spec activate_loggers( [ logger_pid() ] ) -> report_generation_outcome().
+activate_loggers( Loggers ) ->
 
--spec generateLogAnalysisReportFor( wooper:state(),
-  string_fqdn() | bin_fqdn()) -> request_return( report_generation_outcome() ).
-generateLogAnalysisReportFor( State, FQDN ) ->
+	Results = wooper:send_request_in_turn( _Req=rotateSyncLogs,
+							_Args=[], _TargetInstancePIDs=Loggers ),
 
-	{ Hostname, FullDomainName } = net_utils:split_fqdn( FQDN ),
+	case list_utils:delete_all_in( _Elem=log_rotated, Results ) of
 
-	?info_fmt( "Requested to generate the access log analysis reports for the "
-		"'~s' virtual host in the '~s' domain.", [ Hostname, FullDomainName ] ),
+		% Alles gut then:
+		[] ->
+			report_generation_success;
 
-	ReportState = State,
+		Errors ->
+			{ report_generation_failed, Errors }
 
-	wooper:return_state_result( ReportState, report_generation_success ).
+	end.
 
 
 
@@ -2086,8 +2179,7 @@ manage_registrations( ConfigTable, State ) ->
 		key_not_found ->
 			DefCfgRegName = ?default_us_web_config_server_registration_name,
 			?info_fmt( "No user-configured registration name for the US-Web "
-					   "configuration server, defaulting to '~s'.",
-					   [ DefCfgRegName ] ),
+			  "configuration server, defaulting to '~s'.", [ DefCfgRegName ] ),
 			DefCfgRegName;
 
 		{ value, CfgRegName } when is_atom( CfgRegName ) ->
@@ -2097,8 +2189,7 @@ manage_registrations( ConfigTable, State ) ->
 
 		{ value, InvalidCfgRegName } ->
 			?error_fmt( "Invalid user-specified registration name for the "
-						"US-Web configuration server: '~p'.",
-						[ InvalidCfgRegName ] ),
+			  "US-Web configuration server: '~p'.", [ InvalidCfgRegName ] ),
 			throw( { invalid_web_config_registration_name, InvalidCfgRegName,
 					 ?us_web_config_server_registration_name_key } )
 
@@ -2735,7 +2826,7 @@ set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
 	end,
 
 	BinReportToolRoot = case file_utils:is_existing_directory_or_link(
-							   AnalysisReportToolRoot ) of
+								AnalysisReportToolRoot ) of
 
 		true ->
 			text_utils:string_to_binary( AnalysisReportToolRoot );
@@ -2958,7 +3049,7 @@ manage_routes( ConfigTable, State ) ->
 	TaskPeriod = class_USWebLogger:get_default_log_rotation_period(),
 
 	TaskRingPid = class_USTaskRing:new_link( _RingName="US-Web Logger Ring",
-		_Actuators=AllLoggerPids, _TaskRequestName=rotateLogsSynch,
+		_Actuators=AllLoggerPids, _TaskRequestName=rotateLogsAltSync,
 		_TaskRequestArgs=[], TaskPeriod, _ScheduleCount=unlimited,
 		SchedulerPid ),
 

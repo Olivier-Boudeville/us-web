@@ -67,13 +67,19 @@
 % (typically to be best done by being scheduled regularly for that),
 % sequentially, per virtual host, with up to one instance running at any time
 % (to avoid concurrent accesses to the Awstats database), thus typically based
-% on a task ring
+% on a task ring; note that the rotation count starts at 1 and is incremented at
+% each rotation step (which is common to the access and error log); note also
+% that if a log file is empty, it will not be rotated, and as a result there may
+% be gaps in the rotation counts of archive filenames ; finally, if at US-Web
+% start-up log files already exist, they will be immediately rotated (hence even
+% after a stop/crash of the server, no written log should be lost)
 %
 % - generating reports: either done statically/periodically (ex: if inserted in
 % the task ring among access rotations, to avoid possible read/write concurrent
 % accesses) or when explicitly requested by the user (ex: through a dedicated
-% user console command, or through an interactive, control page, possibly
-% Nitrogen-based)
+% user console command (see generate-us-web-log-report.sh /
+% us_web_generate_report_app.erl) or through an interactive, control page,
+% possibly Nitrogen-based)
 
 
 
@@ -91,6 +97,8 @@
 
 
 % Shorthands:
+
+-type count() :: basic_utils:count().
 
 -type ustring() :: text_utils:ustring().
 
@@ -161,6 +169,9 @@
 	{ log_task_id, maybe( task_id() ),
 	  "the identifier of this task for log rotation, as assigned by the "
 	  "scheduler (if any)" },
+
+	{ rotation_count, count(), "the number of the upcoming rotation to "
+	  "take place (useful to keep track of a series of rotated files)" },
 
 	{ web_analysis_info, maybe( web_analysis_info() ),
 	  "settings about web analysis (if any)" },
@@ -345,7 +356,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			% Note that this command does not include '-update' anymore, it just
 			% generates (all) reports:
 			%
-			ReportCmd =text_utils:format( "nice -n ~B ~s -config=~s -dir=~s "
+			ReportCmd = text_utils:format( "nice -n ~B ~s -config=~s -dir=~s "
 				"-awstatsprog=~s 1>/dev/null",
 				[ Niceness, BinReportToolPath, HostCfgDesc, BinWbContDir,
 				  BinUpdateToolPath ] ),
@@ -363,37 +374,45 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		{ error_log_file_path, BinErrorLogFilePath },
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ log_task_id, undefined },
+		{ rotation_count, 1 },
 		{ web_analysis_info, MaybeWebAnalysisInfo },
 		{ log_analysis_update_cmd, MaybeLogUpdateCmd },
 		{ log_analysis_report_gen_cmd, MaybeLogReportCmd } ] ),
+
+	InitialRotationCount = 1,
 
 	% Now taking into account any past, not yet rotated log file, even though it
 	% may create a delay and a resource spike at start-up (as web loggers are
 	% created mostly in parallel, as asynchronously - spawning them
 	% synchronously would result in too long start-up delays).
 	%
-	case file_utils:is_existing_file_or_link( BinAccessLogFilePath ) of
+	FirstRotCount = case file_utils:is_existing_file_or_link(
+						   BinAccessLogFilePath ) of
 
 		true ->
 			% Processes it and then removes it:
-			rotate_access_log_file( ToolState );
+			rotate_access_log_file( InitialRotationCount, ToolState ),
+			InitialRotationCount+1;
 
 		false ->
-			ok
+			InitialRotationCount
 
 	end,
 
 	AccessFile = create_log_file( BinAccessLogFilePath, ToolState ),
 
 
-	case file_utils:is_existing_file_or_link( BinErrorLogFilePath ) of
+	SecondRotCount = case file_utils:is_existing_file_or_link(
+							BinErrorLogFilePath ) of
 
 		true ->
 			% Processes it and then removes it:
-			rotate_basic_log_file( BinErrorLogFilePath, ToolState );
+			rotate_basic_log_file( BinErrorLogFilePath, InitialRotationCount,
+								   ToolState ),
+			InitialRotationCount+1;
 
 		false ->
-			ok
+			FirstRotCount
 
 	end,
 
@@ -419,7 +438,8 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 	ReadyState = setAttributes( ToolState, [
 		{ access_log_file, AccessFile },
 		{ error_log_file, ErrorFile },
-		{ log_task_id, MaybeLogTaskId } ] ),
+		{ log_task_id, MaybeLogTaskId },
+		{ rotation_count, SecondRotCount } ] ),
 
 	?send_info( ReadyState, "Constructed: " ++ to_string( ReadyState ) ),
 
@@ -533,12 +553,24 @@ rotateLogs( State ) ->
 
 
 
+% Defined to be triggered synchronously.
+-spec rotateSyncLogs( wooper:state() ) ->
+						request_return( fallible( 'log_rotated' ) ).
+rotateSyncLogs( State ) ->
+
+	RotateState = rotate_logs( State ),
+
+	wooper:return_state_result( RotateState, log_rotated ).
+
+
+
 % Defined to be triggered as a synchronous task, typically by a task ring.
 %
-% Not synchronised as a request, but by sending back a oneway call.
+% Not synchronised as a request, but alternatively by sending back a oneway
+% call.
 %
--spec rotateLogsSynch( wooper:state(), pid() ) -> oneway_return().
-rotateLogsSynch( State, CalledPid ) ->
+-spec rotateLogsAltSync( wooper:state(), pid() ) -> oneway_return().
+rotateLogsAltSync( State, CalledPid ) ->
 
 	RotateState = rotate_logs( State ),
 
@@ -550,17 +582,39 @@ rotateLogsSynch( State, CalledPid ) ->
 
 
 % Generates the report for the managed host, based on the current database
-% state.
+% state (asynchronous version).
 %
 -spec generateReport( wooper:state() ) -> const_oneway_return().
 generateReport( State ) ->
+
+	_Res = generate_report( State ),
+
+	wooper:const_return().
+
+
+% Generates the report for the managed host, based on the current database
+% state (synchronous version).
+%
+-spec generateReportSync( wooper:state() ) ->
+					const_request_return( fallible( 'report_generated' ) ).
+generateReportSync( State ) ->
+
+	Res = generate_report( State ),
+
+	wooper:const_return_result( Res ).
+
+
+
+% (helper, for re-use)
+-spec generate_report( wooper:state() ) -> fallible( 'report_generated' ).
+generate_report( State ) ->
 
 	case ?getAttr(log_analysis_report_cmd) of
 
 		undefined ->
 			?error( "Generation of report request, yet no corresponding "
 					"command was defined." ),
-			wooper:const_return();
+			{ error, no_report_command };
 
 		% Supposing Awstats here:
 		LogReportGenCmd ->
@@ -572,7 +626,6 @@ generateReport( State ) ->
 			%			[ HTMLReportPath ] ),
 
 			%file_utils:remove_file_if_existing( HTMLReportPath ),
-
 
 			% We trigger the generation of the corresponding HTML pages.
 			%
@@ -637,25 +690,27 @@ generateReport( State ) ->
 			case system_utils:run_executable( LogReportGenCmd ) of
 
 				{ _ReturnCode=0, _CmdOutput="" } ->
-					ok;
+					report_generated;
 
 				{ _ReturnCode=0, CmdOutput } ->
 					?warning_fmt( "Awstats HTML report generation "
 						"succeeded, yet returned following message: '~s'.",
-						[ CmdOutput ] );
+						[ CmdOutput ] ),
+					report_generated;
 
 				% An error here shall not kill this logger as a whole:
 				{ ReturnCode, CmdOutput } ->
 					?error_fmt( "Awstats HTML report generation failed "
 						"(return code: ~w), and returned following "
 						"message: '~s' (command was: '~s').",
-						[ ReturnCode, CmdOutput, LogReportGenCmd ] )
+						[ ReturnCode, CmdOutput, LogReportGenCmd ] ),
+					{ error, CmdOutput }
 
-			end,
-
-			wooper:const_return()
+			end
 
 	end.
+
+
 
 
 
@@ -741,32 +796,69 @@ rotate_logs( State ) ->
 
 	ClosedState = close_log_files( State ),
 
-	{ AccessCompressedFilePath, ErrorCompressedFilePath } =
+	{ MaybeAccessCompressedFilePath, MaybeErrorCompressedFilePath, RotState } =
 		rotate_log_files( ClosedState ),
 
-	?info_fmt( "Logs rotated, accesses archived in '~s', errors in '~s'.",
-			   [ AccessCompressedFilePath, ErrorCompressedFilePath ] ),
+	?info_fmt( "Log rotation: ~s, ~s.", [
+		case MaybeAccessCompressedFilePath of
+
+			undefined ->
+				"no access log to archive";
+
+			_ ->
+				text_utils:format( "access logs archived in '~s'",
+								   [ MaybeAccessCompressedFilePath ] )
+
+		end,
+		case MaybeErrorCompressedFilePath of
+
+			undefined ->
+				"no error log to archive";
+
+			_ ->
+				text_utils:format( "error logs archived in '~s'",
+								   [ MaybeErrorCompressedFilePath ] )
+
+		end ] ),
 
 	% Reopening them now:
-	create_log_files( ClosedState ).
+	create_log_files( RotState ).
 
 
 
 % Rotates the relevant log files, supposed already closed (and does not reopen
 % them, as this is not wanted in all cases).
 %
--spec rotate_log_files( wooper:state() ) -> { file_path(), file_path() }.
+-spec rotate_log_files( wooper:state() ) ->
+			{ maybe( file_path() ), maybe( file_path() ), wooper:state() }.
 rotate_log_files( State ) ->
 
 	[ basic_utils:check_undefined( ?getAttr(FAttr) )
 	  || FAttr <- [ access_log_file, error_log_file ] ],
 
-	AccessArchivePath = rotate_access_log_file( State ),
+	RotCount = ?getAttr(rotation_count),
 
-	ErrorArchivePath = rotate_basic_log_file( ?getAttr(error_log_file_path),
-											   State ),
+	MaybeAccessArchivePath = rotate_access_log_file( RotCount, State ),
 
-	{ AccessArchivePath, ErrorArchivePath }.
+	BinErrorLogFilePath = ?getAttr(error_log_file_path),
+
+	MaybeErrorArchivePath = case file_utils:get_size( BinErrorLogFilePath ) of
+
+		0 ->
+			?debug_fmt( "Not rotating empty error log file '~s'.",
+						[ BinErrorLogFilePath ] ),
+			undefined;
+
+		_ ->
+			?debug_fmt( "Rotating error log file '~s'.",
+						[ BinErrorLogFilePath ] ),
+			rotate_basic_log_file( BinErrorLogFilePath, RotCount, State )
+
+	end,
+
+	RotState = setAttribute( State, rotation_count, RotCount+1 ),
+
+	{ MaybeAccessArchivePath, MaybeErrorArchivePath, RotState }.
 
 
 
@@ -868,46 +960,57 @@ get_domain_description( DomainName ) ->
 % Notes: operates only on access logs, not error ones, as web analyzers do not
 % care about the latters, whose processing is thus more direct.
 %
--spec rotate_access_log_file( wooper:state() ) -> bin_file_path().
-rotate_access_log_file( State ) ->
+-spec rotate_access_log_file( count(), wooper:state() ) -> maybe( file_path() ).
+rotate_access_log_file( RotCount, State ) ->
 
 	BinFilePath = ?getAttr(access_log_file_path),
 
-	?debug_fmt( "Rotating access log file '~s'.", [ BinFilePath ] ),
+	case file_utils:get_size( BinFilePath ) of
 
-	case ?getAttr(log_analysis_update_cmd) of
+		0 ->
+			?debug_fmt( "Not rotating empty access log file '~s'.",
+						[ BinFilePath ] ),
+			undefined;
 
-		undefined ->
-			ok;
+		_ ->
+			?debug_fmt( "Rotating access log file '~s'.", [ BinFilePath ] ),
 
-		% Supposing Awstats here:
-		LogAnalysisUpdateCmd ->
+			case ?getAttr(log_analysis_update_cmd) of
 
-			?debug_fmt( "Updating Awstats database now based on command '~s'.",
-						[ LogAnalysisUpdateCmd ] ),
-
-			case system_utils:run_executable( LogAnalysisUpdateCmd ) of
-
-				{ _ReturnCode=0, _CmdOutput="" } ->
+				undefined ->
 					ok;
 
-				{ _ReturnCode=0, CmdOutput } ->
-					?warning_fmt( "Awstats database update prior to log "
-						"rotation succeeded for main report, yet returned "
-						"following message: '~s'.", [ CmdOutput ] );
+				% Supposing Awstats here:
+				LogAnalysisUpdateCmd ->
 
-				% An error here shall not kill this logger as a whole:
-				{ ReturnCode, CmdOutput } ->
-					?error_fmt( "Awstats database update prior to log rotation "
-						"failed (return code: ~w), and returned following "
-						"message: '~s' (command was: '~s').",
-						[ ReturnCode, CmdOutput, LogAnalysisUpdateCmd ] )
+					?debug_fmt( "Updating Awstats database now based "
+								"on command '~s'.", [ LogAnalysisUpdateCmd ] ),
 
-			end
+					case system_utils:run_executable( LogAnalysisUpdateCmd ) of
 
-	end,
+						{ _ReturnCode=0, _CmdOutput="" } ->
+							ok;
 
-	rotate_basic_log_file( BinFilePath, State ).
+						{ _ReturnCode=0, CmdOutput } ->
+							?warning_fmt( "Awstats database update prior to "
+								"log rotation succeeded for main report, "
+								"yet returned following message: '~s'.",
+								[ CmdOutput ] );
+
+						% An error here shall not kill this logger as a whole:
+						{ ReturnCode, CmdOutput } ->
+							?error_fmt( "Awstats database update prior to "
+								"log rotation failed (return code: ~w), and "
+								"returned following message: '~s' (command "
+								"was: '~s').", [ ReturnCode, CmdOutput,
+												 LogAnalysisUpdateCmd ] )
+
+					end
+
+			end,
+			rotate_basic_log_file( BinFilePath, RotCount, State )
+
+	end.
 
 
 
@@ -949,20 +1052,23 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 
 
 
-% Rotates any basic file (typically the error log one), with no specific
-% post-processing.
+% Rotates any basic log file (typically the access or error one), with no
+% specific post-processing.
+%
+% Returns the path of the resulting archive (ex:
+% "/tmp/access-for-baz.foobar.org.log.41.2021-1-20-at-19h-53m-18s.xz").
 %
 % This file should not be currently open (it should have been closed and its
 % handle forgotten beforehand if necessary); and it will not be reopened here.
 %
--spec rotate_basic_log_file( file_utils:any_file_path(), wooper:state() ) ->
-								bin_file_path().
-rotate_basic_log_file( FilePath, _State ) ->
+-spec rotate_basic_log_file( file_utils:any_file_path(), count(),
+							 wooper:state() ) -> file_path().
+rotate_basic_log_file( FilePath, RotCount, _State ) ->
 
-	ArchiveFilePath = text_utils:format( "~s.~s",
-		  [ FilePath, time_utils:get_textual_timestamp_for_path() ] ),
+	ArchiveFilePath = text_utils:format( "~s.~B.~s", [ FilePath, RotCount,
+				time_utils:get_textual_timestamp_for_path() ] ),
 
-	%?debug_fmt( "Rotating '~s' to a compressed version of '~s'.",
+	%?debug_fmt( "Rotating '~s' to a compressed version: '~s'.",
 	%			[ FilePath, ArchiveFilePath ] ),
 
 	file_utils:move_file( FilePath, ArchiveFilePath ),

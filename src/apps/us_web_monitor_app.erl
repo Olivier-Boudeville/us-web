@@ -21,7 +21,7 @@
 
 
 
-% Actual US-Web monitoring logic.
+% Actual US-Web trace monitoring logic.
 %
 % Typically called through the us_web/priv/bin/monitor-us-web.sh script.
 %
@@ -145,8 +145,8 @@ init_from_command_line() ->
 
 	% Argument expected to be set by the caller script:
 	{ CfgFilePath, ConfigShrunkTable } =
-		case list_table:extract_entry_if_existing( '-config-file',
-												   ArgTable ) of
+			case list_table:extract_entry_if_existing( '-config-file',
+													   ArgTable ) of
 
 		false ->
 			throw( no_configuration_file_set );
@@ -172,8 +172,8 @@ init_from_command_line() ->
 
 	% Argument also expected to be set by the caller script:
 	{ RemoteCookie, CookieShrunkTable } =
-		case list_table:extract_entry_if_existing( '-target-cookie',
-												   ConfigShrunkTable ) of
+			case list_table:extract_entry_if_existing( '-target-cookie',
+													   ConfigShrunkTable ) of
 
 		false ->
 			throw( no_target_cookie_set );

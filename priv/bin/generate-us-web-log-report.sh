@@ -2,7 +2,7 @@
 
 us_web_remote_access_config_filename="us-web-remote-access.config"
 
-usage="$(basename $0) [--config US_WEB_REMOTE_ACCESS_CONFIG_FILE] [--domain DOMAIN] [--host VIRTUAL_HOST]: requests the US-Web instance (possibly running on a remote host) to generate the HTML report corresponding to the log analysis for the specified virtual host of the specified domain.
+usage="Usage: $(basename $0) [--config US_WEB_REMOTE_ACCESS_CONFIG_FILE] [--domain DOMAIN] [--host VIRTUAL_HOST]: requests the US-Web instance (possibly running on a remote host) to generate the HTML report corresponding to the log analysis for the specified virtual host of the specified domain.
 This US-Web instance is found either based on a default '${us_web_remote_access_config_filename}' configuration filename or on a specified one, both looked-up in the US configuration directory found through the default US search paths.
 
 If no virtual host is specified, then the reports of all virtual hosts for the specified domain will be generated.
@@ -30,7 +30,8 @@ while [ $# -gt 0 ]; do
 	if [ "$1" = "--config" ]; then
 		shift
 		if [ -z "$1" ]; then
-			echo "  Error, no configuration file specified after --config." 1>&2
+			echo "  Error, no configuration file specified after --config.
+${usage}" 1>&2
 			exit 10
 		fi
 		us_web_remote_access_config_filename="$1"
@@ -40,7 +41,8 @@ while [ $# -gt 0 ]; do
 	if [ "$1" = "--domain" ]; then
 		shift
 		if [ -z "$1" ]; then
-			echo "  Error, no domain specified after --domain." 1>&2
+			echo "  Error, no domain specified after --domain.
+${usage}" 1>&2
 			exit 10
 		fi
 		target_domain="$1"
@@ -50,7 +52,8 @@ while [ $# -gt 0 ]; do
 	if [ "$1" = "--host" ]; then
 		shift
 		if [ -z "$1" ]; then
-			echo "  Error, no host specified after --host." 1>&2
+			echo "  Error, no host specified after --host.
+${usage}" 1>&2
 			exit 10
 		fi
 		target_host="$1"
@@ -60,7 +63,7 @@ while [ $# -gt 0 ]; do
 
 	if [ $token_eaten -eq 1 ]; then
 		echo "Error, unexpected argument ('$1').
-Usage: ${usage}." 1>&2
+${usage}." 1>&2
 		exit 5
 	fi
 

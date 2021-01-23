@@ -301,8 +301,9 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 	case maps:get( logger_pid, HState ) of
 
 		undefined ->
-			%trace_bridge:debug_fmt( "[~w] Request served (code: ~B), "
-			%   "no logger.", [ self(), HttpStatusCode ] );
+			cond_utils:if_defined( us_web_debug_log_analysis,
+				trace_bridge:debug_fmt( "[~w] Request served (code: ~B), "
+					"no logger.", [ self(), HttpStatusCode ] ) ),
 			ok;
 
 		LoggerPid ->
@@ -310,11 +311,12 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 			BinLog = generate_access_log( HandlerReturn, HttpStatusCode ),
 
 			% Oneway call:
-			LoggerPid ! { reportAccess, [ BinLog ] }
+			LoggerPid ! { reportAccess, [ BinLog ] },
 
-			%trace_bridge:debug_fmt(
-			%  "[~w] Request served (code: ~B), logger ~w notified.",
-			%  [ self(), HttpStatusCode, LoggerPid ] )
+			cond_utils:if_defined( us_web_debug_log_analysis,
+				trace_bridge:debug_fmt(
+					"[~w] Request served (code: ~B), logger ~w notified.",
+					[ self(), HttpStatusCode, LoggerPid ] ) )
 
 	end.
 

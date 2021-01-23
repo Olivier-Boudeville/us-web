@@ -238,6 +238,7 @@
 
 -type vhost_config_entry() :: #vhost_config_entry{}.
 
+
 -type meta_web_settings() ::
 		maybe( { domain_id(), vhost_id(), bin_directory_path() } ).
 
@@ -1666,7 +1667,7 @@ build_vhost_table( DomainId,
 	undefined = ?getAttr(meta_web_settings),
 
 	SetState = setAttribute( State, meta_web_settings,
-					{ DomainId, BinVHost, BinMetaContentRoot } ),
+		{ DomainId, BinVHost, BinMetaContentRoot } ),
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
 			DomainId, BinVHost, MaybeCertManagerPid, BinLogDir, CertSupport,
@@ -1899,8 +1900,8 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 
 				undefined ->
 					?error_fmt( "For the meta ~s, a relative content root was "
-								"specified ('~s') whereas no default web root "
-								"was defined.",
+						"specified ('~s') whereas no default web root was "
+						"defined.",
 						[ describe_host( VHostId, DomainId ), ContentRoot ] ),
 					throw( { meta_relative_to_undefined_web_root, ContentRoot,
 							 { DomainId, VHostId } } );
@@ -3178,25 +3179,34 @@ manage_post_meta( State ) ->
 			end,
 
 			generate_meta( MetaWebSettings, LogAnalysisEnabled,
-				?getAttr(http_tcp_port), ?getAttr(domain_config_table),
-				State )
+						   ?getAttr(domain_config_table), State )
 
 	end.
 
 
 
 % Generates the meta website.
--spec generate_meta( meta_web_settings(), boolean(), tcp_port(),
-					 domain_config_table(), wooper:state() ) -> wooper:state().
+-spec generate_meta( meta_web_settings(), boolean(), domain_config_table(),
+					 wooper:state() ) -> wooper:state().
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
-			   LogAnalysisEnabled, Port, DomainCfgTable, State ) ->
+			   LogAnalysisEnabled, DomainCfgTable, State ) ->
 
 	?debug_fmt( "Generating meta website in '~s'.", [ BinMetaContentRoot ] ),
 
 	IndexPath = file_utils:join( BinMetaContentRoot, "index.html" ),
 
+	{ Scheme, WebPort } = case ?getAttr(cert_support) of
+
+		no_certificates ->
+			{ http, ?getAttr(http_tcp_port) };
+
+		_ ->
+			{ https, ?getAttr(https_tcp_port) }
+
+	end,
+
 	IndexContent = us_web_meta:get_page_header()
-		++ us_web_meta:get_page_body( Port, DomainCfgTable,
+		++ us_web_meta:get_page_body( Scheme, WebPort, DomainCfgTable,
 			?getAttr(start_timestamp), MetaWebSettings, LogAnalysisEnabled )
 		++ us_web_meta:get_page_footer(),
 

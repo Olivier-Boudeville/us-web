@@ -37,15 +37,19 @@
 
 
 % Shorthands:
+
+-type tcp_port() :: net_utils:tcp_port().
+
+-type maybe_url() :: maybe( web_utils:url() ).
+
 -type html_element() :: web_utils:html_element().
+
 -type domain_id() :: class_USWebConfigServer:domain_id().
 -type vhost_config_table() :: class_USWebConfigServer:vhost_config_table().
 -type vhost_config_entry() :: class_USWebConfigServer:vhost_config_entry().
 -type domain_config_table() :: class_USWebConfigServer:domain_config_table().
 -type meta_web_settings() :: class_USWebConfigServer:meta_web_settings().
--type tcp_port() :: net_utils:tcp_port().
 
--type maybe_url() :: maybe( text_utils:string() ).
 
 
 
@@ -143,7 +147,7 @@ div.banner a:hover { color: #000000; background: #FFFFFF;  }
 % Returns the HTML body for a meta page.
 -spec get_page_body( tcp_port(), domain_config_table(),
 					 time_utils:timestamp(), meta_web_settings(), boolean() ) ->
-						   html_element().
+							html_element().
 get_page_body( Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 			   LogAnalysisEnabled ) ->
 
@@ -285,7 +289,7 @@ get_vhost_descriptions( Port, VHostCfgTable, MaybeMetaBaseURL ) ->
 
 % Returns the HTML description for the specified virtual host.
 -spec get_vhost_description( tcp_port(), vhost_config_entry() ) ->
-								   html_element().
+									html_element().
 get_vhost_description( Port, #vhost_config_entry{ virtual_host=VHost,
 												  parent_host=ParentHost } ) ->
 
@@ -342,7 +346,7 @@ get_vhost_description( Port, #vhost_config_entry{ virtual_host=VHost,
 
 % Returns an HTML table suitable for specified vhost entries.,
 -spec get_table_for( [ vhost_config_entry() ], tcp_port(), maybe_url() ) ->
-						   html_element().
+							html_element().
 get_table_for( VHostCfgEntries, Port, MaybeMetaBaseURL ) ->
 
 	Begin = "
@@ -370,18 +374,22 @@ get_table_for( VHostCfgEntries, Port, MaybeMetaBaseURL ) ->
 
 
 
-% Returns the HTML code for specified table cell.
+% Returns the HTML code for the specified table cell.
 get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 								   parent_host=ParentHost },
 			  Port, MaybeMetaBaseURL ) ->
 
 	{ DisplayVHost, URLVHost } = case VHost of
 
+		without_vhost ->
+			{ "", "" };
+
 		default_vhost_catch_all ->
-			{ "*", "ANY_VIRTUAL_HOST" };
+			{ "*.", "ANY_VIRTUAL_HOST." };
 
 		_ ->
-			{ VHost, VHost }
+		   VHostDot = text_utils:binary_to_string( VHost ) ++ ".",
+			{ VHostDot, VHostDot }
 
 	end,
 
@@ -395,10 +403,10 @@ get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 
 	end,
 
-	URL = text_utils:format( "http://~s.~s:~B",
+	URL = text_utils:format( "http://~s~s:~B",
 							 [ URLVHost, URLParentHost, Port ] ),
 
-	DisplayFullHost = text_utils:format( "~s.~s",
+	DisplayFullHost = text_utils:format( "~s~s",
 										 [ DisplayVHost, DisplayParentHost ] ),
 
 	LogAnalysisLink = case MaybeMetaBaseURL of

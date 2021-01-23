@@ -34,13 +34,13 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Monday, January 18, 2021</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Saturday, January 23, 2021</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Work in progress</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.16</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.18</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Dedication:</th><td class="field-body"><p class="first">Users and maintainers of the <tt class="docutils literal">Universal Webserver</tt>.</p>
@@ -187,35 +187,35 @@ $ make release-prod
 <p>It should generate a tarball such as <tt class="docutils literal"><span class="pre">us_web-x.y.z.tar.gz</span></tt></p>
 <p>The <tt class="docutils literal"><span class="pre">export-release</span></tt> make target allows in the same movement to lightly update a pre-existing release and also to transfer it to any target server, designated by setting the <tt class="docutils literal">WEB_SRV</tt> (make or environment) variable to the FQDN of this server.</p>
 <p>So we recommend running:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ make export-release
  Generating rebar3 us_web.app file
  Compiling us_web from XXX/us_web
- ===&gt; Verifying dependencies...
- ===&gt; Compiling myriad
+ <span class="o">===</span>&gt; Verifying dependencies...
+ <span class="o">===</span>&gt; Compiling myriad
  Hiding unsupported sources
  Populating the include symlinks
- [...]
+ <span class="o">[</span>...<span class="o">]</span>
 </pre>
 <p>We recommend installing a release in <tt class="docutils literal"><span class="pre">REL_BASE_ROOT=/opt/universal-server</span></tt>:</p>
-<pre class="literal-block">
-$ mv /tmp/us_web-x.y.z.tar.gz ${REL_BASE_ROOT}
-$ cd ${REL_BASE_ROOT}
+<pre class="code bash literal-block">
+$ mv /tmp/us_web-x.y.z.tar.gz <span class="si">${</span><span class="nv">REL_BASE_ROOT</span><span class="si">}</span>
+$ <span class="nb">cd</span> <span class="si">${</span><span class="nv">REL_BASE_ROOT</span><span class="si">}</span>
 $ tar xvf us_web-x.y.z.tar.gz
 </pre>
 <p>Then various steps are necessary in order to have a functional release running satisfactorily.</p>
 <p>We automated the full deployment process of US-Web on a server for that: once the release has been transferred to that server (possibly thanks to the aforementioned <tt class="docutils literal"><span class="pre">export-release</span></tt> target, possibly to the <tt class="docutils literal">/tmp</tt> directory of that server), one may rely on our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh">deploy-us-web-release.sh</a> script. One may also just take inspiration from it in order to devise one's deployment scheme.</p>
 <p>Let's say from now on that the UNIX name chosen for the US user is <tt class="docutils literal"><span class="pre">us-user</span></tt>, the one of the US-web user is <tt class="docutils literal"><span class="pre">us-web-user</span></tt> and the US group (containing both users, and possibly only them) is <tt class="docutils literal"><span class="pre">us-group</span></tt> (one should keep in mind that <tt class="docutils literal"><span class="pre">US-Web</span></tt> is a specialization of the <tt class="docutils literal">US</tt> framework).</p>
 <p>Using that script boils down to running, as root:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ /tmp/deploy-us-web-release.sh
-Detected US-Web version: 'x.y.z'.
-Trying to stop gracefully any prior release in us_web-x.y.z.
+Detected US-Web version: <span class="s1">'x.y.z'</span>.
+Trying to stop gracefully any prior release <span class="k">in</span> us_web-x.y.z.
 Removing already-existing us_web-x.y.z.
-US-Web release ready in '/opt/universal-server/us_web-x.y.z/bin/us_web'.
-Changing, from '/opt/universal-server/us_web-x.y.z', the owner of release
-files to 'us-web-user' and their group to 'us-group'.
-(no auto-launch enabled)
+US-Web release ready <span class="k">in</span> <span class="s1">'/opt/universal-server/us_web-x.y.z/bin/us_web'</span>.
+Changing, from <span class="s1">'/opt/universal-server/us_web-x.y.z'</span>, the owner of release
+files to <span class="s1">'us-web-user'</span> and their group to <span class="s1">'us-group'</span>.
+<span class="o">(</span>no auto-launch enabled<span class="o">)</span>
 </pre>
 <p>Note that the goal of that deployment phase is to start from a clean state, and as such it will try to stop any already running US-Web instance (for all possible versions thereof).</p>
 <p>Then US-Web is fully <em>deployed</em>. Once properly <em>configured</em>, it will be able to be <em>launched</em> for good.</p>
@@ -229,9 +229,9 @@ files to 'us-web-user' and their group to 'us-group'.
 <p>The other US-related configuration files (ex: any <tt class="docutils literal"><span class="pre">us-web.config</span></tt>) are referenced directly from the main one (<tt class="docutils literal">us.config</tt>), designated there through specific keys (ex: <tt class="docutils literal">us_web_config_filename</tt>); they may be either absolutely defined, or relatively to the aforementioned US configuration directory.</p>
 <p>Let's name <tt class="docutils literal">US_CFG_ROOT</tt> the actual directory in which they all lie; it is typically either <tt class="docutils literal"><span class="pre">~/.config/universal-server/</span></tt> (in development mode), or <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server/</span></tt> (in production mode).</p>
 <p>Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have <tt class="docutils literal">640</tt>, supposing that the <tt class="docutils literal">us.config</tt> designates, in its <tt class="docutils literal">us_web_config_filename</tt> entry, <tt class="docutils literal"><span class="pre">foobar-us-web-for-production.config</span></tt> as the name of the US-Web configuration file <a class="footnote-reference" href="#id4" id="id3">[1]</a>:</p>
-<pre class="literal-block">
--rw-r----- 1 us-user     us-group [...] us.config
--rw-r----- 1 us-web-user us-group [...] foobar-us-web-for-production.config
+<pre class="code bash literal-block">
+-rw-r----- <span class="m">1</span> us-user     us-group <span class="o">[</span>...<span class="o">]</span> us.config
+-rw-r----- <span class="m">1</span> us-web-user us-group <span class="o">[</span>...<span class="o">]</span> foobar-us-web-for-production.config
 </pre>
 <table class="docutils footnote" frame="void" id="id4" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
@@ -253,39 +253,39 @@ files to 'us-web-user' and their group to 'us-group'.
 <p>As a result, a relevant configuration directory (denoted <tt class="docutils literal">US_CFG_ROOT</tt> in this document), in that shared setting, is the standard <tt class="docutils literal">/etc/xdg</tt> one, resulting in the <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt> directory to be used.</p>
 <p>As mentioned, care must be taken so that <tt class="docutils literal">root</tt> and also the US and US-Web users can read the content of that directory - at least the US and US-Web configuration files in it - and that the other users cannot.</p>
 <p>For that, a dedicated <tt class="docutils literal"><span class="pre">us-group</span></tt> group can be created, and any web user (ex: <tt class="docutils literal"><span class="pre">us-web-user</span></tt>) shall belong to that group. For example:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ id us-web-user
-uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),
- 1007(us-group)
+<span class="nv">uid</span><span class="o">=</span><span class="m">1002</span><span class="o">(</span>us-web-user<span class="o">)</span> <span class="nv">gid</span><span class="o">=</span><span class="m">1002</span><span class="o">(</span>us-web-user<span class="o">)</span> <span class="nv">groups</span><span class="o">=</span><span class="m">1002</span><span class="o">(</span>us-web-user<span class="o">)</span>,
+ <span class="m">1007</span><span class="o">(</span>us-group<span class="o">)</span>
 </pre>
 <p>Then, in <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt>, for the US and US-Web configuration files:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ chown us-user us.config
 $ chown us-web-user foobar-us-web-for-production.config
 
-$ us_files=&quot;us.config foobar-us-web-for-production.config&quot;
-$ chgrp us-group ${us_files}
-$ chmod 640 ${us_files}
+$ <span class="nv">us_files</span><span class="o">=</span><span class="s2">&quot;us.config foobar-us-web-for-production.config&quot;</span>
+$ chgrp us-group <span class="si">${</span><span class="nv">us_files</span><span class="si">}</span>
+$ chmod <span class="m">640</span> <span class="si">${</span><span class="nv">us_files</span><span class="si">}</span>
 
 $ chgrp us-group /etc/xdg/universal-server
-$ chmod 700 /etc/xdg/universal-server
+$ chmod <span class="m">700</span> /etc/xdg/universal-server
 </pre>
 <p>We recommend directly setting the <tt class="docutils literal">us_web_app_base_dir</tt> configuration entry to the relevant, absolute path.</p>
 <p>Let's name here <tt class="docutils literal">US_WEB_REL_ROOT</tt> the root of the US-Web release of interest (ex: corresponding to <tt class="docutils literal"><span class="pre">${REL_BASE_ROOT}/us_web-latest/</span></tt>) and <tt class="docutils literal">US_WEB_APP_ROOT</tt> the root of the corresponding US-Web application (ex: corresponding to <tt class="docutils literal"><span class="pre">${US_WEB_REL_ROOT}/lib/us_web-latest/</span></tt>).</p>
 <p>A <tt class="docutils literal">systemd</tt> service shall be declared for US-Web, in <tt class="docutils literal">/etc/systemd/system</tt>; creating there, as root, a symbolic link to <tt class="docutils literal"><span class="pre">${US_WEB_APP_ROOT}/priv/conf/us-web.service</span></tt> will suffice.</p>
 <p>This service requires <tt class="docutils literal"><span class="pre">start-us-web.sh</span></tt> and <tt class="docutils literal"><span class="pre">stop-us-web.sh</span></tt>. Adding for user convenience <tt class="docutils literal"><span class="pre">get-us-web-status.sh</span></tt>, they should all be symlinked that way, still as root:</p>
-<pre class="literal-block">
-$ cd /usr/local/bin
-$ for f in start-us-web.sh stop-us-web.sh get-us-web-status.sh; \
-  do ln -s ${US_WEB_APP_ROOT}/priv/bin/$f ; done
+<pre class="code bash literal-block">
+$ <span class="nb">cd</span> /usr/local/bin
+$ <span class="k">for</span> f <span class="k">in</span> start-us-web.sh stop-us-web.sh get-us-web-status.sh<span class="p">;</span> <span class="se">\
+</span>  <span class="k">do</span> ln -s <span class="si">${</span><span class="nv">US_WEB_APP_ROOT</span><span class="si">}</span>/priv/bin/<span class="nv">$f</span> <span class="p">;</span> <span class="k">done</span>
 </pre>
 <p>The log base directory (see the <tt class="docutils literal">log_base_directory</tt> entry) shall be created and writable; for example:</p>
-<pre class="literal-block">
-$ LOG_DIR=/var/log/universal-server
-$ mkdir -p ${LOG_DIR}
-$ chown us-user ${LOG_DIR}
-$ chgrp us-group ${LOG_DIR}
-$ chmod 770 ${LOG_DIR}
+<pre class="code bash literal-block">
+$ <span class="nv">LOG_DIR</span><span class="o">=</span>/var/log/universal-server
+$ mkdir -p <span class="si">${</span><span class="nv">LOG_DIR</span><span class="si">}</span>
+$ chown us-user <span class="si">${</span><span class="nv">LOG_DIR</span><span class="si">}</span>
+$ chgrp us-group <span class="si">${</span><span class="nv">LOG_DIR</span><span class="si">}</span>
+$ chmod <span class="m">770</span> <span class="si">${</span><span class="nv">LOG_DIR</span><span class="si">}</span>
 </pre>
 <p>In such a production context, in <tt class="docutils literal">sys.config</tt> (typically located in <tt class="docutils literal"><span class="pre">${US_WEB_REL_ROOT}/releases/latest-release</span></tt>), we recommend to enable batch mode (just set <tt class="docutils literal">{is_batch,true}</tt>), so that by default no direct, graphical trace supervision is triggered (a server usually does not have a X server anyway).</p>
 <p>Instead the traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see <a class="reference external" href="http://traces.esperide.org/#trace-supervision-browsing">Ceylan-Traces</a> for that), by running the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh">monitor-us-web.sh</a> script.</p>
@@ -407,10 +407,10 @@ $ chmod 770 ${LOG_DIR}
 <p>Many distributions will parameter <tt class="docutils literal">authbind</tt> so that only the TCP port 80 will be available to &quot;authbound&quot; programs.</p>
 <p>If wanting to run an HTTPS server, the TCP port 443 will be most probably needed and thus must be specifically enabled.</p>
 <p>For that, relying on the same user/group conventions as before, one may enter, as root:</p>
-<pre class="literal-block">
-$ cd /etc/authbind/byport
-$ cp 80 443
-$ chown us-web-user:us-group 443
+<pre class="code bash literal-block">
+$ <span class="nb">cd</span> /etc/authbind/byport
+$ cp <span class="m">80</span> <span class="m">443</span>
+$ chown us-web-user:us-group <span class="m">443</span>
 </pre>
 <p>Otherwise an exception will be raised (about <tt class="docutils literal">eperm</tt> / <tt class="docutils literal">not owner</tt>) when US-Web will try to create its HTTPS listening socket.</p>
 </div>
@@ -420,7 +420,7 @@ $ chown us-web-user:us-group 443
 <h2><a class="toc-backref" href="#id74">Running the Universal-Webserver</a></h2>
 <p>Note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using <em>exactly</em> the same version).</p>
 <p>Supposing a vhost to be served by US-Web is <tt class="docutils literal">baz.foobar.org</tt>, to avoid being confused by your browser, a better way is to test whether a US-Web instance is already running thanks to <tt class="docutils literal">wget</tt> or <tt class="docutils literal">links</tt>:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ wget http://baz.foobar.org -O -
 </pre>
 <p>This will display the fetched content directly on the console (not creating a file).</p>
@@ -430,18 +430,18 @@ $ wget http://baz.foobar.org -O -
 <h3><a class="toc-backref" href="#id75">Stopping any prior instance first</a></h3>
 <p>From now on, we will suppose the current directory is <tt class="docutils literal">US_WEB_APP_ROOT</tt>.</p>
 <p>The <tt class="docutils literal"><span class="pre">stop-us-web.sh</span></tt> script can be used for stopping a US-Web release, typically simply as:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ priv/bin/stop-us-web.sh
 </pre>
 <p>In development mode, still from the root of US-Web, one might use <tt class="docutils literal">make <span class="pre">stop-brutal</span></tt> to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ systemctl stop us-web.service
 </pre>
 </div>
 <div class="section" id="launching-the-us-web-server">
 <h3><a class="toc-backref" href="#id76">Launching the US-Web Server</a></h3>
 <p>In development mode, from the root of US-Web, one may use <tt class="docutils literal">make debug</tt>, while, in production mode, the US-Web server can be launched either with its dedicated script <tt class="docutils literal"><span class="pre">start-us-web.sh</span></tt> or, even better, directly through:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ systemctl start us-web.service
 </pre>
 </div>
@@ -478,7 +478,7 @@ $ systemctl start us-web.service
 <h3><a class="toc-backref" href="#id79">Remote Monitoring</a></h3>
 <p>Here the state of a US-Web instance will be inspected remotely, with no shell connection to its server.</p>
 <p>First of all, is this US-Web instance available? Check with:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ wget http://baz.foobar.org -O -
 </pre>
 <p>As for the applicative traces, they may be monitored remotely as well, thanks to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh">monitor-us-web.sh</a> script.</p>
@@ -492,9 +492,12 @@ $ wget http://baz.foobar.org -O -
 % to monitor traces, to trigger the generation of log access reports, etc.
 </span>
 <span class="c">% The hostname where the US-web instance of interest runs:
-</span><span class="p">{</span> <span class="n">us_web_hostname</span><span class="p">,</span> <span class="s">&quot;baz.foobar.org&quot;</span> <span class="p">}.</span>
+</span><span class="p">{</span><span class="n">us_web_hostname</span><span class="p">,</span> <span class="s">&quot;baz.foobar.org&quot;</span><span class="p">}.</span>
 
-<span class="p">{</span> <span class="n">remote_vm_cookie</span><span class="p">,</span> <span class="n">'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'</span> <span class="p">}.</span>
+<span class="p">{</span><span class="n">remote_vm_cookie</span><span class="p">,</span> <span class="n">'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'</span><span class="p">}.</span>
+
+<span class="c">% If specifically overridden for thay server:
+</span><span class="p">{</span><span class="n">us_web_config_server_registration_name</span><span class="p">,</span> <span class="n">foobar_prod_us_web_cfg_srv</span><span class="p">}.</span>
 
 <span class="c">% A range of TCP ports that may be used for out-of-band inter-VM communication
 % (not using the Erlang carrier; ex: for send_file):
@@ -502,7 +505,7 @@ $ wget http://baz.foobar.org -O -
 % (this range must be typically in-line with any one set at the level of
 % firewalls)
 %
-</span><span class="p">{</span> <span class="n">tcp_port_range</span><span class="p">,</span> <span class="p">{</span> <span class="mi">50000</span><span class="p">,</span> <span class="mi">55000</span> <span class="p">}</span> <span class="p">}.</span>
+</span><span class="p">{</span><span class="n">tcp_port_range</span><span class="p">,</span> <span class="p">{</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">55000</span><span class="p">}}.</span>
 </pre>
 <p>Then running the aforementioned <tt class="docutils literal"><span class="pre">monitor-us-web.sh</span></tt> script should launch a trace browser synchronised to the trace aggregator of the targeted US-Web instance, displaying all traces (i.e. both all that have been emitted since the start of that instance and all newer ones, being then displayed in direct).</p>
 <p>Here is a user-submitted screenshot (edited for confidentiality) of the LogMX-based trace browser corresponding to the native US-Web trace interface (refer to <a class="reference external" href="https://traces.esperide.com">Ceylan-Traces</a> for further details):</p>
@@ -521,8 +524,8 @@ $ wget http://baz.foobar.org -O -
 <h3><a class="toc-backref" href="#id82">Auto-generated Meta Website</a></h3>
 <p>If requested, at server start-up, a &quot;meta&quot; website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.</p>
 <p>For that, in the US-Web configuration file, among the user-specified <tt class="docutils literal">routes</tt>, one may add the following element in the list of virtual host entries associated to a given domain (ex: <tt class="docutils literal">foobar.org</tt>):</p>
-<pre class="literal-block">
-{&quot;mymeta&quot;, &quot;My-meta-generated&quot;, meta}
+<pre class="code erlang literal-block">
+<span class="p">{</span><span class="s">&quot;mymeta&quot;</span><span class="p">,</span> <span class="s">&quot;My-meta-generated&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">}</span>
 </pre>
 <p>This will generate a suitable website in the <tt class="docutils literal"><span class="pre">My-meta-generated</span></tt> subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as <tt class="docutils literal">mymeta.foobar.org</tt> (of course both <tt class="docutils literal">mymeta</tt> and <tt class="docutils literal"><span class="pre">My-meta-generated</span></tt> are examples; these names can be freely chosen).</p>
 <p>Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).</p>
@@ -686,8 +689,8 @@ $ systemctl status us-web.service
 <h4>Operating directly from within the rebar build tree</h4>
 <p>(not recommended in a development phase)</p>
 <p>If having modified and recompiled a Ceylan prerequisite (ex: WOOPER), then, before generating the release, run from its root (ex: <tt class="docutils literal">us_web/_build/default/lib/wooper</tt>):</p>
-<pre class="literal-block">
-$ make rebar3-copy-beams REBAR_BUILD_DIR=../../
+<pre class="code bash literal-block">
+$ make rebar3-copy-beams <span class="nv">REBAR_BUILD_DIR</span><span class="o">=</span>../../
 </pre>
 <p>Or, simply run <tt class="docutils literal">make <span class="pre">rebar3-compile</span> <span class="pre">REBAR_BUILD_DIR=../../</span></tt> (and no need to run <tt class="docutils literal">make release</tt> afterwards).</p>
 </div>
@@ -758,17 +761,17 @@ $ make rebar3-copy-beams REBAR_BUILD_DIR=../../
 <tr><td class="label"><a class="fn-backref" href="#id39">[6]</a></td><td>See <tt class="docutils literal"><span class="pre">priv/for-testing/test-static-website-A/to-test-for-errors</span></tt>, which was created precisely for that. Note that its permissions have been restored to sensible values, as otherwise that directory was blocking the OTP release generation.</td></tr>
 </tbody>
 </table>
-<ul>
-<li><p class="first">log rotation results in timestamped, compressed files such as <tt class="docutils literal"><span class="pre">access-for-bar.localhost.log.2019-12-31-at-22h-03m-35s.xz</span></tt>; note that the timestamp corresponds to the moment at which the rotation took place (hence not the time range of these logs; more an upper bound thereof)</p>
-</li>
-<li><p class="first">to test whether a combination of EPMD port and cookie is legit, one may use for example:</p>
-<pre class="literal-block">
-$ ERL_EPMD_PORT=44000 /usr/local/lib/erlang/erts-x.y/bin/erl_call -name us_web&#64;baz.foobar.org -R -c 'MyCookie' -timeout 60 -a 'erlang is_alive'
-</pre>
-</li>
+<ul class="simple">
+<li>log rotation results in timestamped, compressed files such as <tt class="docutils literal"><span class="pre">access-for-bar.localhost.log.2019-12-31-at-22h-03m-35s.xz</span></tt>; note that the timestamp corresponds to the moment at which the rotation took place (hence not the time range of these logs; more an upper bound thereof)</li>
+<li>to test whether a combination of EPMD port and cookie is legit, one may use for example:</li>
 </ul>
+<pre class="code bash literal-block">
+$ <span class="nv">ERL_EPMD_PORT</span><span class="o">=</span><span class="m">44000</span> /usr/local/lib/erlang/erts-x.y/bin/erl_call
+   -name us_web&#64;baz.foobar.org -R -c <span class="s1">'MyCookie'</span> -timeout <span class="m">60</span>
+   -a <span class="s1">'erlang is_alive'</span>
+</pre>
 <p>You then expect <tt class="docutils literal">true</tt> to be returned - not:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 erl_call: failed to connect to node us_web&#64;baz.foobar.org
 </pre>
 </div>
@@ -777,11 +780,11 @@ erl_call: failed to connect to node us_web&#64;baz.foobar.org
 <div class="section" id="in-terms-of-unix-processes">
 <h4>In terms of (UNIX) Processes</h4>
 <p>A running US-Web server will not be found by looking up <tt class="docutils literal">beam</tt> or <tt class="docutils literal">beam.smp</tt> through <tt class="docutils literal">ps</tt>; as an OTP release, it relies first on the <tt class="docutils literal">run_erl</tt> launcher, like shown, based on <tt class="docutils literal">ps <span class="pre">-edf</span></tt>, in:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 UID         PID    PPID  C STIME TTY TIME     CMD
-us-web-user 767067    1  0 Feb15 ?   00:00:00 /usr/local/lib/erlang/erts-x.y/bin/run_erl
+us-web-user <span class="m">767067</span>    <span class="m">1</span>  <span class="m">0</span> Feb15 ?   <span class="m">00</span>:00:00 /usr/local/lib/erlang/erts-x.y/bin/run_erl
   -daemon /tmp/erl_pipes/us_web&#64;MY_FQDN/ /opt/universal-server/us_web-US_WEB_VERSION/log
-  exec &quot;/opt/universal-server/us_web-US_WEB_VERSION/bin/us_web&quot; &quot;console&quot; ''
+  <span class="nb">exec</span> <span class="s2">&quot;/opt/universal-server/us_web-US_WEB_VERSION/bin/us_web&quot;</span> <span class="s2">&quot;console&quot;</span> <span class="s1">''</span>
   --relx-disable-hooks
 </pre>
 <p>This can be interpreted as:</p>
@@ -793,11 +796,11 @@ us-web-user 767067    1  0 Feb15 ?   00:00:00 /usr/local/lib/erlang/erts-x.y/bin
 </ul>
 <p>This launcher created the main, central, <tt class="docutils literal">us_web</tt> (UNIX) process, parent of all the VM worker (system) threads.</p>
 <p><tt class="docutils literal">pstree <span class="pre">-u</span></tt> (or <tt class="docutils literal">ps <span class="pre">-e</span> <span class="pre">--forest</span></tt>) tells us about the underlying process hierarchy:</p>
-<pre class="literal-block">
-[...]
-  |-run_erl(us-web-user)---beam.smp---erl_child_setup---inet_gethost---inet_gethost
-  |                             |-158*[{beam.smp}]
-[...]
+<pre class="code bash literal-block">
+<span class="o">[</span>...<span class="o">]</span>
+  <span class="p">|</span>-run_erl<span class="o">(</span>us-web-user<span class="o">)</span>---beam.smp---erl_child_setup---inet_gethost---inet_gethost
+  <span class="p">|</span>                             <span class="p">|</span>-158*<span class="o">[{</span>beam.smp<span class="o">}]</span>
+<span class="o">[</span>...<span class="o">]</span>
 </pre>
 <p>The 158 threads must correspond to:</p>
 <ul class="simple">
@@ -819,14 +822,14 @@ us-web-user 767067    1  0 Feb15 ?   00:00:00 /usr/local/lib/erlang/erts-x.y/bin
 </ul>
 <p>(apparently there is no direct way of displaying human-readable sizes)</p>
 <p>See also our <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/list-processes-by-size.sh">list-processes-by-size.sh</a> script; typical use:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ list-processes-by-size.sh
-   Listing running processes by decreasing resident size in RAM (total size in KiB):
+   Listing running processes by decreasing resident size <span class="k">in</span> RAM <span class="o">(</span>total size <span class="k">in</span> KiB<span class="o">)</span>:
  RSS  PID      COMMAND
-[...]
-1204  1695242  /usr/local/lib/erlang/erts-11/bin/run_erl -daemon /tmp/erl_pipes/us_web&#64;somehost.foobar.org/ /opt/universal-server/us_web-x.y.z/log exec &quot;/opt/universal-server/us_web-x.y.z/bin/us_web&quot; &quot;console&quot; ''  --relx-disable-hooks
-67776 1695243 /opt/universal-server/us_web-x.y.z/bin/us_web -A 128 -- -root /opt/universal-server/us_web-x.y.z -progname opt/universal-server/us_web-x.y.z/bin/us_web -- -home /home/us-web-user -epmd_port 4526 -- -boot /opt/universal-server/us_web-x.y.z/releases/x.y.z/start -mode embedded -boot_var ERTS_LIB_DIR /usr/local/lib/erlang/lib -config /opt/universal-server/us_web-x.y.z/releases/x.y.z/sys.config -name us_web -setcookie us_web_initial_cookie -- -- console --relx-disable-hooks --
-[...]
+<span class="o">[</span>...<span class="o">]</span>
+<span class="m">1204</span>  <span class="m">1695242</span>  /usr/local/lib/erlang/erts-11/bin/run_erl -daemon /tmp/erl_pipes/us_web&#64;somehost.foobar.org/ /opt/universal-server/us_web-x.y.z/log <span class="nb">exec</span> <span class="s2">&quot;/opt/universal-server/us_web-x.y.z/bin/us_web&quot;</span> <span class="s2">&quot;console&quot;</span> <span class="s1">''</span>  --relx-disable-hooks
+<span class="m">67776</span> <span class="m">1695243</span> /opt/universal-server/us_web-x.y.z/bin/us_web -A <span class="m">128</span> -- -root /opt/universal-server/us_web-x.y.z -progname opt/universal-server/us_web-x.y.z/bin/us_web -- -home /home/us-web-user -epmd_port <span class="m">4526</span> -- -boot /opt/universal-server/us_web-x.y.z/releases/x.y.z/start -mode embedded -boot_var ERTS_LIB_DIR /usr/local/lib/erlang/lib -config /opt/universal-server/us_web-x.y.z/releases/x.y.z/sys.config -name us_web -setcookie us_web_initial_cookie -- -- console --relx-disable-hooks --
+<span class="o">[</span>...<span class="o">]</span>
 </pre>
 <p>This confirms that, even if higher VIRT sizes can be reported (ex: 5214M, hence roughly 5GB), the RSS size may be 67776 (KB, hence 66 MB), i.e. very little, and does not vary much.</p>
 <p>Indeed, in terms of RSS use (for a few domains, each with a few low-traffic websites, if that matters), we found:</p>
@@ -847,10 +850,10 @@ $ list-processes-by-size.sh
 <div class="section" id="node-test-connection">
 <h4>Node Test &amp; Connection</h4>
 <p>If desperate enough, one may also run, possibly from another host, and based on the settings to be found in the configuration files:</p>
-<pre class="literal-block">
-$ ERL_EPMD_PORT=XXXX erl -name tester -setcookie CCCC -kernel inet_dist_listen_min MIN inet_dist_listen_max MAX
+<pre class="code bash literal-block">
+$ <span class="nv">ERL_EPMD_PORT</span><span class="o">=</span>XXXX erl -name tester -setcookie CCCC -kernel inet_dist_listen_min MIN inet_dist_listen_max MAX
 
-1&gt; net_adm:ping('us_web&#64;foobar.org').
+<span class="m">1</span>&gt; net_adm:ping<span class="o">(</span><span class="s1">'us_web&#64;foobar.org'</span><span class="o">)</span>.
 pong
 </pre>
 <p>Then one may switch to the <em>Job control mode</em> (JCL) by pressing <tt class="docutils literal"><span class="pre">Ctrl-G</span></tt> then <tt class="docutils literal">r</tt> to start a remote job on the US-Web node.</p>
@@ -913,12 +916,12 @@ LogFormat=&quot;%host %other %logname %time1 %methodurl %code %bytesd %refererqu
 <div class="section" id="awstats-installation">
 <h4>Awstats Installation</h4>
 <p>On Arch Linux, one should follow <a class="reference external" href="https://wiki.archlinux.org/index.php/AWStats">these guidelines</a> (example for version 7.8):</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ pacman -Sy --needed awstats
 </pre>
 <p>Awstats will then be installed in <tt class="docutils literal">/usr/share</tt>, including the <tt class="docutils literal"><span class="pre">/usr/share/webapps/awstats/cgi-bin/awstats.pl</span></tt> script and the <tt class="docutils literal">/usr/share/webapps/awstats/icon/</tt> directory.</p>
 <p>Some permission fixes (to be done as root) might be needed first:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ chmod +r /usr/share/webapps/awstats/icon/os/*
 </pre>
 </div>
@@ -949,27 +952,27 @@ $ chmod +r /usr/share/webapps/awstats/icon/os/*
 <p>Various issues may prevent log reports to be available.</p>
 <p>Let's try with a real US-Web uncompressed log file first (ex: <tt class="docutils literal">xz <span class="pre">-d</span> <span class="pre">access-vhost-catchall.log.test.xz</span></tt>), supposing that it corresponds to a <tt class="docutils literal"><span class="pre">my-test</span></tt> virtual host).</p>
 <p>Then configure Awstats (ex: through a <tt class="docutils literal"><span class="pre">/usr/local/etc/awstats/awstats.my-test.conf</span></tt> file) to process that log file; for that, run on that host:</p>
-<pre class="literal-block">
+<pre class="code bash literal-block">
 $ perl /usr/share/awstats/tools/awstats_configure.pl
 </pre>
 <p>Then, to debug the whole process, use, as root:</p>
-<pre class="literal-block">
-$ rm -f /usr/share/webapps/awstats/cgi-bin/awstats*.txt ; echo ;
-   LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
-     -config=my-test -showdropped
+<pre class="code bash literal-block">
+$ rm -f /usr/share/webapps/awstats/cgi-bin/awstats*.txt <span class="p">;</span> <span class="nb">echo</span> <span class="p">;</span>
+   <span class="nv">LANG</span><span class="o">=</span>C /usr/share/webapps/awstats/cgi-bin/awstats.pl
+     -config<span class="o">=</span>my-test -showdropped
 </pre>
 <p>Most problems should become visible then.</p>
 <p>To do the same for a series of web logs in the context of US-Web, one can have them analysed first thanks to:</p>
-<pre class="literal-block">
-$ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
-   LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
-     -config=$f -update ; done
+<pre class="code bash literal-block">
+$ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/awstats-*conf<span class="p">;</span> <span class="k">do</span> <span class="nb">echo</span> <span class="p">;</span>
+   <span class="nv">LANG</span><span class="o">=</span>C /usr/share/webapps/awstats/cgi-bin/awstats.pl
+     -config<span class="o">=</span><span class="nv">$f</span> -update <span class="p">;</span> <span class="k">done</span>
 </pre>
 <p>Then all web reports can be generated manually with:</p>
-<pre class="literal-block">
-$ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
-   LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
-     -config=$f -output ; done
+<pre class="code bash literal-block">
+$ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/awstats-*conf<span class="p">;</span> <span class="k">do</span> <span class="nb">echo</span> <span class="p">;</span>
+   <span class="nv">LANG</span><span class="o">=</span>C /usr/share/webapps/awstats/cgi-bin/awstats.pl
+     -config<span class="o">=</span><span class="nv">$f</span> -output <span class="p">;</span> <span class="k">done</span>
 </pre>
 </div>
 </div>

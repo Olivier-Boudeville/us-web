@@ -344,8 +344,12 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			ExtraOpts = "-showsteps -showcorrupted -showdropped "
 				"-showunknownorigin -showdirectorigin ",
 
+			% Unsilence if debugging:
+			RedirectCmd = cond_utils:if_defined( us_web_debug_log_analysis,
+								"", " 1>/dev/null" ),
+
 			UpdateCmd = text_utils:format( "nice -n ~B ~s " ++ ExtraOpts
-				++ "-config=~s 1>/dev/null",
+				++ "-config=~s" ++ RedirectCmd,
 				[ Niceness, BinUpdateToolPath, HostCfgDesc ] ),
 
 			% Command to generate reports:
@@ -357,7 +361,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			% generates (all) reports:
 			%
 			ReportCmd = text_utils:format( "nice -n ~B ~s -config=~s -dir=~s "
-				"-awstatsprog=~s 1>/dev/null",
+				"-awstatsprog=~s" ++ RedirectCmd,
 				[ Niceness, BinReportToolPath, HostCfgDesc, BinWbContDir,
 				  BinUpdateToolPath ] ),
 
@@ -521,7 +525,8 @@ destruct( State ) ->
 -spec reportAccess( wooper:state(), log_line() ) -> const_oneway_return().
 reportAccess( State, BinLogLine ) ->
 
-	%?debug_fmt( "Storing access log '~s'.", [ BinLogLine ] ),
+	cond_utils:if_defined( us_web_debug_log_analysis,
+		?debug_fmt( "Storing access log '~s'.", [ BinLogLine ] ) ),
 
 	file_utils:write( ?getAttr(access_log_file), BinLogLine ),
 
@@ -554,9 +559,9 @@ rotateLogs( State ) ->
 
 
 % Defined to be triggered synchronously.
--spec rotateSyncLogs( wooper:state() ) ->
+-spec rotateLogsSync( wooper:state() ) ->
 						request_return( fallible( 'log_rotated' ) ).
-rotateSyncLogs( State ) ->
+rotateLogsSync( State ) ->
 
 	RotateState = rotate_logs( State ),
 
@@ -592,6 +597,7 @@ generateReport( State ) ->
 	wooper:const_return().
 
 
+
 % Generates the report for the managed host, based on the current database
 % state (synchronous version).
 %
@@ -605,11 +611,28 @@ generateReportSync( State ) ->
 
 
 
+% Rotates the logs then generates the corresponding report.
+%
+% Both intentionally serialised to ensure that no concurrent access can
+% interfere.
+%
+-spec rotateThenGenerateReportSync( wooper:state() ) ->
+					const_request_return( fallible( 'report_generated' ) ).
+rotateThenGenerateReportSync( State ) ->
+
+	RotateState = rotate_logs( State ),
+
+	Res = generate_report( RotateState ),
+
+	wooper:const_return_result( Res ).
+
+
+
 % (helper, for re-use)
 -spec generate_report( wooper:state() ) -> fallible( 'report_generated' ).
 generate_report( State ) ->
 
-	case ?getAttr(log_analysis_report_cmd) of
+	case ?getAttr(log_analysis_report_gen_cmd) of
 
 		undefined ->
 			?error( "Generation of report request, yet no corresponding "
@@ -772,6 +795,7 @@ create_log_file( BinLogFilePath, State ) ->
 			% (would deserve a warning, yet almost always happens at start-up)
 			%
 			?info_fmt( "Removing a prior '~s' log file.", [ BinLogFilePath ] ),
+
 			file_utils:remove_file( BinLogFilePath );
 
 		false ->
@@ -866,7 +890,10 @@ rotate_log_files( State ) ->
 -spec close_log_files( wooper:state() ) -> wooper:state().
 close_log_files( State ) ->
 
-	[ file_utils:close( ?getAttr(FAttr) )
+	% To avoid delayed errors such as {einval,
+	% {file_descriptor,raw_file_io_delayed, etc.:
+	%
+	[ file_utils:close( ?getAttr(FAttr), _FailureMode=overcome_failure )
 	  || FAttr <- [ access_log_file, error_log_file ] ],
 
 	setAttributes( State, [ { access_log_file, undefined },

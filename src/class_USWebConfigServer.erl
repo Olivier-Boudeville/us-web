@@ -885,17 +885,18 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 
 
 
-% Activates the specified loggers in turn.
+% Activates the specified loggers in turn: triggers a log rotation to update the
+% state of the tool for log analysis, then the generated of the reports as such.
 %
 % (helper)
 %
 -spec activate_loggers( [ logger_pid() ] ) -> report_generation_outcome().
 activate_loggers( Loggers ) ->
 
-	Results = wooper:send_request_in_turn( _Req=rotateSyncLogs,
+	Results = wooper:send_request_in_turn( _Req=rotateThenGenerateReportSync,
 							_Args=[], _TargetInstancePIDs=Loggers ),
 
-	case list_utils:delete_all_in( _Elem=log_rotated, Results ) of
+	case list_utils:delete_all_in( _Elem=report_generated, Results ) of
 
 		% Alles gut then:
 		[] ->
@@ -1422,7 +1423,12 @@ prepare_web_analysis(
 % Returns the first found, supposing only one is defined (build_vhost_table/8
 % will perform an exhaustive search thereof).
 %
-determine_meta_web_root( _UserRoutes=[], _MaybeBinDefaultWebRoot, _State ) ->
+determine_meta_web_root( _UserRoutes=[], _MaybeBinDefaultWebRoot, State ) ->
+
+	?error( "Unable to determine the meta web root to use. Was a "
+			"'meta' virtual host defined through the routes in "
+			"the US-Web configuration file?" ),
+
 	throw( no_meta_web_root_found );
 
 % Per-domain first:

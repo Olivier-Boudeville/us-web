@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Wednesday, January 20, 2021
+:Lastly updated: Saturday, January 23, 2021
 :Status: Work in progress
-:Version: 0.0.17
+:Version: 0.0.18
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -146,7 +146,9 @@ It should generate a tarball such as ``us_web-x.y.z.tar.gz``
 
 The ``export-release`` make target allows in the same movement to lightly update a pre-existing release and also to transfer it to any target server, designated by setting the ``WEB_SRV`` (make or environment) variable to the FQDN of this server.
 
-So we recommend running::
+So we recommend running:
+
+.. code:: bash
 
  $ make export-release
   Generating rebar3 us_web.app file
@@ -158,7 +160,9 @@ So we recommend running::
   [...]
 
 
-We recommend installing a release in ``REL_BASE_ROOT=/opt/universal-server``::
+We recommend installing a release in ``REL_BASE_ROOT=/opt/universal-server``:
+
+.. code:: bash
 
  $ mv /tmp/us_web-x.y.z.tar.gz ${REL_BASE_ROOT}
  $ cd ${REL_BASE_ROOT}
@@ -170,7 +174,9 @@ We automated the full deployment process of US-Web on a server for that: once th
 
 Let's say from now on that the UNIX name chosen for the US user is ``us-user``, the one of the US-web user is ``us-web-user`` and the US group (containing both users, and possibly only them) is ``us-group`` (one should keep in mind that ``US-Web`` is a specialization of the ``US`` framework).
 
-Using that script boils down to running, as root::
+Using that script boils down to running, as root:
+
+.. code:: bash
 
  $ /tmp/deploy-us-web-release.sh
  Detected US-Web version: 'x.y.z'.
@@ -201,7 +207,9 @@ The other US-related configuration files (ex: any ``us-web.config``) are referen
 
 Let's name ``US_CFG_ROOT`` the actual directory in which they all lie; it is typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
 
-Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have ``640``, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_::
+Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have ``640``, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_:
+
+.. code:: bash
 
  -rw-r----- 1 us-user     us-group [...] us.config
  -rw-r----- 1 us-web-user us-group [...] foobar-us-web-for-production.config
@@ -234,14 +242,18 @@ As a result, a relevant configuration directory (denoted ``US_CFG_ROOT`` in this
 
 As mentioned, care must be taken so that ``root`` and also the US and US-Web users can read the content of that directory - at least the US and US-Web configuration files in it - and that the other users cannot.
 
-For that, a dedicated ``us-group`` group can be created, and any web user (ex: ``us-web-user``) shall belong to that group. For example::
+For that, a dedicated ``us-group`` group can be created, and any web user (ex: ``us-web-user``) shall belong to that group. For example:
+
+.. code:: bash
 
  $ id us-web-user
  uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),
   1007(us-group)
 
 
-Then, in ``/etc/xdg/universal-server``, for the US and US-Web configuration files::
+Then, in ``/etc/xdg/universal-server``, for the US and US-Web configuration files:
+
+.. code:: bash
 
  $ chown us-user us.config
  $ chown us-web-user foobar-us-web-for-production.config
@@ -259,14 +271,18 @@ Let's name here ``US_WEB_REL_ROOT`` the root of the US-Web release of interest (
 
 A ``systemd`` service shall be declared for US-Web, in ``/etc/systemd/system``; creating there, as root, a symbolic link to ``${US_WEB_APP_ROOT}/priv/conf/us-web.service`` will suffice.
 
-This service requires ``start-us-web.sh`` and ``stop-us-web.sh``. Adding for user convenience ``get-us-web-status.sh``, they should all be symlinked that way, still as root::
+This service requires ``start-us-web.sh`` and ``stop-us-web.sh``. Adding for user convenience ``get-us-web-status.sh``, they should all be symlinked that way, still as root:
+
+.. code:: bash
 
  $ cd /usr/local/bin
  $ for f in start-us-web.sh stop-us-web.sh get-us-web-status.sh; \
    do ln -s ${US_WEB_APP_ROOT}/priv/bin/$f ; done
 
 
-The log base directory (see the ``log_base_directory`` entry) shall be created and writable; for example::
+The log base directory (see the ``log_base_directory`` entry) shall be created and writable; for example:
+
+.. code:: bash
 
  $ LOG_DIR=/var/log/universal-server
  $ mkdir -p ${LOG_DIR}
@@ -422,7 +438,9 @@ Many distributions will parameter ``authbind`` so that only the TCP port 80 will
 
 If wanting to run an HTTPS server, the TCP port 443 will be most probably needed and thus must be specifically enabled.
 
-For that, relying on the same user/group conventions as before, one may enter, as root::
+For that, relying on the same user/group conventions as before, one may enter, as root:
+
+.. code:: bash
 
  $ cd /etc/authbind/byport
  $ cp 80 443
@@ -437,7 +455,9 @@ Running the Universal-Webserver
 
 Note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using *exactly* the same version).
 
-Supposing a vhost to be served by US-Web is ``baz.foobar.org``, to avoid being confused by your browser, a better way is to test whether a US-Web instance is already running thanks to ``wget`` or ``links``::
+Supposing a vhost to be served by US-Web is ``baz.foobar.org``, to avoid being confused by your browser, a better way is to test whether a US-Web instance is already running thanks to ``wget`` or ``links``:
+
+.. code:: bash
 
  $ wget http://baz.foobar.org -O -
 
@@ -455,12 +475,16 @@ Stopping any prior instance first
 
 From now on, we will suppose the current directory is ``US_WEB_APP_ROOT``.
 
-The ``stop-us-web.sh`` script can be used for stopping a US-Web release, typically simply as::
+The ``stop-us-web.sh`` script can be used for stopping a US-Web release, typically simply as:
+
+.. code:: bash
 
  $ priv/bin/stop-us-web.sh
 
 
-In development mode, still from the root of US-Web, one might use ``make stop-brutal`` to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for::
+In development mode, still from the root of US-Web, one might use ``make stop-brutal`` to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for:
+
+.. code:: bash
 
  $ systemctl stop us-web.service
 
@@ -469,7 +493,9 @@ In development mode, still from the root of US-Web, one might use ``make stop-br
 Launching the US-Web Server
 ===========================
 
-In development mode, from the root of US-Web, one may use ``make debug``, while, in production mode, the US-Web server can be launched either with its dedicated script ``start-us-web.sh`` or, even better, directly through::
+In development mode, from the root of US-Web, one may use ``make debug``, while, in production mode, the US-Web server can be launched either with its dedicated script ``start-us-web.sh`` or, even better, directly through:
+
+.. code:: bash
 
  $ systemctl start us-web.service
 
@@ -526,7 +552,9 @@ Remote Monitoring
 
 Here the state of a US-Web instance will be inspected remotely, with no shell connection to its server.
 
-First of all, is this US-Web instance available? Check with::
+First of all, is this US-Web instance available? Check with:
+
+.. code:: bash
 
  $ wget http://baz.foobar.org -O -
 
@@ -590,7 +618,9 @@ Auto-generated Meta Website
 
 If requested, at server start-up, a "meta" website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
 
-For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (ex: ``foobar.org``)::
+For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (ex: ``foobar.org``):
+
+.. code:: erlang
 
  {"mymeta", "My-meta-generated", meta}
 
@@ -843,7 +873,9 @@ Operating directly from within the rebar build tree
 
 (not recommended in a development phase)
 
-If having modified and recompiled a Ceylan prerequisite (ex: WOOPER), then, before generating the release, run from its root (ex: ``us_web/_build/default/lib/wooper``)::
+If having modified and recompiled a Ceylan prerequisite (ex: WOOPER), then, before generating the release, run from its root (ex: ``us_web/_build/default/lib/wooper``):
+
+.. code:: bash
 
   $ make rebar3-copy-beams REBAR_BUILD_DIR=../../
 
@@ -942,11 +974,17 @@ Execution Hints
 
 - log rotation results in timestamped, compressed files such as ``access-for-bar.localhost.log.2019-12-31-at-22h-03m-35s.xz``; note that the timestamp corresponds to the moment at which the rotation took place (hence not the time range of these logs; more an upper bound thereof)
 
-- to test whether a combination of EPMD port and cookie is legit, one may use for example::
+- to test whether a combination of EPMD port and cookie is legit, one may use for example:
 
-  $ ERL_EPMD_PORT=44000 /usr/local/lib/erlang/erts-x.y/bin/erl_call -name us_web@baz.foobar.org -R -c 'MyCookie' -timeout 60 -a 'erlang is_alive'
+.. code:: bash
 
-You then expect ``true`` to be returned - not::
+   $ ERL_EPMD_PORT=44000 /usr/local/lib/erlang/erts-x.y/bin/erl_call
+	  -name us_web@baz.foobar.org -R -c 'MyCookie' -timeout 60
+	  -a 'erlang is_alive'
+
+You then expect ``true`` to be returned - not:
+
+.. code:: bash
 
  erl_call: failed to connect to node us_web@baz.foobar.org
 
@@ -960,7 +998,9 @@ Monitoring Hints
 In terms of (UNIX) Processes
 ----------------------------
 
-A running US-Web server will not be found by looking up ``beam`` or ``beam.smp`` through ``ps``; as an OTP release, it relies first on the ``run_erl`` launcher, like shown, based on ``ps -edf``, in::
+A running US-Web server will not be found by looking up ``beam`` or ``beam.smp`` through ``ps``; as an OTP release, it relies first on the ``run_erl`` launcher, like shown, based on ``ps -edf``, in:
+
+.. code:: bash
 
  UID         PID    PPID  C STIME TTY TIME     CMD
  us-web-user 767067    1  0 Feb15 ?   00:00:00 /usr/local/lib/erlang/erts-x.y/bin/run_erl
@@ -977,7 +1017,9 @@ This can be interpreted as:
 
 This launcher created the main, central, ``us_web`` (UNIX) process, parent of all the VM worker (system) threads.
 
-``pstree -u`` (or ``ps -e --forest``) tells us about the underlying process hierarchy::
+``pstree -u`` (or ``ps -e --forest``) tells us about the underlying process hierarchy:
+
+.. code:: bash
 
  [...]
    |-run_erl(us-web-user)---beam.smp---erl_child_setup---inet_gethost---inet_gethost
@@ -1009,7 +1051,9 @@ Knowing that, with ``ps``, one may add ``-L`` to display thread information and 
 (apparently there is no direct way of displaying human-readable sizes)
 
 
-See also our `list-processes-by-size.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/list-processes-by-size.sh>`_ script; typical use::
+See also our `list-processes-by-size.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/list-processes-by-size.sh>`_ script; typical use:
+
+.. code:: bash
 
  $ list-processes-by-size.sh
 	Listing running processes by decreasing resident size in RAM (total size in KiB):
@@ -1046,7 +1090,9 @@ One may specify on the command-line another configuration file if needed, such a
 Node Test & Connection
 ----------------------
 
-If desperate enough, one may also run, possibly from another host, and based on the settings to be found in the configuration files::
+If desperate enough, one may also run, possibly from another host, and based on the settings to be found in the configuration files:
+
+.. code:: bash
 
  $ ERL_EPMD_PORT=XXXX erl -name tester -setcookie CCCC -kernel inet_dist_listen_min MIN inet_dist_listen_max MAX
 
@@ -1054,8 +1100,6 @@ If desperate enough, one may also run, possibly from another host, and based on 
  pong
 
 Then one may switch to the *Job control mode* (JCL) by pressing ``Ctrl-G`` then ``r`` to start a remote job on the US-Web node.
-
-
 
 
 

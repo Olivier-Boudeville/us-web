@@ -84,7 +84,9 @@ Awstats Management
 Awstats Installation
 --------------------
 
-On Arch Linux, one should follow `these guidelines <https://wiki.archlinux.org/index.php/AWStats>`_ (example for version 7.8)::
+On Arch Linux, one should follow `these guidelines <https://wiki.archlinux.org/index.php/AWStats>`_ (example for version 7.8):
+
+.. code:: bash
 
  $ pacman -Sy --needed awstats
 
@@ -92,7 +94,9 @@ On Arch Linux, one should follow `these guidelines <https://wiki.archlinux.org/i
 Awstats will then be installed in ``/usr/share``, including the ``/usr/share/webapps/awstats/cgi-bin/awstats.pl`` script and the ``/usr/share/webapps/awstats/icon/`` directory.
 
 
-Some permission fixes (to be done as root) might be needed first::
+Some permission fixes (to be done as root) might be needed first:
+
+.. code:: bash
 
  $ chmod +r /usr/share/webapps/awstats/icon/os/*
 
@@ -143,11 +147,15 @@ Various issues may prevent log reports to be available.
 
 Let's try with a real US-Web uncompressed log file first (ex: ``xz -d access-vhost-catchall.log.test.xz``), supposing that it corresponds to a ``my-test`` virtual host).
 
-Then configure Awstats (ex: through a ``/usr/local/etc/awstats/awstats.my-test.conf`` file) to process that log file; for that, run on that host::
+Then configure Awstats (ex: through a ``/usr/local/etc/awstats/awstats.my-test.conf`` file) to process that log file; for that, run on that host:
+
+.. code:: bash
 
  $ perl /usr/share/awstats/tools/awstats_configure.pl
 
-Then, to debug the whole process, use, as root::
+Then, to debug the whole process, use, as root:
+
+.. code:: bash
 
   $ rm -f /usr/share/webapps/awstats/cgi-bin/awstats*.txt ; echo ;
 	 LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
@@ -155,14 +163,18 @@ Then, to debug the whole process, use, as root::
 
 Most problems should become visible then.
 
-To do the same for a series of web logs in the context of US-Web, one can have them analysed first thanks to::
+To do the same for a series of web logs in the context of US-Web, one can have them analysed first thanks to:
+
+.. code:: bash
 
  $ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
 	LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
 	  -config=$f -update ; done
 
 
-Then all web reports can be generated manually with::
+Then all web reports can be generated manually with:
+
+.. code:: bash
 
  $ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
 	LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl

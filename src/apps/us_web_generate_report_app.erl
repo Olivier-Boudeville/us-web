@@ -102,7 +102,7 @@ exec() ->
 	%					   [ UWCfgPid ] ),
 
 	UWCfgPid ! { generateLogAnalysisReports,
-				 [ MaybeDomainBinStr, MaybeHostBinStr ], self() },
+					[ MaybeDomainBinStr, MaybeHostBinStr ], self() },
 
 	app_facilities:display( "Waiting for the acknowledgement of the generation "
 							"of requested log analysis report(s)." ),

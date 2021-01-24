@@ -469,6 +469,9 @@
 
 % Note: include order matters.
 
+% For the tls_private_key record:
+-include_lib("leec/include/letsencrypt.hrl").
+
 % Allows to define WOOPER base variables and methods for that class:
 -include_lib("wooper/include/wooper.hrl").
 
@@ -478,8 +481,6 @@
 % To define get_execution_target/0:
 -include_lib("myriad/include/utils/basic_utils.hrl").
 
-% For the tls_private_key record:
--include_lib("leec/include/letsencrypt.hrl").
 
 
 

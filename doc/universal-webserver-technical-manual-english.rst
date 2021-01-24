@@ -37,7 +37,7 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Saturday, January 23, 2021
+:Lastly updated: Sunday, January 24, 2021
 :Status: Work in progress
 :Version: 0.0.18
 :Dedication: Users and maintainers of the ``Universal Webserver``.
@@ -80,9 +80,11 @@ Beyond this document, the next level of information about US-Web is to read the 
 Easy Testing of US-Web
 ----------------------
 
-Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter should suffice.
+Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter (ex: ``sh get-us-web-from-sources.sh``, as a normal user) should suffice.
 
-It should clone, build and run a test server, that should be available at `http://localhost:8080 <`http://localhost:8080>`_.
+This should result in US-Web being cloned and built, and a test server (if requested, see the ``--help`` script option for usage) should be configured and run. It should be then available at `http://localhost:8080 <`http://localhost:8080>`_.
+
+See also the `Server Deployment`_ section for, beyond a mere testing of US-Web, a setting up of it in a production context.
 
 
 -----------
@@ -385,7 +387,10 @@ Of course failing to resolve a proper application base directory will result in 
 
 Let's designate this directory from now on with the ``US_WEB_APP_BASE_DIR`` pseudo-variable.
 
-A value thereof is typically ``/opt/universal-server/us_web-native/us_web``.
+So a recommended value for the ``us_web_app_base_dir`` entry could be ``/opt/universal-server/us_web-data`` - hence out of a US-Web instance that could be deployed and upgraded in ``/opt/universal-server/us_web-native``.
+
+Of course, as always, proper permissions shall be set in this data tree as well.
+
 
 
 Separating the US-Web Software from its data

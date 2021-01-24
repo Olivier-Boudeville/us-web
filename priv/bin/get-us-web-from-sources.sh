@@ -3,7 +3,7 @@
 usage="
 Usage: $(basename $0) [-h|--help] [--configure-test] [--run-test]: clones and builds from scratch a fully functional US-Web environment in the current directory; then, if enabled: configures a test instance thereof, and runs it.
 
-Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories.
+Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
@@ -11,6 +11,8 @@ The prerequisites expected to be already installed are:
  - [optional] Awstats (see http://www.awstats.org/)
 
 If the execution of a test instance is enabled, no server shall already be running at TCP port #8080."
+
+# See also deploy-us-web-native-build.sh to install US-Web for production.
 
 
 # Tells whether dependencies shall be fetched (downloaded/cloned):
@@ -94,7 +96,7 @@ github_base="https://github.com/Olivier-Boudeville"
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
 # itself, even if it used at least for some dependencies (ex: LEEC).
 #
-# This does not leadsto duplications (ex: Myriad being built once in the context
+# This does not lead to duplications (ex: Myriad being built once in the context
 # of LEEC and also once for the other packages), thanks to _checkouts containing
 # symlinks.
 
@@ -248,12 +250,35 @@ if [ $do_fetch -eq 0 ]; then
 
 	echo " - cloning Cowboy" | tee --append "${log_file}"
 
-	${git} clone ${clone_opts} git@github.com:ninenines/cowboy.git 1>>"${log_file}" 2>&1
+	#cowboy_git_id="git@github.com:ninenines/cowboy.git"
+	cowboy_git_id="https://github.com/ninenines/cowboy.git"
+
+	${git} clone ${clone_opts} ${cowboy_git_id} 1>>"${log_file}" 2>&1
 
 	if [ ! $? -eq 0 ]; then
 
 		echo " Error, unable to obtain Cowboy." 1>&2
 		exit 35
+
+	fi
+
+	# A lot safer than relying on the tip of the master branch:
+	cowboy_tag="2.8.0"
+
+	if [ -n "${cowboy_tag}" ]; then
+
+		echo " - setting Cowboy to tag '${cowboy_tag}'"
+
+		cd cowboy
+		${git} checkout tags/${cowboy_tag}
+		if [ ! $? -eq 0 ]; then
+
+			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
+			exit 36
+
+		fi
+
+		cd ..
 
 	fi
 
@@ -416,7 +441,7 @@ if [ ${do_build} -eq 0 ]; then
 	echo " - building US-Web" | tee --append "${log_file}"
 	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
 
-	# Relies on rebar3:
+	# Our build; uses Ceylan's sibling trees:
 	${make} all 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of US-Web failed." 1>&2

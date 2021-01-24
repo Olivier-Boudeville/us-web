@@ -1345,7 +1345,7 @@ prepare_web_analysis(
 	UpdateToolPath =
 	  file_utils:join( [ BinAnalysisUpdateToolRoot, "cgi-bin", "awstats.pl" ] ),
 
-	BinUpdateToolPath = case file_utils:is_executable( UpdateToolPath ) of
+	BinUpdateToolPath = case file_utils:is_user_executable( UpdateToolPath ) of
 
 		true ->
 			text_utils:string_to_binary( UpdateToolPath );
@@ -1362,7 +1362,7 @@ prepare_web_analysis(
 	ReportToolPath = file_utils:join(
 		[ BinAnalysisReportToolRoot, "awstats_buildstaticpages.pl" ] ),
 
-	BinReportToolPath = case file_utils:is_executable( ReportToolPath ) of
+	BinReportToolPath = case file_utils:is_user_executable( ReportToolPath ) of
 
 		true ->
 			text_utils:string_to_binary( ReportToolPath );
@@ -2118,10 +2118,15 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 % Transforms specified dispatch routes into corresponding rules, i.e. replaces
-% the original handlers (name and initial state) with specified ones.
+% the original handlers (name and initial state) with specified forwarding ones.
 %
 % Typically useful to mimic routes to be used for https into purely-forwarding
 % ones to be used as their http counterparts.
+%
+% Note that (only) the challenge path matches (for well-known ACME URLs) are not
+% promoted from http to https - as otherwise it would not be possible by design
+% to succeed in an (http) ACME challenge (if starting from scratch, with no
+% valid certificate yet).
 %
 -spec transform_handler_in_routes( dispatch_routes(), handler_module(),
 								   handler_state() ) -> dispatch_rules().
@@ -2136,7 +2141,7 @@ transform_handler_in_routes( DispatchRoutes, NewHandlerModule,
 
 
 
-% (helper)
+% (helper, for all routes)
 set_as_forward_host( _DispatchRoutes=[], _NewHandlerModule,
 					 _NewHandlerInitialState, Acc ) ->
 	lists:reverse( Acc );
@@ -2150,7 +2155,6 @@ set_as_forward_host( _DispatchRoutes=[ { HostMatch, PathsList } | T ],
 	set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
 						 [ { HostMatch, FWPathsList } | Acc ] );
 
-
 set_as_forward_host(
   _DispatchRoutes=[ { HostMatch, Constraints, PathsList } | T ],
   NewHandlerModule, NewHandlerInitialState, Acc ) ->
@@ -2163,10 +2167,18 @@ set_as_forward_host(
 
 
 
-% (helper)
-set_as_forward_paths( _PathsList=[], _NewHandlerModule,
-					  _NewHandlerInitialState, Acc ) ->
+% (helper, relative to a given host)
+set_as_forward_paths( _PathsList=[], _NewHandlerModule, _NewHandlerInitialState,
+					  Acc ) ->
 	lists:reverse( Acc );
+
+% Preserving any Let's Encrypt handler:
+set_as_forward_paths( _PathsList=[ LEMatch={ _PathMatch,
+			us_web_letsencrypt_handler, _InitialState } | T ], NewHandlerModule,
+			NewHandlerInitialState, Acc ) ->
+	% Unchanged, including regarding order:
+	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
+						  [ LEMatch | Acc ] );
 
 % Dropping/replacing current handler and its state:
 set_as_forward_paths(
@@ -2177,7 +2189,6 @@ set_as_forward_paths(
 
 	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
 						  [ FWPath | Acc ] );
-
 
 set_as_forward_paths(
   _PathsList=[ { PathMatch, Constraints, _Handler, _InitialState } | T ],
@@ -3118,8 +3129,8 @@ manage_routes( ConfigTable, State ) ->
 
 	DispatchRules = cowboy_router:compile( DispatchRoutes ),
 
-	?debug_fmt( "The US-Web specified dispatch routes are:~n  ~p~n"
-	  "They correspond, once compiled, to the following dispatch rules:~n  ~p",
+	?debug_fmt( "The US-Web specified base dispatch routes are:~n  ~p.~n~n~n"
+	  "They correspond, once compiled, to the following dispatch rules:~n  ~p.",
 	  [ DispatchRoutes, DispatchRules ] ),
 
 	setAttributes( ProcessState, [ { domain_config_table, DomainCfgTable },

@@ -55,7 +55,7 @@ ifeq ($(ENABLE_DEBUG),true)
 	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_execution
 	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_sni
 	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_handlers
-
+	#US_WEB_DEBUG_FLAGS += -Dus_web_debug_log_analysis
 endif
 
 # Defining check flags:

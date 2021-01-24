@@ -149,6 +149,10 @@ init( _Args=[ AppRunContext ] ) ->
 
 			HttpTransportOpts = [ { port, HttpTCPPort } ],
 
+			trace_bridge:debug_fmt( "The http transport options are:~n ~p~n~n"
+				"~nThe http protocol options are:~n  ~p",
+				[ HttpTransportOpts, HttpProtoOptMap ] ),
+
 			case cowboy:start_clear( us_web_http_listener, HttpTransportOpts,
 									 HttpProtoOptMap ) of
 
@@ -278,7 +282,7 @@ init( _Args=[ AppRunContext ] ) ->
 
 			HttpsTransportOpts = MainTranspOpts ++ WithCaHttpsOpts,
 
-			trace_bridge:debug_fmt( "The https transport options are:~n ~p~n"
+			trace_bridge:debug_fmt( "The https transport options are:~n ~p~n~n"
 				"~nThe https protocol options are:~n  ~p",
 				[ HttpsTransportOpts, HttpsProtoOptMap ] ),
 

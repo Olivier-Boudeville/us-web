@@ -1,23 +1,91 @@
 #!/bin/sh
 
+usage="
+Usage: $(basename $0) [-h|--help] [--configure-test] [--run-test]: clones and builds from scratch a fully functional US-Web environment in the current directory; then, if enabled: configures a test instance thereof, and runs it.
+
+Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories.
+
+The prerequisites expected to be already installed are:
+ - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
+ - rebar3 (see http://myriad.esperide.org/#getting-rebar3), for dependencies that are not ours
+ - [optional] Awstats (see http://www.awstats.org/)
+
+If the execution of a test instance is enabled, no server shall already be running at TCP port #8080."
+
+
+# Tells whether dependencies shall be fetched (downloaded/cloned):
+do_fetch=0
+
 # Tells whether dependencies shall be built:
 do_build=0
+
+# Tells whether a test US-Web install shall be configured:
+do_configure_test=1
+
+# Tells whether a previously configured US-Web install shall be auto-run:
+do_run_test=1
+
+
+token_eaten=0
+
+while [ $token_eaten -eq 0 ]; do
+
+	token_eaten=1
+
+	if [ "$1" = "--configure-test" ]; then
+		shift
+		do_configure_test=0
+		token_eaten=0
+	fi
+
+	if [ "$1" = "--run-test" ]; then
+		shift
+		do_run_test=0
+		token_eaten=0
+	fi
+
+	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		echo "${usage}"
+		exit
+		token_eaten=0
+	fi
+
+done
+
+
+if [ ! $# -eq 0 ]; then
+
+	echo "  Error, unexpected argument(s): '$*'." 1>&2
+	echo "${usage}" 1>&2
+	exit 4
+
+fi
+
+# Applies activity dependencies:
+if [ $do_run_test -eq 0 ]; then
+
+	do_configure_test=0
+
+fi
+
+if [ $do_configure_test -eq 0 ]; then
+
+	do_build=0
+
+fi
+
+if [ $do_build -eq 0 ]; then
+
+	do_fetch=0
+
+fi
+
 
 checkout_opt="--checkout"
 
 # To avoid typos:
 checkout_dir="_checkouts"
 
-usage="
-Usage: $(basename $0) [-h|--help]: clones and builds a fully functional US-Web environment in the current directory, then configures a test instance thereof, and runs it.
- Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories.
-
-The prerequisites expected to be already installed are:
- - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
- - rebar3 (see http://myriad.esperide.org/#getting-rebar3)
- - [optional] Awstats (see http://www.awstats.org/)
-
-For the testing, no server shall already be running at TCP port #8080."
 
 github_base="https://github.com/Olivier-Boudeville"
 
@@ -26,41 +94,16 @@ github_base="https://github.com/Olivier-Boudeville"
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
 # itself, even if it used at least for some dependencies (ex: LEEC).
 #
-# This leads to duplications (ex: Myriad is built once in the context of LEEC
-# and also once for the other packages).
-
-
-
-if [ $# -eq 1 ]; then
-
-	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-
-		echo "${usage}"
-		exit 0
-
-	else
-
-		echo "Error, invalid option specified ('$1')." 1>&2
-		exit 3
-
-	fi
-
-	shift
-
-fi
-
-if [ ! $# -eq 0 ]; then
-
-	echo "${usage}"
-
-	exit 5
-
-fi
+# This does not leadsto duplications (ex: Myriad being built once in the context
+# of LEEC and also once for the other packages), thanks to _checkouts containing
+# symlinks.
 
 
 
 
-# Checking first:
+
+# Checking first, prior to any action:
+
 
 erlc=$(which erlc 2>/dev/null)
 
@@ -86,12 +129,16 @@ if [ ! -x "${rebar3}" ]; then
 fi
 
 
-git=$(which git 2>/dev/null)
+if [ $do_fetch -eq 0 ]; then
 
-if [ ! -x "${git}" ]; then
+	git=$(which git 2>/dev/null)
 
-	echo "  Error, no 'git' tool found." 1>&2
-	exit 18
+	if [ ! -x "${git}" ]; then
+
+		echo "  Error, no 'git' tool found." 1>&2
+		exit 18
+
+	fi
 
 fi
 
@@ -106,151 +153,188 @@ if [ ! -x "${make}" ]; then
 fi
 
 
-config_dir="${HOME}/.config/universal-server"
+if [ $do_fetch -eq 0 ]; then
 
-us_config_filename="${config_dir}/us.config"
+	for d in us-web cowboy us-common letsencrypt-erlang traces wooper myriad; do
 
-if [ -f "${us_config_filename}" ]; then
+		if [ -d "${d}" ]; then
 
-	echo "  Error, a prior US configuration file exists, '${us_config_filename}'. Not overwriting it with the test one, please remove it first." 1>&2
+			echo "  Error, a '${d}' directory exists already, remove it first." 1>&2
+			exit 26
 
-	exit 15
+		fi
 
-fi
-
-
-us_web_config_filename="${config_dir}/us-web-for-tests.config"
-
-if [ -f "${us_web_config_filename}" ]; then
-
-	echo "  Error, a prior US-Web configuration file exists, '${us_web_config_filename}'. Not overwriting it, please remove it first." 1>&2
-
-	exit 17
+	done
 
 fi
 
 
-base_install_dir="$(pwd)"
+if [ $do_configure_test -eq 0 ]; then
+
+	config_dir="${HOME}/.config/universal-server"
+
+	us_config_filename="${config_dir}/us.config"
+
+	if [ -f "${us_config_filename}" ]; then
+
+		echo "  Error, a prior US configuration file exists, '${us_config_filename}'. Not overwriting it with the test one, please remove it first." 1>&2
+
+		exit 15
+
+	fi
+
+
+	us_web_config_filename="${config_dir}/us-web-for-tests.config"
+
+	if [ -f "${us_web_config_filename}" ]; then
+
+		echo "  Error, a prior test US-Web configuration file exists, '${us_web_config_filename}'. Not overwriting it, please remove it first." 1>&2
+
+		exit 17
+
+	fi
+
+fi
+
+
+base_install_dir="$(realpath $(pwd))"
 
 us_web_dir="${base_install_dir}/us_web"
 
 prereq_install_dir="${base_install_dir}"
 
+log_file="${base_install_dir}/us-web-install.log"
+
+if [ -f "${log_file}" ]; then
+
+	/bin/rm -f "${log_file}"
+
+fi
 
 echo
-echo "   Installing US-Web in ${base_install_dir}..."
-echo
+echo "   Installing US-Web in ${base_install_dir}..." | tee --append "${log_file}"
+echo "   (install log in ${log_file})" | tee --append "${log_file}"
+echo | tee --append "${log_file}"
 
 
 
-# First US-Web itself, so that any _checkouts directory can be created afterwards:
-cd "${base_install_dir}"
+
+if [ $do_fetch -eq 0 ]; then
+
+	# First US-Web itself, so that any _checkouts directory can be created
+	# afterwards:
+	#
+	cd "${base_install_dir}"
 
 
-clone_opts="--quiet"
+	clone_opts="--quiet"
 
-echo "Getting the relevant repositories:"
+	echo "Fetching the relevant repositories:" | tee --append "${log_file}"
 
-echo " - cloning US-Web"
+	echo " - cloning US-Web"
 
-${git} clone ${clone_opts} ${github_base}/us-web us_web
+	${git} clone ${clone_opts} ${github_base}/us-web us_web 1>>"${log_file}" 2>&1
 
-if [ ! $? -eq 0 ]; then
+	if [ ! $? -eq 0 ]; then
 
-	echo " Error, unable to obtain US-Web." 1>&2
-	exit 40
+		echo " Error, unable to obtain US-Web." 1>&2
+		exit 40
 
-fi
-
-
-# The explicit build of Cowboy is needed due to a rebar3 bug encountered when
-# building US-Web (see the comment in the 'building US-Web' section).
-
-echo " - cloning Cowboy"
-
-${git} clone ${clone_opts} git@github.com:ninenines/cowboy.git
-
-if [ ! $? -eq 0 ]; then
-
-	echo " Error, unable to obtain Cowboy." 1>&2
-	exit 35
-
-fi
+	fi
 
 
-echo " - cloning US-Common"
+   # The explicit build of Cowboy is needed due to a rebar3 bug encountered when
+   # building US-Web (see the comment in the 'building US-Web' section).
 
-${git} clone ${clone_opts} ${github_base}/us-common us_common
+	echo " - cloning Cowboy" | tee --append "${log_file}"
 
-if [ ! $? -eq 0 ]; then
+	${git} clone ${clone_opts} git@github.com:ninenines/cowboy.git 1>>"${log_file}" 2>&1
 
-	echo " Error, unable to obtain US-Common." 1>&2
-	exit 35
+	if [ ! $? -eq 0 ]; then
 
-fi
+		echo " Error, unable to obtain Cowboy." 1>&2
+		exit 35
+
+	fi
 
 
+	echo " - cloning US-Common" | tee --append "${log_file}"
 
-echo " - cloning LEEC (Ceylan fork of letsencrypt-erlang)"
+	${git} clone ${clone_opts} ${github_base}/us-common us_common 1>>"${log_file}" 2>&1
 
-${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec
+	if [ ! $? -eq 0 ]; then
 
-if [ ! $? -eq 0 ]; then
+		echo " Error, unable to obtain US-Common." 1>&2
+		exit 35
 
-	echo " Error, unable to obtain LEEC (Let's Encrypt Erlang with Ceylan)." 1>&2
-	exit 32
-
-fi
+	fi
 
 
 
-echo " - cloning Ceylan-Traces"
+	echo " - cloning LEEC (Ceylan fork of letsencrypt-erlang)" | tee --append "${log_file}"
 
-${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces
+	${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec 1>>"${log_file}" 2>&1
 
-if [ ! $? -eq 0 ]; then
+	if [ ! $? -eq 0 ]; then
 
-	echo " Error, unable to obtain Ceylan-Traces." 1>&2
-	exit 30
+		echo " Error, unable to obtain LEEC (Let's Encrypt Erlang with Ceylan)." 1>&2
+		exit 32
 
-fi
-
-
-
-echo " - cloning Ceylan-WOOPER"
-
-${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper
-
-if [ ! $? -eq 0 ]; then
-
-	echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
-	exit 25
-
-fi
+	fi
 
 
-echo " - cloning Ceylan-Myriad"
 
-${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad
+	echo " - cloning Ceylan-Traces" | tee --append "${log_file}"
 
-if [ ! $? -eq 0 ]; then
+	${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces 1>>"${log_file}" 2>&1
 
-	echo " Error, unable to obtain Ceylan-Myriad." 1>&2
-	exit 20
+	if [ ! $? -eq 0 ]; then
+
+		echo " Error, unable to obtain Ceylan-Traces." 1>&2
+		exit 30
+
+	fi
+
+
+
+	echo " - cloning Ceylan-WOOPER" | tee --append "${log_file}"
+
+	${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper 1>>"${log_file}" 2>&1
+
+	if [ ! $? -eq 0 ]; then
+
+		echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
+		exit 25
+
+	fi
+
+
+	echo " - cloning Ceylan-Myriad" | tee --append "${log_file}"
+
+	${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad 1>>"${log_file}" 2>&1
+
+	if [ ! $? -eq 0 ]; then
+
+		echo " Error, unable to obtain Ceylan-Myriad." 1>&2
+		exit 20
+
+	fi
 
 fi
 
 
 if [ ${do_build} -eq 0 ]; then
 
-	echo
-	echo "Building these packages:"
+	cd "${base_install_dir}"
 
-	# For Myriad, WOOPER and Traces, we prefer to rely on our own good old build
+	echo
+	echo "Building all packages for US-Web:" | tee --append "${log_file}"
+
+	# For Myriad, WOOPER and Traces, we prefer relying on our own good old build
 	# system (i.e. not on rebar3).
 
-	echo " - building Ceylan-Myriad"
-	cd myriad && ${make} all 1>/dev/null
+	echo " - building Ceylan-Myriad" | tee --append "${log_file}"
+	cd myriad && ${make} all 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Ceylan-Myriad failed." 1>&2
 		exit 50
@@ -258,8 +342,8 @@ if [ ${do_build} -eq 0 ]; then
 	cd ..
 
 	# Our build; uses Myriad's sibling tree:
-	echo " - building Ceylan-WOOPER"
-	cd wooper && ${make} all 1>/dev/null
+	echo " - building Ceylan-WOOPER" | tee --append "${log_file}"
+	cd wooper && ${make} all 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Ceylan-WOOPER failed." 1>&2
 		exit 55
@@ -267,19 +351,19 @@ if [ ${do_build} -eq 0 ]; then
 	cd ..
 
 	# Our build; uses Myriad's and WOOPER's sibling trees:
-	echo " - building Ceylan-Traces"
-	cd traces && ${make} all 1>/dev/null
+	echo " - building Ceylan-Traces" | tee --append "${log_file}"
+	cd traces && ${make} all 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Ceylan-Traces failed." 1>&2
 		exit 60
 	fi
 	cd ..
 
-	# Only for US-Web (not for prerequisites of LEEC):
+	# Only for US-Web (not for the past prerequisites of LEEC):
 	# (implies cowlib and ranch)
 	#
-	echo " - building Cowboy"
-	cd cowboy && ${rebar3} compile 1>/dev/null
+	echo " - building Cowboy" | tee --append "${log_file}"
+	cd cowboy && ${rebar3} compile 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Cowboy failed." 1>&2
 		exit 65
@@ -287,12 +371,13 @@ if [ ${do_build} -eq 0 ]; then
 	cd ..
 
 	# Apart from Myriad (used as a checkout to point to the same, unique install
-	# thereof here), LEEC has dependencies of its own (shotgun, jsx otherwise
-	# jiffy, elli, getopt, yamerl, erlang_color), so, even if not all of them
-	# are actually needed by our use case, we prefer relying on rebar3 (as
-	# indirect dependencies, such as cowlib or gun, are also induced):
+	# thereof here), LEEC has dependencies of its own (jsx otherwise jiffy,
+	# shotgun, elli, getopt, yamerl, erlang_color), so, even if not all of them
+	# are actually needed by our use case (making use only on jsx), we prefer
+	# relying on rebar3 (it used to be convenient when indirect dependencies
+	# such as cowlib or gun were also induced):
 	#
-	echo " - building LEEC"
+	echo " - building LEEC" | tee --append "${log_file}"
 	cd leec && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
 
 	if [ ! $? -eq 0 ]; then
@@ -301,20 +386,10 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 
 	# Relies on rebar3, so that prerequisites such as shotgun are managed):
-	${make} all-rebar3 1>/dev/null
+	${make} all-rebar3 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of LEEC failed." 1>&2
 		exit 66
-	fi
-
-	# So that later US-Web is able to find the element of the 'leec'
-	# application:
-	#
-	cd _build/default/lib/ && ln -s letsencrypt leec && cd leec/ebin && ln -s letsencrypt.app leec.app
-
-	if [ ! $? -eq 0 ]; then
-		echo " Error, the post-build of LEEC failed." 1>&2
-		exit 67
 	fi
 
 	cd "${base_install_dir}"
@@ -323,8 +398,8 @@ if [ ${do_build} -eq 0 ]; then
 	# native build, which thus uses Myriad's, WOOPER's and Traces' sibling
 	# trees:
 	#
-	echo " - building US-Common"
-	cd us_common && ${make} all 1>/dev/null
+	echo " - building US-Common" | tee --append "${log_file}"
+	cd us_common && ${make} all 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of US-Common failed." 1>&2
 		exit 70
@@ -336,13 +411,13 @@ if [ ${do_build} -eq 0 ]; then
 	# yet, due to a rebar3 bug, Traces was attempted to be built again, which
 	# failed as the WOOPER parse transform was not found, as WOOPER had not been
 	# built before - in spite of the dependency; so now we are not using rebar3
-	# for US-Web either, which requires installing by ourselves cowboy):
+	# for US-Web either, which requires installing by ourselves cowboy:
 	#
-	echo " - building US-Web"
+	echo " - building US-Web" | tee --append "${log_file}"
 	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
 
 	# Relies on rebar3:
-	${make} all 1>/dev/null
+	${make} all 1>>"${log_file}" 2>&1
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of US-Web failed." 1>&2
 		exit 75
@@ -352,67 +427,71 @@ if [ ${do_build} -eq 0 ]; then
 fi
 
 
+if [ $do_configure_test -eq 0 ]; then
 
-echo " - configuring a US-Web test instance"
+	echo " - configuring a US-Web test instance" | tee --append "${log_file}"
 
-if [ ! -d "${config_dir}" ]; then
+	if [ ! -d "${config_dir}" ]; then
 
-	mkdir "${config_dir}"
+		mkdir "${config_dir}"
+
+	fi
+
+	cd "${config_dir}"
+
+
+	us_common_dir="${prereq_install_dir}/us_common"
+
+	us_cfg_for_test="${us_common_dir}/priv/for-testing/us.config"
+
+	if [ ! -f "${us_cfg_for_test}" ]; then
+
+		echo " Error, '${us_cfg_for_test}' not found." 1>&2
+		exit 70
+
+	fi
+
+	# Already checked that does not exist:
+	/bin/ln -s "${us_cfg_for_test}"
+
+
+	us_web_cfg_for_test="${us_web_dir}/priv/for-testing/us-web-for-tests.config"
+
+	if [ ! -f "${us_web_cfg_for_test}" ]; then
+
+		echo " Error, '${us_web_cfg_for_test}' not found." 1>&2
+		exit 75
+
+	fi
+
+	# Already checked that does not exist:
+	/bin/ln -s "${us_web_cfg_for_test}"
 
 fi
 
-cd "${config_dir}"
 
+if [ $do_run_test -eq 0 ]; then
 
-us_common_dir="${prereq_install_dir}/us_common"
+	cd ${us_web_dir}
 
-us_cfg_for_test="${us_common_dir}/priv/for-testing/us.config"
+	echo
 
-if [ ! -f "${us_cfg_for_test}" ]; then
+	echo "   Building and launching a test US-Web native application" | tee --append "${log_file}"
+	${make} debug
+	#${make} debug-as-release
 
-	echo " Error, '${us_cfg_for_test}' not found." 1>&2
-	exit 70
+	res=$?
 
-fi
+	if [ $res -eq 0 ]; then
 
-# Already checked that does not exist:
-/bin/ln -s "${us_cfg_for_test}"
+		echo " US-Web launched, please point a browser to http://localhost:8080 to check test sites." | tee --append "${log_file}"
 
+	else
 
-us_web_cfg_for_test="${us_web_dir}/priv/for-testing/us-web-for-tests.config"
+		echo " Unable to build and launch the US-Web Server (error code: $res)." 1>&2
 
-if [ ! -f "${us_web_cfg_for_test}" ]; then
+		exit $res
 
-	echo " Error, '${us_web_cfg_for_test}' not found." 1>&2
-	exit 75
-
-fi
-
-# Already checked that does not exist:
-/bin/ln -s "${us_web_cfg_for_test}"
-
-
-
-cd ${us_web_dir}
-
-echo
-
-echo "   Building and launching a test US-Web native application"
-${make} debug
-
-#echo "   Building and launching a test US-Web release"
-#${make} debug-as-release
-
-res=$?
-
-if [ $res -eq 0 ]; then
-
-	echo " US-Web launched, please point a browser to http://localhost:8080 to check test sites."
-
-else
-
-	echo " Unable to build and launch the US-Web Server (error code: $res)." 1>&2
-
-	exit $res
+	fi
 
 fi

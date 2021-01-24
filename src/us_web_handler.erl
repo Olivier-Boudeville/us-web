@@ -257,7 +257,7 @@ get_footer( VHost, Scheme, Port ) ->
 	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"~s://~s:~B\">website root</a>.
 	  </center>
 	</p>
-~s">>, [ VHost, Scheme, Port, get_base_footer() ]).
+~s">>, [ Scheme, VHost, Port, get_base_footer() ]).
 
 
 % Returns a suitable document header.

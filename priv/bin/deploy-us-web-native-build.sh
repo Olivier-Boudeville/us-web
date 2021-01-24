@@ -1,7 +1,13 @@
 #!/bin/sh
 
-# Note: unless specified, relying on the master branch for all clones.
+# See also:
+# - the get-us-web-from-sources.sh script to install a test version of US-Web
+# - the deploy-us-web-release.sh script to deploy OTP releases of US-Web instead
+# (we prefer and better support the current mode of operation, though)
 
+
+
+# Note: unless specified, relying on the master branch for all clones.
 
 # Deactivations useful for testing:
 
@@ -23,36 +29,36 @@ priv_dir="priv"
 
 base_us_dir="/opt/universal-server"
 
+
 # To be able to coexist with OTP releases (named as us_web-${archive_version});
 # relative to base_us_dir:
 #
-native_install_dir="us_web-native"
+#native_install_dir="us_web-native"
+native_install_dir="us_web-native-$(date '+%Y%m%d')"
 
 
 usage="
 Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
- Creates a basic installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
+
+Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
- - rebar3, for the prerequisites that rely on it (see http://myriad.esperide.org/#getting-rebar3)
+ - rebar3 (see http://myriad.esperide.org/#getting-rebar3), for dependencies that are not ours
  - [optional] Awstats (see http://www.awstats.org/)
 "
+
 github_base="https://github.com/Olivier-Boudeville"
-
-
-# See also the deploy-us-web-release.sh script to deploy OTP releases of US-Web
-# instead (we prefer and better support the current mode of operation, though).
-
 
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
 # itself, even if it used at least for some dependencies (ex: LEEC, so that its
-# own dependencies are automatically managed).
+# own dependencies - mostly a JSON parser - are automatically managed).
 #
-# This could lead to duplications (ex: Myriad being built once in the context of
-# LEEC and also once for the other packages), yet we use checkout directories to
-# avoid that.
+# This does not lead to duplications (ex: Myriad being built once in the context
+# of LEEC and also once for the other packages), thanks to _checkouts
+# directories containing symlinks whenever appropriate.
+
 
 if [ $# -eq 1 ]; then
 
@@ -217,14 +223,19 @@ if [ $do_clone -eq 0 ]; then
 	# A specific branch might be selected:
 	#target_branch="certificate-support"
 	target_branch="master"
-	cd us_web && ${git} checkout ${target_branch} 1>/dev/null && cd ..
-	if [ ! $? -eq 0 ]; then
 
-		echo " Error, unable to switch to US-Web branch '${target_branch}'." 1>&2
-		exit 45
+	# To avoid "Already on 'master'":
+	if [ "${target_branch}" != "master" ]; then
+
+		cd us_web && ${git} checkout ${target_branch} 1>/dev/null && cd ..
+		if [ ! $? -eq 0 ]; then
+
+			echo " Error, unable to switch to US-Web branch '${target_branch}'." 1>&2
+			exit 45
+
+		fi
 
 	fi
-
 
 	# The explicit build of Cowboy is needed due to a rebar3 bug encountered
 	# when building US-Web (see the comment in the 'building US-Web' section).
@@ -246,14 +257,20 @@ if [ $do_clone -eq 0 ]; then
 	cowboy_tag="2.8.0"
 
 	if [ -n "${cowboy_tag}" ]; then
-			echo " - setting Cowboy to tag '${cowboy_tag}'"
-			${git} checkout tags/${cowboy_tag}
-			if [ ! $? -eq 0 ]; then
 
-				echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
-				exit 36
+		echo " - setting Cowboy to tag '${cowboy_tag}'"
 
-			fi
+		cd cowboy
+		${git} checkout tags/${cowboy_tag}
+		if [ ! $? -eq 0 ]; then
+
+			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
+			exit 36
+
+		fi
+
+		cd ..
+
 	fi
 
 
@@ -269,7 +286,7 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 
-	echo " - cloning Ceylan-LEEC"
+	echo " - cloning Ceylan-LEEC (Ceylan fork of letsencrypt-erlang)"
 
 	${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec
 
@@ -402,21 +419,23 @@ if [ ${do_build} -eq 0 ]; then
 	# directory with its own BEAMs, that may become obsolete. This directory
 	# should simply remain out of the code path.
 	#
-	cd leec && /bin/rm -rf _build/default/lib/myriad/ && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
+	# Thanks to checkout, no need to /bin/rm -rf leec/_build/default/lib/myriad.
+	#
+	cd leec && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
 
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the pre-build of LEEC failed." 1>&2
 		exit 65
 	fi
 
-	# Relies either on rebar3, so that prerequisites such as shotgun are
-	# managed, or on our native build (preferred now, as not using extra
-	# dependencies):
-
-	#${make} all-rebar3 1>/dev/null
+	# Relies either on rebar3, so that prerequisites such as the JSON parser are
+	# managed (otherwise our native build could be used, yet then the extra
+	# dependencies - namely JSX - shall be available separately):
+	#
+	${make} all-rebar3 USE_SHOTGUN=false 1>/dev/null
 
 	# Relying on Erlang-native httpc instead (through Myriad's web_utils):
-	${make} all USE_SHOTGUN=false 1>/dev/null
+	#${make} all USE_SHOTGUN=false 1>/dev/null
 
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of LEEC failed." 1>&2
@@ -511,7 +530,11 @@ if [ ${do_build} -eq 0 ]; then
 	# shall also have their permissions updated:
 
 	echo " Changing the permissions of deployed roots in '${abs_native_install_dir}' to ${dir_perms}."
-	if ! sudo chmod ${dir_perms} ${abs_native_install_dir}/*; then
+
+	# Not wanting to select non-directories:
+	dirs=$(/bin/ls -d ${abs_native_install_dir}/*/)
+
+	if ! sudo chmod ${dir_perms} ${dirs}; then
 
 		echo "Error, changing permissions of deployed roots in '${abs_native_install_dir}' to ${dir_perms} failed." 1>&2
 

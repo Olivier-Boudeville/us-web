@@ -94,9 +94,9 @@
 % Returns a suitable term to notify the request initiator that a 404 error was
 % triggered (meaning that the requested content could not be found).
 %
-% Maybe this dynamic implementation is too resource-demanding (prone to denial
-% of service attack) and may be replaced with a static binary string (yet then
-% copied to each per-request process), determined once for all.
+% Maybe this dynamic implementation could be too resource-demanding (prone to
+% denial of service attack) and may be replaced with a static binary string (yet
+% then copied to each per-request process), determined once for all.
 %
 -spec return_404( cowboy_req:req(), bin_content_path(), handler_state() ) ->
 						handler_return().
@@ -109,8 +109,8 @@ return_404( Req, BinFullFilepath, HState ) ->
 	%trace_bridge:debug_fmt( "Returning 404 for full path '~s' and "
 	%                       "request:~n~p", [ BinFullFilepath, Req ] ),
 
-	[ VHost, TCPPort, PathInfo ] =
-		[ maps:get( K, Req ) || K <- [ host, port, path_info ] ],
+	[ Scheme, VHost, TCPPort, PathInfo ] =
+		[ maps:get( K, Req ) || K <- [ scheme, host, port, path_info ] ],
 
 	MaybeBinCssFile = maps:get( css_path, HState ),
 
@@ -183,7 +183,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 	[ PathForBrowser, VHost, MiddleString ] ),
 
 	ReplyBody = [ get_header( PageTitle, MaybeBinCssFile, MaybeBinIconFile ),
-				  PageBody, get_footer( VHost, TCPPort ) ],
+				  PageBody, get_footer( VHost, Scheme, TCPPort ) ],
 
 	ReplyHeaders = get_http_headers( ReplyBody ),
 
@@ -251,13 +251,13 @@ get_base_footer() ->
 
 
 % Returns a suitable document footer.
-get_footer( VHost, Port ) ->
+get_footer( VHost, Scheme, Port ) ->
 	text_utils:format( <<"
 	<p>
-	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"http://~s:~B\">website root</a>.
+	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"~s://~s:~B\">website root</a>.
 	  </center>
 	</p>
-~s">>, [ VHost, Port, get_base_footer() ]).
+~s">>, [ VHost, Scheme, Port, get_base_footer() ]).
 
 
 % Returns a suitable document header.

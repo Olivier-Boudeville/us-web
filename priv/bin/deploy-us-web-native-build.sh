@@ -23,6 +23,8 @@ no_launch_opt="--no-launch"
 
 checkout_opt="--checkout"
 
+support_nitrogen=1
+
 # To avoid typos:
 checkout_dir="_checkouts"
 priv_dir="priv"
@@ -36,9 +38,12 @@ base_us_dir="/opt/universal-server"
 #native_install_dir="us_web-native"
 native_install_dir="us_web-native-$(date '+%Y%m%d')"
 
+nitrogen_option="--support-nitrogen"
 
 usage="
-Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
+Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
+
+The '${nitrogen_option}' option will enable the support for Nitrogen-based websites.
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
@@ -59,44 +64,53 @@ github_base="https://github.com/Olivier-Boudeville"
 # of LEEC and also once for the other packages), thanks to _checkouts
 # directories containing symlinks whenever appropriate.
 
+token_eaten=0
 
-if [ $# -eq 1 ]; then
+while [ $token_eaten -eq 0 ]; do
+
+	token_eaten=1
 
 	if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-
 		echo "${usage}"
 		exit 0
+	fi
 
-	elif [ "$1" = "${no_launch_opt}" ]; then
+	if [ "$1" = "-n" ] || [ "$1" = "${nitrogen_option}" ]; then
+		echo "(Nitrogen support enabled)"
+		support_nitrogen=1
+		token_eaten=0
+	fi
 
+	if [ "$1" = "${no_launch_opt}" ]; then
 		echo "(auto-launch disabled)"
 		do_launch=1
+		token_eaten=0
+	fi
 
-	else
+	if [ $token_eaten -eq 0 ]; then
+		shift
+	fi
 
-		# If specified, must exist:
-		base_us_dir="$1"
-		if [ ! -d "${base_us_dir}" ]; then
+done
 
-			echo "  Error, specified installation directory, '${base_us_dir}', does not exist." 1>&2
-			exit 4
+# Acts as a default option catchall as well:
+if [ -n "$1" ]; then
+	base_us_dir="$1"
+	# If specified, must exist:
+	if [ ! -d "${base_us_dir}" ]; then
 
-
-		fi
+		echo "  Error, specified installation directory, '${base_us_dir}', does not exist.
+${usage}" 1>&2
+		exit 4
 
 	fi
 
-	shift
-
 fi
 
-if [ ! $# -eq 0 ]; then
+#echo "support_nitrogen = ${support_nitrogen}"
+#echo "do_launch = ${do_launch}"
+#echo "base_us_dir = ${base_us_dir}"
 
-	echo "${usage}"
-
-	exit 5
-
-fi
 
 
 # Just to avoid error messages if running from a non-existing directory:
@@ -209,6 +223,7 @@ if [ $do_clone -eq 0 ]; then
 	echo "Getting the relevant repositories (as $(id -un)):"
 
 
+
 	echo " - cloning US-Web"
 
 	${git} clone ${clone_opts} ${github_base}/us-web us_web
@@ -231,7 +246,7 @@ if [ $do_clone -eq 0 ]; then
 		if [ ! $? -eq 0 ]; then
 
 			echo " Error, unable to switch to US-Web branch '${target_branch}'." 1>&2
-			exit 45
+			exit 42
 
 		fi
 
@@ -249,7 +264,7 @@ if [ $do_clone -eq 0 ]; then
 	if [ ! $? -eq 0 ]; then
 
 		echo " Error, unable to obtain Cowboy." 1>&2
-		exit 35
+		exit 50
 
 	fi
 
@@ -265,11 +280,200 @@ if [ $do_clone -eq 0 ]; then
 		if [ ! $? -eq 0 ]; then
 
 			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
-			exit 36
+			exit 52
 
 		fi
 
 		cd ..
+
+	fi
+
+
+	if [ $support_nitrogen -eq 0 ]; then
+
+		# After more studies, building nitrogen_core takes care of the following
+		# dependencies: cf erlware_commons nitro_cache nprocreg qdate
+		# qdate_localtime rekt simple_bridge stacktrace_compat Its rebar.config
+		# lists an additional one, sync, which is not needed in production, so
+		# ultimately only nitrogen_core is actually needed.
+
+		echo " - cloning nitrogen_core"
+
+		${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core
+		if [ ! $? -eq 0 ]; then
+
+			echo " Error, unable to obtain nitrogen_core." 1>&2
+			exit 80
+
+		fi
+
+		nitrogen_core_tag="v2.4.0"
+
+		if [ -n "${nitrogen_core_tag}" ]; then
+
+			echo " - setting nitrogen_core to tag '${nitrogen_core_tag}'"
+
+			cd nitrogen_core
+			${git} checkout tags/${nitrogen_core_tag}
+			if [ ! $? -eq 0 ]; then
+
+				echo " Error, unable to set nitrogen_core to tag '${nitrogen_core_tag}'." 1>&2
+				exit 82
+
+			fi
+
+			cd ..
+
+		fi
+
+
+		# echo " - cloning simple_bridge"
+
+		# ${git} clone ${clone_opts} git://github.com/nitrogen/simple_bridge
+		# if [ ! $? -eq 0 ]; then
+
+		#	echo " Error, unable to obtain ." 1>&2
+		#	exit 60
+
+		# fi
+
+		# simple_bridge_tag="v2.1.0"
+
+		# if [ -n "${simple_bridge_tag}" ]; then
+
+		#	echo " - setting simple_bridge to tag '${simple_bridge_tag}'"
+
+		#	cd simple_bridge
+		#	${git} checkout tags/${simple_bridge_tag}
+		#	if [ ! $? -eq 0 ]; then
+
+		#		echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
+		#		exit 62
+
+		#	fi
+
+		#	cd ..
+
+		# fi
+
+
+		# echo " - cloning qdate"
+
+		# ${git} clone ${clone_opts} git://github.com/choptastic/qdate
+		# if [ ! $? -eq 0 ]; then
+
+		#	echo " Error, unable to obtain qdate." 1>&2
+		#	exit 70
+
+		# fi
+
+		# qdate_tag="0.5.0"
+
+		# if [ -n "${qdate_tag}" ]; then
+
+		#	echo " - setting qdate to tag '${qdate_tag}'"
+
+		#	cd qdate
+		#	${git} checkout tags/${qdate_tag}
+		#	if [ ! $? -eq 0 ]; then
+
+		#		echo " Error, unable to set qdate to tag '${qdate_tag}'." 1>&2
+		#		exit 72
+
+		#	fi
+
+		#	cd ..
+
+		# fi
+
+
+		# echo " - cloning nprocreg"
+
+		# ${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core
+		# if [ ! $? -eq 0 ]; then
+
+		#	echo " Error, unable to obtain nprocreg." 1>&2
+		#	exit 70
+
+		# fi
+
+		# nprocreg_tag="v0.3.0"
+
+		# if [ -n "${nprocreg_tag}" ]; then
+
+		#	echo " - setting nprocreg to tag '${nprocreg_tag}'"
+
+		#	cd nprocreg
+		#	${git} checkout tags/${nprocreg_tag}
+		#	if [ ! $? -eq 0 ]; then
+
+		#		echo " Error, unable to set nprocreg to tag '${nprocreg_tag}'." 1>&2
+		#		exit 72
+
+		#	fi
+
+		#	cd ..
+
+		# fi
+
+		# echo " - cloning sync"
+
+		# ${git} clone ${clone_opts} git://github.com/rustyio/sync
+		# if [ ! $? -eq 0 ]; then
+
+		#	echo " Error, unable to obtain sync." 1>&2
+		#	exit 90
+
+		# fi
+
+		# sync_tag="v0.2.0"
+
+		# if [ -n "${sync_tag}" ]; then
+
+		#	echo " - setting sync to tag '${sync_tag}'"
+
+		#	cd sync
+		#	${git} checkout tags/${sync_tag}
+		#	if [ ! $? -eq 0 ]; then
+
+		#		echo " Error, unable to set sync to tag '${sync_tag}'." 1>&2
+		#		exit 92
+
+		#	fi
+
+		#	cd ..
+
+		# fi
+
+
+		# echo " - cloning nitro_cache"
+
+		# ${git} clone ${clone_opts} git://github.com/choptastic/nitro_cache
+		# if [ ! $? -eq 0 ]; then
+
+		#	echo " Error, unable to obtain nitro_cache." 1>&2
+		#	exit 100
+
+		# fi
+
+		# nitro_cache_tag="0.5.0"
+
+		# if [ -n "${nitro_cache_tag}" ]; then
+
+		#	echo " - setting nitro_cache to tag '${nitro_cache_tag}'"
+
+		#	cd nitro_cache
+		#	${git} checkout tags/${nitro_cache_tag}
+		#	if [ ! $? -eq 0 ]; then
+
+		#		echo " Error, unable to set nitro_cache to tag '${nitro_cache_tag}'." 1>&2
+		#		exit 102
+
+		#	fi
+
+		#	cd ..
+
+		# fi
 
 	fi
 
@@ -401,6 +605,65 @@ if [ ${do_build} -eq 0 ]; then
 		exit 65
 	fi
 	cd ..
+
+	if [ $support_nitrogen -eq 0 ]; then
+
+
+		echo " - building nitrogen_core"
+
+		cd nitrogen_core
+
+		${make} all
+		if [ ! $? -eq 0 ]; then
+			echo " Error, the build of nitrogen_core failed." 1>&2
+			exit 70
+		fi
+
+		cd ..
+
+
+		# Next dependencies not explicitly needed finally:
+
+		# echo " - building simple_bridge"
+
+		# cd simple_bridge
+
+		# ${make} all
+		# if [ ! $? -eq 0 ]; then
+		#	echo " Error, the build of simple_bridge failed." 1>&2
+		#	exit 70
+		# fi
+
+		# cd ..
+
+
+		# echo " - building qdate"
+
+		# cd qdate
+
+		# ${make} all
+		# if [ ! $? -eq 0 ]; then
+		#	echo " Error, the build of qdate failed." 1>&2
+		#	exit 75
+		# fi
+
+		# cd ..
+
+
+		# echo " - building nprocreg"
+
+		# cd nprocreg
+
+		# ${make} all
+		# if [ ! $? -eq 0 ]; then
+		#	echo " Error, the build of nprocreg failed." 1>&2
+		#	exit 80
+		# fi
+
+		# cd ..
+
+
+	fi
 
 	# Apart from Myriad (used as a checkout to point to the same, unique install
 	# thereof here), LEEC has dependencies of its own (shotgun, jsx otherwise

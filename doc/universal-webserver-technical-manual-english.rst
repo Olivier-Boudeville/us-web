@@ -37,7 +37,7 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Monday, February 8, 2021
+:Lastly updated: Sunday, February 21, 2021
 :Status: Work in progress
 :Version: 0.0.18
 :Dedication: Users and maintainers of the ``Universal Webserver``.
@@ -97,7 +97,7 @@ From the highest level to the lowest, as summarised `here <https://github.com/Ol
 
 - the *Universal Webserver* services themselves (i.e. this `US-Web <http://us-web.esperide.org/>`_ layer)
 - `Cowboy <https://github.com/ninenines/cowboy>`_ (for a small, fast and modern web framework)
-- [optional] `LEEC <https://github.com/Olivier-Boudeville/letsencrypt-erlang/>`_ (for the management of Let's Encrypt certificates)
+- [optional] `LEEC <https://github.com/Olivier-Boudeville/Ceylan-LEEC/>`_ (for the management of Let's Encrypt certificates)
 - [optional] `Awstats <http://www.awstats.org/>`_ (for the analysis of access log files)
 - `US-Common <http://us-common.esperide.org/>`_ (for US base facilities)
 - `Ceylan-Traces <http://traces.esperide.org>`_ (for advanced runtime traces)
@@ -747,7 +747,7 @@ Current Stable Version & Download
 As mentioned, the single, direct prerequisites of the `Universal Webserver <https://github.com/Olivier-Boudeville/Universal Webserver>`_ are:
 
 - `Cowboy <https://github.com/ninenines/cowboy>`_ (version 2.8 or above)
-- `LEEC <https://github.com/Olivier-Boudeville/letsencrypt-erlang/>`_ as an optional, runtime-only dependency
+- `LEEC <https://github.com/Olivier-Boudeville/Ceylan-LEEC/>`_ as an optional, runtime-only dependency
 - `Awstats <http://www.awstats.org/>`_ as an optional, runtime-only dependency (version 7.8 or above)
 - `US-Common <http://us-common.esperide.org/>`_
 
@@ -774,7 +774,7 @@ Using Cutting-Edge GIT
 
 This is the installation method that we use and recommend; the Universal Webserver ``master`` branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.
 
-Once Erlang (see `here <http://myriad.esperide.org/index.html#getting-erlang>`_), rebar3 (see `here <http://myriad.esperide.org/index.html#getting-rebar3>`_) and possibly LEEC (see `here <https://github.com/Olivier-Boudeville/letsencrypt-erlang#building>`_) or Awstats (see `here <#getting-awstats>`_) are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information).
+Once Erlang (see `here <http://myriad.esperide.org/index.html#getting-erlang>`_), rebar3 (see `here <http://myriad.esperide.org/index.html#getting-rebar3>`_) and possibly LEEC (see `here <https://github.com/Olivier-Boudeville/Ceylan-LEEC#building>`_) or Awstats (see `here <#getting-awstats>`_) are available, it should be just a matter of executing our `get-us-web-from-sources.sh <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh>`_ script for downloading and building all dependencies at once, and run a test server (use its ``--help`` option for more information).
 
 For example:
 

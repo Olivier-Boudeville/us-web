@@ -63,6 +63,9 @@
 % For the vhost_config_entry and web_analysis_info records:
 -include("class_USWebConfigServer.hrl").
 
+-type general_web_settings() :: #general_web_settings{}.
+
+
 % For default_us_web_config_server_registration_name:
 -include("us_web_defines.hrl").
 
@@ -70,8 +73,8 @@
 -type web_analysis_info() :: #web_analysis_info{}.
 
 
--export_type([ web_kind/0, vhost_id/0, web_analysis_info/0,
-			   log_analysis_tool_name/0 ]).
+-export_type([ web_kind/0, vhost_id/0, general_web_settings/0,
+			   web_analysis_info/0, log_analysis_tool_name/0 ]).
 
 
 
@@ -243,13 +246,6 @@
 		maybe( { domain_id(), vhost_id(), bin_directory_path() } ).
 
 
-% General web settings, typically useful for the us_web supervisor:
--type general_web_settings() :: { dispatch_rules(), maybe( tcp_port() ),
-		maybe( dispatch_rules() ), maybe( tcp_port() ), cert_support(),
-		maybe( sni_info() ), maybe( bin_file_path() ),
-		maybe( bin_file_path() ) }.
-
-
 % Tells whether the generation of a log analysis report succeeded.
 -type report_generation_outcome() :: 'report_generation_success'
 			| { 'report_generation_failed', error_reason() }.
@@ -265,7 +261,7 @@
 
 % Not exported:
 %-type route_rule() :: cowboy_router:route_rule().
--type route_rule() :: term().
+-type route_rule() :: { HostMatch :: term(), PathMatches :: list() }.
 
 -type dispatch_routes() :: cowboy_router:dispatch_routes().
 
@@ -297,9 +293,16 @@
 -type cert_mode() :: 'development' | 'production'.
 
 
+-type https_transport_options() :: ranch_ssl:opts().
+
+-type https_transport_info() ::
+			maybe( { https_transport_options(), sni_info() } ).
+
+
 % To silence attribute-only types:
 -export_type([ dispatch_rules/0, log_analysis_settings/0,
-			   cert_support/0, cert_mode/0 ]).
+			   cert_support/0, cert_mode/0,
+			   https_transport_options/0, https_transport_info/0 ]).
 
 
 % User-specified tuple for a virtual host in the context of a domain:
@@ -343,7 +346,7 @@
 -type handler_state() :: us_web_handler:handler_state().
 
 
--type bin_san() :: letsencrypt:bin_san().
+-type bin_san() :: leec:bin_san().
 
 
 
@@ -364,6 +367,10 @@
 
 	{ default_web_root, maybe( bin_directory_path() ),
 	  "the default root (if any) for the website trees" },
+
+	{ nitrogen_enabled, boolean(),
+	  "tells whether Nitrogen is enabled, i.e. if at least one virtual host is "
+	  "of this type" },
 
 	{ meta_web_settings, maybe( meta_web_settings() ),
 	  "the domain, virtual host identifiers and web root of the auto-generated "
@@ -438,13 +445,13 @@
 
 	{ dh_key_path, maybe( bin_file_path() ),
 	  "the absolute path to the Diffie-Helman key file (if any) to ensure "
-	  "a very secure key exchange with Forward Secrecy" },
+	  "a secure key exchange with Forward Secrecy" },
 
 	{ ca_cert_key_path, maybe( bin_file_path() ),
 	  "the absolute path to the certificate authority PEM file (if any) "
 	  "for the chain of trust" },
 
-	{ sni_info, maybe( sni_info() ),
+	{ https_transp_info, maybe( https_transport_options() ),
 	  "information regarding Server Name Indication, so that virtual hosts "
 	  "can be supported with https" },
 
@@ -470,7 +477,7 @@
 % Note: include order matters.
 
 % For the tls_private_key record:
--include_lib("leec/include/letsencrypt.hrl").
+-include_lib("leec/include/leec.hrl").
 
 % Allows to define WOOPER base variables and methods for that class:
 -include_lib("wooper/include/wooper.hrl").
@@ -646,10 +653,15 @@ getWebConfigSettings( State ) ->
 
 	end,
 
-	GenWebSettings = { HttpDispatchRules, ?getAttr(http_tcp_port),
-		MaybeHttpsDispatchRules, MaybeHttpsTCPPort, CertSupport,
-		_MaybeHttpsTranspOpts=?getAttr(sni_info),
-		?getAttr(dh_key_path), ?getAttr(ca_cert_key_path) },
+	GenWebSettings = #general_web_settings{
+		http_dispatch_rules=HttpDispatchRules,
+		http_tcp_port=?getAttr(http_tcp_port),
+		https_dispatch_rules=MaybeHttpsDispatchRules,
+		https_tcp_port=MaybeHttpsTCPPort,
+		certificate_support=CertSupport,
+		https_transport_info=?getAttr(https_transp_info),
+		dh_key_path=?getAttr(dh_key_path),
+		ca_cert_key_path=?getAttr(ca_cert_key_path) },
 
 	?debug_fmt( "Returning the general web configuration settings:~n  ~p",
 				[ GenWebSettings ] ),
@@ -1079,6 +1091,7 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 			StoreState = setAttributes( State, [
 				{ execution_context, ExecContext },
+				{ nitrogen_enabled, false },
 				{ meta_web_settings, undefined },
 				{ config_base_directory, BinCfgDir },
 				{ us_server_pid, MaybeUSServerPid },
@@ -1574,7 +1587,7 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 	maybe( cert_manager_pid() ), bin_directory_path(),
 	maybe( bin_directory_path() ), maybe( web_analysis_info() ),
 	vhost_config_table(), dispatch_routes(), cert_support(), wooper:state() ) ->
-		  { vhost_config_table(), dispatch_routes(), wooper:state() }.
+			{ vhost_config_table(), dispatch_routes(), wooper:state() }.
 build_vhost_table( _DomainId, _VHostInfos=[], _MaybeCertManagerPid, _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
 		_CertSupport, State ) ->
@@ -1683,11 +1696,48 @@ build_vhost_table( DomainId,
 
 
 % Nitrogen kind here:
-build_vhost_table( _DomainId,
-		_VHostInfos=[ { _VHost, _ContentRoot, _WebKind=nitrogen } | _T ],
-		_MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
-		_MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
-	throw( not_implemented_yet );
+build_vhost_table( DomainId,
+		_VHostInfos=[ { VHost, ContentRoot, WebKind=nitrogen } | T ],
+		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
+
+	?debug_fmt( "Managing Nitrogen configuration for virtual host '~s' in "
+				"domain '~s'.", [ VHostId, DomainId ] ),
+
+	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
+									   VHostId, DomainId, State ),
+
+	ActualKind = check_kind( WebKind, VHostId, DomainId, State ),
+
+	BinVHostId = case VHostId of
+
+		without_vhost ->
+			without_vhost;
+
+		default_vhost_catch_all ->
+			default_vhost_catch_all;
+
+		_ ->
+			text_utils:string_to_binary( VHostId )
+
+	end,
+
+	% We do not generate certificates for individual virtual hosts anymore (too
+	% many of them), we rely on SANs instead; so managing here only any web
+	% logger, and static dispatch:
+	%
+	{ VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
+		DomainId, BinVHostId, MaybeCertManagerPid, BinLogDir, CertSupport,
+		MaybeWebAnalysisInfo ),
+
+	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
+
+	SetState = setAttribute( State, nitrogen_enabled, true ),
+
+	build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
+		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
+		[ VHostRoute | AccRoutes ], CertSupport, SetState );
+
 
 
 % Unknown kind:
@@ -1826,8 +1876,17 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 									  logger_pid=LoggerPid,
 									  cert_manager_pid=MaybeCertManagerPid },
 
-	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-								LoggerPid, CertSupport, MaybeCertManagerPid ),
+	VHostRoute = case ActualKind of
+
+		static ->
+			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
+							LoggerPid, CertSupport, MaybeCertManagerPid );
+
+		nitrogen ->
+			get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
+							LoggerPid, CertSupport, MaybeCertManagerPid )
+
+	end,
 
 	{ VHostEntry, VHostRoute }.
 
@@ -1850,8 +1909,8 @@ get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 
 				undefined ->
 					?error_fmt( "For the ~s, a relative content root was "
-								"specified ('~s') whereas no default web root "
-								"was defined.",
+						"specified ('~s') whereas no default web root was "
+						"defined.",
 						[ describe_host( VHostId, DomainId ), ContentRoot ] ),
 					throw( { relative_to_undefined_web_root, ContentRoot,
 							 { DomainId, VHostId } } );
@@ -1972,8 +2031,8 @@ describe_host( VHostId, BinDomainName ) ->
 
 
 
-% Returns a static dispatch route corresponding to the specified virtual host
-% identifier, domain identifier and content root.
+% Returns a static dispatch route rule corresponding to the specified virtual
+% host identifier, domain identifier and content root.
 %
 % See https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/ for more details.
 %
@@ -1983,56 +2042,13 @@ describe_host( VHostId, BinDomainName ) ->
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 						 CertSupport, MaybeCertManagerPid ) ->
 
-	% We prepare, once for all, all settings for a given (virtual) host.
+	% We prepare, once for all, all settings for a given static (virtual) host.
 
 	% Refer to https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/ and
 	% https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/:
 
-	% Plain string wanted, if not wildcard:
-	HostMatch = case DomainId of
-
-		default_domain_catch_all ->
-
-			case VHostId of
-
-				without_vhost ->
-					":_.:_";
-
-				default_vhost_catch_all ->
-					'_';
-
-				BinVHostName when is_binary( BinVHostName ) ->
-					% Ex: if BinVHostName="baz", "baz.foobar.org" is matching
-					% (i.e. "baz.*.*"):
-					%
-					text_utils:format( "~s.:_.:_", [ BinVHostName ] )
-
-			end;
-
-		BinDomainName when is_binary( BinDomainName ) ->
-
-			case VHostId of
-
-				without_vhost ->
-					text_utils:binary_to_string( BinDomainName );
-
-				default_vhost_catch_all ->
-					% text_utils:format( ":_.~s", [ BinDomainName ] );
-					%
-					% A little better (more general) than above (which, if
-					% BinDomainName="foobar.org", matches only "*.foobar.org"),
-					% as below is matching any number of subdomains (ex:
-					% "*.*.*.foobar.org"):
-					%
-					text_utils:format( "[...].~s", [ BinDomainName ] );
-
-				BinVHostName when is_binary( BinVHostName ) ->
-					text_utils:format( "~s.~s",
-									   [ BinVHostName, BinDomainName ] )
-
-			end
-
-	end,
+	% Plain strings wanted, if not catch-alls:
+	HostMatch = get_host_match_for( DomainId, VHostId ),
 
 	CssPath = file_utils:join( [ BinContentRoot, "common", "default.css" ] ),
 
@@ -2045,7 +2061,6 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 			undefined
 
 	end,
-
 
 	IconPath =
 		file_utils:join( [ BinContentRoot, "images", "default-icon.png" ] ),
@@ -2117,6 +2132,116 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 
+% Returns a Nitrogen-specific dispatch route rule corresponding to the specified
+% virtual host identifier, domain identifier and content root.
+%
+% See, in simple_bridge, cowboy_simple_bridge_sup.erl for more details.
+%
+-spec get_nitrogen_dispatch_for( vhost_id(), domain_id(),
+		bin_directory_path(), logger_pid(), cert_support(),
+		maybe( cert_manager_pid() ) ) -> route_rule().
+get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
+						   CertSupport, MaybeCertManagerPid ) ->
+
+	% We prepare, once for all, all settings for a given Nitrogen-based
+	% (virtual) host; see get_static_dispatch_for/6 for more details.
+
+	HostMatch = get_host_match_for( DomainId, VHostId ),
+
+	% These static paths were obtained from a live Nitrogen 2.4.1 site example
+	% (ex: the default, base, generated site obtained with 'make rel_cowboy
+	% PROJECT=my_test').
+	%
+	% To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
+	%
+	%io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n",
+	%		   [StaticDispatches,HandlerModule,HandlerOpts]),
+	%
+	% Then 'make all', 'bin/nitrogen restart' and 'grep StaticDispatches
+	% log/erlang.log.*'
+	%
+	HandlerModule = us_web_static,
+
+	% 'all' rather than 'web' here, apparently:
+	CowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
+
+	StaticDirs = [ "js", "css", "images", "nitrogen" ],
+
+	InitialState = #{ content_root => BinContentRoot,
+					  %css_path => MaybeBinCssFile,
+					  %icon_path => MaybeBinIconFile,
+					  %image_404 => MaybeBin404,
+					  cowboy_opts => CowboyOpts,
+					  logger_pid => LoggerPid },
+
+	StaticDirDispatches = [ { text_utils:format( "/~s/[...]", [ D ] ),
+		HandlerModule,  InitialState#{ type => directory,
+									   path => BinContentRoot }
+		{ dir, text_utils:format( "./site/static/~s/", [ D ] ), CowboyOpts } }
+							|| D <- StaticDirs ],
+
+	StaticFiles = [ "favicon.ico" ],
+
+	StaticFileDispatches = [ { text_utils:format( "/~s", [ D ] ),
+		HandlerModule,  InitialState#{ type => file,
+									   path => BinContentRoot }
+		{ dir, text_utils:format( "./site/static/~s/", [ D ] ), CowboyOpts } }
+							|| F <- StaticFiles ],
+
+
+  Dispatches = [{"/js/[...]",cowboy_static,
+					 {dir,"./site/static/js/",
+						  [{mimetypes,cow_mimetypes,all}]}},
+					{"/css/[...]",cowboy_static,
+					 {dir,"./site/static/css/",
+						  [{mimetypes,cow_mimetypes,all}]}},
+					{"/images/[...]",cowboy_static,
+					 {dir,"./site/static/images/",
+						  [{mimetypes,cow_mimetypes,all}]}},
+					{"/nitrogen/[...]",cowboy_static,
+					 {dir,"./site/static/nitrogen/",
+						  [{mimetypes,cow_mimetypes,all}]}},
+					{"/favicon.ico",cowboy_static,
+					 {file,"./site/static/favicon.ico",
+						   [{mimetypes,cow_mimetypes,all}]}}] 
+
+
+
+% Returns the host match corresponding to specified domain and virtual host.
+-spec get_host_match_for( domain_id(), vhost_id() ) -> host_match().
+get_host_match_for( _DomainId=default_domain_catch_all,
+					_VHostId=without_vhost ) ->
+	":_.:_";
+
+get_host_match_for( _DomainId=default_domain_catch_all,
+					_VHostId=default_vhost_catch_all ) ->
+	'_';
+
+% Ex: if BinVHostName="baz", "baz.foobar.org" is matching (i.e. "baz.*.*"):
+get_host_match_for( _DomainId=default_domain_catch_all,
+					_VHostId=BinVHostName ) when is_binary( BinVHostName )->
+	text_utils:format( "~s.:_.:_", [ BinVHostName ] );
+
+get_host_match_for( _DomainId=BinDomainName, _VHostId=without_vhost )
+							when is_binary( BinDomainName ) ->
+	text_utils:binary_to_string( BinDomainName );
+
+get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
+							when is_binary( BinDomainName ) ->
+	% text_utils:format( ":_.~s", [ BinDomainName ] );
+	%
+	% A little better (more general) than above (which, if
+	% BinDomainName="foobar.org", matches only "*.foobar.org"), as below is
+	% matching any number of subdomains (ex: "*.*.*.foobar.org"):
+	%
+	text_utils:format( "[...].~s", [ BinDomainName ] );
+
+get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
+	  when is_binary( BinDomainName ) andalso when is_binary( BinVHostName ) ->
+	text_utils:format( "~s.~s", [ BinVHostName, BinDomainName ] ).
+
+
+
 % Transforms specified dispatch routes into corresponding rules, i.e. replaces
 % the original handlers (name and initial state) with specified forwarding ones.
 %
@@ -2174,7 +2299,7 @@ set_as_forward_paths( _PathsList=[], _NewHandlerModule, _NewHandlerInitialState,
 
 % Preserving any Let's Encrypt handler:
 set_as_forward_paths( _PathsList=[ LEMatch={ _PathMatch,
-			us_web_letsencrypt_handler, _InitialState } | T ], NewHandlerModule,
+			us_web_leec_handler, _InitialState } | T ], NewHandlerModule,
 			NewHandlerInitialState, Acc ) ->
 	% Unchanged, including regarding order:
 	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
@@ -2205,12 +2330,12 @@ set_as_forward_paths(
 % Returns the path match that shall be used in order to answer ACME challenges
 % from Let's Encrypt from a LEEC FSM.
 %
-% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave
+% See https://leec.esperide.org/#usage-example
 %
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
-	%{ <<"/.well-known/acme-challenge/:token">>, us_web_letsencrypt_handler,
-	{ "/.well-known/acme-challenge/:token", us_web_letsencrypt_handler,
+	%{ <<"/.well-known/acme-challenge/:token">>, us_web_leec_handler,
+	{ "/.well-known/acme-challenge/:token", us_web_leec_handler,
 	  _InitialState=CertManagerPid };
 
 get_challenge_path_match( Unexpected ) ->
@@ -3008,17 +3133,17 @@ manage_certificates( ConfigTable, State ) ->
 						" LEEC agent has been found (searched for '~s'), "
 						"generating it now.", [ TargetKeyPath ] ),
 
-					PrivKey = letsencrypt_tls:obtain_private_key(
+					PrivKey = leec_tls:obtain_private_key(
 								{ new, ?leec_key_filename }, CertDir ),
 
 					PrivKey#tls_private_key.file_path
 
 			end,
 
-			BinDHKeyPath = letsencrypt_tls:obtain_dh_key( CertDir ),
+			BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
 
 			BinCAKeyPath =
-				letsencrypt_tls:obtain_ca_cert_file( CertDir ),
+				leec_tls:obtain_ca_cert_file( CertDir ),
 
 			?debug_fmt( "DH (Diffie-Helman) key path is '~s', "
 				"CA (Certificate Authority) key path is '~s'.",
@@ -3030,11 +3155,11 @@ manage_certificates( ConfigTable, State ) ->
 		use_existing_certificates ->
 
 			% A DH file is still needed, for key exchanges:
-			BinDHKeyPath = letsencrypt_tls:obtain_dh_key( CertDir ),
+			BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
 
 			% Not sure relevant here:
 			BinCAKeyPath =
-				letsencrypt_tls:obtain_ca_cert_file( CertDir ),
+				leec_tls:obtain_ca_cert_file( CertDir ),
 
 			?debug_fmt( "DH (Diffie-Helman) key path is '~s', "
 				"CA (Certificate Authority) key path is '~s'.",
@@ -3098,18 +3223,19 @@ manage_routes( ConfigTable, State ) ->
 		SchedulerPid, State ),
 
 	% TLS configuration for any https support:
-	MaybeSNIInfo = case CertSupport of
+	MaybeHttpsTranspInfo = case CertSupport of
 
 		no_certificates ->
 			undefined;
 
 		_ ->
-			SNIInfo = class_USCertificateManager:get_sni_info( UserRoutes,
-															   CertDir ),
+			TranspInfos = class_USCertificateManager:get_https_transport_info(
+									UserRoutes, CertDir ),
 
-			?debug_fmt( "SNI information are:~n  ~p.", [ SNIInfo ] ),
+			?debug_fmt( "HTTPS transport information are:~n  ~p.",
+						[ TranspInfos ] ),
 
-			SNIInfo
+			TranspInfos
 
 	end,
 
@@ -3133,11 +3259,12 @@ manage_routes( ConfigTable, State ) ->
 	  "They correspond, once compiled, to the following dispatch rules:~n  ~p.",
 	  [ DispatchRoutes, DispatchRules ] ),
 
-	setAttributes( ProcessState, [ { domain_config_table, DomainCfgTable },
-								   { dispatch_routes, DispatchRoutes },
-								   { dispatch_rules, DispatchRules },
-								   { logger_task_ring, TaskRingPid },
-								   { sni_info, MaybeSNIInfo } ] ).
+	setAttributes( ProcessState, [
+							{ domain_config_table, DomainCfgTable },
+							{ dispatch_routes, DispatchRoutes },
+							{ dispatch_rules, DispatchRules },
+							{ logger_task_ring, TaskRingPid },
+							{ https_transp_info, MaybeHttpsTranspInfo } ] ).
 
 
 
@@ -3395,11 +3522,21 @@ to_string( State ) ->
 
 	end,
 
+	NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_enabled) of
+
+		true ->
+			"enabled";
+
+		false ->
+			"disabled"
+
+	end,
+
 	text_utils:format( "US-Web configuration ~s, running ~s, ~s, ~s, ~s, "
 		"running in the ~s execution context, ~s, knowing: ~s, "
 		"US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~s' configuration directory and "
-		"on the '~s' log directory.~n~nIn terms of routes, using ~s~n~n"
+		"on the '~s' log directory, ~s.~n~nIn terms of routes, using ~s~n~n"
 		"Corresponding dispatch rules:~n~p",
 		[ class_USServer:to_string( State ),
 		  otp_utils:application_run_context_to_string(
@@ -3407,6 +3544,6 @@ to_string( State ) ->
 		  HttpString, HttpsString,
 		  WebRootString, ?getAttr(execution_context), CertString, SrvString,
 		  ?getAttr(us_config_server_pid), ?getAttr(us_web_supervisor_pid),
-		  ?getAttr(config_base_directory), ?getAttr(log_directory),
+		  ?getAttr(config_base_directory), ?getAttr(log_directory), NitroString,
 		  domain_table_to_string( ?getAttr(domain_config_table) ),
 		  ?getAttr(dispatch_rules) ] ).

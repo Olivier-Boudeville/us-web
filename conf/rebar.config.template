@@ -20,34 +20,31 @@
 %
 {deps, [
 
-	{cowboy,             {git, "git://github.com/ninenines/cowboy",
-						   {tag, "2.8.0"}}},
+	{cowboy, {git, "git://github.com/ninenines/cowboy",
+						{tag, "2.8.0"}}},
 
-	% A.k.a. LEEC:
-	{letsencrypt,        {git, "git://github.com/Olivier-Boudeville/letsencrypt-erlang",
-						   {branch, "master"}}},
+	% To support the generation of X.509 certificates thanks to Let's Encrypt:
+	{leec, {git, "git://github.com/Olivier-Boudeville/Ceylan-LEEC",
+						{branch, "master"}}},
 
-	%{simple_bridge,     {git, "git://github.com/nitrogen/simple_bridge",
-	%					   {branch, "master"}}},
-	%{qdate,             {git, "git://github.com/choptastic/qdate",
-	%					   {branch, "master"}}},
-	%{nprocreg,          {git, "git://github.com/nitrogen/nprocreg",
-	%					   {branch, "master"}}},
-	%{nitrogen_core,     {git, "git://github.com/nitrogen/nitrogen_core",
-	%					   {branch, "master"}}},
-	%{sync,              {git, "git://github.com/rustyio/sync",
-	%					   {branch, "master"}}},
-	%{simple_cache,      {git, "git://github.com/nitrogen/simple_cache",
-	%					   {branch, "master"}}},
+	% Uncomment to enable the support for Nitrogen-based websites:
+	%{simple_bridge, {git, "git://github.com/nitrogen/simple_bridge",{tag, "v2.1.0"}}},
+	%{qdate,         {git, "git://github.com/choptastic/qdate",      {tag, "0.5.0"}}},
+	%{nprocreg,      {git, "git://github.com/nitrogen/nprocreg",     {tag, "v0.3.0"}}},
+	%{nitrogen_core, {git, "git://github.com/nitrogen/nitrogen_core",{tag, "v2.4.0"}}},
+	%{sync,          {git, "git://github.com/rustyio/sync",          {tag, "v0.2.0"}}},
+	%{nitro_cache,   {git, "git://github.com/nitrogen/nitro_cache",  {tag, "0.4.0"}}}
 
-	{myriad,             {git, "git://github.com/Olivier-Boudeville/Ceylan-Myriad",
-						   {branch, "master"}}},
-	{wooper,             {git, "git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
-						   {branch, "master"}}},
-	{traces,             {git, "git://github.com/Olivier-Boudeville/Ceylan-Traces",
-						   {branch, "master"}}},
-	{us_common,          {git, "git://github.com/Olivier-Boudeville/us-common",
-						   {branch, "master"}}}
+	% Our toolbox dependencies:
+	{myriad,         {git, "git://github.com/Olivier-Boudeville/Ceylan-Myriad",
+						{branch, "master"}}},
+	{wooper,         {git, "git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
+						{branch, "master"}}},
+	{traces,         {git, "git://github.com/Olivier-Boudeville/Ceylan-Traces",
+						{branch, "master"}}},
+	{us_common,      {git, "git://github.com/Olivier-Boudeville/us-common",
+						{branch, "master"}}}
+
 ]}.
 
 
@@ -79,7 +76,7 @@
 	% in the code path:
 	%
 	%[ crypto, ranch, simple_cache, qdate, nitrogen_core, cowboy, us_web ] },
-	[ crypto, ranch, cowboy, letsencrypt, us_common, us_web ] },
+	[ crypto, ranch, cowboy, leec, us_common, us_web ] },
 
 	{sys_config, "conf/sys.config"},
 

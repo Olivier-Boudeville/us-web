@@ -42,12 +42,11 @@
 %
 % Certificates are obtained thanks to Let's Encrypt, more precisely thanks to
 % LEEC ("Let's Encrypt Erlang with Ceylan", our fork of letsencrypt-erlang),
-% namely https://github.com/Olivier-Boudeville/letsencrypt-erlang).
+% namely https://github.com/Olivier-Boudeville/Ceylan-LEEC).
 %
 % Each instance of this class is dedicated to the certificates for a given FQDN.
-% This allows multiplexing requests possibly for several FQDNs in parallel,
-% whereas the async callback of letsencrypt-erlang does not seem to tell for
-% which source it was obtained.
+% This allows multiplexing requests possibly for several FQDNs in parallel more
+% easily.
 %
 % This allows also handling more easily and gracefully errors and time-outs.
 %
@@ -74,12 +73,12 @@
 % certificate. SAN information (and, possibly in the future with other challenge
 % types, wildcard certificates) are also useful for that.
 %
-% Initially, the call to letsencrypt:obtain_certificate_for/3 below was
-% synchronous (blocking), however then the corresponding LEEC web handler
-% process that would be spawned whenever the ACME server requested the token
-% would lead to this LEEC handler process requesting the challenge from the
-% current certificate manager - whereas this one was blocked by design. So now
-% certificate managers use non-blocking calls to obtain their certificate.
+% Initially, the call to leec:obtain_certificate_for/3 below was synchronous
+% (blocking), however then the corresponding LEEC web handler process that would
+% be spawned whenever the ACME server requested the token would lead to this
+% LEEC handler process requesting the challenge from the current certificate
+% manager - whereas this one was blocked by design. So now certificate managers
+% use non-blocking calls to obtain their certificate.
 
 % Note that just *creating* (even before requesting any certificate) multiple
 % certificate managers may already lead to hitting the rate limits of the ACME
@@ -134,9 +133,11 @@
 -type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
 -type cert_mode() :: class_USWebConfigServer:cert_mode().
 
--type leec_pid() :: letsencrypt:fsm_pid().
+-type leec_pid() :: leec:fsm_pid().
 
--type bin_san() :: letsencrypt:bin_san().
+-type bin_san() :: leec:bin_san().
+
+-type https_transport_info() :: class_USWebConfigServer:https_transport_info().
 
 
 
@@ -380,7 +381,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	% Let's start LEEC now:
 
-	% Refer to https://github.com/Olivier-Boudeville/letsencrypt-erlang#api.
+	% Refer to https://leec.esperide.org/#usage-example
 
 	% Slave mode, as we control the webserver for the challenge:
 	% (BinCertDir must be writable by this process)
@@ -418,7 +419,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
 		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
 
-	LEECFsmPid = case letsencrypt:start( StartOpts, BridgeSpec ) of
+	LEECFsmPid = case leec:start( StartOpts, BridgeSpec ) of
 
 		{ ok, FsmPid } ->
 			?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
@@ -469,7 +470,7 @@ destruct( State ) ->
 
 		LeecPid ->
 			?debug( "Shutting down LEEC." ),
-			letsencrypt:stop( LeecPid )
+			leec:stop( LeecPid )
 
 	end,
 
@@ -530,9 +531,9 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 
 	% Note that these managers must not be frozen here in the waiting of a
 	% onCertificateRequestOutcome message, as they have to remain responsive to
-	% branch the US-Web Letsencrypt handler to the corresponding LEEC FSM, so
-	% that the challenges can be returned to the ACME server for this procedure
-	% to complete.
+	% branch the US-Web LEEC handler to the corresponding LEEC FSM, so that the
+	% challenges can be returned to the ACME server for this procedure to
+	% complete.
 
 	?debug( "Requested to renew certificate in a synchronisable manner." ),
 
@@ -580,7 +581,7 @@ request_certificate( State ) ->
 	?debug_fmt( "Requesting certificate for '~s', with following SAN "
 				"information:~n  ~p.", [ FQDN, ActualSans ] ),
 
-	async = letsencrypt:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
+	async = leec:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
 		_CertReqOptionMap=#{ async => true,
 							 callback => Callback,
 							 sans => ActualSans } ),
@@ -591,7 +592,7 @@ request_certificate( State ) ->
 
 % Method to be called back whenever a certificate was requested.
 -spec onCertificateRequestOutcome( wooper:state(),
-			letsencrypt:cert_creation_outcome() ) -> oneway_return().
+			leec:cert_creation_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
 			_CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
 
@@ -713,9 +714,9 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 % Requests this manager to return (indirectly, through the current LEEC FSM) the
 % current thumbprint challenges to specified target process.
 %
-% Typically called from a web handler (see us_web_letsencrypt_handler,
-% specifying its PID as target one) whenever the ACME well-known URL is read by
-% an ACME server, to check that the returned challenges match the expected ones.
+% Typically called from a web handler (see us_web_leec_handler, specifying its
+% PID as target one) whenever the ACME well-known URL is read by an ACME server,
+% to check that the returned challenges match the expected ones.
 %
 -spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
 getChallenge( State, TargetPid ) ->
@@ -725,7 +726,7 @@ getChallenge( State, TargetPid ) ->
 	?debug_fmt( "Requested to return the current thumbprint challenges "
 		"from LEEC FSM ~w, on behalf of (and to) ~w.", [ FSMPid, TargetPid ] ),
 
-	letsencrypt:send_ongoing_challenges( FSMPid, TargetPid ),
+	leec:send_ongoing_challenges( FSMPid, TargetPid ),
 
 	wooper:const_return().
 
@@ -782,27 +783,28 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % Static section.
 
 
-% Returns SNI information suitable for https-enabled virtual hosts, i.e. the
-% transport options for the domain of interest - i.e. the path to the PEM
-% certificate for the main, default host (ex: foobar.org) and to its private
-% key, together with SNI (Server Name Indication, see
-% https://erlang.org/doc/man/ssl.html#type-sni_hosts) host information for all
-% virtual host of all hosts (ex: baz.foobar.org, aa.buz.net, etc.).
+% Returns the https transport options and the SNI information suitable for
+% https-enabled virtual hosts, i.e. the transport options for the domain of
+% interest - i.e. the path to the PEM certificate for the main, default host
+% (ex: foobar.org) and to its private key, together with SNI (Server Name
+% Indication, see https://erlang.org/doc/man/ssl.html#type-sni_hosts) host
+% information for all virtual host of all hosts (ex: baz.foobar.org, aa.buz.net,
+% etc.).
 %
 % See also https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/.
 %
 % Note: we rely on the user routes rather than on the domain table as we need to
 % determine the first hots listed as the main one.
 %
--spec get_sni_info( dispatch_routes(), bin_directory_path() ) ->
-						  static_return( sni_info() ).
-get_sni_info( _, _BinCertDir=undefined ) ->
+-spec get_https_transport_info( dispatch_routes(), bin_directory_path() ) ->
+							static_return( https_transport_info() ).
+get_https_transport_info( _, _BinCertDir=undefined ) ->
 	throw( no_certificate_directory_for_sni );
 
-get_sni_info( _UserRoutes=[], _BinCertDir ) ->
+get_https_transport_info( _UserRoutes=[], _BinCertDir ) ->
 	throw( no_hostname_for_sni );
 
-get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
+get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 			  BinCertDir ) ->
 
 	% For https with SNI, a default host must be defined, distinct from the SNI
@@ -821,7 +823,6 @@ get_sni_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 	SNIHostInfos = list_utils:flatten_once(
 					[ get_virtual_host_sni_infos( H, VH, BinCertDir )
 						|| { H, VH } <- UserRoutes ] ),
-
 
 	% Redundant:
 	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(

@@ -110,9 +110,15 @@ init( _Args=[ AppRunContext ] ) ->
 	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
 
-	{ HttpDispatchRules, MaybeHttpTCPPort, MaybeHttpsDispatchRules,
-	  MaybeHttpsTCPPort, CertSupport, MaybeHttpsTranspOpts, MaybeBinDHKeyPath,
-	  MaybeBinCaKeyPath } = receive
+	#general_web_settings{
+			http_dispatch_rules=HttpDispatchRules,
+			http_tcp_port=MaybeHttpTCPPort
+			https_dispatch_rules=MaybeHttpsDispatchRules,
+			https_tcp_port=MaybeHttpsTCPPort,
+			certificate_support=CertSupport,
+			https_transport_info=MaybeHttpsTranspOptsk
+			dh_key_path=MaybeBinDHKeyPath
+			ca_cert_key_path=MaybeBinCaKeyPath } = receive
 
 		{ wooper_result, GenWebSettings } ->
 				trace_bridge:debug_fmt( "Received general web settings:~n  ~p",

@@ -32,7 +32,9 @@ Let's Encrypt follows the ACME (*Automatic Certificate Management Environment*) 
 
 This agent generates first a RSA key pair in order to interact with the Let’s Encrypt certificate authority, so that it can prove through received challenge(s) that it is bound to the claimed domain / virtual host (ex: ``baz.foobar.org``) and has the control to the private key corresponding to the public one that it transmitted to the CA.
 
-Generally this involves for that agent to receive a "random" piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting file available through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: ``http://baz.foobar.org/.well-known/acme-challenge/xxx``). Refer to `this page <https://letsencrypt.org/how-it-works/>`_ for more information.
+Generally this involves for that agent to receive a "random" piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting answer to the challenges available (as tokens) through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: ``http://baz.foobar.org/.well-known/acme-challenge/xxx``).
+
+Refer to `this page <https://letsencrypt.org/how-it-works/>`_ for more information; the overall process is `explained here <https://ietf-wg-acme.github.io/acme/draft-ietf-acme-acme.html#rfc.section.4>`_ and in `this RFC <https://www.rfc-editor.org/rfc/rfc8555.html>`_.
 
 
 

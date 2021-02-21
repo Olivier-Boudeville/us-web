@@ -162,7 +162,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 
 	PageBody = text_utils:format(
-	  <<"<h1>Requested page '~s' not found</h1>
+	  <<"<h1>Requested content '~s' not found</h1>
   <p>I could not find the document you wanted, sorry.</p>
   <p style=\"padding-left:10%\">       --- The ~s server.</p>
   <p>

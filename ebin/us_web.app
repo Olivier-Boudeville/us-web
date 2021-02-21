@@ -20,7 +20,7 @@
 
 {application, us_web,
  [{description, "US-Web, the OTP active application offering web services in the context of the Universal Server framework (see http://us-web.esperide.org)"},
-  {vsn, "0.0.11"},
+  {vsn, "0.0.12"},
   {registered, [us_web]},
 
  % Active application:
@@ -36,15 +36,15 @@
   %  - Myriad, see http://myriad.esperide.org/myriad.html#otp
 
 
-  % myriad is a dependency of wooper (and leec), which is itself a dependency of
-  % traces, dependency of us_common (dependency of this us_web); as such they
-  % may not be listed here, however we stay conservative;
+  % myriad is a dependency of wooper, which is itself a dependency of traces,
+  % dependency of us_common (dependency of this us_web); as such they may not be
+  % listed here, however we stay conservative;
   %
-  {applications, [kernel, stdlib, sasl, leec, cowboy, myriad, wooper, traces, us_common]},
+  {applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common, leec]},
   {env,[]},
 
   % Flat hierarchy in ebin here:
-  {modules, [class_USCertificateManager, class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_handler, us_web_letsencrypt_handler, us_web_meta, us_web_monitor_app, us_web_port_forwarder, us_web_static, us_web_sup]},
+  {modules, [class_USCertificateManager, class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_generate_report_app, us_web_handler, us_web_leec_handler, us_web_meta, us_web_monitor_app, us_web_port_forwarder, us_web_static, us_web_stop_app, us_web_sup3]},
 
   {licenses, ["US-Web is licensed by its author (Olivier Boudeville) under the GNU Affero General Public License (AGPL), version 3.0 or later"]},
 

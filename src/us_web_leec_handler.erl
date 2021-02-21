@@ -20,13 +20,12 @@
 % Creation date: Monday, August 3, 2020.
 
 
-% Let's Encrypt-compliant handler for US-Web, in order to answer ACME challenges
-% thanks to LEEC, in order to complete the verification procedure.
+% LEEC-compliant handler for US-Web, in order to answer ACME challenges thanks
+% to LEEC, in order to complete the verification procedure.
 %
-% See https://github.com/Olivier-Boudeville/letsencrypt-erlang#as-slave and
-% http://leec.esperide.org.
+% See https://leec.esperide.org/#usage-example for more details.
 %
--module(us_web_letsencrypt_handler).
+-module(us_web_leec_handler).
 
 
 -export([ init/2, handle/2, terminate/3 ]).
@@ -65,7 +64,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
 
 	cond_utils:if_defined( us_web_debug_handlers, trace_bridge:debug_fmt(
-		"Request ~p to be handled for letsencrypt, while "
+		"Request ~p to be handled on behalf of LEEC, while "
 		"handler state is the PID of the associated certificate manager: ~w.",
 		[ Req, CertManagerPid ] ) ),
 

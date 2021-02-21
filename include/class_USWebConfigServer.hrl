@@ -20,6 +20,44 @@
 % Creation date: Saturday, February 15, 2020.
 
 
+% General web settings, typically useful for the us_web supervisor:
+-record( general_web_settings, {
+
+		   % Rules so that http accesses are managed by the right handlers:
+		   http_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
+
+		   % TCP port (ex: 80) to serve any http content:
+		   http_tcp_port :: maybe( net_utils:tcp_port() ),
+
+
+		   % Rules so that https accesses are managed by the right handlers:
+		   https_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
+
+		   % TCP port (ex: 443) to serve any https content:
+		   https_tcp_port :: maybe( net_utils:tcp_port() ),
+
+
+		   % Tells whether certificates shall be used, and how:
+		   certificate_support :: class_USWebConfigServer:cert_support(),
+
+		   % Including for SNI information:
+		   https_transport_info ::
+			   maybe( class_USWebConfigServer:https_transport_info() ),
+
+		   % The absolute path to the Diffie-Helman key file (if any) to ensure
+		   % a secure key exchange with Forward Secrecy:
+		   %
+		   dh_key_path :: maybe( file_utils:bin_file_path() ),
+
+		   % The absolute path to the certificate authority PEM file (if any)
+		   % for the chain of trust:
+		   %
+		   ca_cert_key_path :: maybe( file_utils:bin_file_path() )
+
+ } ).
+
+
+
 % The full configuration information regarding a virtual host (ex:
 % "bar.foo.org"):
 %

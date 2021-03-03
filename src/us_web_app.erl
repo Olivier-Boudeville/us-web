@@ -135,11 +135,11 @@ start( StartType, StartArgs ) ->
 		"(start type: ~p, arguments: ~p)...~n", [ StartType, StartArgs ] ),
 
 	% Location to check:
-	BuildRootDir = "..",
+	%BuildRootDir = "..",
 
-	% They will be started by LEEC afterwards:
-	_OrderedAppNames = otp_utils:prepare_for_execution( [ shotgun, elli ],
-													   BuildRootDir ),
+	% They used to be started by LEEC afterwards, but now not anymore:
+	%_OrderedAppNames = otp_utils:prepare_for_execution( [ shotgun, elli ],
+	%													BuildRootDir ),
 
 	% To debug any dependency-related 'undef' problem, or to ensure
 	% concurrently-emitted messages can be seen (otherwise many outputs may be

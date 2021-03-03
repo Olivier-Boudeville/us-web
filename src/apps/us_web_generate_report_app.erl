@@ -93,7 +93,7 @@ exec() ->
 	%app_facilities:display( "Looking up US-Web config server by name: ~s.",
 	%						[ UWCfgRegName ] ),
 
-	UWCfgRegScope = ?default_registration_scope,
+	UWCfgRegScope = ?us_web_config_server_registration_scope,
 
 	UWCfgPid = naming_utils:get_registered_pid_for( UWCfgRegName,
 		naming_utils:registration_to_look_up_scope( UWCfgRegScope ) ),

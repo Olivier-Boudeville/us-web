@@ -215,10 +215,15 @@ ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec/.),)
 	# By default, expect a checkout directory:
 	LEEC_TOP = $(US_WEB_TOP)/_checkouts/leec
 else
-	# Otherwise assume a sibling one:
+	# Second, a sibling one is searched for:
 	ifneq ($(wildcard $(US_WEB_TOP)/../leec/.),)
 		LEEC_TOP = $(US_WEB_TOP)/../leec
    else
-		FORCE_EVAL := $(error Unable to find the build root of LEEC)
+		# Otherwise most probably in a 'rebar3 compile' context:
+		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/leec/.),)
+			LEEC_TOP = $(US_WEB_TOP)/_build/default/lib/leec
+		else
+			FORCE_EVAL := $(error Unable to find the build root of US-Common from $(realpath .).)
+		endif
 	endif
 endif

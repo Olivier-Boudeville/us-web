@@ -257,7 +257,8 @@
 			   report_generation_outcome/0 ]).
 
 
--type path_match() :: text_utils:any_string().
+-type host_match() :: any_string().
+-type path_match() :: any_string().
 
 % Not exported:
 %-type route_rule() :: cowboy_router:route_rule().
@@ -312,22 +313,25 @@
 
 % Shorthands:
 
--type ustring() :: text_utils:ustring().
-
 -type error_reason() :: basic_utils:error_reason().
 
+-type ustring() :: text_utils:ustring().
+-type any_string() :: text_utils:any_string().
+
+-type file_path() :: file_utils:file_path().
+-type bin_file_path() :: file_utils:bin_file_path().
 -type directory_path() :: file_utils:directory_path().
 -type bin_directory_path() :: file_utils:bin_directory_path().
 -type any_directory_path() :: file_utils:any_directory_path().
 
--type bin_file_path() :: file_utils:bin_file_path().
+-type registration_name() :: naming_utils:registration_name().
+-type registration_scope() :: naming_utils:registration_scope().
 
 -type domain_name() :: net_utils:domain_name().
 -type bin_domain_name() :: net_utils:bin_domain_name().
 
-
 -type bin_host_name() :: net_utils:bin_host_name().
--type tcp_port() :: net_utils:tcp_port().
+%-type tcp_port() :: net_utils:tcp_port().
 
 -type supervisor_pid() :: otp_utils:supervisor_pid().
 -type application_run_context() :: otp_utils:application_run_context().
@@ -455,8 +459,11 @@
 	  "information regarding Server Name Indication, so that virtual hosts "
 	  "can be supported with https" },
 
-	{ scheduler_registration_name, naming_utils:registration_name(),
+	{ scheduler_registration_name, registration_name(),
 	  "the name under which the dedicated scheduler is registered" },
+
+	{ scheduler_registration_scope, registration_scope(),
+	  "the scope under which the dedicated scheduler is registered" },
 
 	{ start_timestamp, time_utils:timestamp(),
 	  "the start timestamp of this server" },
@@ -896,6 +903,7 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 	end,
 
 	wooper:const_return_result( Res ).
+
 
 
 
@@ -1651,7 +1659,7 @@ build_vhost_table( DomainId,
 
 % Meta kind here:
 build_vhost_table( DomainId,
-	   _VHostInfos=[ { VHost, _ContentRoot, WebKind=meta } | T ],
+	   _VHostInfos=[ { VHostId, _ContentRoot, WebKind=meta } | T ],
 	   MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
 	   MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport,
 	   State ) ->
@@ -1660,7 +1668,7 @@ build_vhost_table( DomainId,
 	% organisation are not that useful:
 
 	% Not expected to be 'without_vhost' or 'default_vhost_catch_all':
-	BinVHost = text_utils:string_to_binary( VHost ),
+	BinVHost = text_utils:string_to_binary( VHostId ),
 
 	BinMetaContentRoot = case MaybeWebAnalysisInfo of
 
@@ -1668,8 +1676,8 @@ build_vhost_table( DomainId,
 			?error_fmt( "A meta website (vhost '~s' for domain '~s') was "
 				"requested, yet no web analysis information is available. "
 				"No 'log_analysis' entry defined in US-Web configuration file?",
-				[ VHost, DomainId ] ),
-			throw( { no_web_analysis_info, VHost, DomainId } );
+				[ VHostId, DomainId ] ),
+			throw( { no_web_analysis_info, VHostId, DomainId } );
 
 		#web_analysis_info{ web_content_dir=BinWebContentDir } ->
 			% Full path, unlike ContentRoot:
@@ -1684,8 +1692,8 @@ build_vhost_table( DomainId,
 		{ DomainId, BinVHost, BinMetaContentRoot } ),
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
-			DomainId, BinVHost, MaybeCertManagerPid, BinLogDir, CertSupport,
-			MaybeWebAnalysisInfo ),
+		DomainId, BinVHost, MaybeCertManagerPid, BinLogDir, CertSupport,
+		MaybeWebAnalysisInfo ),
 
 	NewAccVTable = table:add_entry( _K=BinVHost, VHostEntry, AccVTable ),
 
@@ -1697,7 +1705,7 @@ build_vhost_table( DomainId,
 
 % Nitrogen kind here:
 build_vhost_table( DomainId,
-		_VHostInfos=[ { VHost, ContentRoot, WebKind=nitrogen } | T ],
+		_VHostInfos=[ { VHostId, ContentRoot, WebKind=nitrogen } | T ],
 		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
 
@@ -2155,17 +2163,15 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	% To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
 	%
 	%io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n",
-	%		   [StaticDispatches,HandlerModule,HandlerOpts]),
+	%		   [ StaticDispatches, HandlerModule, HandlerOpts ] ),
 	%
-	% Then 'make all', 'bin/nitrogen restart' and 'grep StaticDispatches
-	% log/erlang.log.*'
-	%
+	% Then 'make all', 'bin/nitrogen restart' and
+	% 'grep StaticDispatches log/erlang.log.*'.
+
 	HandlerModule = us_web_static,
 
 	% 'all' rather than 'web' here, apparently:
 	CowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
-
-	StaticDirs = [ "js", "css", "images", "nitrogen" ],
 
 	InitialState = #{ content_root => BinContentRoot,
 					  %css_path => MaybeBinCssFile,
@@ -2174,36 +2180,38 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 					  cowboy_opts => CowboyOpts,
 					  logger_pid => LoggerPid },
 
+	StaticDirs = [ "js", "css", "images", "nitrogen" ],
+
 	StaticDirDispatches = [ { text_utils:format( "/~s/[...]", [ D ] ),
-		HandlerModule,  InitialState#{ type => directory,
-									   path => BinContentRoot }
-		{ dir, text_utils:format( "./site/static/~s/", [ D ] ), CowboyOpts } }
+		HandlerModule, InitialState#{
+				type => directory,
+				path => text_utils:format( "./site/static/~s/", [ D ] ) } }
 							|| D <- StaticDirs ],
+
 
 	StaticFiles = [ "favicon.ico" ],
 
-	StaticFileDispatches = [ { text_utils:format( "/~s", [ D ] ),
-		HandlerModule,  InitialState#{ type => file,
-									   path => BinContentRoot }
-		{ dir, text_utils:format( "./site/static/~s/", [ D ] ), CowboyOpts } }
+	StaticFileDispatches = [ { text_utils:format( "/~s", [ F ] ),
+		HandlerModule, InitialState#{
+				type => file,
+				path => text_utils:format( "./site/static/~s", [ F ] ) } }
 							|| F <- StaticFiles ],
 
+	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
 
-  Dispatches = [{"/js/[...]",cowboy_static,
-					 {dir,"./site/static/js/",
-						  [{mimetypes,cow_mimetypes,all}]}},
-					{"/css/[...]",cowboy_static,
-					 {dir,"./site/static/css/",
-						  [{mimetypes,cow_mimetypes,all}]}},
-					{"/images/[...]",cowboy_static,
-					 {dir,"./site/static/images/",
-						  [{mimetypes,cow_mimetypes,all}]}},
-					{"/nitrogen/[...]",cowboy_static,
-					 {dir,"./site/static/nitrogen/",
-						  [{mimetypes,cow_mimetypes,all}]}},
-					{"/favicon.ico",cowboy_static,
-					 {file,"./site/static/favicon.ico",
-						   [{mimetypes,cow_mimetypes,all}]}}] 
+	PathMatches = case CertSupport =:= renew_certificates
+						andalso MaybeCertManagerPid =/= undefined of
+
+		true ->
+			 % Be able to answer Let's Encrypt ACME challenges:
+			[ get_challenge_path_match( MaybeCertManagerPid ) | StaticMatches ];
+
+		false ->
+			StaticMatches
+
+	end,
+
+	{ HostMatch, PathMatches }.
 
 
 
@@ -2237,7 +2245,7 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
 	text_utils:format( "[...].~s", [ BinDomainName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
-	  when is_binary( BinDomainName ) andalso when is_binary( BinVHostName ) ->
+	  when is_binary( BinDomainName ) andalso is_binary( BinVHostName ) ->
 	text_utils:format( "~s.~s", [ BinVHostName, BinDomainName ] ).
 
 
@@ -2370,69 +2378,37 @@ check_kind( WebKind, VHost, DomainId, State ) ->
 									wooper:state().
 manage_registrations( ConfigTable, State ) ->
 
-	Scope = ?default_registration_scope,
+	{ CfgRegName, CfgRegScope, SchedRegName, SchedRegScope, RegMsg } =
+			case get_registration_info( ConfigTable ) of
 
-	WebCfgSrvRegName = case table:lookup_entry(
-			?us_web_config_server_registration_name_key, ConfigTable ) of
+		{ ok, Q } ->
+			Q;
 
-		key_not_found ->
-			DefCfgRegName = ?default_us_web_config_server_registration_name,
-			?info_fmt( "No user-configured registration name for the US-Web "
-			  "configuration server, defaulting to '~s'.", [ DefCfgRegName ] ),
-			DefCfgRegName;
-
-		{ value, CfgRegName } when is_atom( CfgRegName ) ->
-			?info_fmt( "Using user-configured registration name for the "
-					   "US-Web configuration server, '~s'.", [ CfgRegName ] ),
-			CfgRegName;
-
-		{ value, InvalidCfgRegName } ->
-			?error_fmt( "Invalid user-specified registration name for the "
-			  "US-Web configuration server: '~p'.", [ InvalidCfgRegName ] ),
-			throw( { invalid_web_config_registration_name, InvalidCfgRegName,
-					 ?us_web_config_server_registration_name_key } )
+		{ error, DiagnosedError } ->
+			basic_utils:throw_diagnosed( DiagnosedError )
 
 	end,
 
-	naming_utils:register_as( WebCfgSrvRegName, Scope ),
+	?info( RegMsg ),
 
-
-	SchedRegName = case table:lookup_entry(
-					 ?us_web_scheduler_registration_name_key, ConfigTable ) of
-
-		key_not_found ->
-			DefScRegName = ?default_us_web_scheduler_registration_name,
-			?info_fmt( "No user-configured registration name for the US-Web "
-					   "scheduler, defaulting to '~s'.", [ DefScRegName ] ),
-			DefScRegName;
-
-		{ value, ScRegName } when is_atom( ScRegName ) ->
-			?info_fmt( "Using user-configured registration name for the "
-					   "US-Web scheduler, '~s'.", [ ScRegName ] ),
-			ScRegName;
-
-		{ value, InvalidScRegName } ->
-			?error_fmt( "Invalid user-specified registration name for the "
-						"US-Web scheduler: '~p'.", [ InvalidScRegName ] ),
-			throw( { invalid_web_scheduler_registration_name, InvalidScRegName,
-					 ?us_web_config_server_registration_name_key } )
-
-	end,
+	naming_utils:register_as( CfgRegName, CfgRegScope ),
 
 	% Relatively private to this node:
 	SchedPid = class_USScheduler:new_link( "US-Web Scheduler", SchedRegName,
-										   _SchedRegScope=local_only ),
+										   SchedRegScope ),
 
 	?info_fmt( "This US-Web configuration server was registered as '~s' "
-		"(scope: ~s), an will be using scheduler ~w.",
-		[ WebCfgSrvRegName, Scope, SchedPid ] ),
+		"(scope: ~s), and will be using scheduler ~w (registered as '~s', "
+		"(scope: ~s).",
+		[ CfgRegName, CfgRegScope, SchedPid, SchedRegName, SchedRegScope ] ),
 
 	setAttributes( State, [
 			% Inherited:
-			{ registration_name, WebCfgSrvRegName },
-			{ registration_scope, Scope },
+			{ registration_name, CfgRegName },
+			{ registration_scope, CfgRegScope },
 
 			{ scheduler_registration_name, SchedRegName },
+			{ scheduler_registration_scope, SchedRegScope },
 			{ us_web_scheduler_pid, SchedPid } ] ).
 
 
@@ -2500,7 +2476,6 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 		key_not_found ->
 			undefined;
-
 
 		{ value, D } when is_list( D ) ->
 			?info_fmt( "User-configured US-Web application base directory "
@@ -2657,19 +2632,37 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 % Tries to guess the US-Web application directory.
 guess_app_dir( AppRunContext, State ) ->
-	GuessedDir = case AppRunContext of
+
+	CurrentDir = file_utils:get_current_directory(),
+
+	GuessingDir = case AppRunContext of
 
 		as_otp_release ->
-			% [...]/us_web/_build/default/rel/us_web, and we want the first
+			% In [...]/us_web/_build/default/rel/us_web, and we want the first
 			% us_web, so:
 			%
-			file_utils:normalise_path( file_utils:join( [
-				file_utils:get_current_directory(), "..",
-				"..", "..", ".." ] ) );
+			OTPPath = file_utils:normalise_path( file_utils:join(
+							[ CurrentDir, "..", "..", "..", ".." ] ) ),
+
+			case file_utils:get_base_path( OTPPath ) of
+
+				"us_web" ->
+					% Looks good:
+					OTPPath;
+
+				% Not found; another try, if running as a test (from
+				% us_web/test):
+				%
+				_ ->
+					file_utils:get_base_path( CurrentDir )
+
+			end;
 
 		as_native ->
-			% In the case of a native build, running from us_web/src, so:
-			file_utils:get_base_path( file_utils:get_current_directory() )
+			% In the case of a native build, running from us_web/src (covers
+			% also the case where a test is being run from us_web/test), so:
+			%
+			file_utils:get_base_path( CurrentDir )
 
 	end,
 
@@ -2677,9 +2670,9 @@ guess_app_dir( AppRunContext, State ) ->
 	?info_fmt( "No user-configured US-Web application base directory set "
 		"(neither in configuration file nor through the '~s' environment "
 		"variable), hence trying to guess it, in a ~s context, as '~s'.",
-		[ ?us_web_app_env_variable, AppRunContext, GuessedDir ] ),
+		[ ?us_web_app_env_variable, AppRunContext, GuessingDir ] ),
 
-	GuessedDir.
+	GuessingDir.
 
 
 
@@ -3403,6 +3396,163 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 			BinSan = text_utils:bin_format( "~s.~s",
 											[ VHostname, DomainName ] ),
 			get_san_list( T, DomainName, [ BinSan | Acc ] )
+
+	end.
+
+
+
+
+% Static section.
+
+
+% Returns, based on the US main configuration table and the US configuration
+% directory, the US-Web configuration table, as read from the US-Web
+% configuration file, together with the path of this file.
+%
+% Static method, to be available from external code such as clients or tests.
+%
+-spec get_configuration_table( class_USConfigServer:us_config_table(),
+							   bin_directory_path() ) ->
+  static_return( diagnosed_fallible( { us_web_config_table(), file_path() } ) ).
+get_configuration_table( USCfgTable, BinCfgDir ) ->
+
+	% First, let's determine the name of the US-Web configuration file:
+
+	% (lighter diagnose for checks as we are just in a client/test logic, not in
+	% the US-Web main one)
+
+	Res = case
+	  class_USConfigServer:get_us_web_configuration_filename( USCfgTable ) of
+
+		{ ok, undefined } ->
+			ErrorMsg = "No US-Web configuration filename (for webservers and "
+				"virtual hosting) defined in US configuration",
+			{ error, { no_us_web_config_defined, ErrorMsg } };
+
+		{ ok, WebCfgFilename } ->
+			WebCfgFilePath = file_utils:join( BinCfgDir, WebCfgFilename ),
+			case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
+
+				true ->
+					%trace_bridge:info_fmt( "Reading the US-Web configuration "
+					%    "from '~s'.", [ WebCfgFilePath ] ),
+
+					% Ensures as well that all top-level terms are pairs indeed:
+					ConfigTable = table:new_from_unique_entries(
+									file_utils:read_terms( WebCfgFilePath ) ),
+
+					{ ok, { ConfigTable, WebCfgFilePath } };
+
+				false ->
+					ErrorMsg = text_utils:format( "US-Web configuration "
+						"filename was defined in US configuration as '~s', "
+						"resulting in path '~s', which was found not existing",
+						[ WebCfgFilename, WebCfgFilePath ] ),
+
+					{ error, { { non_existing_us_web_config_file,
+								 WebCfgFilePath }, ErrorMsg } }
+
+			end;
+
+			E -> %{ error, _P } ->
+				E
+
+	end,
+
+	wooper:return_static( Res ).
+
+
+
+% Returns information about the naming registration of various US-Web servers.
+%
+% Static for sharing with clients, tests, etc.
+%
+-spec get_registration_info( us_web_config_table() ) ->
+		fallible( { registration_name(), registration_scope(),
+					registration_name(), registration_scope(), ustring() } ).
+get_registration_info( ConfigTable ) ->
+
+	CfgRegOutcome = case table:lookup_entry(
+			?us_web_config_server_registration_name_key, ConfigTable ) of
+
+		key_not_found ->
+			DefCfgRegName = ?default_us_web_config_server_registration_name,
+			DefCfgMsg = text_utils:format( "No user-configured registration "
+				"name for the US-Web configuration server, defaulting to '~s'",
+				[ DefCfgRegName ] ),
+			{ ok, DefCfgRegName, DefCfgMsg };
+
+		{ value, UserCfgRegName } when is_atom( UserCfgRegName ) ->
+			UserCfgMsg = text_utils:format( "Using user-configured "
+				"registration name for the US-Web configuration server, '~s'",
+				[ UserCfgRegName ] ),
+			{ ok, UserCfgRegName, UserCfgMsg };
+
+		{ value, InvalidCfgRegName } ->
+			CfgErrorMsg = text_utils:format( "Invalid user-specified "
+				"registration name for the US-Web configuration server: '~p'.",
+				[ InvalidCfgRegName ] ),
+			{ error, _DiagnosedError={ { invalid_web_config_registration_name,
+				InvalidCfgRegName,
+				?us_web_config_server_registration_name_key }, CfgErrorMsg } }
+
+	end,
+
+	case CfgRegOutcome of
+
+		% No need to go further:
+		P={ error, _DiagnosedErr } ->
+			P;
+
+		{ ok, CfgRegName, CfgMsg } ->
+
+			% Name can be user-defined, scope is fixed:
+			CfgRegScope = ?us_web_config_server_registration_scope,
+
+			SchedRegScope = ?us_web_scheduler_registration_scope,
+
+			case table:lookup_entry( ?us_web_scheduler_registration_name_key,
+									 ConfigTable ) of
+
+				key_not_found ->
+
+					DefSchedRegName =
+						?default_us_web_scheduler_registration_name,
+
+					FullMsg = text_utils:format( "~s; no user-configured "
+						"registration name for the US-Web scheduler, "
+						"defaulting to '~s'.", [ CfgMsg, DefSchedRegName ] ),
+
+					Info = { CfgRegName, CfgRegScope, default,
+							 SchedRegScope, FullMsg },
+
+					{ ok, Info };
+
+
+				{ value, SchedRegName } when is_atom( SchedRegName ) ->
+
+					FullMsg = text_utils:format( "~s; using user-configured "
+						"registration name for the US-Web scheduler, '~s'.",
+						[ CfgMsg, SchedRegName ] ),
+
+					Info = { CfgRegName, CfgRegScope, SchedRegName,
+							 SchedRegScope, FullMsg },
+
+					{ ok, Info };
+
+
+				{ value, InvalidScRegName } ->
+
+					SchedErrorMsg = text_utils:format( "Invalid user-specified "
+						"registration name for the US-Web scheduler: '~p'.",
+						[ InvalidScRegName ] ),
+
+					{ error, { { invalid_web_scheduler_registration_name,
+								 InvalidScRegName,
+								 ?us_web_config_server_registration_name_key },
+							   SchedErrorMsg } }
+
+		end
 
 	end.
 

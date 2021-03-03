@@ -3467,9 +3467,9 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 %
 % Static for sharing with clients, tests, etc.
 %
--spec get_registration_info( us_web_config_table() ) ->
+-spec get_registration_info( us_web_config_table() ) -> static_return(
 		fallible( { registration_name(), registration_scope(),
-					registration_name(), registration_scope(), ustring() } ).
+					registration_name(), registration_scope(), ustring() } ) ).
 get_registration_info( ConfigTable ) ->
 
 	CfgRegOutcome = case table:lookup_entry(
@@ -3498,7 +3498,7 @@ get_registration_info( ConfigTable ) ->
 
 	end,
 
-	case CfgRegOutcome of
+	Res = case CfgRegOutcome of
 
 		% No need to go further:
 		P={ error, _DiagnosedErr } ->
@@ -3554,7 +3554,9 @@ get_registration_info( ConfigTable ) ->
 
 		end
 
-	end.
+	end,
+
+	wooper:return_static( Res ).
 
 
 

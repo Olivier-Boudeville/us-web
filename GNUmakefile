@@ -12,7 +12,7 @@ US_WEB_TOP = .
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability                            \
 		inspect monitor-development monitor-production                         \
-		kill shell test test-interactive                                       \
+		kill shell test test-interactive test-ci                               \
 		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
 		info info-local info-conditionals info-deps
 
@@ -369,6 +369,12 @@ shell: test-interactive
 #
 test-interactive: compile
 	@$(REBAR3_EXEC) shell
+
+
+# Tests in the context of continuous integration:
+test-ci:
+	@cd test && $(MAKE) -s test-ci
+
 
 
 # Creates the symbolic links that allow the make system to find its Ceylan

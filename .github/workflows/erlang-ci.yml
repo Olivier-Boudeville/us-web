@@ -31,4 +31,4 @@ jobs:
         ln -s "${us_common_base_dir}/priv/for-testing/us.config"
         ln -s "${base_dir}/priv/for-testing/us-web-for-tests.config"
         cd "${base_dir}"
-        make test NODE_NAMING="--sn"
+        make test-ci NODE_NAMING="--sn"

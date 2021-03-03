@@ -28,14 +28,21 @@
 
 -behaviour(supervisor).
 
+
 -export([ start_link/0, start_link/1 ]).
 
 -export([ init/1 ]).
 
 -define( server_registration_name, ?MODULE ).
 
+
+% For the general_web_settings record:
+-include("class_USWebConfigServer.hrl").
+
+
 % Shorthand:
 -type application_run_context() :: otp_utils:application_run_context().
+
 
 
 % Implementation notes:
@@ -112,12 +119,12 @@ init( _Args=[ AppRunContext ] ) ->
 
 	#general_web_settings{
 			http_dispatch_rules=HttpDispatchRules,
-			http_tcp_port=MaybeHttpTCPPort
+			http_tcp_port=MaybeHttpTCPPort,
 			https_dispatch_rules=MaybeHttpsDispatchRules,
 			https_tcp_port=MaybeHttpsTCPPort,
 			certificate_support=CertSupport,
-			https_transport_info=MaybeHttpsTranspOptsk
-			dh_key_path=MaybeBinDHKeyPath
+			https_transport_info=MaybeHttpsTranspOpts,
+			dh_key_path=MaybeBinDHKeyPath,
 			ca_cert_key_path=MaybeBinCaKeyPath } = receive
 
 		{ wooper_result, GenWebSettings } ->

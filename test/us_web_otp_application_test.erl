@@ -87,7 +87,7 @@ test_us_web_application( OrderedAppNames ) ->
 
 	{ USWebCfgRegName, USWebCfgRegScope, USWebSchedRegName, USWebSchedRegScope,
 	  USWebRegMsg } = case class_USWebConfigServer:get_registration_info(
-							 USWebCfgTable ) of
+								USWebCfgTable ) of
 
 		{ ok, Q } ->
 			Q;
@@ -152,6 +152,50 @@ test_us_web_application( OrderedAppNames ) ->
 	?test_info_fmt( "US-Web version: ~p.",
 					[ system_utils:get_application_version( us_web ) ] ),
 
+	TestPort = 8080,
+	TestUrl = "index.html",
+
+	?test_info_fmt( "As a test, attempting to fetch page '~s' from that "
+		"just-launched US-Web instance, supposedly running on localhost, "
+		"at TCP port #~B.", [ TestUrl, TestPort ] ),
+
+	URI = text_utils:format( "http://localhost:~B/~s", [ TestPort, TestUrl ] ),
+
+	ExpectedContentStr = text_utils:binary_to_string( file_utils:read_whole(
+				   "../priv/for-testing/test-static-website-D/index.html" ) ),
+
+	web_utils:start(),
+
+	case web_utils:get( URI, _Headers=[], _HttpOptions=[] ) of
+
+		{ _StatusCode=200, _HeaderMap, Body } ->
+			case Body of
+
+				ExpectedContentStr ->
+					?test_info_fmt( "Read, from the US-Web test instance, "
+					  "the expected content ('~s'), end-to-end test succeeded.",
+					  [ Body ] );
+
+				OtherStr ->
+					trace_bridge:error_fmt( "Read a content from the US-Web "
+						"test instance, yet not the expected one: read '~s' "
+						"instead of '~s'.", [ OtherStr, ExpectedContentStr ] ),
+					throw( { unexpected_web_content, OtherStr } )
+
+			end;
+
+		{ StatusCode, HeaderMap, Body } ->
+			trace_bridge:error_fmt( "Reading URI '~s' from the US-Web test "
+				"instance failed: status code is ~B (~s), headers are ~p "
+				"and body is ~p.",
+				[ URI, StatusCode, web_utils:http_status_class_to_string(
+					web_utils:get_http_status_class( StatusCode ) ),
+				HeaderMap, Body ] ),
+			throw( { web_content_reading_failed, StatusCode, URI } )
+
+	end,
+
+	web_utils:stop(),
 
 	% Of course shall be sent before the stopping of Traces:
 	?test_info( "Successful test (not fully ended yet) of the US-Web OTP "

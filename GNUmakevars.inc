@@ -105,7 +105,7 @@ endif
 
 
 # The uniquely-defined version of this layer, for all uses, including rebar:
-US_WEB_VERSION := 0.0.12
+US_WEB_VERSION := 0.0.13
 
 
 # PROJECT_VERSION should be defined on a per-project basis:
@@ -179,11 +179,11 @@ endif
 # We define the path to the US-Common layer (possibly available as a symbolic
 # link).
 #
-# For the sake of these build-related makefiles, dependencies will be searched
-# (in that order, the one enforced in otp_utils) in a local _checkouts child
-# directory (if checkout directories are used and if the top-level package of
-# interest is the current one), otherwise in sibling directories (i.e. whose
-# build root is at the same level as this one).
+# For the sake of these build-related makefiles, US or Ceylan dependencies will
+# be searched (in that order, the one enforced in otp_utils) in a local
+# _checkouts child directory (if checkout directories are used and if the
+# top-level package of interest is the current one), otherwise in sibling
+# directories (i.e. whose build root is at the same level as this one).
 #
 # This last case happens notably if not using checkout directories, or if using
 # them and if all the packages mentioned here are themselves dependencies (in
@@ -196,11 +196,16 @@ endif
 ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/us_common/.),)
 	US_COMMON_TOP = $(US_WEB_TOP)/_checkouts/us_common
 else
-	# Otherwise a sibling one is searched for:
+	# Second, a sibling one is searched for:
 	ifneq ($(wildcard $(US_WEB_TOP)/../us_common/.),)
 		US_COMMON_TOP = $(US_WEB_TOP)/../us_common
    else
-		FORCE_EVAL := $(error Unable to find the build root of US-Common)
+		# Otherwise most probably in a 'rebar3 compile' context:
+		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/us_common/.),)
+			US_COMMON_TOP = $(US_WEB_TOP)/_build/default/lib/us_common
+		else
+			FORCE_EVAL := $(error Unable to find the build root of US-Common from $(realpath .).)
+		endif
 	endif
 endif
 

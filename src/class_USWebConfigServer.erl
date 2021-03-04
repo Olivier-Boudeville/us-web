@@ -1886,7 +1886,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 	VHostRoute = case ActualKind of
 
-		static ->
+		K when K =:= static orelse K =:= meta ->
 			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
 							LoggerPid, CertSupport, MaybeCertManagerPid );
 

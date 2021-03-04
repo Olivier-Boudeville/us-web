@@ -37,9 +37,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Sunday, February 21, 2021
+:Lastly updated: Thursday, March 4, 2021
 :Status: Work in progress
-:Version: 0.0.18
+:Version: 0.0.19
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -640,6 +640,8 @@ This will generate a suitable website in the ``My-meta-generated`` subdirectory 
 
 Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).
 
+Note that apparently, at least under some circumstances, some versions of Firefox may incorrectly render a Meta web page: despite its HTML source being correct, for some reason the entry page of websites may correspond to another virtual host (whereas other browsers display correctly the same Meta page).
+
 
 
 Icon (favicon) Management
@@ -1083,7 +1085,7 @@ Indeed, in terms of RSS use (for a few domains, each with a few low-traffic webs
 - after 24 days: 76 MB
 - after 55 days: 80-88 MB
 
-A more recent server instance is using, after more than 70 days, 60 MB of RSS memory.
+A more recent server instance is using, after more than 70 days, 60 MB of RSS memory, whereas after 30 days another ones was 108 MB. Anyway quite low.
 
 
 

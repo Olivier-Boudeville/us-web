@@ -1,6 +1,7 @@
 #!/bin/sh
 
 # Starts a US-Web instance, to be run as an OTP release.
+# Note: one may prefer using start-us-web-native-build.sh instead.
 
 # Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
@@ -74,6 +75,11 @@ secure_authbind
 prepare_us_web_launch
 
 
+# Note that a former instance of EPMD may wrongly report that a node with the
+# target name is still running (whereas no Erlang VM is even running). Apart
+# from killing this EPMD instance (jeopardising any other running Erlang
+# application), no solution exist (names cannot be unregistered from EPMD, as we
+# do not launch it with -relaxed_command_check).
 
 echo
 echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: ${erl_epmd_port}) with '${us_web_exec}'..."

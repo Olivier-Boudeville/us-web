@@ -170,7 +170,7 @@ get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 			 || { D, _MaybeCertManagerPid, _VHostCfgTable }
 					<- table:values( DomainCfgTable ) ] ++
 		"<a href=\"#meta_bottom\">[go to bottom]</a>"
-		"</p></div>"
+		"</p></div>~n~n"
 		"<center><h1>Welcome to the US-Web <b>meta</b> website</h1>"
 		"</center>~n~n"
 		"<h2>General Information</h2>~n"

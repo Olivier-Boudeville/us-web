@@ -158,18 +158,15 @@ div.banner a:hover { color: #000000; background: #FFFFFF;  }
 
 % Returns the HTML body for a meta page.
 -spec get_page_body( protocol_type(), tcp_port(), domain_config_table(),
-					 time_utils:timestamp(), meta_web_settings(), boolean() ) ->
-							html_element().
+	 time_utils:timestamp(), meta_web_settings(), boolean() ) -> html_element().
 get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 			   LogAnalysisEnabled ) ->
-
-
 
 	text_utils:format(
 		"<body>"
 		"<div class=\"banner\"><p><em>Domain selection</em>"
 		"<a href=\"#meta_top\">[go to top]</a> "
-		++ [ text_utils:format( "~s~n", [ get_domain_link( D ) ] )
+		++ [ text_utils:format( "- ~s~n", [ get_domain_link( D ) ] )
 			 || { D, _MaybeCertManagerPid, _VHostCfgTable }
 					<- table:values( DomainCfgTable ) ] ++
 		"<a href=\"#meta_bottom\">[go to bottom]</a>"
@@ -378,7 +375,7 @@ get_vhost_description( Scheme, Port,
 
 
 
-% Returns an HTML table suitable for specified vhost entries.,
+% Returns an HTML table suitable for specified vhost entries.
 -spec get_table_for( [ vhost_config_entry() ], protocol_type(), tcp_port(),
 					 maybe_url() ) -> html_element().
 get_table_for( VHostCfgEntries, Scheme, Port, MaybeMetaBaseURL ) ->

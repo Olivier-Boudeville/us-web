@@ -34,13 +34,13 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Monday, February 8, 2021</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Thursday, March 4, 2021</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Work in progress</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.18</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">0.0.19</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Dedication:</th><td class="field-body"><p class="first">Users and maintainers of the <tt class="docutils literal">Universal Webserver</tt>.</p>
@@ -156,7 +156,7 @@
 <ul class="simple">
 <li>the <em>Universal Webserver</em> services themselves (i.e. this <a class="reference external" href="http://us-web.esperide.org/">US-Web</a> layer)</li>
 <li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a> (for a small, fast and modern web framework)</li>
-<li>[optional] <a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang/">LEEC</a> (for the management of Let's Encrypt certificates)</li>
+<li>[optional] <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-LEEC/">LEEC</a> (for the management of Let's Encrypt certificates)</li>
 <li>[optional] <a class="reference external" href="http://www.awstats.org/">Awstats</a> (for the analysis of access log files)</li>
 <li><a class="reference external" href="http://us-common.esperide.org/">US-Common</a> (for US base facilities)</li>
 <li><a class="reference external" href="http://traces.esperide.org">Ceylan-Traces</a> (for advanced runtime traces)</li>
@@ -538,6 +538,7 @@ $ wget http://baz.foobar.org -O -
 </pre>
 <p>This will generate a suitable website in the <tt class="docutils literal"><span class="pre">My-meta-generated</span></tt> subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as <tt class="docutils literal">mymeta.foobar.org</tt> (of course both <tt class="docutils literal">mymeta</tt> and <tt class="docutils literal"><span class="pre">My-meta-generated</span></tt> are examples; these names can be freely chosen).</p>
 <p>Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).</p>
+<p>Note that apparently, at least under some circumstances, some versions of Firefox may incorrectly render a Meta web page: despite its HTML source being correct, for some reason the entry page of websites may correspond to another virtual host (whereas other browsers display correctly the same Meta page).</p>
 </div>
 <div class="section" id="icon-favicon-management">
 <h3><a class="toc-backref" href="#id86">Icon (favicon) Management</a></h3>
@@ -608,7 +609,7 @@ $ wget http://baz.foobar.org -O -
 <p>As mentioned, the single, direct prerequisites of the <a class="reference external" href="https://github.com/Olivier-Boudeville/UniversalWebserver">Universal Webserver</a> are:</p>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a> (version 2.8 or above)</li>
-<li><a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang/">LEEC</a> as an optional, runtime-only dependency</li>
+<li><a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-LEEC/">LEEC</a> as an optional, runtime-only dependency</li>
 <li><a class="reference external" href="http://www.awstats.org/">Awstats</a> as an optional, runtime-only dependency (version 7.8 or above)</li>
 <li><a class="reference external" href="http://us-common.esperide.org/">US-Common</a></li>
 </ul>
@@ -626,7 +627,7 @@ $ wget http://baz.foobar.org -O -
 <div class="section" id="using-cutting-edge-git">
 <h3><a class="toc-backref" href="#id93">Using Cutting-Edge GIT</a></h3>
 <p>This is the installation method that we use and recommend; the Universal Webserver <tt class="docutils literal">master</tt> branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.</p>
-<p>Once Erlang (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-erlang">here</a>), rebar3 (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-rebar3">here</a>) and possibly LEEC (see <a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang#building">here</a>) or Awstats (see <a class="reference external" href="#getting-awstats">here</a>) are available, it should be just a matter of executing our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh">get-us-web-from-sources.sh</a> script for downloading and building all dependencies at once, and run a test server (use its <tt class="docutils literal"><span class="pre">--help</span></tt> option for more information).</p>
+<p>Once Erlang (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-erlang">here</a>), rebar3 (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-rebar3">here</a>) and possibly LEEC (see <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-LEEC#building">here</a>) or Awstats (see <a class="reference external" href="#getting-awstats">here</a>) are available, it should be just a matter of executing our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh">get-us-web-from-sources.sh</a> script for downloading and building all dependencies at once, and run a test server (use its <tt class="docutils literal"><span class="pre">--help</span></tt> option for more information).</p>
 <p>For example:</p>
 <pre class="code bash literal-block">
 $ <span class="nb">cd</span> /tmp
@@ -848,7 +849,7 @@ $ list-processes-by-size.sh
 <li>after 24 days: 76 MB</li>
 <li>after 55 days: 80-88 MB</li>
 </ul>
-<p>A more recent server instance is using, after more than 70 days, 60 MB of RSS memory.</p>
+<p>A more recent server instance is using, after more than 70 days, 60 MB of RSS memory, whereas after 30 days another ones was 108 MB. Anyway quite low.</p>
 </div>
 <div class="section" id="trace-monitoring">
 <h4>Trace Monitoring</h4>
@@ -1023,7 +1024,8 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 </table>
 <p>Let's Encrypt follows the ACME (<em>Automatic Certificate Management Environment</em>) protocol. It relies on an agent running on the server bound to the domain for which a certificate is requested.</p>
 <p>This agent generates first a RSA key pair in order to interact with the Let’s Encrypt certificate authority, so that it can prove through received challenge(s) that it is bound to the claimed domain / virtual host (ex: <tt class="docutils literal">baz.foobar.org</tt>) and has the control to the private key corresponding to the public one that it transmitted to the CA.</p>
-<p>Generally this involves for that agent to receive a &quot;random&quot; piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting file available through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: <tt class="docutils literal"><span class="pre">http://baz.foobar.org/.well-known/acme-challenge/xxx</span></tt>). Refer to <a class="reference external" href="https://letsencrypt.org/how-it-works/">this page</a> for more information.</p>
+<p>Generally this involves for that agent to receive a &quot;random&quot; piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting answer to the challenges available (as tokens) through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: <tt class="docutils literal"><span class="pre">http://baz.foobar.org/.well-known/acme-challenge/xxx</span></tt>).</p>
+<p>Refer to <a class="reference external" href="https://letsencrypt.org/how-it-works/">this page</a> for more information; the overall process is <a class="reference external" href="https://ietf-wg-acme.github.io/acme/draft-ietf-acme-acme.html#rfc.section.4">explained here</a> and in <a class="reference external" href="https://www.rfc-editor.org/rfc/rfc8555.html">this RFC</a>.</p>
 </div>
 <div class="section" id="us-web-mode-of-operation">
 <h3><a class="toc-backref" href="#id110">US-Web Mode of Operation</a></h3>

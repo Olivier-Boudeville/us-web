@@ -7,6 +7,7 @@
 # (we prefer and better support the current, native mode of operation enforced
 # by this script, though)
 
+# (standalone script)
 
 
 # Note: unless specified, relying on the master branch for all clones.
@@ -52,8 +53,7 @@ Creates a full installation where most dependencies are sibling directories of U
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
  - rebar3 (see http://myriad.esperide.org/#getting-rebar3), for dependencies that are not ours
- - [optional] Awstats (see http://www.awstats.org/)
-"
+ - [optional] Awstats (see http://www.awstats.org/)"
 
 github_base="https://github.com/Olivier-Boudeville"
 
@@ -185,10 +185,8 @@ abs_native_install_dir="${base_us_dir}/${native_install_dir}"
 us_web_dir="${abs_native_install_dir}/us_web"
 
 
-echo
 echo "   Installing US-Web in '${abs_native_install_dir}'..."
 echo
-
 
 
 # First US-Web itself, so that any _checkouts directory can be created
@@ -278,7 +276,7 @@ if [ $do_clone -eq 0 ]; then
 		echo " - setting Cowboy to tag '${cowboy_tag}'"
 
 		cd cowboy
-		${git} checkout tags/${cowboy_tag}
+		${git} -c advice.detachedHead=false checkout tags/${cowboy_tag}
 		if [ ! $? -eq 0 ]; then
 
 			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
@@ -610,7 +608,6 @@ if [ ${do_build} -eq 0 ]; then
 
 	if [ $support_nitrogen -eq 0 ]; then
 
-
 		echo " - building nitrogen_core"
 
 		cd nitrogen_core
@@ -781,7 +778,7 @@ if [ ${do_build} -eq 0 ]; then
 
 		cd "${us_cert_dir}"
 
-		ln -s ${us_web_dir}/conf/GNUmakefile-for-certificates GNUmakefile
+		ln -sf ${us_web_dir}/conf/GNUmakefile-for-certificates GNUmakefile
 
 		cd "${previous_dir}"
 

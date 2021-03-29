@@ -114,6 +114,19 @@ ifndef PROJECT_VERSION
 endif
 
 
+# Variable name intentionally not including the current layer, for more generic
+# rules:
+
+ifndef VERSION_FOR_REBAR
+	VERSION_FOR_REBAR := $(PROJECT_VERSION)
+endif
+
+
+ifndef PACKAGE_NAME
+	PACKAGE_NAME := $(PROJECT_NAME)
+endif
+
+
 ifndef PACKAGE_TOP
 	PACKAGE_TOP := $(US_WEB_TOP)
 endif

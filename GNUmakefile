@@ -1,4 +1,4 @@
-US_WEB_TOP = .
+ US_WEB_TOP = .
 
 
 .PHONY: help help-intro help-us-web register-version-in-header register-us-web \
@@ -8,7 +8,7 @@ US_WEB_TOP = .
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
 		sync-full-us-web                                                       \
-		start debug debug-as-release start-as-release status                   \
+		start debug start-as-release debug-as-release status                   \
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability                            \
 		inspect monitor-development monitor-production                         \
@@ -82,8 +82,8 @@ all:
 
 
 all-rebar3:
-	@$(REBAR3_EXEC) upgrade
-	@$(REBAR3_EXEC) compile
+	@$(MYRIAD_REBAR_EXEC) upgrade
+	@$(MYRIAD_REBAR_EXEC) compile
 
 
 # Default target:
@@ -133,7 +133,7 @@ stats:
 
 compile: rebar3-create-app-file
 	@echo "  Compiling us_web from $$(pwd)"
-	@$(REBAR3_EXEC) compile
+	@$(MYRIAD_REBAR_EXEC) compile
 
 
 # Ensures a relevant development release is available.
@@ -155,13 +155,13 @@ ensure-prod-release:
 release: release-prod
 
 
-# Probably that '@$(REBAR3_EXEC) tar' exceeds what is needed:
+# Probably that '@$(MYRIAD_REBAR_EXEC) tar' exceeds what is needed:
 #
 # ('compile' is not needed either: same happens because of 'release')
 #
 release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #update-release
 	@echo "  Generating OTP us_web release in development mode, using $(shell rebar3 -v)"
-	@$(REBAR3_EXEC) release
+	@$(MYRIAD_REBAR_EXEC) release
 	@cd $(US_WEB_DEFAULT_REL_DIR)/releases && /bin/ln -sf $(US_WEB_VERSION) latest-release
 
 
@@ -170,7 +170,7 @@ release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #
 #
 release-prod: real-clean rebar3-create-app-file set-rebar-conf
 	@echo "  Generating OTP us_web release $(US_WEB_VERSION) from scratch in production mode, using $(shell rebar3 -v)"
-	@$(REBAR3_EXEC) as prod tar
+	@$(MYRIAD_REBAR_EXEC) as prod tar
 
 
 # Rebuilding the "normal" version thereof (not the testing or Hex one):
@@ -187,7 +187,7 @@ rebar.config: conf/rebar.config.template
 #
 release-prod-light:
 	@echo "  Generating OTP us_web release $(US_WEB_VERSION) in production mode"
-	@$(REBAR3_EXEC) as prod tar
+	@$(MYRIAD_REBAR_EXEC) as prod tar
 
 
 export-release: release-prod-light just-export-release
@@ -205,7 +205,7 @@ just-export-release:
 # relevant dependencies)
 #
 upgrade-us-common:
-	@$(REBAR3_EXEC) upgrade us_common
+	@$(MYRIAD_REBAR_EXEC) upgrade us_common
 
 
 # Synchronises all {Ceylan,US}-related sources of US-Web to the specified server
@@ -246,21 +246,21 @@ start: kill clean-logs compile
 	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web start &
 	@sleep 1 ; $(MAKE) -s log
 
-
 debug:
 	@echo " Running us_web for debug natively (EPMD port: $(EPMD_PORT))"
 	@cd src && $(MAKE) us_web_exec CMD_LINE_OPT="--batch"
 
-
-debug-as-release: ensure-dev-release
-	@echo " Running us_web for debug as a release (EPMD port: $(EPMD_PORT))"
-	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) -s log
 
 
 # Not tested yet, as we use releases in production mode, through systemd.
 start-as-release:
 	@echo "Starting a us_web release (EPMD port: $(EPMD_PORT)):"
 	@$(US_WEB_TOP)/priv/bin/start-us-web.sh
+
+
+debug-as-release: ensure-dev-release
+	@echo " Running us_web for debug as a release (EPMD port: $(EPMD_PORT))"
+	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) -s log
 
 
 
@@ -368,7 +368,7 @@ shell: test-interactive
 # in following shell:
 #
 test-interactive: compile
-	@$(REBAR3_EXEC) shell
+	@$(MYRIAD_REBAR_EXEC) shell
 
 
 # Tests in the context of continuous integration:
@@ -389,7 +389,7 @@ test-ci:
 
 clean-local: clean-log
 	@echo "  Cleaning from $$(pwd)"
-	@$(REBAR3_EXEC) clean
+	@$(MYRIAD_REBAR_EXEC) clean
 
 
 # Web-related logs already removed by the recursive 'clean' target:
@@ -419,7 +419,7 @@ info-local:
 	@echo "US_DEFAULT_REL_EXEC = $(US_DEFAULT_REL_EXEC)"
 	@echo "VM_LOG_FILES = $(VM_LOG_FILES)"
 	@echo "RELEASE_PATH = $(RELEASE_PATH)"
-	@echo "REBAR3_EXEC = $(REBAR3_EXEC)"
+	@echo "MYRIAD_REBAR_EXEC = $(MYRIAD_REBAR_EXEC)"
 	@echo "REBAR_INCS = $(REBAR_INCS)"
 
 

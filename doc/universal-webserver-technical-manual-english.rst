@@ -32,7 +32,7 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Friday, March 12, 2021
+:Lastly updated: Monday, March 29, 2021
 :Status: Work in progress
 :Version: 0.0.19
 :Dedication: Users and maintainers of the ``Universal Webserver``.
@@ -843,7 +843,7 @@ Most common sources of failures are:
 - there is **already a program listening at the target TCP port** (typically port 80) designated for US-Web; one may check for example with ``lsof -i:80``, otherwise with ``netstat -ltpn | grep ':80'``; of course use the same for TCP port ``443`` if having enabled ``https`` on its standard port
 - check that no firewall is in the way (ex: thanks to ``iptables -nL | gr ':80'``)
 - there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf | grep us_web``
-- the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd``
+- the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd`` (unfortunately no less brutal solution is known in this case that may easily happen)
 - check your ``authbind`` local configuration (refer to `this section <#authbind>`_)
 
 If the problem remains, time to perform some investigation, refer to the `Local Monitoring`_ section.

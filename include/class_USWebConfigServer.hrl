@@ -42,7 +42,7 @@
 
 		   % Including for SNI information:
 		   https_transport_info ::
-			   maybe( class_USWebConfigServer:https_transport_info() ),
+				maybe( class_USWebConfigServer:https_transport_info() ),
 
 		   % The absolute path to the Diffie-Helman key file (if any) to ensure
 		   % a secure key exchange with Forward Secrecy:

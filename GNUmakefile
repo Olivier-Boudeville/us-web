@@ -1,4 +1,4 @@
- US_WEB_TOP = .
+US_WEB_TOP = .
 
 
 .PHONY: help help-intro help-us-web register-version-in-header register-us-web \

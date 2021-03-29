@@ -521,27 +521,27 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	class_TraceEmitter:register_bridge( TraceState ),
 
 	?send_info_fmt( TraceState, "Creating a US-Web configuration server, "
-		"running ~s, in ~s security mode.",
+		"running ~ts, in ~ts security mode.",
 		[ otp_utils:application_run_context_to_string( AppRunContext ),
 		  cond_utils:switch_set_to( us_web_security,
-			[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ]),
+				[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ]),
 
-	?send_debug_fmt( TraceState, "Running Erlang ~s, whose ~s",
+	?send_debug_fmt( TraceState, "Running Erlang ~ts, whose ~ts",
 		[ system_utils:get_interpreter_version(),
 		  code_utils:get_code_path_as_string() ] ),
 
-	?send_debug_fmt( TraceState, "System description: ~s",
+	?send_debug_fmt( TraceState, "System description: ~ts",
 		[ system_utils:get_system_description() ] ),
 
 	% Should a module be a problem:
 	%Module = cow_http2,
-	%?send_debug_fmt( TraceState, "For module '~s': ~p",
+	%?send_debug_fmt( TraceState, "For module '~ts': ~p",
 	%	[ Module, code_utils:is_beam_in_path( Module ) ] ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
 	%
-	%io:format( "code: ~s", [ code_utils:get_code_path_as_string() ] ),
+	%io:format( "code: ~ts", [ code_utils:get_code_path_as_string() ] ),
 	%timer:sleep( 1000 ),
 
 	% Same logic as the overall US configuration server, notably to obtain the
@@ -551,7 +551,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 
 		{ undefined, CfgMsg } ->
 			?send_error_fmt( TraceState, "Unable to determine the US "
-							 "configuration directory: ~s", [ CfgMsg ] ),
+							 "configuration directory: ~ts", [ CfgMsg ] ),
 			throw( us_configuration_directory_not_found );
 
 		{ FoundCfgDir, CfgMsg } ->
@@ -586,8 +586,8 @@ construct( State, SupervisorPid, AppRunContext ) ->
 			file_utils:join( getAttribute( CfgState, log_directory ),
 							 "us_web.traces" ) ),
 
-	?send_debug_fmt( CfgState, "Requesting the renaming of trace file to '~s'.",
-					 [ NewBinTraceFilePath ] ),
+	?send_debug_fmt( CfgState, "Requesting the renaming of trace file "
+					 "to '~ts'.", [ NewBinTraceFilePath ] ),
 
 	getAttribute( CfgState, trace_aggregator_pid ) !
 		{ renameTraceFile, NewBinTraceFilePath },
@@ -693,7 +693,7 @@ renewCertificates( State ) ->
 	MaxDurationInMs = 90*1000,
 
 	?info_fmt( "Renewing all certificates, through their ~B managers (~w); "
-		"setting a (large) ~s for each of them.", [ CertManagerCount,
+		"setting a (large) ~ts for each of them.", [ CertManagerCount,
 		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
 
 	% We should not trigger all managers in parallel for a certificate renewal,
@@ -715,8 +715,7 @@ renewCertificates( State ) ->
 		FailedCertPids ->
 			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
 				"obtained by their respective managers: ~w.",
-				[ length( FailedCertPids ), CertManagerCount,
-				  FailedCertPids ] )
+				[ length( FailedCertPids ), CertManagerCount, FailedCertPids ] )
 
 	end,
 
@@ -730,8 +729,8 @@ renewCertificates( State ) ->
 							const_oneway_return().
 renewCertificate( State, DomainId, VHostId ) ->
 
-	?info_fmt( "Renewal of TLS certification for virtual host '~s' of "
-			   "domain '~s' requested.", [ VHostId, DomainId ] ),
+	?info_fmt( "Renewal of TLS certification for virtual host '~ts' of "
+			   "domain '~ts' requested.", [ VHostId, DomainId ] ),
 
 	?error( "Not implemented yet." ),
 
@@ -768,8 +767,7 @@ generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
 				[ table:values( VhCfgTable )
 					|| { _DomId, _Cert, VhCfgTable } <- AllDomainInfos ] ),
 
-			case [ E#vhost_config_entry.logger_pid
-							|| E <-AllVhCfgEntries ] of
+			case [ E#vhost_config_entry.logger_pid || E <-AllVhCfgEntries ] of
 
 				[] ->
 					?warning_fmt( "All access log analysis reports requested "
@@ -809,7 +807,7 @@ generateLogAnalysisReports( State, BinDomainName,
 
 		_ ->
 			?debug_fmt( "Generation of access log analysis reports requested "
-				"for all virtual hosts of domain '~s'.", [ BinDomainName ] ),
+				"for all virtual hosts of domain '~ts'.", [ BinDomainName ] ),
 
 			case table:lookup_entry( BinDomainName,
 									 ?getAttr(domain_config_table) ) of
@@ -822,20 +820,20 @@ generateLogAnalysisReports( State, BinDomainName,
 						[] ->
 							?warning_fmt( "Access log analysis reports "
 								"requested for all virtual hosts of domain "
-								"'~s', yet none was found.",
+								"'~ts', yet none was found.",
 								[ BinDomainName ] ),
 								% Not a failure per se:
 								report_generation_success;
 
 						VhCfgEntries ->
 							AllLoggers = [ VCE#vhost_config_entry.logger_pid
-										   || VCE <- VhCfgEntries ],
+											|| VCE <- VhCfgEntries ],
 							activate_loggers( AllLoggers )
 
 					end;
 
 				key_not_found ->
-					?error_fmt( "No entry found for domain '~s', no report "
+					?error_fmt( "No entry found for domain '~ts', no report "
 								"generated.", [ BinDomainName ] ),
 
 					Domain = text_utils:binary_to_string( BinDomainName ),
@@ -859,7 +857,7 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 
 		_ ->
 			?debug_fmt( "Generation of access log analysis reports requested "
-				"for virtual host '~s' of domain '~s'.",
+				"for virtual host '~ts' of domain '~ts'.",
 				[ BinHostName, BinDomainName ] ),
 
 			case table:lookup_entry( BinDomainName,
@@ -876,20 +874,20 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 								[ VCE#vhost_config_entry.logger_pid ] );
 
 						key_not_found ->
-							?error_fmt( "No entry found for virtual host '~s' "
-								"in domain '~s', no report generated.",
+							?error_fmt( "No entry found for virtual host '~ts' "
+								"in domain '~ts', no report generated.",
 								[ BinHostName, BinDomainName ] ),
 							Host = text_utils:binary_to_string( BinHostName ),
 							Domain = text_utils:binary_to_string(
-									   BinDomainName ),
+										BinDomainName ),
 							{ report_generation_failed, {
 								{ host_not_found, Host }, { domain, Domain } } }
 
 					end;
 
 				key_not_found ->
-					?error_fmt( "No entry found for domain '~s' (requested "
-						"for virtual host '~s'), no report generated.",
+					?error_fmt( "No entry found for domain '~ts' (requested "
+						"for virtual host '~ts'), no report generated.",
 						[ BinDomainName, BinHostName ] ),
 
 					Host = text_utils:binary_to_string( BinHostName ),
@@ -985,21 +983,22 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 			ok;
 
 		false ->
-			?error_fmt( "The overall US configuration file ('~s') "
+			?error_fmt( "The overall US configuration file ('~ts') "
 						"could not be found.", [ USCfgFilePath ] ),
 			% Must have disappeared then:
 			throw( { us_config_file_not_found, USCfgFilePath } )
 
 	end,
 
-	?info_fmt( "Reading the Universal Server configuration from '~s'.",
+	?info_fmt( "Reading the Universal Server configuration from '~ts'.",
 			   [ USCfgFilePath ] ),
 
 	% Ensures as well that all top-level terms are only pairs:
 	ConfigTable = table:new_from_unique_entries(
 					file_utils:read_terms( USCfgFilePath ) ),
 
-	?info_fmt( "Read US configuration ~s", [ table:to_string( ConfigTable ) ] ),
+	?info_fmt( "Read US configuration ~ts",
+			   [ table:to_string( ConfigTable ) ] ),
 
 	% We check whether a proper US configuration server already exists (and then
 	% we use it) or if it shall be created; for that we just extract its
@@ -1011,13 +1010,13 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 		key_not_found ->
 			?info_fmt( "No user-configured registration name to locate the "
-			   "overall US configuration server, using default name '~s'.",
+			   "overall US configuration server, using default name '~ts'.",
 			   [ USCfgDefRegName ] ),
 			USCfgDefRegName;
 
 		{ value, UserRegName } when is_atom( UserRegName ) ->
 			?info_fmt( "To locate the overall US configuration server, will "
-				"rely on the user-configured registration name '~s'.",
+				"rely on the user-configured registration name '~ts'.",
 				[ UserRegName ] ),
 			UserRegName;
 
@@ -1044,8 +1043,8 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 			case naming_utils:is_registered( USCfgRegName, USCfgRegScope ) of
 
 				not_registered ->
-					?info_fmt( "There is no ~s registration of '~s'; creating "
-						"thus a new overall US configuration server.",
+					?info_fmt( "There is no ~ts registration of '~ts'; "
+						"creating thus a new overall US configuration server.",
 						[ USCfgRegScope, USCfgRegName ] ),
 					% Not linked to have an uniform semantics:
 					class_USConfigServer:new();
@@ -1053,7 +1052,7 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 				DelayedCfgPid ->
 					?info_fmt( "Found (after some delay) an already running "
 						"overall US configuration server, using it: "
-						"~s registration look-up for '~s' returned ~w.",
+						"~ts registration look-up for '~ts' returned ~w.",
 						[ USCfgRegScope, USCfgRegName, DelayedCfgPid ] ),
 					DelayedCfgPid
 
@@ -1061,8 +1060,8 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 		CfgPid ->
 			?info_fmt( "Found an already running overall US configuration "
-			  "server, using it: ~s registration look-up for '~s' returned ~w.",
-			  [ USCfgRegScope, USCfgRegName, CfgPid ] ),
+				"server, using it: ~ts registration look-up for '~ts' "
+				"returned ~w.", [ USCfgRegScope, USCfgRegName, CfgPid ] ),
 			CfgPid
 
 	end,
@@ -1089,11 +1088,11 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 				_ ->
 					?error_fmt( "Mismatching US configuration directories: had "
-					  "'~s', yet received from US configuration server: '~s'.",
-					  [ BinCfgDir, RecvBinCfgDir ] ),
+						"'~ts', yet received from US configuration server: "
+						"'~ts'.", [ BinCfgDir, RecvBinCfgDir ] ),
 
 					throw( { us_config_dir_mismatch,
-							 {  BinCfgDir, RecvBinCfgDir } } )
+								{ BinCfgDir, RecvBinCfgDir } } )
 
 			end,
 
@@ -1123,7 +1122,7 @@ load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
 
 	?info_fmt( "No configuration filename known of the overall US configuration"
 		" server (i.e. none defined in its own configuration file), "
-		"hence defaulting to '~s'.", [ DefaultBinWebCfgFilename ] ),
+		"hence defaulting to '~ts'.", [ DefaultBinWebCfgFilename ] ),
 
 	load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, State );
 
@@ -1136,13 +1135,13 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 	case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
 
 		true ->
-			?info_fmt( "Reading web configuration file, found as '~s'.",
+			?info_fmt( "Reading web configuration file, found as '~ts'.",
 					   [ WebCfgFilePath ] );
 
 		false ->
 			% Possibly user/group permission issue:
 			?error_fmt( "No web configuration file found or accessible "
-				"(ex: symbolic link to an inaccessible file); tried '~s'.",
+				"(ex: symbolic link to an inaccessible file); tried '~ts'.",
 				[ WebCfgFilePath ] ),
 			throw( { us_web_config_file_not_found,
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
@@ -1153,7 +1152,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 	WebCfgTable = table:new_from_unique_entries(
 					file_utils:read_terms( WebCfgFilePath ) ),
 
-	?debug_fmt( "Read web configuration ~s",
+	?debug_fmt( "Read web configuration ~ts",
 				[ table:to_string( WebCfgTable ) ] ),
 
 	RegState = manage_registrations( WebCfgTable, State ),
@@ -1186,9 +1185,11 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 			PostMetaState;
 
 		UnexpectedKeys ->
-			?error_fmt( "Unknown key(s) in '~s': ~s~nLicit keys: ~s",
+
+			?error_fmt( "Unknown key(s) in '~ts': ~ts~nLicit keys: ~ts",
 				[ WebCfgFilePath, text_utils:terms_to_string( UnexpectedKeys ),
 				  text_utils:terms_to_string( LicitKeys ) ] ),
+
 			throw( { invalid_configuration_keys, UnexpectedKeys,
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
 
@@ -1298,7 +1299,7 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 %
 -spec prepare_web_analysis( maybe( log_analysis_settings() ), list(),
 							maybe( bin_directory_path() ), wooper:state() ) ->
-								  maybe( web_analysis_info() ).
+									maybe( web_analysis_info() ).
 prepare_web_analysis( _MaybeLogAnalysisSettings=undefined, _UserRoutes,
 					  _MaybeBinDefaultWebRoot, _State ) ->
 	undefined;
@@ -1344,7 +1345,7 @@ prepare_web_analysis(
 
 		false ->
 			?debug_fmt( "Creating the directory to store the state of "
-				"the log analysis tool, '~s'.", [ LogAnalysisStateDir ] ),
+				"the log analysis tool, '~ts'.", [ LogAnalysisStateDir ] ),
 			file_utils:create_directory( LogAnalysisStateDir )
 
 	end,
@@ -1419,8 +1420,8 @@ prepare_web_analysis(
 	catch
 
 		_AnyClass:Exception ->
-			?error_fmt( "The attempt to create the '~s' directory (and "
-				"possibly its parents) as user '~s' failed: ~p.",
+			?error_fmt( "The attempt to create the '~ts' directory (and "
+				"possibly its parents) as user '~ts' failed: ~p.",
 				[ GenAwCfgDir, system_utils:get_user_name_safe(), Exception ] )
 
 	end,
@@ -1448,8 +1449,8 @@ prepare_web_analysis(
 %
 determine_meta_web_root( _UserRoutes=[], _MaybeBinDefaultWebRoot, State ) ->
 
-	?error( "Unable to determine the meta web root to use. Was a "
-			"'meta' virtual host defined through the routes in "
+	?error( "Unable to determine the meta web root to use. Was a 'meta' "
+			"virtual host defined through the routes in "
 			"the US-Web configuration file?" ),
 
 	throw( no_meta_web_root_found );
@@ -1621,8 +1622,8 @@ build_vhost_table( DomainId,
 		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
 
-	?debug_fmt( "Managing static configuration for virtual host '~s' in "
-				"domain '~s'.", [ VHostId, DomainId ] ),
+	?debug_fmt( "Managing static configuration for virtual host '~ts' in "
+				"domain '~ts'.", [ VHostId, DomainId ] ),
 
 	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
 									   VHostId, DomainId, State ),
@@ -1673,7 +1674,7 @@ build_vhost_table( DomainId,
 	BinMetaContentRoot = case MaybeWebAnalysisInfo of
 
 		undefined ->
-			?error_fmt( "A meta website (vhost '~s' for domain '~s') was "
+			?error_fmt( "A meta website (vhost '~ts' for domain '~ts') was "
 				"requested, yet no web analysis information is available. "
 				"No 'log_analysis' entry defined in US-Web configuration file?",
 				[ VHostId, DomainId ] ),
@@ -1709,8 +1710,8 @@ build_vhost_table( DomainId,
 		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
 		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
 
-	?debug_fmt( "Managing Nitrogen configuration for virtual host '~s' in "
-				"domain '~s'.", [ VHostId, DomainId ] ),
+	?debug_fmt( "Managing Nitrogen configuration for virtual host '~ts' in "
+				"domain '~ts'.", [ VHostId, DomainId ] ),
 
 	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
 									   VHostId, DomainId, State ),
@@ -1836,7 +1837,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 			% "foobar.org" for the domain, and a relevant regex for the alias to
 			% catch all:
 			%
-			RegexStr = text_utils:format( " REGEX[~s$]", [
+			RegexStr = text_utils:format( " REGEX[~ts$]", [
 				% So that "baz.foobar.org" becomes "baz\.foobar\.org":
 				text_utils:escape_with( CfgDomainStr, _CharsToEscape=[ $. ],
 										_EscapingChar=$\\ ) ] ),
@@ -1869,7 +1870,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 	file_utils:write_whole( TargetConfFilePath, VHostContent ),
 
-	%trace_utils:debug_fmt( "Wrote '~s', creating corresponding logger.",
+	%trace_utils:debug_fmt( "Wrote '~ts', creating corresponding logger.",
 	%					   [ TargetConfFilePath ] ),
 
 	% As we must create that logger *after* the configuration file it relies on:
@@ -1916,8 +1917,8 @@ get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 			case MaybeBinDefaultWebRoot of
 
 				undefined ->
-					?error_fmt( "For the ~s, a relative content root was "
-						"specified ('~s') whereas no default web root was "
+					?error_fmt( "For the ~ts, a relative content root was "
+						"specified ('~ts') whereas no default web root was "
 						"defined.",
 						[ describe_host( VHostId, DomainId ), ContentRoot ] ),
 					throw( { relative_to_undefined_web_root, ContentRoot,
@@ -1939,7 +1940,7 @@ get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 
 		false ->
 			HostDesc = describe_host( VHostId, DomainId ),
-			?error_fmt( "For the ~s, the specified content root ('~s') "
+			?error_fmt( "For the ~ts, the specified content root ('~ts') "
 						"does not exist.", [ HostDesc, NormContentRoot ] ),
 			throw( { non_existing_content_root, NormContentRoot,
 					 { DomainId, VHostId } } )
@@ -1967,8 +1968,8 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 			case MaybeBinDefaultWebRoot of
 
 				undefined ->
-					?error_fmt( "For the meta ~s, a relative content root was "
-						"specified ('~s') whereas no default web root was "
+					?error_fmt( "For the meta ~ts, a relative content root was "
+						"specified ('~ts') whereas no default web root was "
 						"defined.",
 						[ describe_host( VHostId, DomainId ), ContentRoot ] ),
 					throw( { meta_relative_to_undefined_web_root, ContentRoot,
@@ -1990,8 +1991,9 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 
 		false ->
 			HostDesc = describe_host( VHostId, DomainId ),
-			?warning_fmt( "For the ~s, the specified meta content root ('~s') "
-				"does not exist, creating it.", [ HostDesc, NormContentRoot ] ),
+			?warning_fmt( "For the ~ts, the specified meta content root "
+						  "('~ts') does not exist, creating it.",
+						  [ HostDesc, NormContentRoot ] ),
 			file_utils:create_directory( NormContentRoot )
 
 	end,
@@ -2009,11 +2011,11 @@ describe_host( _VHostId=without_vhost, DomainId ) ->
 			"the domain catch-all";
 
 		BinDomainName ->
-			text_utils:format( "domain '~s'", [ BinDomainName ] )
+			text_utils:format( "domain '~ts'", [ BinDomainName ] )
 
 	end,
 
-	text_utils:format( "~s itself", [ DomainString ] );
+	text_utils:format( "~ts itself", [ DomainString ] );
 
 describe_host( _VHostId=default_vhost_catch_all, DomainId ) ->
 
@@ -2023,19 +2025,19 @@ describe_host( _VHostId=default_vhost_catch_all, DomainId ) ->
 			"the domain catch-all";
 
 		BinDomainName ->
-			text_utils:format( "domain '~s'", [ BinDomainName ] )
+			text_utils:format( "domain '~ts'", [ BinDomainName ] )
 
 	end,
 
-	text_utils:format( "catch-all for all virtual hosts under ~s",
+	text_utils:format( "catch-all for all virtual hosts under ~ts",
 					   [ DomainString ] );
 
 describe_host( VHostId, _DomainId=default_domain_catch_all ) ->
-	text_utils:format( "virtual host '~s' for the domain catch-all",
+	text_utils:format( "virtual host '~ts' for the domain catch-all",
 					   [ VHostId ] );
 
 describe_host( VHostId, BinDomainName ) ->
-	text_utils:format( "virtual host '~s.~s'", [ VHostId, BinDomainName ] ).
+	text_utils:format( "virtual host '~ts.~ts'", [ VHostId, BinDomainName ] ).
 
 
 
@@ -2107,7 +2109,7 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 					  logger_pid => LoggerPid },
 
 	BinIndex = text_utils:string_to_binary(
-				text_utils:format( "~s/index.html", [ BinContentRoot ] ) ),
+				text_utils:format( "~ts/index.html", [ BinContentRoot ] ) ),
 
 	% Allows to expand a requested 'http://foobar.org' into
 	% 'http://foobar.org/index.html':
@@ -2182,19 +2184,19 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 	StaticDirs = [ "js", "css", "images", "nitrogen" ],
 
-	StaticDirDispatches = [ { text_utils:format( "/~s/[...]", [ D ] ),
+	StaticDirDispatches = [ { text_utils:format( "/~ts/[...]", [ D ] ),
 		HandlerModule, InitialState#{
 				type => directory,
-				path => text_utils:format( "./site/static/~s/", [ D ] ) } }
+				path => text_utils:format( "./site/static/~ts/", [ D ] ) } }
 							|| D <- StaticDirs ],
 
 
 	StaticFiles = [ "favicon.ico" ],
 
-	StaticFileDispatches = [ { text_utils:format( "/~s", [ F ] ),
+	StaticFileDispatches = [ { text_utils:format( "/~ts", [ F ] ),
 		HandlerModule, InitialState#{
 				type => file,
-				path => text_utils:format( "./site/static/~s", [ F ] ) } }
+				path => text_utils:format( "./site/static/~ts", [ F ] ) } }
 							|| F <- StaticFiles ],
 
 	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
@@ -2228,7 +2230,7 @@ get_host_match_for( _DomainId=default_domain_catch_all,
 % Ex: if BinVHostName="baz", "baz.foobar.org" is matching (i.e. "baz.*.*"):
 get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=BinVHostName ) when is_binary( BinVHostName )->
-	text_utils:format( "~s.:_.:_", [ BinVHostName ] );
+	text_utils:format( "~ts.:_.:_", [ BinVHostName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=without_vhost )
 							when is_binary( BinDomainName ) ->
@@ -2236,17 +2238,17 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=without_vhost )
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
 							when is_binary( BinDomainName ) ->
-	% text_utils:format( ":_.~s", [ BinDomainName ] );
+	% text_utils:format( ":_.~ts", [ BinDomainName ] );
 	%
 	% A little better (more general) than above (which, if
 	% BinDomainName="foobar.org", matches only "*.foobar.org"), as below is
 	% matching any number of subdomains (ex: "*.*.*.foobar.org"):
 	%
-	text_utils:format( "[...].~s", [ BinDomainName ] );
+	text_utils:format( "[...].~ts", [ BinDomainName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
 	  when is_binary( BinDomainName ) andalso is_binary( BinVHostName ) ->
-	text_utils:format( "~s.~s", [ BinVHostName, BinDomainName ] ).
+	text_utils:format( "~ts.~ts", [ BinVHostName, BinDomainName ] ).
 
 
 
@@ -2359,13 +2361,17 @@ check_kind( _WebKind=nitrogen, _VHost, _DomainId, _State ) ->
 	nitrogen;
 
 check_kind( WebKind, VHost, DomainId, State ) when is_atom( WebKind ) ->
-	?error_fmt( "Unknown web kind '~s' specified for virtual host '~s' for "
-				"domain '~s'.", [ WebKind, VHost, DomainId ] ),
+
+	?error_fmt( "Unknown web kind '~ts' specified for virtual host '~ts' for "
+				"domain '~ts'.", [ WebKind, VHost, DomainId ] ),
+
 	throw( { unknown_web_kind, WebKind, { VHost, DomainId } } );
 
 check_kind( WebKind, VHost, DomainId, State ) ->
-	?error_fmt( "Invalid web kind '~p' specified for virtual host '~s' for "
-				"domain '~s'.", [ WebKind, VHost, DomainId ] ),
+
+	?error_fmt( "Invalid web kind '~p' specified for virtual host '~ts' for "
+				"domain '~ts'.", [ WebKind, VHost, DomainId ] ),
+
 	throw( { invalid_web_kind_term, WebKind, { VHost, DomainId } } ).
 
 
@@ -2397,9 +2403,9 @@ manage_registrations( ConfigTable, State ) ->
 	SchedPid = class_USScheduler:new_link( "US-Web Scheduler", SchedRegName,
 										   SchedRegScope ),
 
-	?info_fmt( "This US-Web configuration server was registered as '~s' "
-		"(scope: ~s), and will be using scheduler ~w (registered as '~s', "
-		"(scope: ~s).",
+	?info_fmt( "This US-Web configuration server was registered as '~ts' "
+		"(scope: ~ts), and will be using scheduler ~w (registered as '~ts', "
+		"(scope: ~ts).",
 		[ CfgRegName, CfgRegScope, SchedPid, SchedRegName, SchedRegScope ] ),
 
 	setAttributes( State, [
@@ -2426,8 +2432,8 @@ manage_os_user( ConfigTable, State ) ->
 		key_not_found ->
 			ActualUsername = system_utils:get_user_name(),
 			?info_fmt( "No user-configured US-Web operating-system username "
-					   "set for this server; runtime-detected: '~s'.",
-					   [ ActualUsername ] ),
+				"set for this server; runtime-detected: '~ts'.",
+				[ ActualUsername ] ),
 			ActualUsername;
 
 		{ value, Username } when is_list( Username ) ->
@@ -2435,14 +2441,14 @@ manage_os_user( ConfigTable, State ) ->
 
 				Username ->
 					?info_fmt( "Using user-configured US-Web operating-system "
-						"username '~s' for this server, which matches "
+						"username '~ts' for this server, which matches "
 						"the current runtime user.", [ Username ] ),
 					Username;
 
 				OtherUsername ->
 					?error_fmt( "The user-configured US-Web operating-system "
-						"username '~s' for this server does not match "
-						"the current runtime user, '~s'.",
+						"username '~ts' for this server does not match "
+						"the current runtime user, '~ts'.",
 						[ Username, OtherUsername ] ),
 					throw( { inconsistent_os_us_web_user, OtherUsername,
 							 Username, ?us_web_username_key } )
@@ -2460,7 +2466,7 @@ manage_os_user( ConfigTable, State ) ->
 % directories.
 %
 -spec manage_app_base_directories( us_web_config_table(), wooper:state() ) ->
-									   wooper:state().
+										wooper:state().
 manage_app_base_directories( ConfigTable, State ) ->
 
 	% As opposed to, say, start/stop script, the Erlang code does not care so
@@ -2472,14 +2478,14 @@ manage_app_base_directories( ConfigTable, State ) ->
 	AppRunContext = ?getAttr(app_run_context),
 
 	MaybeConfBaseDir = case table:lookup_entry( ?us_web_app_base_dir_key,
-											   ConfigTable ) of
+												ConfigTable ) of
 
 		key_not_found ->
 			undefined;
 
 		{ value, D } when is_list( D ) ->
 			?info_fmt( "User-configured US-Web application base directory "
-					   "is '~s'.", [ D ] ),
+					   "is '~ts'.", [ D ] ),
 			D;
 
 		{ value, InvalidDir }  ->
@@ -2494,7 +2500,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 		undefined ->
 			case system_utils:get_environment_variable(
-				   ?us_web_app_env_variable ) of
+					?us_web_app_env_variable ) of
 
 				false ->
 					undefined;
@@ -2508,7 +2514,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 				EnvDir ->
 					?info_fmt( "No user-configured US-Web application base "
 						"directory set in configuration file, using the value "
-						"of the '~s' environment variable: '~s'.",
+						"of the '~ts' environment variable: '~ts'.",
 						[ ?us_web_app_env_variable, EnvDir ] ),
 					EnvDir
 
@@ -2549,12 +2555,12 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 						"us_web" ++ _ ->
 							?info_fmt( "US-Web (release) application base "
-							  "directory set to '~s'.", [ BaseDir ] ),
+							  "directory set to '~ts'.", [ BaseDir ] ),
 							BinBaseDir;
 
 						_Other ->
 							%?warning_fmt( "The US-Web application base "
-							%  "directory '~s' does not seem legit (it "
+							%  "directory '~ts' does not seem legit (it "
 							%  "should end with 'us_web'), thus considering "
 							%   "knowing none.", [ BaseDir ] ),
 							%undefined
@@ -2569,7 +2575,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 						"us_web" ->
 							?info_fmt( "US-Web (native) application base "
-							  "directory set to '~s'.", [ BaseDir ] ),
+									   "directory set to '~ts'.", [ BaseDir ] ),
 							BinBaseDir;
 
 						_Other ->
@@ -2590,16 +2596,16 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 				false ->
 					?error_fmt( "The determined US-Web application base "
-						"directory '~s' does not have a 'priv' subdirectory.",
+						"directory '~ts' does not have a 'priv' subdirectory.",
 						[ BinBaseDir ] ),
-					throw( { no_priv_us_web_app_base_directory,
-							 BaseDir, ?us_web_app_base_dir_key } )
+					throw( { no_priv_us_web_app_base_directory, BaseDir,
+							 ?us_web_app_base_dir_key } )
 
 			end;
 
 
 		false ->
-			%?warning_fmt( "The US-Web application base directory '~s' does "
+			%?warning_fmt( "The US-Web application base directory '~ts' does "
 			%			  "not exist, thus considering knowing none.",
 			%			  [ BaseDir ] ),
 			%undefined
@@ -2668,8 +2674,8 @@ guess_app_dir( AppRunContext, State ) ->
 
 	% Was a warning:
 	?info_fmt( "No user-configured US-Web application base directory set "
-		"(neither in configuration file nor through the '~s' environment "
-		"variable), hence trying to guess it, in a ~s context, as '~s'.",
+		"(neither in configuration file nor through the '~ts' environment "
+		"variable), hence trying to guess it, in a ~ts context, as '~ts'.",
 		[ ?us_web_app_env_variable, AppRunContext, GuessingDir ] ),
 
 	GuessingDir.
@@ -2707,7 +2713,7 @@ manage_data_directory( ConfigTable, State ) ->
 			ok;
 
 		false ->
-			?warning_fmt( "The base data directory '~s' does not exist, "
+			?warning_fmt( "The base data directory '~ts' does not exist, "
 						  "creating it.", [ BaseDir ] )
 
 	end,
@@ -2727,10 +2733,10 @@ manage_data_directory( ConfigTable, State ) ->
 			% Clearer than system_utils:get_user_name_string/0:
 			Username = system_utils:get_user_name(),
 
-			?error_fmt( "Unable to create the directory for working data '~s': "
-				"please ensure its parent directory can be written by user "
-				"'~s', or set it to different path thanks to the '~s' key.",
-				[ DataDir, Username, ?us_web_data_dir_key ] ),
+			?error_fmt( "Unable to create the directory for working data "
+				"'~ts': please ensure its parent directory can be written "
+				"by user '~ts', or set it to different path thanks to the "
+				"'~ts' key.", [ DataDir, Username, ?us_web_data_dir_key ] ),
 
 			throw( { data_directory_creation_failed, DataDir, eacces,
 					 Username } );
@@ -2803,7 +2809,7 @@ manage_log_directory( ConfigTable, State ) ->
 
 			%throw( { non_existing_base_us_web_log_directory, LogDir } )
 
-			?warning_fmt( "The base US-Web log directory '~s' does not exist, "
+			?warning_fmt( "The base US-Web log directory '~ts' does not exist, "
 						  "creating it.", [ LogDir ] ),
 
 			% As for example the default path would require to create
@@ -2878,7 +2884,7 @@ manage_web_root( ConfigTable, State ) ->
 			case file_utils:is_existing_directory( AbsDefaultWebRoot ) of
 
 				true ->
-					?info_fmt( "Default web root set to '~s'.",
+					?info_fmt( "Default web root set to '~ts'.",
 							   [ AbsDefaultWebRoot ] ),
 
 					text_utils:string_to_binary( AbsDefaultWebRoot );
@@ -2886,7 +2892,7 @@ manage_web_root( ConfigTable, State ) ->
 				false ->
 					?error_fmt( "The user-specified default web root "
 						"(obtained from the 'default_web_root' key), "
-						"'~s', is not an existing directory.",
+						"'~ts', is not an existing directory.",
 						[ AbsDefaultWebRoot ] ),
 
 					throw( { non_existing_default_web_root,
@@ -3003,14 +3009,14 @@ set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
 
 	BinUpdateToolRoot =
 			case file_utils:is_existing_directory_or_link(
-				   AnalysisUpdateToolRoot ) of
+					AnalysisUpdateToolRoot ) of
 
 		true ->
 			text_utils:string_to_binary( AnalysisUpdateToolRoot );
 
 		false ->
-			?error_fmt( "Root directory '~s' for web log analysis update "
-				"tool ('~s') not found.",
+			?error_fmt( "Root directory '~ts' for web log analysis update "
+				"tool ('~ts') not found.",
 				[ AnalysisUpdateToolRoot, ToolName ] ),
 			throw( { root_of_log_update_tool_not_found, ToolName,
 					 AnalysisUpdateToolRoot } )
@@ -3024,8 +3030,8 @@ set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
 			text_utils:string_to_binary( AnalysisReportToolRoot );
 
 		false ->
-			?error_fmt( "Root directory '~s' for web log analysis report "
-				"tool ('~s') not found.",
+			?error_fmt( "Root directory '~ts' for web log analysis report "
+				"tool ('~ts') not found.",
 				[ AnalysisReportToolRoot, ToolName ] ),
 			throw( { root_of_log_report_tool_not_found, ToolName,
 					 AnalysisReportToolRoot } )
@@ -3101,7 +3107,7 @@ manage_certificates( ConfigTable, State ) ->
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
 
-			?debug_fmt( "Certificates are to be generated in '~s'.",
+			?debug_fmt( "Certificates are to be generated in '~ts'.",
 						[ CertDir ] ),
 
 			% A LEEC instance will be started by each (independent) certificate
@@ -3116,14 +3122,14 @@ manage_certificates( ConfigTable, State ) ->
 
 				true ->
 					?debug_fmt( "A pre-existing TLS private key for the US-Web "
-						"LEEC agent has been found (as '~s'), it will be "
+						"LEEC agent has been found (as '~ts'), it will be "
 						"re-used.", [ TargetKeyPath ] ),
 					text_utils:string_to_binary( TargetKeyPath );
 
 				false ->
 
 					?debug_fmt( "No pre-existing TLS private key for the US-Web"
-						" LEEC agent has been found (searched for '~s'), "
+						" LEEC agent has been found (searched for '~ts'), "
 						"generating it now.", [ TargetKeyPath ] ),
 
 					PrivKey = leec_tls:obtain_private_key(
@@ -3138,8 +3144,8 @@ manage_certificates( ConfigTable, State ) ->
 			BinCAKeyPath =
 				leec_tls:obtain_ca_cert_file( CertDir ),
 
-			?debug_fmt( "DH (Diffie-Helman) key path is '~s', "
-				"CA (Certificate Authority) key path is '~s'.",
+			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
+				"CA (Certificate Authority) key path is '~ts'.",
 				[ BinDHKeyPath, BinCAKeyPath ] ),
 
 			{ BinKeyPath, BinDHKeyPath, BinCAKeyPath };
@@ -3154,8 +3160,8 @@ manage_certificates( ConfigTable, State ) ->
 			BinCAKeyPath =
 				leec_tls:obtain_ca_cert_file( CertDir ),
 
-			?debug_fmt( "DH (Diffie-Helman) key path is '~s', "
-				"CA (Certificate Authority) key path is '~s'.",
+			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
+				"CA (Certificate Authority) key path is '~ts'.",
 				[ BinDHKeyPath, BinCAKeyPath ] ),
 
 			{ undefined, BinDHKeyPath, BinCAKeyPath };
@@ -3300,8 +3306,8 @@ manage_post_meta( State ) ->
 							ErrorOutput } ->
 							trace_utils:error_fmt(
 							  "Unable to copy Awstats icons: "
-							  "one may try \"chmod -R +r '~s'\" to fix "
-							  "permissions.~nError message was: ~s.",
+							  "one may try \"chmod -R +r '~ts'\" to fix "
+							  "permissions.~nError message was: ~ts.",
 							  [ IconDir, ErrorOutput ] ),
 							throw( E )
 
@@ -3323,7 +3329,7 @@ manage_post_meta( State ) ->
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 			   LogAnalysisEnabled, DomainCfgTable, State ) ->
 
-	?debug_fmt( "Generating meta website in '~s'.", [ BinMetaContentRoot ] ),
+	?debug_fmt( "Generating meta website in '~ts'.", [ BinMetaContentRoot ] ),
 
 	IndexPath = file_utils:join( BinMetaContentRoot, "index.html" ),
 
@@ -3393,7 +3399,7 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 			get_san_list( T, DomainName, Acc );
 
 		VHostname ->
-			BinSan = text_utils:bin_format( "~s.~s",
+			BinSan = text_utils:bin_format( "~ts.~ts",
 											[ VHostname, DomainName ] ),
 			get_san_list( T, DomainName, [ BinSan | Acc ] )
 
@@ -3435,7 +3441,7 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 
 				true ->
 					%trace_bridge:info_fmt( "Reading the US-Web configuration "
-					%    "from '~s'.", [ WebCfgFilePath ] ),
+					%    "from '~ts'.", [ WebCfgFilePath ] ),
 
 					% Ensures as well that all top-level terms are pairs indeed:
 					ConfigTable = table:new_from_unique_entries(
@@ -3445,8 +3451,8 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 
 				false ->
 					ErrorMsg = text_utils:format( "US-Web configuration "
-						"filename was defined in US configuration as '~s', "
-						"resulting in path '~s', which was found not existing",
+						"filename was defined in US configuration as '~ts', "
+						"resulting in path '~ts', which was found not existing",
 						[ WebCfgFilename, WebCfgFilePath ] ),
 
 					{ error, { { non_existing_us_web_config_file,
@@ -3478,13 +3484,13 @@ get_registration_info( ConfigTable ) ->
 		key_not_found ->
 			DefCfgRegName = ?default_us_web_config_server_registration_name,
 			DefCfgMsg = text_utils:format( "No user-configured registration "
-				"name for the US-Web configuration server, defaulting to '~s'",
+				"name for the US-Web configuration server, defaulting to '~ts'",
 				[ DefCfgRegName ] ),
 			{ ok, DefCfgRegName, DefCfgMsg };
 
 		{ value, UserCfgRegName } when is_atom( UserCfgRegName ) ->
 			UserCfgMsg = text_utils:format( "Using user-configured "
-				"registration name for the US-Web configuration server, '~s'",
+				"registration name for the US-Web configuration server, '~ts'",
 				[ UserCfgRegName ] ),
 			{ ok, UserCfgRegName, UserCfgMsg };
 
@@ -3519,9 +3525,9 @@ get_registration_info( ConfigTable ) ->
 					DefSchedRegName =
 						?default_us_web_scheduler_registration_name,
 
-					FullMsg = text_utils:format( "~s; no user-configured "
+					FullMsg = text_utils:format( "~ts; no user-configured "
 						"registration name for the US-Web scheduler, "
-						"defaulting to '~s'.", [ CfgMsg, DefSchedRegName ] ),
+						"defaulting to '~ts'.", [ CfgMsg, DefSchedRegName ] ),
 
 					Info = { CfgRegName, CfgRegScope, default,
 							 SchedRegScope, FullMsg },
@@ -3531,8 +3537,8 @@ get_registration_info( ConfigTable ) ->
 
 				{ value, SchedRegName } when is_atom( SchedRegName ) ->
 
-					FullMsg = text_utils:format( "~s; using user-configured "
-						"registration name for the US-Web scheduler, '~s'.",
+					FullMsg = text_utils:format( "~ts; using user-configured "
+						"registration name for the US-Web scheduler, '~ts'.",
 						[ CfgMsg, SchedRegName ] ),
 
 					Info = { CfgRegName, CfgRegScope, SchedRegName,
@@ -3646,7 +3652,7 @@ to_string( State ) ->
 			"not using a default web root";
 
 		WebRoot ->
-			text_utils:format( "using default web root '~s'", [ WebRoot ] )
+			text_utils:format( "using default web root '~ts'", [ WebRoot ] )
 
 	end,
 
@@ -3660,7 +3666,7 @@ to_string( State ) ->
 
 		renew_certificates ->
 			text_utils:format( "relying on auto-renewed certificates "
-				"(mode: ~s)", [ ?getAttr(cert_mode) ] )
+				"(mode: ~ts)", [ ?getAttr(cert_mode) ] )
 
 	end,
 
@@ -3684,11 +3690,11 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US-Web configuration ~s, running ~s, ~s, ~s, ~s, "
-		"running in the ~s execution context, ~s, knowing: ~s, "
+	text_utils:format( "US-Web configuration ~ts, running ~ts, ~ts, ~ts, ~ts, "
+		"running in the ~ts execution context, ~ts, knowing: ~ts, "
 		"US overall configuration server ~w and "
-		"OTP supervisor ~w, relying on the '~s' configuration directory and "
-		"on the '~s' log directory, ~s.~n~nIn terms of routes, using ~s~n~n"
+		"OTP supervisor ~w, relying on the '~ts' configuration directory and "
+		"on the '~ts' log directory, ~ts.~n~nIn terms of routes, using ~ts~n~n"
 		"Corresponding dispatch rules:~n~p",
 		[ class_USServer:to_string( State ),
 		  otp_utils:application_run_context_to_string(

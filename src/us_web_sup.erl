@@ -99,7 +99,7 @@ init( _Args=[ AppRunContext ] ) ->
 
 	trace_bridge:register( BridgeSpec ),
 
-	trace_bridge:debug_fmt( "Starting us_web supervisor (run context: ~s)...",
+	trace_bridge:debug_fmt( "Starting us_web supervisor (run context: ~ts)...",
 							[ AppRunContext ] ),
 
 	% Watchdog check every 15 minutes:

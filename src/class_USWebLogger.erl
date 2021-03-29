@@ -273,12 +273,12 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 	end,
 
-	ServerName = text_utils:format( "Logger for ~s",
+	ServerName = text_utils:format( "Logger for ~ts",
 					[ get_host_description( BinHostId, DomainId ) ] ),
 
 	% First the direct mother classes, then this class-specific actions:
 	TraceState = class_USServer:construct( State,
-						   ?trace_categorize(ServerName), _TrapExits=true ),
+							?trace_categorize(ServerName), _TrapExits=true ),
 
 	{ BinAccessLogFilename, BinErrorLogFilename } =
 		get_log_paths( BinHostId, DomainId ),
@@ -348,8 +348,8 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			RedirectCmd = cond_utils:if_defined( us_web_debug_log_analysis,
 								"", " 1>/dev/null" ),
 
-			UpdateCmd = text_utils:format( "nice -n ~B ~s " ++ ExtraOpts
-				++ "-config=~s" ++ RedirectCmd,
+			UpdateCmd = text_utils:format( "nice -n ~B ~ts " ++ ExtraOpts
+				++ "-config=~ts" ++ RedirectCmd,
 				[ Niceness, BinUpdateToolPath, HostCfgDesc ] ),
 
 			% Command to generate reports:
@@ -360,8 +360,8 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			% Note that this command does not include '-update' anymore, it just
 			% generates (all) reports:
 			%
-			ReportCmd = text_utils:format( "nice -n ~B ~s -config=~s -dir=~s "
-				"-awstatsprog=~s" ++ RedirectCmd,
+			ReportCmd = text_utils:format( "nice -n ~B ~ts -config=~ts "
+				"-dir=~ts -awstatsprog=~ts" ++ RedirectCmd,
 				[ Niceness, BinReportToolPath, HostCfgDesc, BinWbContDir,
 				  BinUpdateToolPath ] ),
 
@@ -391,7 +391,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 	% synchronously would result in too long start-up delays).
 	%
 	FirstRotCount = case file_utils:is_existing_file_or_link(
-						   BinAccessLogFilePath ) of
+							BinAccessLogFilePath ) of
 
 		true ->
 			% Processes it and then removes it:
@@ -483,7 +483,7 @@ destruct( State ) ->
 	% reopened; prefer avoiding throwing from destructor):
 	%
 	[ file_utils:close( ?getAttr(FAttr), _FailureMode=overcome_failure )
-	  || FAttr <- [ access_log_file, error_log_file ] ],
+		|| FAttr <- [ access_log_file, error_log_file ] ],
 
 	ClosedState = setAttributes( State, [ { access_log_file, undefined },
 										  { error_log_file, undefined } ] ),
@@ -526,7 +526,7 @@ destruct( State ) ->
 reportAccess( State, BinLogLine ) ->
 
 	cond_utils:if_defined( us_web_debug_log_analysis,
-		?debug_fmt( "Storing access log '~s'.", [ BinLogLine ] ) ),
+		?debug_fmt( "Storing access log '~ts'.", [ BinLogLine ] ) ),
 
 	file_utils:write( ?getAttr(access_log_file), BinLogLine ),
 
@@ -643,9 +643,9 @@ generate_report( State ) ->
 		LogReportGenCmd ->
 
 			?debug_fmt( "Generating HTML Awstats access report based on "
-						"command '~s'.", [ LogReportGenCmd ] ),
+						"command '~ts'.", [ LogReportGenCmd ] ),
 
-			%?debug_fmt( "Generating HTML access report in '~s' with Awstats.",
+			%?debug_fmt( "Generating HTML access report in '~ts' with Awstats.",
 			%			[ HTMLReportPath ] ),
 
 			%file_utils:remove_file_if_existing( HTMLReportPath ),
@@ -662,7 +662,7 @@ generate_report( State ) ->
 
 			% No more '-update':
 			%Cmd = text_utils:format(
-			%  "nice -n ~B ~s -config=~s -output -staticlinks > ~s",
+			%  "nice -n ~B ~ts -config=~ts -output -staticlinks > ~ts",
 			%  [ Niceness, BinToolPath, CfgDesc, HTMLReportPath ] ),
 			%
 			%case system_utils:run_executable( Cmd ) of
@@ -672,14 +672,14 @@ generate_report( State ) ->
 			%
 			%	{ _ReturnCode=0, CmdOutput } ->
 			%		?warning_fmt( "Awstats main report generation succeeded, "
-			%           "yet returned following message: '~s'.",
+			%           "yet returned following message: '~ts'.",
 			%           [ CmdOutput ] );
 			%
 			%	% An error here shall not kill this logger as a whole:
 			%	{ ReturnCode, CmdOutput } ->
 			%		?error_fmt( "Awstats main report generation failed "
 			%           "(return code: ~w), and returned following message: "
-			%           "'~s' (command was: '~s').",
+			%           "'~ts' (command was: '~ts').",
 			%			[ ReturnCode, CmdOutput, Cmd ] )
 			%
 			%end,
@@ -703,8 +703,8 @@ generate_report( State ) ->
 			%							   "awstats" ),
 			%
 			% No more '-update':
-			%CmdFormatString = text_utils:format( "nice -n ~B ~s -config=~s "
-			%	"-output=~~s -staticlinks > ~s.~s.~~s.html",
+			%CmdFormatString = text_utils:format( "nice -n ~B ~ts -config=~ts "
+			%	"-output=~~ts -staticlinks > ~ts.~ts.~~ts.html",
 			%	[ Niceness, BinToolPath, CfgDesc, BaseGenFile, CfgDesc ] ),
 			%
 			%generate_other_report_pages( ReportTypes, CmdFormatString, State )
@@ -717,7 +717,7 @@ generate_report( State ) ->
 
 				{ _ReturnCode=0, CmdOutput } ->
 					?warning_fmt( "Awstats HTML report generation "
-						"succeeded, yet returned following message: '~s'.",
+						"succeeded, yet returned following message: '~ts'.",
 						[ CmdOutput ] ),
 					report_generated;
 
@@ -725,7 +725,7 @@ generate_report( State ) ->
 				{ ReturnCode, CmdOutput } ->
 					?error_fmt( "Awstats HTML report generation failed "
 						"(return code: ~w), and returned following "
-						"message: '~s' (command was: '~s').",
+						"message: '~ts' (command was: '~ts').",
 						[ ReturnCode, CmdOutput, LogReportGenCmd ] ),
 					{ error, CmdOutput }
 
@@ -773,7 +773,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 create_log_files( State ) ->
 
 	[ basic_utils:check_undefined( ?getAttr(FAttr) )
-	  || FAttr <- [ access_log_file, error_log_file ] ],
+		|| FAttr <- [ access_log_file, error_log_file ] ],
 
 	AccessFile = create_log_file( ?getAttr(access_log_file_path), State ),
 	ErrorFile = create_log_file( ?getAttr(error_log_file_path), State ),
@@ -794,7 +794,7 @@ create_log_file( BinLogFilePath, State ) ->
 			%
 			% (would deserve a warning, yet almost always happens at start-up)
 			%
-			?info_fmt( "Removing a prior '~s' log file.", [ BinLogFilePath ] ),
+			?info_fmt( "Removing a prior '~ts' log file.", [ BinLogFilePath ] ),
 
 			file_utils:remove_file( BinLogFilePath );
 
@@ -803,7 +803,7 @@ create_log_file( BinLogFilePath, State ) ->
 
 	end,
 
-	%?debug_fmt( "Creating log file '~s'.", [ BinLogFilePath ] ),
+	%?debug_fmt( "Creating log file '~ts'.", [ BinLogFilePath ] ),
 
 	file_utils:open( BinLogFilePath,
 					 _Opts=[ write, exclusive, raw, delayed_write ] ).
@@ -823,14 +823,14 @@ rotate_logs( State ) ->
 	{ MaybeAccessCompressedFilePath, MaybeErrorCompressedFilePath, RotState } =
 		rotate_log_files( ClosedState ),
 
-	?info_fmt( "Log rotation: ~s, ~s.", [
+	?info_fmt( "Log rotation: ~ts, ~ts.", [
 		case MaybeAccessCompressedFilePath of
 
 			undefined ->
 				"no access log to archive";
 
 			_ ->
-				text_utils:format( "access logs archived in '~s'",
+				text_utils:format( "access logs archived in '~ts'",
 								   [ MaybeAccessCompressedFilePath ] )
 
 		end,
@@ -840,7 +840,7 @@ rotate_logs( State ) ->
 				"no error log to archive";
 
 			_ ->
-				text_utils:format( "error logs archived in '~s'",
+				text_utils:format( "error logs archived in '~ts'",
 								   [ MaybeErrorCompressedFilePath ] )
 
 		end ] ),
@@ -869,12 +869,12 @@ rotate_log_files( State ) ->
 	MaybeErrorArchivePath = case file_utils:get_size( BinErrorLogFilePath ) of
 
 		0 ->
-			?debug_fmt( "Not rotating empty error log file '~s'.",
+			?debug_fmt( "Not rotating empty error log file '~ts'.",
 						[ BinErrorLogFilePath ] ),
 			undefined;
 
 		_ ->
-			?debug_fmt( "Rotating error log file '~s'.",
+			?debug_fmt( "Rotating error log file '~ts'.",
 						[ BinErrorLogFilePath ] ),
 			rotate_basic_log_file( BinErrorLogFilePath, RotCount, State )
 
@@ -894,7 +894,7 @@ close_log_files( State ) ->
 	% {file_descriptor,raw_file_io_delayed, etc.:
 	%
 	[ file_utils:close( ?getAttr(FAttr), _FailureMode=overcome_failure )
-	  || FAttr <- [ access_log_file, error_log_file ] ],
+		|| FAttr <- [ access_log_file, error_log_file ] ],
 
 	setAttributes( State, [ { access_log_file, undefined },
 							{ error_log_file, undefined } ] ).
@@ -908,13 +908,13 @@ get_host_description( _BinHostId=default_vhost_catch_all,
 	"*.*";
 
 get_host_description( _BinHostId=default_vhost_catch_all, DomainId ) ->
-	text_utils:format( "*.~s", [ DomainId ] );
+	text_utils:format( "*.~ts", [ DomainId ] );
 
 get_host_description( BinHostname, _DomainId=default_domain_catch_all ) ->
-	text_utils:format( "~s.*", [ BinHostname ] );
+	text_utils:format( "~ts.*", [ BinHostname ] );
 
 get_host_description( BinHostname, DomainId ) ->
-	text_utils:format( "~s.~s", [ BinHostname, DomainId ] ).
+	text_utils:format( "~ts.~ts", [ BinHostname, DomainId ] ).
 
 
 
@@ -923,7 +923,7 @@ get_host_description( BinHostname, DomainId ) ->
 								log_analysis_tool() ) -> ustring().
 get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
 	% Includes default_vhost_catch_all and/or default_domain_catch_all:
-	text_utils:format( "~s.~s", [ BinHostId, DomainId ] ).
+	text_utils:format( "~ts.~ts", [ BinHostId, DomainId ] ).
 
 
 
@@ -947,10 +947,10 @@ get_log_paths( _BinHostId=default_vhost_catch_all, DomainId ) ->
 
 	DomainString = get_domain_description( DomainId ),
 
-	BinAccess = text_utils:bin_format( "access-vhost-catchall-for-~s.log",
+	BinAccess = text_utils:bin_format( "access-vhost-catchall-for-~ts.log",
 									   [ DomainString ] ),
 
-	BinError = text_utils:bin_format( "error-vhost-catchall-for-~s.log",
+	BinError = text_utils:bin_format( "error-vhost-catchall-for-~ts.log",
 									  [ DomainString ] ),
 
 	wooper:return_static( { BinAccess, BinError } );
@@ -960,10 +960,10 @@ get_log_paths( BinHostId, DomainId ) ->
 
 	DomainString = get_domain_description( DomainId ),
 
-	BinAccess = text_utils:bin_format( "access-for-~s.~s.log",
+	BinAccess = text_utils:bin_format( "access-for-~ts.~ts.log",
 									   [ BinHostId, DomainString ] ),
 
-	BinError = text_utils:bin_format( "error-for-~s.~s.log",
+	BinError = text_utils:bin_format( "error-for-~ts.~ts.log",
 									  [ BinHostId, DomainString ] ),
 
 	wooper:return_static( { BinAccess, BinError } ).
@@ -995,12 +995,12 @@ rotate_access_log_file( RotCount, State ) ->
 	case file_utils:get_size( BinFilePath ) of
 
 		0 ->
-			?debug_fmt( "Not rotating empty access log file '~s'.",
+			?debug_fmt( "Not rotating empty access log file '~ts'.",
 						[ BinFilePath ] ),
 			undefined;
 
 		_ ->
-			?debug_fmt( "Rotating access log file '~s'.", [ BinFilePath ] ),
+			?debug_fmt( "Rotating access log file '~ts'.", [ BinFilePath ] ),
 
 			case ?getAttr(log_analysis_update_cmd) of
 
@@ -1011,7 +1011,7 @@ rotate_access_log_file( RotCount, State ) ->
 				LogAnalysisUpdateCmd ->
 
 					?debug_fmt( "Updating Awstats database now based "
-								"on command '~s'.", [ LogAnalysisUpdateCmd ] ),
+								"on command '~ts'.", [ LogAnalysisUpdateCmd ] ),
 
 					case system_utils:run_executable( LogAnalysisUpdateCmd ) of
 
@@ -1021,15 +1021,15 @@ rotate_access_log_file( RotCount, State ) ->
 						{ _ReturnCode=0, CmdOutput } ->
 							?warning_fmt( "Awstats database update prior to "
 								"log rotation succeeded for main report, "
-								"yet returned following message: '~s'.",
+								"yet returned following message: '~ts'.",
 								[ CmdOutput ] );
 
 						% An error here shall not kill this logger as a whole:
 						{ ReturnCode, CmdOutput } ->
 							?error_fmt( "Awstats database update prior to "
 								"log rotation failed (return code: ~w), and "
-								"returned following message: '~s' (command "
-								"was: '~s').", [ ReturnCode, CmdOutput,
+								"returned following message: '~ts' (command "
+								"was: '~ts').", [ ReturnCode, CmdOutput,
 												 LogAnalysisUpdateCmd ] )
 
 					end
@@ -1057,20 +1057,20 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 	case system_utils:run_executable( Cmd ) of
 
 		{ _ReturnCode=0, _CmdOutput="" } ->
-			?debug_fmt( "Generated report type '~s' (command: '~s').",
+			?debug_fmt( "Generated report type '~ts' (command: '~ts').",
 						[ ReportType, Cmd ] ),
 			ok;
 
 		{ _ReturnCode=0, CmdOutput } ->
 			?warning_fmt( "Awstats execution prior to log rotation "
-				"succeeded for report type '~s', yet returned following "
-				"message: '~s'.", [ ReportType, CmdOutput ] );
+				"succeeded for report type '~ts', yet returned following "
+				"message: '~ts'.", [ ReportType, CmdOutput ] );
 
 		% An error here shall not kill this logger as a whole:
 		{ ReturnCode, CmdOutput } ->
 			?error_fmt( "Awstats execution prior to log rotation failed "
-				"(return code: ~w) for report type '~s', and returned "
-				"following message: '~s' (command was: '~s').",
+				"(return code: ~w) for report type '~ts', and returned "
+				"following message: '~ts' (command was: '~ts').",
 				[ ReturnCode, ReportType, CmdOutput, Cmd ] )
 
 	end,
@@ -1092,10 +1092,10 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 							 wooper:state() ) -> file_path().
 rotate_basic_log_file( FilePath, RotCount, _State ) ->
 
-	ArchiveFilePath = text_utils:format( "~s.~B.~s", [ FilePath, RotCount,
+	ArchiveFilePath = text_utils:format( "~ts.~B.~ts", [ FilePath, RotCount,
 				time_utils:get_textual_timestamp_for_path() ] ),
 
-	%?debug_fmt( "Rotating '~s' to a compressed version: '~s'.",
+	%?debug_fmt( "Rotating '~ts' to a compressed version: '~ts'.",
 	%			[ FilePath, ArchiveFilePath ] ),
 
 	file_utils:move_file( FilePath, ArchiveFilePath ),
@@ -1104,8 +1104,8 @@ rotate_basic_log_file( FilePath, RotCount, _State ) ->
 
 	file_utils:remove_file( ArchiveFilePath ),
 
-	%?debug_fmt( "Log rotation finished: archive '~s' generated "
-	%			"(original '~s' removed).", [ CompressedFilePath, FilePath ] ),
+	%?debug_fmt( "Log rotation finished: archive '~ts' generated "
+	%			"(original '~ts' removed).", [ CompressedFilePath, FilePath ] ),
 
 	CompressedFilePath.
 
@@ -1126,7 +1126,7 @@ get_file_prefix_for( DomainId, VHostId, _Tool=awstats ) ->
 	% Works in all cases, including default_vhost_catch_all and/or
 	% default_domain_catch_all:
 	%
-	Filename = text_utils:format( "awstats.~s.~s", [ VHostId, DomainId ] ),
+	Filename = text_utils:format( "awstats.~ts.~ts", [ VHostId, DomainId ] ),
 	wooper:return_static( Filename );
 
 get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
@@ -1150,7 +1150,7 @@ get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
 -spec get_conf_filename_for( domain_id(), vhost_id(), log_analysis_tool() ) ->
 								static_return( file_name() ).
 get_conf_filename_for( DomainId, VHostId, _Tool=awstats ) ->
-	Filename = text_utils:format( "awstats.~s.conf",
+	Filename = text_utils:format( "awstats.~ts.conf",
 				[ get_host_description_for( VHostId, DomainId, awstats ) ] ),
 	wooper:return_static( Filename );
 
@@ -1175,16 +1175,16 @@ to_string( State ) ->
 							report_tool_path=BinReportToolPath,
 							conf_dir=BinConfDir,
 							web_content_dir=BinWbContDir } ->
-			text_utils:format( "web analysis enabled, based on '~s' "
-				"(update path: '~s', report generation path: '~s'), with, as "
-				"configuration directory '~s', and as web content "
-				"directory '~s'",
+			text_utils:format( "web analysis enabled, based on '~ts' "
+				"(update path: '~ts', report generation path: '~ts'), with, as "
+				"configuration directory '~ts', and as web content "
+				"directory '~ts'",
 				[ ToolName, BinUpdateToolPath, BinReportToolPath, BinConfDir,
 				  BinWbContDir ] )
 
 	end,
 
-	text_utils:format( "US web logger for '~s', using log directory '~s' "
-		"(writing there '~s' and '~s'); ~s", [ HostDesc, ?getAttr(log_dir),
+	text_utils:format( "US web logger for '~ts', using log directory '~ts' "
+		"(writing there '~ts' and '~ts'); ~ts", [ HostDesc, ?getAttr(log_dir),
 		?getAttr(access_log_file_path), ?getAttr(error_log_file_path),
 		ConfString ] ).

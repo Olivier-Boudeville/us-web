@@ -71,8 +71,8 @@ test_us_web_application( OrderedAppNames ) ->
 
 	% Now we can take care of the US-Web counterpart configuration file:
 	{ USWebCfgTable, USWebCfgFilePath } = case
-		  class_USWebConfigServer:get_configuration_table( USCfgTable,
-														   BinCfgDir ) of
+			class_USWebConfigServer:get_configuration_table( USCfgTable,
+															 BinCfgDir ) of
 
 		{ ok, P } ->
 			P;
@@ -82,7 +82,7 @@ test_us_web_application( OrderedAppNames ) ->
 
 	end,
 
-	test_facilities:display( "Read US-Web configuration from '~s'.",
+	test_facilities:display( "Read US-Web configuration from '~ts'.",
 							 [ USWebCfgFilePath ] ),
 
 	{ USWebCfgRegName, USWebCfgRegScope, USWebSchedRegName, USWebSchedRegScope,
@@ -155,11 +155,11 @@ test_us_web_application( OrderedAppNames ) ->
 	TestPort = 8080,
 	TestUrl = "index.html",
 
-	?test_info_fmt( "As a test, attempting to fetch page '~s' from that "
+	?test_info_fmt( "As a test, attempting to fetch page '~ts' from that "
 		"just-launched US-Web instance, supposedly running on localhost, "
 		"at TCP port #~B.", [ TestUrl, TestPort ] ),
 
-	URI = text_utils:format( "http://localhost:~B/~s", [ TestPort, TestUrl ] ),
+	URI = text_utils:format( "http://localhost:~B/~ts", [ TestPort, TestUrl ] ),
 
 	ExpectedContentStr = text_utils:binary_to_string( file_utils:read_whole(
 				   "../priv/for-testing/test-static-website-D/index.html" ) ),
@@ -172,21 +172,21 @@ test_us_web_application( OrderedAppNames ) ->
 			case Body of
 
 				ExpectedContentStr ->
-					?test_info_fmt( "Read, from the US-Web test instance, "
-					  "the expected content ('~s'), end-to-end test succeeded.",
+					?test_info_fmt( "Read, from the US-Web test instance, the "
+					  "expected content ('~ts'), end-to-end test succeeded.",
 					  [ Body ] );
 
 				OtherStr ->
 					trace_bridge:error_fmt( "Read a content from the US-Web "
-						"test instance, yet not the expected one: read '~s' "
-						"instead of '~s'.", [ OtherStr, ExpectedContentStr ] ),
+						"test instance, yet not the expected one: read '~ts' "
+						"instead of '~ts'.", [ OtherStr, ExpectedContentStr ] ),
 					throw( { unexpected_web_content, OtherStr } )
 
 			end;
 
 		{ StatusCode, HeaderMap, Body } ->
-			trace_bridge:error_fmt( "Reading URI '~s' from the US-Web test "
-				"instance failed: status code is ~B (~s), headers are ~p "
+			trace_bridge:error_fmt( "Reading URI '~ts' from the US-Web test "
+				"instance failed: status code is ~B (~ts), headers are ~p "
 				"and body is ~p.",
 				[ URI, StatusCode, web_utils:http_status_class_to_string(
 					web_utils:get_http_status_class( StatusCode ) ),
@@ -209,7 +209,7 @@ test_us_web_application( OrderedAppNames ) ->
 	basic_utils:check_no_pending_message(),
 
 	test_facilities:display(
-	  "Successful end of test of the US-Web OTP application." ).
+		"Successful end of test of the US-Web OTP application." ).
 
 
 

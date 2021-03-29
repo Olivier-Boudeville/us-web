@@ -252,7 +252,7 @@
 %
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ],
 		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
-					   wooper:state().
+					    wooper:state().
 construct( State, BinFQDN, BinSans, BinCertDir, BinAgentKeyPath,
 		   MaybeSchedulerPid ) ->
 	construct( State, BinFQDN, BinSans, _CertMode=production, BinCertDir,
@@ -292,7 +292,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 		   MaybeSchedulerPid, _IsSingleton=false ) ->
 
 	ServerName =
-		text_utils:format( "Certificate manager for ~s", [ BinFQDN ] ),
+		text_utils:format( "Certificate manager for ~ts", [ BinFQDN ] ),
 
 	% First the direct mother classes, then this class-specific actions:
 	%
@@ -329,7 +329,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
-	?send_info_fmt( ReadyState, "Constructed: ~s.",
+	?send_info_fmt( ReadyState, "Constructed: ~ts.", 
 					[ to_string( ReadyState ) ] ),
 
 	% Would be too early, as the HTTP webserver needed to validate the ACME
@@ -414,7 +414,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	% Otherwise opens subcategories in traces, as an emitter:
 	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
-	TraceEmitterName = text_utils:format( "LEEC for ~s", [ DotlessFQDN ] ),
+	TraceEmitterName = text_utils:format( "LEEC for ~ts", [ DotlessFQDN ] ),
 
 	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
 		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
@@ -525,8 +525,8 @@ renewCertificate( State ) ->
 % ensure no two certificate requests overlap (to avoid hitting a rate limit
 % regarding ACME servers).
 %
--spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
-			oneway_return().
+-spec renewCertificateSynchronisable( wooper:state(), pid() ) -> 
+											oneway_return().
 renewCertificateSynchronisable( State, ListenerPid ) ->
 
 	% Note that these managers must not be frozen here in the waiting of a
@@ -578,7 +578,7 @@ request_certificate( State ) ->
 
 	end,
 
-	?debug_fmt( "Requesting certificate for '~s', with following SAN "
+	?debug_fmt( "Requesting certificate for '~ts', with following SAN "
 				"information:~n  ~p.", [ FQDN, ActualSans ] ),
 
 	async = leec:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
@@ -598,8 +598,8 @@ onCertificateRequestOutcome( State,
 
 	FQDN = ?getAttr(fqdn),
 
-	?info_fmt( "Certificate generation success for '~s', "
-			   "certificate stored in '~s'.", [ FQDN, BinCertFilePath ] ),
+	?info_fmt( "Certificate generation success for '~ts', "
+			   "certificate stored in '~ts'.", [ FQDN, BinCertFilePath ] ),
 
 	SetState = case ?getAttr(renew_listener) of
 
@@ -624,7 +624,7 @@ onCertificateRequestOutcome( State,
 
 	FQDN = ?getAttr(fqdn),
 
-	?error_fmt( "Certificate generation failed for '~s': ~p.",
+	?error_fmt( "Certificate generation failed for '~ts': ~p.",
 				[ FQDN, ErrorTerm ] ),
 
 	% Reasonable offset for next attempt:
@@ -687,7 +687,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 						time_utils:get_timestamp(), RenewDelay ),
 
 					?debug_fmt( "Next attempt of certificate renewal to "
-					  "take place in ~s, i.e. at ~s.",
+					  "take place in ~ts, i.e. at ~ts.",
 					  [ time_utils:duration_to_string( 1000 * RenewDelay ),
 						time_utils:timestamp_to_string( NextTimestamp ) ] ),
 
@@ -757,8 +757,8 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 	%WaitDurationMs = 15000,
 	WaitDurationMs = 4*3600*1000,
 
-	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~s'), "
-		"starting a new LEEC instance after a delay of ~s.",
+	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~ts'), "
+		"starting a new LEEC instance after a delay of ~ts.",
 		[ ExitType, CrashPid, FQDN,
 		  time_utils:duration_to_string( WaitDurationMs ) ] ),
 
@@ -768,7 +768,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
 				   ?getAttr(private_key_path), State ),
 
-	?info_fmt( "New LEEC instance started for '~s': ~w; requesting new "
+	?info_fmt( "New LEEC instance started for '~ts': ~w; requesting new "
 			   "certificate.", [ FQDN, LEECPid ] ),
 
 	% Immediately retries:
@@ -988,7 +988,7 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 	PrivKeyFilePath = file_utils:join( BinCertDir, PrivKeyFilename ),
 
 	wooper:return_static(
-	  [ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
+	    [ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
 
 
 
@@ -1002,7 +1002,7 @@ to_string( State ) ->
 			"no periodic renewal";
 
 		PeriodSecs ->
-			text_utils:format( "with a renewal every ~s",
+			text_utils:format( "with a renewal every ~ts",
 				[ time_utils:duration_to_string( 1000 * PeriodSecs ) ] )
 
 	end,
@@ -1023,7 +1023,7 @@ to_string( State ) ->
 			"not having generated a certificate yet";
 
 		CertPath ->
-			text_utils:format( "having generated a certificate in '~s'",
+			text_utils:format( "having generated a certificate in '~ts'",
 							   [ CertPath ] )
 
 	end,
@@ -1034,14 +1034,14 @@ to_string( State ) ->
 			"no Subject Alternative Names";
 
 		Sans ->
-			text_utils:format( "~B Subject Alternative Names: ~s",
+			text_utils:format( "~B Subject Alternative Names: ~ts",
 				[ length( Sans ),
 				  text_utils:binaries_to_listed_string( Sans ) ] )
 
 	end,
 
-	text_utils:format( "US certificate manager for '~s' in ~s mode, "
-		"using certificate directory '~s', with ~s, using ~s, with ~s; "
-		"it is to specify ~s",
+	text_utils:format( "US certificate manager for '~ts' in ~ts mode, "
+		"using certificate directory '~ts', with ~ts, using ~ts, with ~ts; "
+		"it is to specify ~ts",
 		[ ?getAttr(fqdn), ?getAttr(cert_mode), ?getAttr(cert_dir), PeriodStr,
 		  FSMStr, CertStr, SansStr ] ).

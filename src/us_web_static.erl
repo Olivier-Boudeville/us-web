@@ -98,11 +98,11 @@ init( Req, HState ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-		  _Name=text_utils:format( "Static handler for path ~s", [ BinPath ] ),
+		  _Name=text_utils:format( "Static handler for path ~ts", [ BinPath ] ),
 		  _Categ="US.US-Web.Static Handler" ) ),
 
 	%trace_utils:debug_fmt(
-	%  "[~s:~w] Serving request as a ~s~nInitial handler state being ~s",
+	%  "[~ts:~w] Serving request as a ~ts~nInitial handler state being ~ts",
 	%  [ ?MODULE, self(), table:to_string( Req ), table:to_string( HState ) ] ),
 
 	CowboyOpts = maps:get( cowboy_opts, HState ),
@@ -122,7 +122,7 @@ init( Req, HState ) ->
 
 	% Logging already done in the init_* functions above.
 
-	%trace_utils:debug_fmt( "[~s:~w] Returning:~n~p",
+	%trace_utils:debug_fmt( "[~ts:~w] Returning:~n~p",
 	%                       [ ?MODULE, self(), HReturn ] ),
 
 	HReturn.
@@ -132,7 +132,7 @@ init( Req, HState ) ->
 % Handles the request for a file.
 init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
-	%trace_utils:debug_fmt( "init_info for file '~s' (opts: ~p)",
+	%trace_utils:debug_fmt( "init_info for file '~ts' (opts: ~p)",
 	%                       [ BinFullFilePath, CowboyOpts ] ),
 
 	case file:read_file_info( BinFullFilePath, [ { time, universal } ] ) of
@@ -173,7 +173,7 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 % Handles the request for a directory.
 init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
 
-	%trace_utils:debug_fmt( "init_dir for directory '~s'.",
+	%trace_utils:debug_fmt( "init_dir for directory '~ts'.",
 	%                       [ BinContentRoot ] ),
 
 	case cowboy_req:path_info( Req ) of
@@ -413,7 +413,7 @@ generate_default_etag( Size, Mtime ) ->
 
 % Returns the time of last modification of the handler-referenced file.
 -spec last_modified( cowboy_req:req(), rest_handler_state() ) ->
-	   { calendar:datetime(), cowboy_req:req(), rest_handler_state() }.
+		{ calendar:datetime(), cowboy_req:req(), rest_handler_state() }.
 last_modified( Req, HState={ _BinContenPath,
 		 { _AccessType, #file_info{ mtime=ModifiedTime } }, _Extra } ) ->
 	{ ModifiedTime, Req, HState }.
@@ -422,8 +422,8 @@ last_modified( Req, HState={ _BinContenPath,
 
 % Streams the handler-referenced file.
 -spec get_file( cowboy_req:req(), rest_handler_state() ) ->
-		  { { 'sendfile', 0, non_neg_integer(), binary() }, cowboy_req:req(),
-			rest_handler_state() }.
+			{ { 'sendfile', 0, non_neg_integer(), binary() }, cowboy_req:req(),
+			  rest_handler_state() }.
 get_file( Req, HState={ BinPath, { direct, #file_info{ size=Size } },
 						_Extra } ) ->
 	{ { sendfile, 0, Size, BinPath }, Req, HState };

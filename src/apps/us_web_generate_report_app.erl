@@ -57,12 +57,12 @@ exec() ->
 
 	Cfg = file_utils:read_terms( CfgFilePath ),
 
-	%trace_utils:debug_fmt( "Read configuration from '~s': ~p",
+	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
 	%					   [ CfgFilePath, Cfg ] ),
 
 	TargetNodeName = get_target_node_name( Cfg ),
 
-	app_facilities:display( "Connecting to node '~s'.", [ TargetNodeName ] ),
+	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
 
 	case net_adm:ping( TargetNodeName ) of
 
@@ -70,7 +70,7 @@ exec() ->
 			ok;
 
 		pang ->
-			trace_utils:error_fmt( "Unable to connect to '~s'.~nIf the target "
+			trace_utils:error_fmt( "Unable to connect to '~ts'.~nIf the target "
 				"node is really running and is named exactly like that, check "
 				"that the cookies match and, finally, that no firewall is in "
 				"the way (ex: a server may filter the EPMD port of interest).",
@@ -90,7 +90,7 @@ exec() ->
 
 	UWCfgRegName = get_us_web_cfg_server_name( Cfg ),
 
-	%app_facilities:display( "Looking up US-Web config server by name: ~s.",
+	%app_facilities:display( "Looking up US-Web config server by name: ~ts.",
 	%						[ UWCfgRegName ] ),
 
 	UWCfgRegScope = ?us_web_config_server_registration_scope,
@@ -111,7 +111,7 @@ exec() ->
 
 		{ wooper_result, report_generation_success } ->
 			app_facilities:display(
-			  "Log analysis report(s) successfully generated." ),
+				"Log analysis report(s) successfully generated." ),
 			basic_utils:stop();
 
 		{ wooper_result, R={ report_generation_failed, ErrorReason } } ->
@@ -130,7 +130,7 @@ init_from_command_line() ->
 
 	ArgTable = shell_utils:get_argument_table(),
 
-	%trace_utils:debug_fmt( "Argument table: ~s",
+	%trace_utils:debug_fmt( "Argument table: ~ts",
 	%					   [ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
@@ -158,7 +158,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:debug_fmt( "Configuration file: '~s'.", [ CfgFilePath ] ),
+	%trace_utils:debug_fmt( "Configuration file: '~ts'.", [ CfgFilePath ] ),
 
 	% Argument also expected to be set by the caller script:
 	{ RemoteCookie, CookieShrunkTable } =
@@ -176,7 +176,7 @@ init_from_command_line() ->
 
 	end,
 
-	trace_utils:debug_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
+	trace_utils:debug_fmt( "Setting remote cookie: '~ts'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
 
@@ -198,7 +198,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:debug_fmt( "Selected target domain: '~s'.",
+	%trace_utils:debug_fmt( "Selected target domain: '~ts'.",
 	%					   [ MaybeDomainBinStr ] ),
 
 
@@ -217,7 +217,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:debug_fmt( "Selected target host: '~s'.",
+	%trace_utils:debug_fmt( "Selected target host: '~ts'.",
 	%					   [ MaybeHostBinStr ] ),
 
 
@@ -241,7 +241,7 @@ get_target_node_name( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
 
-	%trace_utils:debug_fmt( "Remote host: '~s'.", [ RemoteHostname ] ),
+	%trace_utils:debug_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
 
 	%NodeStringName =
 	case net_utils:localnode() of
@@ -272,7 +272,7 @@ get_us_web_cfg_server_name( Cfg ) ->
 		true ->
 			RegName = list_table:get_value( RegNameKey, Cfg ),
 			%trace_utils:debug_fmt( "Registration name of the US-Web "
-			%	"configuration read from configuration file: '~s'.",
+			%	"configuration read from configuration file: '~ts'.",
 			%	[ RegName ] ),
 			RegName;
 
@@ -280,7 +280,7 @@ get_us_web_cfg_server_name( Cfg ) ->
 			DefRegName = ?default_us_web_config_server_registration_name,
 			%trace_utils:debug_fmt( "No registration name for the US-Web "
 			%	"configuration found in configuration file, using "
-			%	"default one: '~s'.", [ DefRegName ] ),
+			%	"default one: '~ts'.", [ DefRegName ] ),
 			DefRegName
 
 	end.

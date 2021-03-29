@@ -65,7 +65,7 @@ exec() ->
 	  "Starting the US-Web application natively (not as a release)." ),
 
 	cond_utils:if_defined( us_web_debug_execution,
-		trace_bridge:debug_fmt( "Initially, the ~s",
+		trace_bridge:debug_fmt( "Initially, the ~ts",
 								[ code_utils:get_code_path_as_string() ] ) ),
 
 	% Not in an OTP context here, yet we need OTP applications (Cowboy, LEEC,
@@ -146,7 +146,7 @@ start( StartType, StartArgs ) ->
 	% lost):
 	%
 	%io:format( "Current code path:~n~p~n", [ code:get_path() ] ),
-	%io:format( "undef interpretation: ~s~n",
+	%io:format( "undef interpretation: ~ts~n",
 	%  [ code_utils:interpret_undef_exception( M, F, A ) ] ),
 	%
 	%timer:sleep( 2000 ),

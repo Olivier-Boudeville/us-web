@@ -62,12 +62,12 @@ exec() ->
 
 	Cfg = file_utils:read_terms( CfgFilePath ),
 
-	%trace_utils:debug_fmt( "Read configuration from '~s': ~p",
+	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
 	%					   [ CfgFilePath, Cfg ] ),
 
 	TargetNodeName = get_target_node_name( Cfg ),
 
-	app_facilities:display( "Connecting to node '~s'.", [ TargetNodeName ] ),
+	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
 
 	case net_adm:ping( TargetNodeName ) of
 
@@ -75,7 +75,7 @@ exec() ->
 			ok;
 
 		pang ->
-			trace_utils:error_fmt( "Unable to connect to '~s'.~nIf the target "
+			trace_utils:error_fmt( "Unable to connect to '~ts'.~nIf the target "
 				"node is really running and is named exactly like that, check "
 				"that the cookies match and, finally, that no firewall is in "
 				"the way (ex: a server may filter the EPMD port of interest).",
@@ -93,7 +93,7 @@ exec() ->
 
 	AggregatorName = ?trace_aggregator_name,
 
-	%app_facilities:display( "Looking up aggregator by name: ~s.",
+	%app_facilities:display( "Looking up aggregator by name: ~ts.",
 	%						[ AggregatorName ] ),
 
 	AggregatorPid = naming_utils:get_registered_pid_for( AggregatorName,
@@ -140,7 +140,7 @@ init_from_command_line() ->
 
 	ArgTable = shell_utils:get_argument_table(),
 
-	%trace_utils:debug_fmt( "Argument table: ~s",
+	%trace_utils:debug_fmt( "Argument table: ~ts",
 	%					   [ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
@@ -168,7 +168,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:debug_fmt( "Configuration file: '~s'.", [ CfgFilePath ] ),
+	%trace_utils:debug_fmt( "Configuration file: '~ts'.", [ CfgFilePath ] ),
 
 	% Argument also expected to be set by the caller script:
 	{ RemoteCookie, CookieShrunkTable } =
@@ -186,7 +186,7 @@ init_from_command_line() ->
 
 	end,
 
-	trace_utils:debug_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
+	trace_utils:debug_fmt( "Setting remote cookie: '~ts'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
 
@@ -210,7 +210,7 @@ get_target_node_name( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
 
-	%trace_utils:debug_fmt( "Remote host: '~s'.", [ RemoteHostname ] ),
+	%trace_utils:debug_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
 
 	%NodeStringName =
 	case net_utils:localnode() of
@@ -233,7 +233,7 @@ get_target_node_name( Cfg ) ->
 get_tcp_port_range( Cfg ) ->
 
 	MaybePortRange = list_table:get_value_with_defaults( _K=tcp_port_range,
-												 _Default=undefined, Cfg ),
+												_Default=undefined, Cfg ),
 
 	%trace_utils:debug_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
 

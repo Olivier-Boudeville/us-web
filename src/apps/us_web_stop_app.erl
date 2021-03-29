@@ -58,10 +58,10 @@ exec() ->
 	init_from_command_line(),
 
 	% Hardcoded node name:
-	TargetNodeName = text_utils:atom_format( "us_web@~s",
+	TargetNodeName = text_utils:atom_format( "us_web@~ts",
 											 [ net_utils:localhost() ] ),
 
-	app_facilities:display( "Connecting to node '~s'.", [ TargetNodeName ] ),
+	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
 
 	case net_adm:ping( TargetNodeName ) of
 
@@ -69,12 +69,11 @@ exec() ->
 			ok;
 
 		pang ->
-			trace_utils:error_fmt( "Unable to connect to '~s'.~nIf the target "
+			trace_utils:error_fmt( "Unable to connect to '~ts'.~nIf the target "
 				"node is really running and is named exactly like that, check "
 				"that the cookies and EPMD ports match and, finally, that "
 				"no firewall is in the way (ex: a server may filter the EPMD "
-				"port of interest).",
-				[ TargetNodeName ] ),
+				"port of interest).", [ TargetNodeName ] ),
 
 			throw( { unable_to_connect_to, TargetNodeName } )
 
@@ -93,11 +92,11 @@ exec() ->
 	case rpc:call( TargetNodeName, init, stop, [] ) of
 
 		{ badrpc, Reason } ->
-			trace_utils:warning_fmt( "The stopping of node '~s' failed with "
+			trace_utils:warning_fmt( "The stopping of node '~ts' failed with "
 				"following RPC reason: ~p", [ TargetNodeName, Reason ] );
 
 		ok ->
-			trace_utils:info_fmt( "Node '~s' stopped successfully",
+			trace_utils:info_fmt( "Node '~ts' stopped successfully",
 								  [ TargetNodeName ] )
 
 	end,
@@ -119,13 +118,13 @@ init_from_command_line() ->
 
 	ArgTable = shell_utils:get_argument_table(),
 
-	%trace_utils:debug_fmt( "Argument table: ~s",
+	%trace_utils:debug_fmt( "Argument table: ~ts",
 	%					   [ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
 	{ RemoteCookie, CookieShrunkTable } =
 		case list_table:extract_entry_if_existing( '-target-cookie',
-												  ArgTable ) of
+												   ArgTable ) of
 
 		false ->
 			throw( no_target_cookie_set );
@@ -138,7 +137,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:debug_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
+	%trace_utils:debug_fmt( "Setting remote cookie: '~ts'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
 

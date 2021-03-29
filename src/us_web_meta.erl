@@ -158,7 +158,7 @@ div.banner a:hover { color: #000000; background: #FFFFFF;  }
 
 % Returns the HTML body for a meta page.
 -spec get_page_body( protocol_type(), tcp_port(), domain_config_table(),
-	 time_utils:timestamp(), meta_web_settings(), boolean() ) -> html_element().
+   time_utils:timestamp(), meta_web_settings(), boolean() ) -> html_element().
 get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 			   LogAnalysisEnabled ) ->
 
@@ -166,7 +166,7 @@ get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 		"<body>"
 		"<div class=\"banner\"><p><em>Domain selection</em>"
 		"<a href=\"#meta_top\">[go to top]</a> "
-		++ [ text_utils:format( "- ~s~n", [ get_domain_link( D ) ] )
+		++ [ text_utils:format( "- ~ts~n", [ get_domain_link( D ) ] )
 			 || { D, _MaybeCertManagerPid, _VHostCfgTable }
 					<- table:values( DomainCfgTable ) ] ++
 		"<a href=\"#meta_bottom\">[go to bottom]</a>"
@@ -174,11 +174,11 @@ get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 		"<center><h1>Welcome to the US-Web <b>meta</b> website</h1>"
 		"</center>~n~n"
 		"<h2>General Information</h2>~n"
-		"<p>Server started on ~s, running on ~s (TCP port #~B).</p>~n"
+		"<p>Server started on ~ts, running on ~ts (TCP port #~B).</p>~n"
 		"<p>Note that this meta website does not self-reference.</p>~n"
 		"<a name=\"meta_top\"></a>~n"
 		"<p><center><a href=\"#meta_bottom\">[Go to bottom]</a></center></p>~n"
-		"<p>~s</p>~n~n~s~n",
+		"<p>~ts</p>~n~n~ts~n",
 		[ time_utils:get_textual_timestamp( StartTimestamp ), Scheme, Port,
 		  create_toc( DomainCfgTable ),
 		  describe_hosting( Scheme, Port, DomainCfgTable, MetaWebSettings,
@@ -198,7 +198,7 @@ create_toc( DomainCfgTable ) ->
 			"a single domain: " ++ get_domain_ref( DomainId );
 
 		DomInfos ->
-			text_utils:format( "~B domains:~n~s", [ length( DomInfos ),
+			text_utils:format( "~B domains:~n~ts", [ length( DomInfos ),
 				web_utils:get_unordered_list( [ get_domain_link( DomId )
 		|| { DomId, _MaybeCertManagerPid, _VHostCfgTable } <- DomInfos ] ) ] )
 
@@ -216,7 +216,7 @@ describe_hosting( Scheme, Port, DomainCfgTable,
 	MaybeMetaBaseURL = case LogAnalysisEnabled of
 
 		true ->
-			text_utils:format( "~s://~s.~s:~B",
+			text_utils:format( "~ts://~ts.~ts:~B",
 							   [ Scheme, MetaVhostId, MetaDomainId, Port ] );
 
 		false ->
@@ -255,7 +255,7 @@ get_domain_descriptions( Scheme, Port, DomainInfos, MaybeMetaBaseURL ) ->
 		  || { DomId, _MaybeCertManagerPid, VCfgTable } <- DomainInfos ] ),
 
 	% Just for the newline:
-	[ text_utils:format( "<p>~s</p>~n", [ DomStr ] ) || DomStr <- DomStrings ].
+	[ text_utils:format( "<p>~ts</p>~n", [ DomStr ] ) || DomStr <- DomStrings ].
 
 
 
@@ -268,17 +268,16 @@ get_domain_description( Scheme, Port, _DomainId=default_domain_catch_all,
 	text_utils:format(
 	  "<a name=\"" ++ ?domain_catch_all_target ++ "\"></a>~n"
 	  "<h2>For the domain catch-all</h2>~n"
-	  "<p>Note that the corresponding URLs are likely not resolvable</p>~s"
+	  "<p>Note that the corresponding URLs are likely not resolvable</p>~ts"
 	  ++ go_to_top(),
 	  [ get_vhost_descriptions( Scheme, Port, VCfgTable, MaybeMetaBaseURL ) ] );
 
 get_domain_description( Scheme, Port, DomainId, VCfgTable, MaybeMetaBaseURL ) ->
-	 text_utils:format( "<a name=\"~s\"></a>~n"
-			"<h2>Hosting for domain <code>~s</code></h2>~n<p>~s</p>~n",
+	 text_utils:format( "<a name=\"~ts\"></a>~n"
+			"<h2>Hosting for domain <code>~ts</code></h2>~n<p>~ts</p>~n",
 		[ DomainId, DomainId, get_vhost_descriptions( Scheme, Port, VCfgTable,
 													  MaybeMetaBaseURL ) ] )
 		++ go_to_top().
-
 
 
 
@@ -289,7 +288,7 @@ get_vhost_descriptions( Scheme, Port, VHostCfgTable, MaybeMetaBaseURL ) ->
 
 	% (domain better fetched from the vhost entries)
 
-	%trace_utils:debug_fmt( "Vhost configuration table: ~s",
+	%trace_utils:debug_fmt( "Vhost configuration table: ~ts",
 	%					   [ table:to_string( VHostCfgTable ) ] ),
 
 	"This domain comprises " ++ case table:values( VHostCfgTable ) of
@@ -298,14 +297,14 @@ get_vhost_descriptions( Scheme, Port, VHostCfgTable, MaybeMetaBaseURL ) ->
 			"no virtual host.";
 
 		V=[ _VHostCfgEntry ] ->
-			text_utils:format( "a single virtual host: ~s.",
+			text_utils:format( "a single virtual host: ~ts.",
 			%	[ get_vhost_description( Port, VHostCfgEntry ) ] );
 				[ get_table_for( V, Scheme, Port, MaybeMetaBaseURL ) ] );
 
 		VHostCfgEntries ->
 			%VStrings = lists:sort( [ get_vhost_description( Port, VE )
 			%			 || VE <- VHostCfgEntries ] ),
-			text_utils:format( "~B virtuals hosts:~n~s~n~s",
+			text_utils:format( "~B virtuals hosts:~n~ts~n~ts",
 				[ length( VHostCfgEntries ), web_utils:get_unordered_list(
 					[ get_vhost_link( VHostId, ParentHost )
 					  || #vhost_config_entry{ virtual_host=VHostId,
@@ -344,10 +343,10 @@ get_vhost_description( Scheme, Port,
 
 	end,
 
-	TargetURL = text_utils:format( "~s://~s.~s:~B/",
+	TargetURL = text_utils:format( "~ts://~ts.~ts:~B/",
 							[ Scheme, URLVHost, URLDomain, Port ] ),
 
-	TargetName = text_utils:format( "~s://~s.~s:~B/",
+	TargetName = text_utils:format( "~ts://~ts.~ts:~B/",
 							[ Scheme, NameVHost, NameDomain, Port ] ),
 
 	ToBegin = case VHost of
@@ -356,7 +355,7 @@ get_vhost_description( Scheme, Port,
 			"virtual host catch-all is ";
 
 		_ ->
-			text_utils:format( "<b>~s</b> is ", [ VHost ] )
+			text_utils:format( "<b>~ts</b> is ", [ VHost ] )
 
 	end,
 
@@ -370,7 +369,7 @@ get_vhost_description( Scheme, Port,
 
 	end,
 
-	text_utils:format( "~s<a href=\"~s\" target=\"_blank\">[~s]</a> ~s",
+	text_utils:format( "~ts<a href=\"~ts\" target=\"_blank\">[~ts]</a> ~ts",
 					   [ ToBegin, TargetURL, TargetName, ToAdd ] ).
 
 
@@ -433,10 +432,10 @@ get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 
 	end,
 
-	URL = text_utils:format( "~s://~s~s:~B",
-							[ Scheme, URLVHost, URLParentHost, Port ] ),
+	URL = text_utils:format( "~ts://~ts~ts:~B",
+							 [ Scheme, URLVHost, URLParentHost, Port ] ),
 
-	DisplayFullHost = text_utils:format( "~s~s",
+	DisplayFullHost = text_utils:format( "~ts~ts",
 										 [ DisplayVHost, DisplayParentHost ] ),
 
 	LogAnalysisLink = case MaybeMetaBaseURL of
@@ -452,24 +451,24 @@ get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 			PageFilename = class_USWebLogger:get_file_prefix_for( ParentHost,
 									VHost, _Tool=awstats ) ++ ".html",
 			text_utils:format(
-			  "<a href=\"~s/~s\" target=\"_blank\">[log analysis]</a>",
+			  "<a href=\"~ts/~ts\" target=\"_blank\">[log analysis]</a>",
 			  [ MaybeMetaBaseURL, PageFilename ] )
 
 	end,
 
 	text_utils:format( "
  <tr>
-	<td><center><a href=\"~s\">~s</a> <br>~s</center></td>
+	<td><center><a href=\"~ts\">~ts</a> <br>~ts</center></td>
 
-	<td>~s
+	<td>~ts
 	  <div class=\"wrap\">
-		<iframe src=\"~s\" class=\"frame\"></iframe>
+		<iframe src=\"~ts\" class=\"frame\"></iframe>
 	  </div>
 	</td>
 
 	<td>
 	  <div class=\"wrap\">
-		<iframe src=\"~s/NON_EXISTING_PAGE.html\" class=\"frame\"></iframe>
+		<iframe src=\"~ts/NON_EXISTING_PAGE.html\" class=\"frame\"></iframe>
 	  </div>
 	</td>
 
@@ -491,7 +490,7 @@ get_domain_display_name( _DomainId=default_domain_catch_all ) ->
 	"domain catch-all";
 
 get_domain_display_name( DomainId ) ->
-	text_utils:format( "domain ~s", [ DomainId ] ).
+	text_utils:format( "domain ~ts", [ DomainId ] ).
 
 
 % Returns the short display name for the specified domain.
@@ -499,18 +498,18 @@ get_domain_short_display_name( _DomainId=default_domain_catch_all ) ->
 	"*";
 
 get_domain_short_display_name( DomainId ) ->
-	text_utils:format( "~s", [ DomainId ] ).
+	text_utils:format( "~ts", [ DomainId ] ).
 
 
 % Returns a reference to the specified domain anchor.
 get_domain_ref( DomainId ) ->
-	text_utils:format( "<a name=\"~s\"></a>",
+	text_utils:format( "<a name=\"~ts\"></a>",
 					   [ get_domain_anchor( DomainId ) ] ).
 
 
 % Returns a link to the specified domain anchor.
 get_domain_link( DomainId ) ->
-	text_utils:format( "<a href=\"#~s\">~s</a>",
+	text_utils:format( "<a href=\"#~ts\">~ts</a>",
 					   [ get_domain_anchor( DomainId ),
 						 get_domain_short_display_name( DomainId ) ] ).
 
@@ -530,22 +529,22 @@ get_vhost_anchor( VHostId, ParentHost ) ->
 			"vhost-catch-all";
 
 		_ ->
-			text_utils:format( "vhost-~s", [ VHostId ] )
+			text_utils:format( "vhost-~ts", [ VHostId ] )
 
-					   end ++ "-~s", [ DomainAnchor ] ).
+					   end ++ "-~ts", [ DomainAnchor ] ).
 
 
 % Returns the display name for the specified vhost.
 get_vhost_display_name( _VHostId=without_vhost, ParentHost ) ->
-	text_utils:format( "host for the ~s itself",
+	text_utils:format( "host for the ~ts itself",
 					   [ get_domain_display_name( ParentHost ) ] );
 
 get_vhost_display_name( _VHostId=default_vhost_catch_all, ParentHost ) ->
-	text_utils:format( "virtual host catch-all for ~s",
+	text_utils:format( "virtual host catch-all for ~ts",
 					   [ get_domain_display_name( ParentHost ) ] );
 
 get_vhost_display_name( VHostId, ParentHost ) ->
-	text_utils:format( "virtual host ~s for ~s",
+	text_utils:format( "virtual host ~ts for ~ts",
 					   [ VHostId, get_domain_display_name( ParentHost ) ] ).
 
 
@@ -554,23 +553,23 @@ get_vhost_short_display_name( _VHostId=without_vhost, ParentHost ) ->
 	 get_domain_short_display_name( ParentHost );
 
 get_vhost_short_display_name( _VHostId=default_vhost_catch_all, ParentHost ) ->
-	text_utils:format( "*.~s",
+	text_utils:format( "*.~ts",
 		[ get_domain_short_display_name( ParentHost ) ] );
 
 get_vhost_short_display_name( VHostId, ParentHost ) ->
-	text_utils:format( "~s.~s",
+	text_utils:format( "~ts.~ts",
 		[ VHostId, get_domain_short_display_name( ParentHost ) ] ).
 
 
 % Returns a reference to the specified vhost anchor.
 get_vhost_ref( VHostId, ParentHost ) ->
-	text_utils:format( "<a name=\"~s\"></a>",
+	text_utils:format( "<a name=\"~ts\"></a>",
 					   [ get_vhost_anchor( VHostId, ParentHost ) ] ).
 
 
 % Returns a link to the specified vhost anchor.
 get_vhost_link( VHostId, ParentHost ) ->
-	text_utils:format( "<a href=\"#~s\">~s</a>",
+	text_utils:format( "<a href=\"#~ts\">~ts</a>",
 		[ get_vhost_anchor( VHostId, ParentHost ),
 		  get_vhost_short_display_name( VHostId, ParentHost ) ] ).
 

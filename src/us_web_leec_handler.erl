@@ -44,7 +44,7 @@
 % read the thumbprints from the well-known ACME URL).
 %
 -spec init( cowboy_req:req(), handler_state() ) ->
-				us_web_handler:handler_return().
+					us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
@@ -107,8 +107,8 @@ init( Req, _HandlerState=CertManagerPid ) ->
 		%	throw( { unexpected_thumbprint_answer, Other } )
 
 	after ChallengeTimeout ->
-		trace_bridge:error_fmt( "Time-out, no challenge received for host '~s' "
-			"after ~s.",
+		trace_bridge:error_fmt( "Time-out, no challenge received "
+			"for host '~ts' after ~ts.",
 			[ BinHost, time_utils:duration_to_string( ChallengeTimeout ) ] ),
 
 		throw( { challenge_timeout_for, BinHost, ChallengeTimeout } )
@@ -118,14 +118,14 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	Reply = case maps:get( Token, Thumbprints, _Default=undefined ) of
 
 		undefined ->
-			trace_bridge:error_fmt( "For host '~s', token '~p' not found among "
-				"thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
+			trace_bridge:error_fmt( "For host '~ts', token '~p' not found "
+				"among thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
 			cowboy_req:reply( 404, Req#{ <<"server">> => ?server_header_id } );
 
 		TokenThumbprint ->
 
 			cond_utils:if_defined( us_web_debug_handlers,
-			  trace_bridge:debug_fmt( "For host '~s', token '~p' found "
+			  trace_bridge:debug_fmt( "For host '~ts', token '~p' found "
 					"associated to '~p', among thumbprints '~p'.",
 					[ BinHost, Token, TokenThumbprint, Thumbprints ] ) ),
 

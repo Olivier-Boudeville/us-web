@@ -106,7 +106,7 @@
 %  BinFullFilepath, #{ image_404 := MaybeImage404 }=HState ) ->
 return_404( Req, BinFullFilepath, HState ) ->
 
-	%trace_bridge:debug_fmt( "Returning 404 for full path '~s' and "
+	%trace_bridge:debug_fmt( "Returning 404 for full path '~ts' and "
 	%                       "request:~n~p", [ BinFullFilepath, Req ] ),
 
 	[ Scheme, VHost, TCPPort, PathInfo ] =
@@ -136,7 +136,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 	end,
 
-	PageTitle = text_utils:format( "Page '~s' not found on ~s",
+	PageTitle = text_utils:format( "Page '~ts' not found on ~ts",
 								   [ PathForBrowser, VHost ] ),
 
 	MiddleString = case MaybeImage404 of
@@ -155,22 +155,22 @@ return_404( Req, BinFullFilepath, HState ) ->
 			RootRelImgPath = file_utils:join(
 				   [ ".." || _PathElem <- tl( PathInfo ) ], ImagePath ),
 
-			text_utils:format( "<td><center><img src=\"~s\" border=\"0\" "
+			text_utils:format( "<td><center><img src=\"~ts\" border=\"0\" "
 				"width=\"50%\"></center></td>", [ RootRelImgPath ] )
 
 	end,
 
 
 	PageBody = text_utils:format(
-	  <<"<h1>Requested content '~s' not found</h1>
+	  <<"<h1>Requested content '~ts' not found</h1>
   <p>I could not find the document you wanted, sorry.</p>
-  <p style=\"padding-left:10%\">       --- The ~s server.</p>
+  <p style=\"padding-left:10%\">       --- The ~ts server.</p>
   <p>
 	<center>
 		<table style=\"border:none\" width=\"30%\">
 		  <tr>
 			<td style=\"font-size:1000%\">4</td>
-			~s
+			~ts
 			<td style=\"font-size:1000%\">4</td>
 		  </tr>
 		</table>
@@ -178,7 +178,7 @@ return_404( Req, BinFullFilepath, HState ) ->
   </p>">>,
   % Reporting currently disabled, not wanting to leak an e-mail address:
   %
-  %<p>You can report this issue: <a href=\"mailto:error-404@~s?subject=Error%20404\">click here</a>. Thanks!</p>">>,
+  %<p>You can report this issue: <a href=\"mailto:error-404@~ts?subject=Error%20404\">click here</a>. Thanks!</p>">>,
 	%[ PathForBrowser, VHost, MiddleString, VHost ] ),
 	[ PathForBrowser, VHost, MiddleString ] ),
 
@@ -209,7 +209,7 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 		BinCssFile ->
 			text_utils:format(
-			  "<link rel=\"stylesheet\" type=\"text/css\" href=\"~s\">",
+			  "<link rel=\"stylesheet\" type=\"text/css\" href=\"~ts\">",
 			  [ BinCssFile ] )
 
 	end,
@@ -220,7 +220,7 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 			"";
 
 		BinIconFile ->
-			text_utils:format( "<link rel=\"icon\" href=\"~s\">",
+			text_utils:format( "<link rel=\"icon\" href=\"~ts\">",
 							   [ BinIconFile ] )
 
 	end,
@@ -254,10 +254,10 @@ get_base_footer() ->
 get_footer( VHost, Scheme, Port ) ->
 	text_utils:format( <<"
 	<p>
-	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"~s://~s:~B\">website root</a>.
+	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"~ts://~ts:~B\">website root</a>.
 	  </center>
 	</p>
-~s">>, [ Scheme, VHost, Port, get_base_footer() ]).
+~ts">>, [ Scheme, VHost, Port, get_base_footer() ]).
 
 
 % Returns a suitable document header.
@@ -379,7 +379,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 	Path = maps:get( path, Req ),
 	Version = maps:get( version, Req ),
 
-	MethodURL = text_utils:format( "~s ~s ~s", [ Method, Path, Version ] ),
+	MethodURL = text_utils:format( "~ts ~ts ~ts", [ Method, Path, Version ] ),
 
 	% Size of the body object returned to the client, not including the response
 	% headers:
@@ -398,7 +398,8 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 	UserAgent = maps:get( <<"user-agent">>, Headers,
 						  _DefaultUserAgent= <<"(unknown user agent)">> ),
 
-	text_utils:bin_format( "~s ~s ~s ~s ~s \"~s\" ~B ~B \"~s\" \"~s\"~n",
+	text_utils:bin_format(
+		"~ts ~ts ~ts ~ts ~ts \"~ts\" ~B ~B \"~ts\" \"~ts\"~n",
 		[ VirtualName, IPString, Other, Login, Time, MethodURL, HttpStatusCode,
 		  SentSize, Referer, UserAgent ] ).
 
@@ -408,10 +409,10 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 % request-specific process in order to further parallelize their processing.
 %
 -spec manage_error_log( basic_utils:error_reason(), cowboy_req:req(),
-				bin_content_path(), handler_state() ) -> void().
+						bin_content_path(), handler_state() ) -> void().
 manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
-	%trace_bridge:debug_fmt( "Logging error for full path '~s' and "
+	%trace_bridge:debug_fmt( "Logging error for full path '~ts' and "
 	%					   "request:~n~p", [ BinFullFilePath, Req ] ),
 
 	% Unlike accesses, no specific log format seems to apply here:
@@ -419,14 +420,14 @@ manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 	Host = maps:get( host, Req, no_host ),
 
 	BinErrorMsg = text_utils:bin_format(
-		"[~s][~s] Error '~p' while requested to serve '~s'; full ~s~n",
+		"[~ts][~ts] Error '~p' while requested to serve '~ts'; full ~ts~n",
 		[ time_utils:get_textual_timestamp(), Host, Error, BinFullFilePath,
 		  request_to_string( Req ) ] ),
 
 	case maps:get( logger_pid, HState ) of
 
 		undefined ->
-			trace_bridge:error_fmt( "[~w] No logger to record ~s",
+			trace_bridge:error_fmt( "[~w] No logger to record ~ts",
 									[ self(), BinErrorMsg ] );
 
 		LoggerPid ->
@@ -434,7 +435,7 @@ manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 			% Oneway call:
 			LoggerPid ! { reportError, [ BinErrorMsg ] }
 
-			%trace_bridge:debug_fmt( "[~w] reported ~s.",
+			%trace_bridge:debug_fmt( "[~w] reported ~ts.",
 			%					   [ self(), BinErrorMsg ] )
 
 	end.
@@ -448,6 +449,6 @@ request_to_string( Req ) ->
 	% Map in map better special cases:
 	{ Headers, ShrunkReq } = table:extract_entry( headers, Req ),
 
-	text_utils:format( "request corresponding without the headers to a ~s~n"
-		"Request headers corresponding to a ~s",
+	text_utils:format( "request corresponding without the headers to a ~ts~n"
+		"Request headers corresponding to a ~ts",
 		[ table:to_string( ShrunkReq ), table:to_string( Headers ) ] ).

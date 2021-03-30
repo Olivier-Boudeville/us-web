@@ -362,7 +362,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 	% To be resolved later as an hostname (reverse look-up):
 	{ IP, _Port } = maps:get( peer, Req ),
 
-	IPString = io_lib:format( "~B.~B.~B.~B", tuple_to_list( IP ) ),
+	IPString = text_utils:format( "~B.~B.~B.~B", tuple_to_list( IP ) ),
 
 	% RFC 1413 identity of the client (unreliable):
 	Other = "-",
@@ -443,7 +443,7 @@ manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
 
 % Returns a textual description of specified request.
--spec request_to_string( cowboy_req:req() ) -> text_utils:string().
+-spec request_to_string( cowboy_req:req() ) -> text_utils:ustring().
 request_to_string( Req ) ->
 
 	% Map in map better special cases:

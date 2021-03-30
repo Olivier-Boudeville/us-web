@@ -43,10 +43,10 @@
 
 -type extra() :: [ extra_charset() | extra_etag() | extra_mimetypes() ].
 
--type opts() :: { file | dir, string() | binary() }
-	| { file | dir, string() | binary(), extra() }
-	| { priv_file | priv_dir, atom(), string() | binary() }
-	| { priv_file | priv_dir, atom(), string() | binary(), extra() }.
+-type opts() :: { file | dir, ustring() | binary() }
+	| { file | dir, ustring() | binary(), extra() }
+	| { priv_file | priv_dir, atom(), ustring() | binary() }
+	| { priv_file | priv_dir, atom(), ustring() | binary(), extra() }.
 
 -export_type([ opts/0 ]).
 
@@ -58,9 +58,11 @@
 
 % Shorthands:
 
--type file_info() :: file_utils:file_info().
--type bin_content_path() :: us_web_handler:bin_content_path().
+-type ustring() :: text_utils:ustring().
 
+-type file_info() :: file_utils:file_info().
+
+-type bin_content_path() :: us_web_handler:bin_content_path().
 -type handler_state() :: us_web_handler:handler_state().
 -type handler_return() :: us_web_handler:handler_return().
 

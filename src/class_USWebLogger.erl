@@ -665,7 +665,7 @@ generate_report( State ) ->
 			%  "nice -n ~B ~ts -config=~ts -output -staticlinks > ~ts",
 			%  [ Niceness, BinToolPath, CfgDesc, HTMLReportPath ] ),
 			%
-			%case system_utils:run_executable( Cmd ) of
+			%case system_utils:run_command( Cmd ) of
 			%
 			%	{ _ReturnCode=0, _CmdOutput="" } ->
 			%		ok;
@@ -710,7 +710,7 @@ generate_report( State ) ->
 			%generate_other_report_pages( ReportTypes, CmdFormatString, State )
 
 			% Newer approach builds all report pages in one go:
-			case system_utils:run_executable( LogReportGenCmd ) of
+			case system_utils:run_command( LogReportGenCmd ) of
 
 				{ _ReturnCode=0, _CmdOutput="" } ->
 					report_generated;
@@ -1013,7 +1013,7 @@ rotate_access_log_file( RotCount, State ) ->
 					?debug_fmt( "Updating Awstats database now based "
 								"on command '~ts'.", [ LogAnalysisUpdateCmd ] ),
 
-					case system_utils:run_executable( LogAnalysisUpdateCmd ) of
+					case system_utils:run_command( LogAnalysisUpdateCmd ) of
 
 						{ _ReturnCode=0, _CmdOutput="" } ->
 							ok;
@@ -1030,7 +1030,7 @@ rotate_access_log_file( RotCount, State ) ->
 								"log rotation failed (return code: ~w), and "
 								"returned following message: '~ts' (command "
 								"was: '~ts').", [ ReturnCode, CmdOutput,
-												 LogAnalysisUpdateCmd ] )
+												  LogAnalysisUpdateCmd ] )
 
 					end
 
@@ -1054,7 +1054,7 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 
 	Cmd = text_utils:format( CmdFormatString, [ ReportType, ReportType ] ),
 
-	case system_utils:run_executable( Cmd ) of
+	case system_utils:run_command( Cmd ) of
 
 		{ _ReturnCode=0, _CmdOutput="" } ->
 			?debug_fmt( "Generated report type '~ts' (command: '~ts').",

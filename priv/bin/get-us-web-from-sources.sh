@@ -57,8 +57,8 @@ done
 
 if [ ! $# -eq 0 ]; then
 
-	echo "  Error, unexpected argument(s): '$*'." 1>&2
-	echo "${usage}" 1>&2
+	echo "  Error, unexpected argument(s): '$*'.
+${usage}" 1>&2
 	exit 4
 
 fi
@@ -107,7 +107,7 @@ github_base="https://github.com/Olivier-Boudeville"
 # Checking first, prior to any action:
 
 
-erlc=$(which erlc 2>/dev/null)
+erlc="$(which erlc 2>/dev/null)"
 
 # No version checked:
 if [ ! -x "${erlc}" ]; then
@@ -119,7 +119,7 @@ if [ ! -x "${erlc}" ]; then
 fi
 
 
-rebar3=$(which rebar3 2>/dev/null)
+rebar3="$(which rebar3 2>/dev/null)"
 
 # No version checked either:
 if [ ! -x "${rebar3}" ]; then
@@ -133,7 +133,7 @@ fi
 
 if [ $do_fetch -eq 0 ]; then
 
-	git=$(which git 2>/dev/null)
+	git="$(which git 2>/dev/null)"
 
 	if [ ! -x "${git}" ]; then
 
@@ -145,7 +145,7 @@ if [ $do_fetch -eq 0 ]; then
 fi
 
 
-make=$(which make 2>/dev/null)
+make="$(which make 2>/dev/null)"
 
 if [ ! -x "${make}" ]; then
 
@@ -497,7 +497,7 @@ fi
 
 if [ $do_run_test -eq 0 ]; then
 
-	cd ${us_web_dir}
+	cd "${us_web_dir}"
 
 	echo
 

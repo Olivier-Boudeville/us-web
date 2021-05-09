@@ -37,8 +37,7 @@
 % - static: a basic, static website to be served (the default)
 % - meta: a website generated, if requested, by US-Web, to browse conveniently
 % all the other hosted websites
-% - nitrogen: a Nitrogen-based, dynamic website (see
-% http://nitrogenproject.com/)
+% - nitrogen: a Nitrogen-based, dynamic website (see http://nitrogenproject.com)
 %
 -type web_kind() :: 'static' | 'meta' | 'nitrogen'.
 
@@ -372,9 +371,9 @@
 	{ default_web_root, maybe( bin_directory_path() ),
 	  "the default root (if any) for the website trees" },
 
-	{ nitrogen_enabled, boolean(),
-	  "tells whether Nitrogen is enabled, i.e. if at least one virtual host is "
-	  "of this type" },
+	{ nitrogen_roots, [ bin_directory_path() ], "the known content roots of "
+	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, i.e. if
+	  at least one virtual host is of this type" },
 
 	{ meta_web_settings, maybe( meta_web_settings() ),
 	  "the domain, virtual host identifiers and web root of the auto-generated "
@@ -1098,7 +1097,7 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 			StoreState = setAttributes( State, [
 				{ execution_context, ExecContext },
-				{ nitrogen_enabled, false },
+				{ nitrogen_roots, [] },
 				{ meta_web_settings, undefined },
 				{ config_base_directory, BinCfgDir },
 				{ us_server_pid, MaybeUSServerPid },
@@ -1741,7 +1740,7 @@ build_vhost_table( DomainId,
 
 	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
 
-	SetState = setAttribute( State, nitrogen_enabled, true ),
+	SetState = appendToAttribute( State, nitrogen_roots, BinContentRoot ),
 
 	build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
 		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
@@ -1789,8 +1788,17 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 									  logger_pid=LoggerPid,
 									  cert_manager_pid=MaybeCertManagerPid },
 
-	VHostRoute = get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-						LoggerPid, CertSupport, MaybeCertManagerPid ),
+	VHostRoute = case ActualKind of
+
+		K when K =:= static orelse K =:= meta ->
+			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
+							LoggerPid, CertSupport, MaybeCertManagerPid );
+
+		nitrogen ->
+			get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
+							LoggerPid, CertSupport, MaybeCertManagerPid )
+
+	end,
 
 	{ VHostEntry, VHostRoute };
 
@@ -2164,52 +2172,67 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	%
 	% To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
 	%
-	%io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n",
-	%		   [ StaticDispatches, HandlerModule, HandlerOpts ] ),
+	%io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n"
+	%		   "Resulting in: BaseDispatch = ~p~n",
+	%		   [ StaticDispatches, HandlerModule, HandlerOpts, BaseDispatch ] ),
 	%
 	% Then 'make all', 'bin/nitrogen restart' and
 	% 'grep StaticDispatches log/erlang.log.*'.
 
-	HandlerModule = us_web_static,
+	StaticHandlerModule = us_web_static,
 
 	% 'all' rather than 'web' here, apparently:
-	CowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
+	StaticCowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
 
-	InitialState = #{ content_root => BinContentRoot,
+	BaseStaticHandlerState = #{ content_root => BinContentRoot,
 					  %css_path => MaybeBinCssFile,
 					  %icon_path => MaybeBinIconFile,
 					  %image_404 => MaybeBin404,
-					  cowboy_opts => CowboyOpts,
+					  cowboy_opts => StaticCowboyOpts,
 					  logger_pid => LoggerPid },
 
 	StaticDirs = [ "js", "css", "images", "nitrogen" ],
 
 	StaticDirDispatches = [ { text_utils:format( "/~ts/[...]", [ D ] ),
-		HandlerModule, InitialState#{
+		StaticHandlerModule, BaseStaticHandlerState#{
 				type => directory,
-				path => text_utils:format( "./site/static/~ts/", [ D ] ) } }
+				path => text_utils:format( "site/static/~ts/", [ D ] ) } }
 							|| D <- StaticDirs ],
 
 
 	StaticFiles = [ "favicon.ico" ],
 
 	StaticFileDispatches = [ { text_utils:format( "/~ts", [ F ] ),
-		HandlerModule, InitialState#{
+		StaticHandlerModule, BaseStaticHandlerState#{
 				type => file,
-				path => text_utils:format( "./site/static/~ts", [ F ] ) } }
+				path => text_utils:format( "site/static/~ts", [ F ] ) } }
 							|| F <- StaticFiles ],
 
 	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
+
+	% Useful to that the Nitrogen cache can know where to look for elements
+	% (such as templates) that are defined as paths that are relative to the
+	% content root at hand; basic Nitrogen places its current directory at this
+	% content root, whereas the current directory of US-Web VM is necessarily
+	% elsewhere (as multiple Nitrogen-based websites can be served), so US-Web
+	% needs to locate easily where the served contents shall be found.
+	%
+	InitialNitroHandlerState = BinContentRoot,
+
+	AllNitroMatches = StaticMatches
+		++ [ { '_', [], _NitroHandler=cowboy_simple_bridge_anchor,
+			   InitialNitroHandlerState } ],
 
 	PathMatches = case CertSupport =:= renew_certificates
 						andalso MaybeCertManagerPid =/= undefined of
 
 		true ->
 			 % Be able to answer Let's Encrypt ACME challenges:
-			[ get_challenge_path_match( MaybeCertManagerPid ) | StaticMatches ];
+			[ get_challenge_path_match( MaybeCertManagerPid )
+			| AllNitroMatches ];
 
 		false ->
-			StaticMatches
+			AllNitroMatches
 
 	end,
 
@@ -2766,7 +2789,7 @@ manage_data_directory( ConfigTable, State ) ->
 
 	end,
 
-	BinDataDir = text_utils:string_to_binary( DataDir ),
+	BinDataDir = text_utils:ensure_binary( DataDir ),
 
 	setAttribute( State, data_directory, BinDataDir ).
 
@@ -2851,7 +2874,7 @@ manage_log_directory( ConfigTable, State ) ->
 
 	end,
 
-	BinLogDir = text_utils:string_to_binary( LogDir ),
+	BinLogDir = text_utils:ensure_binary( LogDir ),
 
 	setAttribute( State, log_directory, BinLogDir ).
 
@@ -3221,6 +3244,20 @@ manage_routes( ConfigTable, State ) ->
 		?getAttr(cert_mode), CertDir, ?getAttr(leec_agents_key_path),
 		SchedulerPid, State ),
 
+	case getAttribute( ProcessState, nitrogen_roots ) of
+
+		[] ->
+			?debug( "Nitrogen not enabled, hence not initialised." );
+
+		NitroRoots ->
+			?info_fmt( "Initializing Nitrogen for the following corresponding "
+					   "content-root: ~ts",
+					   [ text_utils:binaries_to_binary( NitroRoots ) ] ),
+
+			initialise_nitrogen_for_contents( NitroRoots, State )
+
+	end,
+
 	% TLS configuration for any https support:
 	MaybeHttpsTranspInfo = case CertSupport of
 
@@ -3265,6 +3302,86 @@ manage_routes( ConfigTable, State ) ->
 							{ logger_task_ring, TaskRingPid },
 							{ https_transp_info, MaybeHttpsTranspInfo } ] ).
 
+
+
+% Initialises Nitrogen for the specified content roots.
+-spec initialise_nitrogen_for_contents( [ bin_directory_path() ],
+										wooper:state() ) -> void().
+initialise_nitrogen_for_contents( _ContentRoots=[], _State ) ->
+	ok;
+
+initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
+
+	NitroEbin = file_utils:bin_join( BinContentRoot, "ebin" ),
+
+	case file_utils:is_existing_directory_or_link( NitroEbin ) of
+
+		true ->
+			code_utils:declare_beam_directory( NitroEbin ),
+
+			% Something akin to MY_SITE/etc/simple_bridge.config should be
+			% probably set, otherwise:
+
+			%[error][erlang_logger]     label: {proc_lib,crash}
+			%    report: [[{initial_call,
+			%                  {cowboy_stream_h,request_process,
+			%                    ['Argument__1','Argument__2','Argument__3']}},
+			%              {pid,<0.218.0>},
+			%              {registered_name,[]},
+			%              {error_info,
+			%                  {error,undef,
+			%                      [{undefined,run,
+			%                           [{sbw,cowboy_simple_bridge,
+			%                               {cowboy_bridge,
+
+			Settings = [ { handler, nitrogen }, { backend, cowboy },
+						 { max_post_size, 10 }, { max_file_size, 10 },
+						 { max_file_in_memory_size, 0 },
+						 { scratch_dir, "./scratch" } ],
+
+			[ ok = application:set_env( _App=simple_bridge, Param, Value,
+										_Opts=[ { persistent, true } ] )
+			  || { Param, Value } <- Settings ],
+
+			%[notice][erlang_logger]     args: [{throw,
+			%               {handler_not_found_in_context,crash_handler,
+			%     {handler_context,config_handler,default_config_handler,
+			%                        undefined,[]},
+			%              {handler_context,log_handler,default_log_handler,
+			%                        undefined,[]},
+			%                    {handler_context,process_registry_handler,
+			%                        nprocreg_registry_handler,undefined,[]}]},
+			%               [{wf_handler,get_handler,1,
+			%                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
+
+			%OtherPrereqApps =
+			%	otp_utils:prepare_for_execution( nitrogen_core, BinContentRoot ),
+
+			%debug_fmt( "Other prerequisite applications: ~p.", [ OtherPrereqApps ] ),
+
+			%otp_utils:start_application( nitrogen_core ),
+
+			otp_utils:start_application( nitro_cache ),
+
+			%PrereqApps =
+			%	otp_utils:prepare_for_execution( nitrogen, BinContentRoot ),
+
+			%?debug_fmt( "Prerequisite applications: ~p.", [ PrereqApps ] ),
+
+			% Possibly to perform only once overall:
+			%otp_utils:start_application( nitrogen ),
+
+			% As suggested by Nitrogen's 'embed' script:
+			%nitrogen_sup:start_link(),
+
+			initialise_nitrogen_for_contents( T , State );
+
+		false ->
+			?error_fmt( "Unable to find the ebin directory for the Nitrogen "
+						"content root '~ts'.", [ BinContentRoot ] ),
+			throw( { no_ebin, text_utils:binary_to_string( BinContentRoot ) } )
+
+	end.
 
 
 % Applies the meta support.
@@ -3680,13 +3797,13 @@ to_string( State ) ->
 
 	end,
 
-	NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_enabled) of
+	NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_roots) of
 
-		true ->
-			"enabled";
+		[] ->
+			"disabled";
 
-		false ->
-			"disabled"
+		_ ->
+			"enabled"
 
 	end,
 

@@ -32,9 +32,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Monday, March 29, 2021
+:Lastly updated: Thursday, May 6, 2021
 :Status: Work in progress
-:Version: 0.0.19
+:Version: 0.0.20
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 

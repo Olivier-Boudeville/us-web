@@ -26,7 +26,9 @@ no_launch_opt="--no-launch"
 
 checkout_opt="--checkout"
 
+# Not by default:
 support_nitrogen=1
+
 
 # To avoid typos:
 checkout_dir="_checkouts"
@@ -46,7 +48,7 @@ nitrogen_option="--support-nitrogen"
 usage="
 Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
-The '${nitrogen_option}' option will enable the support for Nitrogen-based websites.
+The '${nitrogen_option}' option enables the support for Nitrogen-based websites.
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
@@ -79,7 +81,7 @@ while [ $token_eaten -eq 0 ]; do
 
 	if [ "$1" = "-n" ] || [ "$1" = "${nitrogen_option}" ]; then
 		echo "(Nitrogen support enabled)"
-		support_nitrogen=1
+		support_nitrogen=0
 		token_eaten=0
 	fi
 
@@ -128,7 +130,7 @@ if [ $(id -u ) -eq 0 ]; then
 
 fi
 
-erlc=$(which erlc 2>/dev/null)
+erlc="$(which erlc 2>/dev/null)"
 
 # No version checked:
 if [ ! -x "${erlc}" ]; then
@@ -140,7 +142,7 @@ if [ ! -x "${erlc}" ]; then
 fi
 
 
-rebar3=$(which rebar3 2>/dev/null)
+rebar3="$(which rebar3 2>/dev/null)"
 
 # No version checked either:
 if [ ! -x "${rebar3}" ]; then
@@ -152,7 +154,7 @@ if [ ! -x "${rebar3}" ]; then
 fi
 
 
-make=$(which make 2>/dev/null)
+make="$(which make 2>/dev/null)"
 
 if [ ! -x "${make}" ]; then
 
@@ -293,9 +295,10 @@ if [ $do_clone -eq 0 ]; then
 
 		# After more studies, building nitrogen_core takes care of the following
 		# dependencies: cf erlware_commons nitro_cache nprocreg qdate
-		# qdate_localtime rekt simple_bridge stacktrace_compat Its rebar.config
-		# lists an additional one, sync, which is not needed in production, so
-		# ultimately only nitrogen_core is actually needed.
+		# qdate_localtime rekt simple_bridge stacktrace_compat
+		#
+		# Its rebar.config lists an additional one, sync, which is not needed in
+		# production, so ultimately only nitrogen_core is actually needed.
 
 		echo " - cloning nitrogen_core"
 

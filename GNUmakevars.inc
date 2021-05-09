@@ -149,8 +149,22 @@ US_WEB_BEAM := $(US_WEB_TOP)/src
 MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
 
 
-# We rely on Myriad, WOOPER, Traces and US-Common as well:
-BEAM_DIRS += $(US_WEB_BEAM_DIRS)
+# Nitrogen section.
+
+NITROGEN_BEAM_DIRS = $(NITROGEN_CORE_TOP)/ebin $(NITROGEN_DEPS_BEAM_DIRS)
+
+NITROGEN_DEPS_DIRS = cf erlware_commons nitro_cache nprocreg qdate \
+					 qdate_localtime rekt simple_bridge stacktrace_compat
+
+NITROGEN_DEPS_BEAM_DIRS = $(patsubst %, $(NITROGEN_CORE_TOP)/deps/%/ebin, $(NITROGEN_DEPS_DIRS))
+
+
+# We rely on Myriad, WOOPER, Traces and US-Common as well, and, if enabled,
+# Nitrogen:
+#
+BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(NITROGEN_BEAM_DIRS)
+
+
 
 
 ifndef VM_NAME
@@ -236,7 +250,26 @@ else
 		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/leec/.),)
 			LEEC_TOP = $(US_WEB_TOP)/_build/default/lib/leec
 		else
-			FORCE_EVAL := $(error Unable to find the build root of US-Common from $(realpath .).)
+			FORCE_EVAL := $(error Unable to find the build root of Ceylan-LEEC from $(realpath .).)
+		endif
+	endif
+endif
+
+
+# And for any nitrogen_core available:
+ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/nitrogen_core/.),)
+	# By default, expect a checkout directory:
+	NITROGEN_CORE_TOP = $(US_WEB_TOP)/_checkouts/nitrogen_core
+else
+	# Second, a sibling one is searched for:
+	ifneq ($(wildcard $(US_WEB_TOP)/../nitrogen_core/.),)
+		NITROGEN_CORE_TOP = $(US_WEB_TOP)/../nitrogen_core
+   else
+		# Otherwise most probably in a 'rebar3 compile' context:
+		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/nitrogen_core/.),)
+			NITROGEN_CORE_TOP = $(US_WEB_TOP)/_build/default/lib/nitrogen_core
+		else
+			FORCE_EVAL := $(warning Warning: unable to find a build root for Nitrogen-core from $(realpath .).)
 		endif
 	endif
 endif

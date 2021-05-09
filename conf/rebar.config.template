@@ -34,6 +34,9 @@
 						{branch, "master"}}},
 
 	% Uncomment to enable the support for Nitrogen-based websites:
+	%
+	% (specifying only 'nitrogen_core' should be sufficient)
+	%
 	%{simple_bridge, {git, "git://github.com/nitrogen/simple_bridge",{tag, "v2.1.0"}}},
 	%{qdate,         {git, "git://github.com/choptastic/qdate",      {tag, "0.5.0"}}},
 	%{nprocreg,      {git, "git://github.com/nitrogen/nprocreg",     {tag, "v0.3.0"}}},

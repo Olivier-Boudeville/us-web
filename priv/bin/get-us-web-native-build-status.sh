@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# Script typically meant to be placed in /usr/local/bin of a gateway
+# Script typically meant to be placed in /usr/local/bin of a gateway, for a
+# native US-Web release (the kind of release that is recommended now).
 #
 # Complementary to running, as root: 'systemctl status us-web.service'
 
@@ -22,13 +23,25 @@ fi
 
 # We need first to locate the us-web-common.sh script:
 
-us_web_rel_root=$(/bin/ls -d -t /opt/universal-server/us_web-* 2>/dev/null | head -n 1)
+release_base="/opt/universal-server/us_web"
+
+us_web_rel_root="$(/bin/ls -d -t ${release_base}-* 2>/dev/null | head -n 1)"
 
 if [ ! -d "${us_web_rel_root}" ]; then
 
-	echo "Error, unable to locate the root of the target US-Web release (tried '${us_web_rel_root}' from '$(pwd)')." 1>&2
+	if ! /bin/ls -d -t ${release_base}-* 1>/dev/null 2>&1; then
 
-	exit 30
+		echo "  Error, no US-Web release found in the '${release_base}' directory." 1>&2
+
+		exit 30
+
+	else
+
+		echo "  Error, unable to locate the root of the target US-Web release (tried '${us_web_rel_root}' in ${release_base} (from '$(pwd)')." 1>&2
+
+		exit 31
+
+	fi
 
 fi
 
@@ -41,7 +54,7 @@ us_web_common_script="lib/us_web-latest/priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
-	echo "Error, unable to find ${us_web_common_script_name} script (not found as '${us_web_common_script}', while being in '$(pwd)')." 1>&2
+	echo "  Error, unable to find ${us_web_common_script_name} script (not found as '${us_web_common_script}', while being in '$(pwd)')." 1>&2
 	exit 35
 
 fi

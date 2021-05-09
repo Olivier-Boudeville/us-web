@@ -70,6 +70,12 @@ LOG_DIR := $(US_WEB_DEFAULT_REL_DIR)/log
 VM_LOG_FILES := $(LOG_DIR)/erlang.log.*
 
 
+# Shall be kept consistent with the http_tcp_port entry in
+# priv/for-testing/us-web-for-tests.config:
+#
+DEBUG_TEST_PORT := 8080
+
+
 # SIMPLE_BRIDGE_LIB_DIR := $(DEFAULT_BASE)/lib/simple_bridge
 
 # SIMPLE_BRIDGE_CONFIG := $(SIMPLE_BRIDGE_LIB_DIR)/etc/simple_bridge.config
@@ -99,9 +105,9 @@ help-us-web:
 
 
 register-version-in-header:
-	@if [ -z "$(VERSION_FILE)" ] ; then \
+	@if [ -z "$(VERSION_FILE)" ]; then \
 	echo "Error, no version file defined." 1>&2 ; exit 52 ; else \
-	$(MAKE) register-us-web ; fi
+	$(MAKE) -s register-us-web ; fi
 
 
 register-us-web:
@@ -138,14 +144,14 @@ compile: rebar3-create-app-file
 
 # Ensures a relevant development release is available.
 ensure-dev-release:
-	@if [ ! -f "$(US_DEFAULT_REL_EXEC)" ] ; then \
-	echo "No $(US_DEFAULT_REL_EXEC) found, building a development release." ; $(MAKE) -s release-dev ; fi
+	@if [ ! -f "$(US_DEFAULT_REL_EXEC)" ]; then \
+	echo "No $(US_DEFAULT_REL_EXEC) found, building a development release."; $(MAKE) -s release-dev ; fi
 
 
 # Ensures a relevant production release is available.
 ensure-prod-release:
-	@if [ ! -f "$(US_DEFAULT_REL_EXEC)" ] ; then \
-	echo "No $(US_DEFAULT_REL_EXEC) found, building a production release." ; $(MAKE) -s release-prod ; fi
+	@if [ ! -f "$(US_DEFAULT_REL_EXEC)" ]; then \
+	echo "No $(US_DEFAULT_REL_EXEC) found, building a production release."; $(MAKE) -s release-prod ; fi
 
 
 
@@ -242,14 +248,15 @@ update-release:
 #
 start: kill clean-logs compile
 	@echo "Starting the us_web release (EPMD port: $(EPMD_PORT)):"
-	@#export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
-	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web start &
-	@sleep 1 ; $(MAKE) -s log
+	@#export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web daemon &
+	@export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web start &
+	@sleep 1; $(MAKE) -s log
+
 
 debug:
 	@echo " Running us_web for debug natively (EPMD port: $(EPMD_PORT))"
-	@cd src && $(MAKE) us_web_exec CMD_LINE_OPT="--batch"
-
+	@cd src && $(MAKE) -s us_web_exec CMD_LINE_OPT="--batch"
+	@echo "You may point a browser to (possibly) http://localhost:$(DEBUG_TEST_PORT)/ or http://baz.localhost:$(DEBUG_TEST_PORT)/ or even, if enabled, http://nitrogen-testing.localhost:$(DEBUG_TEST_PORT)/"
 
 
 # Not tested yet, as we use releases in production mode, through systemd.
@@ -260,14 +267,14 @@ start-as-release:
 
 debug-as-release: ensure-dev-release
 	@echo " Running us_web for debug as a release (EPMD port: $(EPMD_PORT))"
-	@killall java 2>/dev/null ; export ERL_EPMD_PORT=$(EPMD_PORT) ; $(MAKE) -s start || $(MAKE) -s log
+	@killall java 2>/dev/null; export ERL_EPMD_PORT=$(EPMD_PORT); $(MAKE) -s start || $(MAKE) -s log
 
 
 
 # A rule such as the following would be bound to fail because of a non-matching
 # cookie:
 #
-#	-@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web status
+#	-@export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web status
 status:
 	@echo "Status of the us_web release (EPMD port: $(EPMD_PORT)):"
 	@$(US_WEB_TOP)/priv/bin/get-us-web-status.sh
@@ -276,14 +283,14 @@ status:
 # A rule such as the following would be bound to fail because of a non-matching
 # cookie:
 #
-#  @export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || ( echo "Stop failed" ; $(MAKE) -s log )
+#  @export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || ( echo "Stop failed"; $(MAKE) -s log )
 #
 # Note: will probably not work due to the VM cookie having been changed; use
 # 'stop-brutal' instead, if run with 'start' or 'debug':
 #
 stop:
 	@echo "Stopping us_web release (EPMD port: $(EPMD_PORT)):"
-	@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || $(MAKE) -s log
+	@export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || $(MAKE) -s log
 
 
 # Useful typically if the runtime cookie was changed:
@@ -293,14 +300,14 @@ stop-brutal: kill
 # A rule such as the following would be bound to fail because of a non-matching
 # cookie:
 #
-#	-@export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop
+#	-@export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop
 #
 # Note: only applies when the target instance has been started as a release.
 #
 # A rule such as the following would be bound to fail because of a non-matching
 # cookie:
 #
-#  @export ERL_EPMD_PORT=$(EPMD_PORT) ; $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || ( echo "Stop failed" ; $(MAKE) -s log )
+#  @export ERL_EPMD_PORT=$(EPMD_PORT); $(US_WEB_DEFAULT_REL_DIR)/bin/us_web stop || ( echo "Stop failed"; $(MAKE) -s log )
 #
 stop-as-release:
 	@echo "Stopping the us_web release (EPMD port: $(EPMD_PORT)):"
@@ -327,7 +334,7 @@ tail-log:
 
 # Settings supposed in line with a local, debug US-Web configuration file:
 check-web-availability:
-	@wget http://localhost:8080 -O -
+	@wget http://localhost:$(DEBUG_TEST_PORT) -O -
 
 
 # run_erl here, not beam.smp:
@@ -364,7 +371,7 @@ shell: test-interactive
 
 # us_web auto-booted:
 #
-# One may paste 'io:format( \"~s\", [ us_web:get_runtime_configuration() ] ).'
+# One may paste 'io:format(\"~s\", [us_web:get_runtime_configuration()]).'
 # in following shell:
 #
 test-interactive: compile
@@ -429,6 +436,7 @@ info-deps:
 	@echo "TRACES_TOP = $(TRACES_TOP)) (i.e. $$(realpath $(TRACES_TOP)))"
 	@echo "US_COMMON_TOP = $(US_COMMON_TOP) (i.e. $$(realpath $(US_COMMON_TOP)))"
 	@echo "LEEC_TOP = $(LEEC_TOP) (i.e. $$(realpath $(LEEC_TOP)))"
+	@echo "NITROGEN_BEAM_DIRS = $(NITROGEN_BEAM_DIRS)"
 
 
 info-conditionals:

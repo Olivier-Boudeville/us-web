@@ -24,7 +24,7 @@ if [ -n "$1" ]; then
 fi
 
 
-us_web_install_root=$(realpath $(dirname $0)/../..)
+us_web_install_root="$(realpath $(dirname $0)/../..)"
 
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
@@ -93,7 +93,7 @@ fi
 #echo "Using '${us_web_hostname}' as remote US-Web hostname."
 
 # Could have been done in the Erlang part:
-remote_vm_cookie=$(echo "${uw_cfg_base_content}" | grep remote_vm_cookie | sed 's|^[[:space:]]*{[[:space:]]remote_vm_cookie,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
+remote_vm_cookie="$(echo "${uw_cfg_base_content}" | grep remote_vm_cookie | sed 's|^[[:space:]]*{[[:space:]]remote_vm_cookie,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')"
 
 
 if [ -z "${remote_vm_cookie}" ]; then
@@ -130,11 +130,11 @@ else
 
 fi
 
-script_dir=$(dirname $0)
+script_dir="$(dirname $0)"
 
-app_dir=${script_dir}/../../src/apps/
+app_dir="${script_dir}/../../src/apps/"
 
-cd ${app_dir}
+cd "${app_dir}"
 
 
 # Any argument(s) specified to this script shall be interpreted as a plain,

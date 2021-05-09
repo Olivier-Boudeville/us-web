@@ -100,7 +100,8 @@ init( Req, HState ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-		  _Name=text_utils:format( "Static handler for path ~ts", [ BinPath ] ),
+		  _Name=text_utils:format( "Static handler for path '~ts'",
+								   [ BinPath ] ),
 		  _Categ="US.US-Web.Static Handler" ) ),
 
 	%trace_utils:debug_fmt(
@@ -141,8 +142,8 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
 		{ ok, FileInfo } ->
 
-			RestHandlerState = { BinFullFilePath, { direct, FileInfo },
-								 CowboyOpts },
+			RestHandlerState =
+				{ BinFullFilePath, { direct, FileInfo }, CowboyOpts },
 
 			HReturn = { cowboy_rest, Req, RestHandlerState },
 
@@ -173,10 +174,21 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
 
 % Handles the request for a directory.
-init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
+%
+% RelContentRoot is the path of the target directory relatively to the absolute
+% website root.
+%
+init_dir( Req, RelContentRoot, CowboyOpts, HState )
+  when is_list( RelContentRoot ) ->
+	BinRelContentRoot = text_utils:string_to_binary( RelContentRoot ),
+	init_dir( Req, BinRelContentRoot, CowboyOpts, HState );
 
-	%trace_utils:debug_fmt( "init_dir for directory '~ts'.",
-	%                       [ BinContentRoot ] ),
+init_dir( Req, BinRelContentRoot, CowboyOpts, HState ) ->
+
+	trace_utils:debug_fmt( "us_web_static:init_dir/4 for:~n"
+		" - Req = ~p~n - BinRelContentRoot = ~p~n"
+		" - CowboyOpts = ~p~n - HState = ~p~n",
+		[ Req, BinRelContentRoot, CowboyOpts, HState ] ),
 
 	case cowboy_req:path_info( Req ) of
 
@@ -185,35 +197,46 @@ init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
 		%
 		undefined ->
 			us_web_handler:manage_error_log( _Error=no_path_info_for_dir, Req,
-											 BinContentRoot, HState ),
+											 BinRelContentRoot, HState ),
 			{ ok, cowboy_req:reply( ?internal_server_error, Req ), error };
 
 		PathInfo ->
 			case validate_reserved( PathInfo ) of
 
 				ok ->
+
+					% The absolute root of the website of interest:
+					BinAbsWebsiteRoot = maps:get( content_root, HState ),
+
+					BinBasePath =
+						filename:join( BinAbsWebsiteRoot, BinRelContentRoot ),
+
+					BaseLen = byte_size( BinBasePath ),
+
 					BinFullFilepath =
-						filename:join( [ BinContentRoot | PathInfo ] ),
+						filename:join( [ BinBasePath | PathInfo ] ),
 
-					Len = byte_size( BinContentRoot ),
+					% Checks that we serve indeed a content from the root
+					% directory assigned to this handler (not escaping from it):
+					%
+					case normalise_path( BinFullFilepath ) of
 
-					case fullpath( BinFullFilepath ) of
-
-						<< BinContentRoot:Len/binary, $/, _/binary >> ->
+						<< BinBasePath:BaseLen/binary, $/, _/binary >> ->
 							%trace_utils:debug( "init_dir: case A." ),
 							init_info( Req, BinFullFilepath, CowboyOpts,
 									   HState );
 
-						<< BinContentRoot:Len/binary >> ->
+						<< BinBasePath:BaseLen/binary >> ->
 							%trace_utils:debug( "init_dir: case B." ),
 							init_info( Req, BinFullFilepath, CowboyOpts,
 									   HState );
 
-						_ ->
+						Other ->
 							%trace_utils:debug( "init_dir: case C." ),
 							us_web_handler:manage_error_log(
-							  _Error={ no_full_path_for, PathInfo }, Req,
-							  BinContentRoot, HState ),
+							  _Error={ invalid_path_for, PathInfo,
+									   Other, BinFullFilepath },
+							  Req, BinRelContentRoot, HState ),
 							{ cowboy_rest, Req, error }
 
 					end;
@@ -223,7 +246,7 @@ init_dir( Req, BinContentRoot, CowboyOpts, HState ) ->
 					%trace_utils:debug( "init_dir: case D." ),
 					us_web_handler:manage_error_log(
 					  _Error={ invalid_path_info, PathInfo }, Req,
-					  BinContentRoot, HState ),
+					  BinRelContentRoot, HState ),
 					{ cowboy_rest, Req, error }
 
 
@@ -275,23 +298,25 @@ validate_reserved_helper( <<_, Rest/bits>> ) ->
 
 
 % Normalises specified path.
-fullpath( Path ) ->
-	fullpath( filename:split( Path ), _Acc=[] ).
+normalise_path( Path ) ->
+	normalise_path( filename:split( Path ), _Acc=[] ).
 
-fullpath( [], Acc ) ->
+
+% (helper)
+normalise_path( [], Acc ) ->
 	filename:join( lists:reverse( Acc ) );
 
-fullpath( [ <<".">> | T ], Acc ) ->
-	fullpath( T, Acc );
+normalise_path( [ <<".">> | T ], Acc ) ->
+	normalise_path( T, Acc );
 
-fullpath( [ <<"..">> | T ], Acc=[ _ ] ) ->
-	fullpath( T, Acc );
+normalise_path( [ <<"..">> | T ], Acc=[ _ ] ) ->
+	normalise_path( T, Acc );
 
-fullpath( [ <<"..">> | T ], [ _ | Acc ] ) ->
-	fullpath( T, Acc );
+normalise_path( [ <<"..">> | T ], [ _ | Acc ] ) ->
+	normalise_path( T, Acc );
 
-fullpath( [ Segment | T ], Acc ) ->
-	fullpath( T, [ Segment | Acc ] ).
+normalise_path( [ Segment | T ], Acc ) ->
+	normalise_path( T, [ Segment | Acc ] ).
 
 
 

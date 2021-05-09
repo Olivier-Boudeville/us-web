@@ -65,23 +65,40 @@ exec() ->
 	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
 	%					   [ CfgFilePath, Cfg ] ),
 
-	TargetNodeName = get_target_node_name( Cfg ),
+	{ MainTargetNodeName, UserTargetNodeName } = get_target_node_names( Cfg ),
 
-	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
+	app_facilities:display( "Trying to connect to US-Web node '~ts'.",
+							[ MainTargetNodeName ] ),
 
-	case net_adm:ping( TargetNodeName ) of
+	case net_adm:ping( MainTargetNodeName ) of
 
 		pong ->
 			ok;
 
 		pang ->
-			trace_utils:error_fmt( "Unable to connect to '~ts'.~nIf the target "
-				"node is really running and is named exactly like that, check "
-				"that the cookies match and, finally, that no firewall is in "
-				"the way (ex: a server may filter the EPMD port of interest).",
-				[ TargetNodeName ] ),
+			trace_utils:warning_fmt( "Unable to connect to a target main "
+				"node '~ts'; trying an alternate one, based on "
+				"user name: '~ts'.",
+				[ MainTargetNodeName, UserTargetNodeName ] ),
 
-			throw( { unable_to_connect_to, TargetNodeName } )
+			case net_adm:ping( UserTargetNodeName ) of
+
+				pong ->
+					ok;
+
+				pang ->
+					trace_utils:error_fmt( "Unable to connect to either node "
+						"names, the main one ('~ts') or the user one ('~ts')."
+						"~nIf the target node is really running and is named "
+						"like either of the two, check that the cookies match "
+						"and, finally, that no firewall is in the way "
+						"(ex: a server may filter the EPMD port of interest).",
+						[ MainTargetNodeName, UserTargetNodeName ] ),
+
+					throw( { unable_to_connect_to,
+							 { MainTargetNodeName, UserTargetNodeName } } )
+
+			end
 
 	end,
 
@@ -205,14 +222,18 @@ init_from_command_line() ->
 
 
 
-% Returns the target node name.
-get_target_node_name( Cfg ) ->
+% Returns the possible node names (main or user-based one) corresponding to the
+% target server US-Web instance.
+%
+% Two names are considered, as two approaches can be used to launch US-Web
+% nodes.
+%
+get_target_node_names( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
 
 	%trace_utils:debug_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
 
-	%NodeStringName =
 	case net_utils:localnode() of
 
 		local_node ->
@@ -224,8 +245,20 @@ get_target_node_name( Cfg ) ->
 
 	end,
 
-	% Note that a single, hardcoded node name is used here:
-	text_utils:string_to_atom( "us_web" ++ [ $@ | RemoteHostname ] ).
+	% Note that a two hardcoded node names are used here, the main one (when run
+	% as a service) and one embedding the name of the current user (when run as
+	% an app, typically for testing):
+
+	Prefixes = [ "us_web", text_utils:format( "us_web_exec-~ts",
+										[ system_utils:get_user_name() ] ) ],
+
+	% Long names:
+	Candidates = [ P ++ [ $@ | RemoteHostname ] || P <- Prefixes ],
+
+	% Short names:
+	%Candidates = Prefixes,
+
+	list_to_tuple( [ text_utils:string_to_atom( S ) || S <- Candidates ] ).
 
 
 

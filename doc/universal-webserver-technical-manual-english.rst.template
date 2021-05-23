@@ -15,7 +15,7 @@
 
 :raw-html:`<a name="universal-webserver_top"></a>`
 
-:raw-html:`<div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://us-web.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#universal-webserver_top">go to top</a> <a href="#universal-webserver_bottom">go to bottom</a> <a href="https://github.com/Olivier-Boudeville/us-web">go to project</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div>`
+:raw-html:`<div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://us-web.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#universal-webserver_top">go to top</a> <a href="#universal-webserver_toc">go to toc</a> <a href="#universal-webserver_bottom">go to bottom</a> <a href="api-doc/index.html">browse API</a> <a href="https://github.com/Olivier-Boudeville/us-web">go to project</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div>`
 
 
 
@@ -32,9 +32,9 @@ Technical Manual of the ``Universal Webserver``
 :Organisation: Copyright (C) 2019-2021 Olivier Boudeville
 :Contact: about (dash) universal-webserver (at) esperide (dot) com
 :Creation date: Saturday, May 2, 2020
-:Lastly updated: Thursday, May 6, 2021
-:Status: Work in progress
-:Version: 0.0.20
+:Lastly updated: GENERATION_DATE
+:Version: PROJECT_VERSION
+:Status: Stable
 :Dedication: Users and maintainers of the ``Universal Webserver``.
 :Abstract:
 
@@ -42,7 +42,7 @@ Technical Manual of the ``Universal Webserver``
 
 	We present here a short overview of these services, to introduce them to newcomers.
 
-	The next level of information is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
+	The next level of information is either to browse the `US-Web API documentation <api-doc/index.html>`_ or simply to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
 
 
 .. meta::
@@ -51,11 +51,16 @@ Technical Manual of the ``Universal Webserver``
 
 :raw-latex:`\pagebreak`
 
-.. contents:: Table of Contents
-	:depth: 3
+:raw-html:`<a name="universal-webserver_toc"></a>`
+
+.. _`table of contents`:
+
+.. contents:: **Table of Contents**
+  :depth: 3
 
 
 :raw-latex:`\pagebreak`
+
 
 --------
 Overview

@@ -20,10 +20,10 @@
 % Creation date: Monday, August 3, 2020.
 
 
-% LEEC-compliant handler for US-Web, in order to answer ACME challenges thanks
-% to LEEC, in order to complete the verification procedure.
+% @doc <b>LEEC-compliant handler</b> for US-Web, whose role is to answer ACME
+% challenges thanks to LEEC, in order to complete the verification procedure.
 %
-% See https://leec.esperide.org/#usage-example for more details.
+% See [https://leec.esperide.org/#usage-example] for more details.
 %
 -module(us_web_leec_handler).
 
@@ -39,6 +39,9 @@
 -include("us_web_defines.hrl").
 
 
+
+% @doc Initialises this LEEC handler.
+%
 % This handler initialisation tries to serve the relevant challenge tokens to
 % the requesting http client (supposed to be an ACME server currently trying to
 % read the thumbprints from the well-known ACME URL).
@@ -138,13 +141,13 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	{ ok, Reply, no_state }.
 
 
-
+% @doc Handles specified request (not expected to be used).
 handle( Req, HandlerState ) ->
 	trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
 
 
-
+% @doc Terminates this handler.
 terminate( _Reason=normal, _Req, _HandlerState ) ->
 	ok;
 

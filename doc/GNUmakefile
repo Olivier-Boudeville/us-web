@@ -25,28 +25,28 @@ PROJECT_CSS := pygments-default.css,us-web.css
 
 PROJECT_ICON := us-web-icon.png
 
-WEB_CONTENT = *.html *.css *.png *.pdf
+WEB_CONTENT = *.html *.css *.png *.pdf api-doc
 
 # Read from the user's environment:
 GITHUB_PAGES_BASE := $(shell basename "$(US_WEB_WEB_MIRROR_BRANCH)")
 
 
 
-.PHONY: doc all full-doc create-links html pdf clone-mirror         \
-		export-doc export-to-official export-to-mirror              \
+.PHONY: doc all full-doc create-links html pdf api clone-mirror         \
+		export-doc export-doc-to-official export-doc-to-mirror          \
 		clean clean-doc clean-links info info-web
 
 
 
 # Default do-nothing target:
-doc:
-
-
 all:
 	@echo "  Run 'make full-doc' to generate the manual of the 'US-Web' layer."
 
 
-full-doc: $(DOC_GENERATED_FILES)
+doc:
+
+
+full-doc: $(DOC_GENERATED_FILES) api-doc
 
 
 # This link does not need to be in version control:
@@ -58,15 +58,22 @@ html: clean-doc $(HTML_TARGET)
 
 pdf: clean-doc $(PDF_TARGET)
 
+api:
+	@cd $(LAYER_TOP) && $(MAKE) -s generate-api-doc
+
+
+# To generate the actual API documentation tree:
+api-doc: api
+
 
 # Creates a separate repository for the GitHub pages branch:
-# (please then remove all initial content of that branch)
-#
 clone-mirror:
+	@echo "  Creating a separate repository for website in $(GITHUB_PAGES_BASE)"
 	@cd ../../ && git clone https://github.com/Olivier-Boudeville/us-web $(GITHUB_PAGES_BASE) && cd $(GITHUB_PAGES_BASE) && git checkout -b gh-pages
+	@echo "Please remove all initial content in that selected 'gh-pages' branch."
 
 
-export-doc: clean-doc full-doc export-to-official export-to-mirror
+export-doc: clean-doc full-doc export-doc-to-official export-doc-to-mirror
 
 
 # Drawback: scp will not preserve symlinks, it will duplicate files instead.
@@ -75,14 +82,14 @@ export-doc: clean-doc full-doc export-to-official export-to-mirror
 # not a set of files), so currently not used:
 # rsync -avze "ssh $(SP)" $(SOME_WEB_TREE) $(WEB_SRV):$(WEB_ROOT)/US-Web/
 #
-export-to-official: create-links $(DOC_GENERATED_FILES)
+export-doc-to-official: create-links $(DOC_GENERATED_FILES)
 	@echo "   Exporting US-Web documentation to official website ($(WEB_SRV))"
-	@/bin/scp $(SP) $(WEB_CONTENT) $(WEB_SRV):$(WEB_ROOT)/US-Web
+	@/bin/scp -r $(SP) $(WEB_CONTENT) $(WEB_SRV):$(WEB_ROOT)/US-Web
 
 
-export-to-mirror: create-links $(DOC_GENERATED_FILES)
+export-doc-to-mirror: create-links $(DOC_GENERATED_FILES)
 	@echo "   Exporting US-Web documentation to mirror website in $(US_WEB_WEB_MIRROR_BRANCH)"
-	@/bin/cp -f $(WEB_CONTENT) $(US_WEB_WEB_MIRROR_BRANCH) && cd $(US_WEB_WEB_MIRROR_BRANCH) && git add . && git merge -s ours && git commit -m "us-web doc updated." && git push && git pull --ff-only
+	@/bin/cp -rf $(WEB_CONTENT) $(US_WEB_WEB_MIRROR_BRANCH) && cd $(US_WEB_WEB_MIRROR_BRANCH) && git add . && git merge -s ours && git commit -m "us-web doc updated." && git push && git pull --ff-only
 
 
 
@@ -92,6 +99,7 @@ clean: clean-doc
 clean-doc: clean-links
 	@echo "     Cleaning documentation"
 	-@/bin/rm -f *.aux *.log *.maf *.mtc* *.stc* *.tex *.toc $(DOC_GENERATED_FILES)
+	-@/bin/rm -rf api-doc
 
 
 clean-links:
@@ -99,6 +107,11 @@ clean-links:
 
 
 info: info-web
+
+
+info-doc:
+	@echo "OVERALL_DOCUMENT_SOURCE = $(OVERALL_DOCUMENT_SOURCE)"
+	@echo "DOC_TRACKER = $(DOC_TRACKER)"
 
 
 info-web:

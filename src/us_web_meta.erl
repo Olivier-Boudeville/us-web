@@ -20,8 +20,8 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% Module to handle 'meta' websites, i.e. (generated) websites about websites, to
-% help their quick monitoring.
+% @doc Module to handle <b>'meta' websites</b>, that is (generated) websites
+% about websites, to help their quick monitoring.
 %
 -module(us_web_meta).
 
@@ -62,7 +62,7 @@
 -export([ get_vhost_display_name/2 ]).
 
 
-% Returns the HTML header for a meta page.
+% @doc Returns the HTML header for a meta page.
 -spec get_page_header() -> html_element().
 get_page_header() ->
 	"<!DOCTYPE html>
@@ -156,7 +156,7 @@ div.banner a:hover { color: #000000; background: #FFFFFF;  }
 
 
 
-% Returns the HTML body for a meta page.
+% @doc Returns the HTML body for a meta page.
 -spec get_page_body( protocol_type(), tcp_port(), domain_config_table(),
    time_utils:timestamp(), meta_web_settings(), boolean() ) -> html_element().
 get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
@@ -185,7 +185,7 @@ get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 							LogAnalysisEnabled ) ] ).
 
 
-% Creates a table of contents for domains.
+% @doc Creates a table of contents for domains.
 create_toc( DomainCfgTable ) ->
 
 	"This US-Web server manages " ++ case table:values( DomainCfgTable ) of
@@ -205,8 +205,8 @@ create_toc( DomainCfgTable ) ->
 	end.
 
 
-% Describes (in HTML) the current hosting, i.e. all the virtual hosts (except
-% the meta website itself) of all known domains.
+% @doc Describes (in HTML) the current hosting, that is all the virtual hosts
+% (except the meta website itself) of all known domains.
 %
 describe_hosting( Scheme, Port, DomainCfgTable,
 	  _MetaWebSettings={ MetaDomainId, MetaVhostId, _BinMetaContentRoot },
@@ -245,7 +245,7 @@ describe_hosting( Scheme, Port, DomainCfgTable,
 
 
 
-% Returns the HTML description for the specified domains.
+% @doc Returns the HTML description for the specified domains.
 -spec get_domain_descriptions( protocol_type(), tcp_port(),
 	[ class_USWebConfigServer:domain_info() ], maybe_url() ) -> html_element().
 get_domain_descriptions( Scheme, Port, DomainInfos, MaybeMetaBaseURL ) ->
@@ -259,7 +259,7 @@ get_domain_descriptions( Scheme, Port, DomainInfos, MaybeMetaBaseURL ) ->
 
 
 
-% Returns the HTML description for the specified domain.
+% @doc Returns the HTML description for the specified domain.
 -spec get_domain_description( protocol_type(), tcp_port(), domain_id(),
 				vhost_config_table(), maybe_url() ) -> html_element().
 get_domain_description( Scheme, Port, _DomainId=default_domain_catch_all,
@@ -281,7 +281,7 @@ get_domain_description( Scheme, Port, DomainId, VCfgTable, MaybeMetaBaseURL ) ->
 
 
 
-% Returns the HTML description for the specified virtual hosts.
+% @doc Returns the HTML description for the specified virtual hosts.
 -spec get_vhost_descriptions( protocol_type(), tcp_port(), vhost_config_table(),
 							  maybe_url() ) -> html_element().
 get_vhost_descriptions( Scheme, Port, VHostCfgTable, MaybeMetaBaseURL ) ->
@@ -316,7 +316,7 @@ get_vhost_descriptions( Scheme, Port, VHostCfgTable, MaybeMetaBaseURL ) ->
 
 
 
-% Returns the HTML description for the specified virtual host.
+% @doc Returns the HTML description for the specified virtual host.
 -spec get_vhost_description( protocol_type(), tcp_port(),
 							 vhost_config_entry() ) -> html_element().
 get_vhost_description( Scheme, Port,
@@ -374,7 +374,7 @@ get_vhost_description( Scheme, Port,
 
 
 
-% Returns an HTML table suitable for specified vhost entries.
+% @doc Returns an HTML table suitable for specified vhost entries.
 -spec get_table_for( [ vhost_config_entry() ], protocol_type(), tcp_port(),
 					 maybe_url() ) -> html_element().
 get_table_for( VHostCfgEntries, Scheme, Port, MaybeMetaBaseURL ) ->
@@ -403,7 +403,7 @@ get_table_for( VHostCfgEntries, Scheme, Port, MaybeMetaBaseURL ) ->
 
 
 
-% Returns the HTML code for the specified table cell.
+% @doc Returns the HTML code for the specified table cell.
 get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 								   parent_host=ParentHost },
 			  Scheme, Port, MaybeMetaBaseURL ) ->
@@ -477,7 +477,7 @@ get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 		 get_vhost_ref( VHost, ParentHost ), URL, URL ] ).
 
 
-% Returns the anchor corresponding to the specified .domain
+% @doc Returns the anchor corresponding to the specified .domain
 get_domain_anchor( _DomainId=default_domain_catch_all ) ->
 	"domain-catch-all";
 
@@ -485,7 +485,7 @@ get_domain_anchor( DomainId ) ->
 	DomainId.
 
 
-% Returns the display name for the specified domain.
+% @doc Returns the display name for the specified domain.
 get_domain_display_name( _DomainId=default_domain_catch_all ) ->
 	"domain catch-all";
 
@@ -493,7 +493,7 @@ get_domain_display_name( DomainId ) ->
 	text_utils:format( "domain ~ts", [ DomainId ] ).
 
 
-% Returns the short display name for the specified domain.
+% @doc Returns the short display name for the specified domain.
 get_domain_short_display_name( _DomainId=default_domain_catch_all ) ->
 	"*";
 
@@ -501,13 +501,13 @@ get_domain_short_display_name( DomainId ) ->
 	text_utils:format( "~ts", [ DomainId ] ).
 
 
-% Returns a reference to the specified domain anchor.
+% @doc Returns a reference to the specified domain anchor.
 get_domain_ref( DomainId ) ->
 	text_utils:format( "<a name=\"~ts\"></a>",
 					   [ get_domain_anchor( DomainId ) ] ).
 
 
-% Returns a link to the specified domain anchor.
+% @doc Returns a link to the specified domain anchor.
 get_domain_link( DomainId ) ->
 	text_utils:format( "<a href=\"#~ts\">~ts</a>",
 					   [ get_domain_anchor( DomainId ),
@@ -515,7 +515,7 @@ get_domain_link( DomainId ) ->
 
 
 
-% Returns the anchor corresponding to the specified vhost.
+% @doc Returns the anchor corresponding to the specified vhost.
 get_vhost_anchor( VHostId, ParentHost ) ->
 
 	DomainAnchor = get_domain_anchor( ParentHost ),
@@ -534,7 +534,8 @@ get_vhost_anchor( VHostId, ParentHost ) ->
 					   end ++ "-~ts", [ DomainAnchor ] ).
 
 
-% Returns the display name for the specified vhost.
+
+% @doc Returns the display name for the specified vhost.
 get_vhost_display_name( _VHostId=without_vhost, ParentHost ) ->
 	text_utils:format( "host for the ~ts itself",
 					   [ get_domain_display_name( ParentHost ) ] );
@@ -548,7 +549,8 @@ get_vhost_display_name( VHostId, ParentHost ) ->
 					   [ VHostId, get_domain_display_name( ParentHost ) ] ).
 
 
-% Returns the short display name for the specified vhost.
+
+% @doc Returns the short display name for the specified vhost.
 get_vhost_short_display_name( _VHostId=without_vhost, ParentHost ) ->
 	 get_domain_short_display_name( ParentHost );
 
@@ -561,13 +563,15 @@ get_vhost_short_display_name( VHostId, ParentHost ) ->
 		[ VHostId, get_domain_short_display_name( ParentHost ) ] ).
 
 
-% Returns a reference to the specified vhost anchor.
+
+% @doc Returns a reference to the specified vhost anchor.
 get_vhost_ref( VHostId, ParentHost ) ->
 	text_utils:format( "<a name=\"~ts\"></a>",
 					   [ get_vhost_anchor( VHostId, ParentHost ) ] ).
 
 
-% Returns a link to the specified vhost anchor.
+
+% @doc Returns a link to the specified vhost anchor.
 get_vhost_link( VHostId, ParentHost ) ->
 	text_utils:format( "<a href=\"#~ts\">~ts</a>",
 		[ get_vhost_anchor( VHostId, ParentHost ),
@@ -575,7 +579,7 @@ get_vhost_link( VHostId, ParentHost ) ->
 
 
 
-% Returns the HTML footer for a meta page.
+% @doc Returns the HTML footer for a meta page.
 -spec get_page_footer() -> html_element().
 get_page_footer() ->
 	"<a name=\"meta_bottom\"></a>"
@@ -583,6 +587,8 @@ get_page_footer() ->
 		"</html>".
 
 
+
+% @doc Returns a "go to top" link.
 -spec go_to_top() -> html_element().
 go_to_top() ->
 	% Just for the newline:

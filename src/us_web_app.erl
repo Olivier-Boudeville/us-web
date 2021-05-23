@@ -20,11 +20,13 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% The main entry point of the US-Web active OTP application.
+% @doc The <b>main entry point</b> of the US-Web active OTP application.
 %
 % Typically triggered:
+%
 %  - through OTP/rebar3, by ebin/us_web.app (as obtained from
 %  conf/us_web.app.src; see start/2)
+%
 %  - directly, with the help of Myriad's otp_utils (see exec/0)
 %
 -module(us_web_app).
@@ -54,7 +56,7 @@
 
 
 
-% Runs US-Web, directly (ex: as 'make us_web_exec') rather than as an OTP
+% @doc Runs US-Web, directly (ex: as 'make us_web_exec') rather than as an OTP
 % release.
 %
 -spec exec() -> void().
@@ -117,7 +119,7 @@ exec() ->
 
 
 
-% Called when US-Web itself is started as an OTP application (as opposed to
+% @doc Called when US-Web itself is started as an OTP application (as opposed to
 % natively, "manually", see exec/0).
 %
 % The setup and dependency management shall have been done already by the OTP
@@ -158,6 +160,8 @@ start( StartType, StartArgs ) ->
 	us_web_sup:start_link( as_otp_release ).
 
 
+
+% @doc Stops the US-Web application.
 stop( _State ) ->
 	trace_bridge:info( "Stopping us_web application." ),
 
@@ -171,7 +175,7 @@ stop( _State ) ->
 % Internal functions:
 
 
-% Startings required applications (not used currently):
+% @doc Starts required applications (not used currently)/
 -spec start_application( application_name() ) -> void().
 start_application( simple_bridge ) ->
 

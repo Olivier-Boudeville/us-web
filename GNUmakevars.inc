@@ -98,14 +98,20 @@ ifndef PROJECT_NAME
 endif
 
 
+# PROJECT_SHORT_NAME should be defined on a per-project basis.
+ifndef PROJECT_SHORT_NAME
+    PROJECT_SHORT_NAME := us_web
+endif
+
+
 # PROJECT_NAME_FOR_REBAR should be defined on a per-project basis.
 ifndef PROJECT_NAME_FOR_REBAR
-	PROJECT_NAME_FOR_REBAR := us_web
+	PROJECT_NAME_FOR_REBAR := $(PROJECT_SHORT_NAME)
 endif
 
 
 # The uniquely-defined version of this layer, for all uses, including rebar:
-US_WEB_VERSION := 0.0.13
+US_WEB_VERSION := 1.0.13
 
 
 # PROJECT_VERSION should be defined on a per-project basis:
@@ -250,7 +256,7 @@ else
 		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/leec/.),)
 			LEEC_TOP = $(US_WEB_TOP)/_build/default/lib/leec
 		else
-			FORCE_EVAL := $(error Unable to find the build root of Ceylan-LEEC from $(realpath .).)
+			FORCE_EVAL := $(error Unable to find the build root of Ceylan-LEEC from '$(realpath .)'.)
 		endif
 	endif
 endif
@@ -269,7 +275,7 @@ else
 		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/nitrogen_core/.),)
 			NITROGEN_CORE_TOP = $(US_WEB_TOP)/_build/default/lib/nitrogen_core
 		else
-			FORCE_EVAL := $(warning Warning: unable to find a build root for Nitrogen-core from $(realpath .).)
+			FORCE_EVAL := $(warning Warning: unable to find a build root for Nitrogen-core from '$(realpath .)'.)
 		endif
 	endif
 endif

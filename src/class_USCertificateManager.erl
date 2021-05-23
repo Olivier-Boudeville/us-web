@@ -20,6 +20,9 @@
 % Creation date: Thursday, August 6, 2020.
 
 
+% @doc Class in charge of managing the <b>generation and renewal of X.509
+% certificates</b> for a given domain.
+%
 -module(class_USCertificateManager).
 
 
@@ -42,7 +45,7 @@
 %
 % Certificates are obtained thanks to Let's Encrypt, more precisely thanks to
 % LEEC ("Let's Encrypt Erlang with Ceylan", our fork of letsencrypt-erlang),
-% namely https://github.com/Olivier-Boudeville/Ceylan-LEEC).
+% namely [https://github.com/Olivier-Boudeville/Ceylan-LEEC]).
 %
 % Each instance of this class is dedicated to the certificates for a given FQDN.
 % This allows multiplexing requests possibly for several FQDNs in parallel more
@@ -60,6 +63,7 @@
 %
 % In addition to TCP for http (generally port 80), the TCP for https port
 % (generally 443) must be opened.
+
 
 % For certificate renewals, rather than relying on a periodic scheduling defined
 % a priori, each renewal will just plan the next one, to better account for any
@@ -95,21 +99,21 @@
 -type manager_pid() :: class_UniversalServer:server_pid().
 
 
-% Per-virtual-host SNI (SSL-related) option (ranch_ssl:opts()):
 -type ssl_option() :: ssl:server_option() | ssl:common_option().
+% Per-virtual-host SNI (SSL-related) option (ranch_ssl:opts()).
 
-% Virtual-host pair storing SNI-related certificate information:
+
 -type sni_host_info() :: { net_utils:string_host_name(), [ ssl_option() ] }.
+% Virtual-host pair storing SNI-related certificate information.
 
 
+-type sni_info() :: { [ ssl_option() ], [ sni_host_info() ] }.
 % Information regarding Server Name Indication: transport information for the
 % main, default hostname, and per-virtual host information.
-%
--type sni_info() :: { [ ssl_option() ], [ sni_host_info() ] }.
 
 
-% Identifier of a cipher (ex: 'AES128-SHA').
 -type cipher_name() :: atom().
+% Identifier of a cipher (ex: 'AES128-SHA').
 
 -export_type([ manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
 			   cipher_name/0 ]).
@@ -193,7 +197,7 @@
 % requested by a given manager instance for the FQDN it takes care of.
 %
 % Let’s Encrypt certificate lifetime is 90 days (cf. duration in
-% https://letsencrypt.org/docs/faq/); we trigger a renewal with some margin:
+% [https://letsencrypt.org/docs/faq/]); we trigger a renewal with some margin:
 
 % For development:
 -define( dhms_cert_renewal_period_development, { 0, 1, 0, 0 } ).
@@ -245,14 +249,14 @@
 
 
 
-% Constructs a US certificate manager for the specified FQDN (host in specified
-% domain), in production mode, using the specified directory to write
+% @doc Constructs a US certificate manager for the specified FQDN (host in
+% specified domain), in production mode, using the specified directory to write
 % certificate information, and the specified scheduler for automatic certificate
 % renewal.
 %
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ],
 		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
-					    wooper:state().
+						wooper:state().
 construct( State, BinFQDN, BinSans, BinCertDir, BinAgentKeyPath,
 		   MaybeSchedulerPid ) ->
 	construct( State, BinFQDN, BinSans, _CertMode=production, BinCertDir,
@@ -260,9 +264,9 @@ construct( State, BinFQDN, BinSans, BinCertDir, BinAgentKeyPath,
 
 
 
-% Constructs a US certificate manager for the specified FQDN (host in specified
-% domain), in specified certificate management mode, using specified directory
-% to write certificate information, and the specified scheduler.
+% @doc Constructs a US certificate manager for the specified FQDN (host in
+% specified domain), in specified certificate management mode, using specified
+% directory to write certificate information, and the specified scheduler.
 %
 % (most complete constructor)
 %
@@ -329,7 +333,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
-	?send_info_fmt( ReadyState, "Constructed: ~ts.", 
+	?send_info_fmt( ReadyState, "Constructed: ~ts.",
 					[ to_string( ReadyState ) ] ),
 
 	% Would be too early, as the HTTP webserver needed to validate the ACME
@@ -341,7 +345,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 
 
 
-% Initializes our LEEC private instance.
+% @doc Initializes our LEEC private instance.
 -spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(), bin_file_path(),
 				 wooper:state() ) -> leec_pid().
 init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
@@ -381,7 +385,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	% Let's start LEEC now:
 
-	% Refer to https://leec.esperide.org/#usage-example
+	% Refer to [https://leec.esperide.org/#usage-example].
 
 	% Slave mode, as we control the webserver for the challenge:
 	% (BinCertDir must be writable by this process)
@@ -437,7 +441,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 
 
-% Overridden destructor.
+% @doc Overridden destructor.
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
@@ -504,7 +508,7 @@ destruct( State ) ->
 % Method section.
 
 
-% Renews asynchronously a certificate for the managed hostname.
+% @doc Renews asynchronously a certificate for the managed hostname.
 -spec renewCertificate( wooper:state() ) -> const_oneway_return().
 renewCertificate( State ) ->
 
@@ -518,14 +522,14 @@ renewCertificate( State ) ->
 
 
 
-% Renews a certificate for the managed hostname on a synchronisable manner.
+% @doc Renews a certificate for the managed hostname on a synchronisable manner.
 %
 % The specified listener is typically the US-Web configuration server, so that
 % HTTPS support can be triggered only when certificates are ready and/or to
 % ensure no two certificate requests overlap (to avoid hitting a rate limit
 % regarding ACME servers).
 %
--spec renewCertificateSynchronisable( wooper:state(), pid() ) -> 
+-spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
 											oneway_return().
 renewCertificateSynchronisable( State, ListenerPid ) ->
 
@@ -590,7 +594,7 @@ request_certificate( State ) ->
 
 
 
-% Method to be called back whenever a certificate was requested.
+% @doc Oneway called back whenever a certificate was requested.
 -spec onCertificateRequestOutcome( wooper:state(),
 			leec:cert_creation_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
@@ -711,8 +715,8 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 
 
-% Requests this manager to return (indirectly, through the current LEEC FSM) the
-% current thumbprint challenges to specified target process.
+% @doc Requests this manager to return (indirectly, through the current LEEC
+% FSM) the current thumbprint challenges to specified target process.
 %
 % Typically called from a web handler (see us_web_leec_handler, specifying its
 % PID as target one) whenever the ACME well-known URL is read by an ACME server,
@@ -733,7 +737,7 @@ getChallenge( State, TargetPid ) ->
 
 
 
-% Callback triggered, as we trap exits, whenever a linked process stops
+% @doc Callback triggered, as we trap exits, whenever a linked process stops
 % (typically should the LEEC FSM crash).
 %
 -spec onWOOPERExitReceived( wooper:state(), pid(),
@@ -783,15 +787,15 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % Static section.
 
 
-% Returns the https transport options and the SNI information suitable for
-% https-enabled virtual hosts, i.e. the transport options for the domain of
-% interest - i.e. the path to the PEM certificate for the main, default host
+% @doc Returns the https transport options and the SNI information suitable for
+% https-enabled virtual hosts, that is the transport options for the domain of
+% interest - meaning the path to the PEM certificate for the main, default host
 % (ex: foobar.org) and to its private key, together with SNI (Server Name
-% Indication, see https://erlang.org/doc/man/ssl.html#type-sni_hosts) host
+% Indication, see [https://erlang.org/doc/man/ssl.html#type-sni_hosts]) host
 % information for all virtual host of all hosts (ex: baz.foobar.org, aa.buz.net,
 % etc.).
 %
-% See also https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/.
+% See also [https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/].
 %
 % Note: we rely on the user routes rather than on the domain table as we need to
 % determine the first hots listed as the main one.
@@ -826,15 +830,15 @@ get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 
 	% Redundant:
 	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
-	%	"SNI information: transport options for the default "
-	%	"hostname are: ~p.~nVirtual host options are:~n~p",
-	%	[ MainTranspOpts, SNIHostInfos ] ) ),
+	%   "SNI information: transport options for the default "
+	%   "hostname are: ~p.~nVirtual host options are:~n~p",
+	%   [ MainTranspOpts, SNIHostInfos ] ) ),
 
 	wooper:return_static( { MainTranspOpts, SNIHostInfos } ).
 
 
 
-% Returns an (ordered) list of the recommended ciphers for a webserver.
+% @doc Returns an (ordered) list of the recommended ciphers for a webserver.
 %
 % An important security setting is to force the cipher to be set based on the
 % server-specified order instead of the client-specified oner, hence enforcing
@@ -844,14 +848,14 @@ get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 % Apparently Erlang (i.e. cowboy:start_tls/3, relying on ranch_ssl:opts(), which
 % corresponds roughly to ssl:erl_cipher_suite()) relies on cipher suites
 % expressed with IANA conventions, whereas sites such as SSL Labs uses OpenSSL
-% conventions. For conversions, see reference table in:
-% https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table
+% conventions. For conversions, see reference table in
+% [https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table].
 %
 -spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
 get_recommended_ciphers() ->
 
 	% Recommended ciphers for TLS v.3 (source:
-	% https://wiki.mozilla.org/Security/Server_Side_TLS), only modern settings
+	% [https://wiki.mozilla.org/Security/Server_Side_TLS]), only modern settings
 	% apply, namely, with OpenSSL conventions:
 	%
 	% - TLS_AES_128_GCM_SHA256
@@ -870,7 +874,7 @@ get_recommended_ciphers() ->
 						  "TLS_CHACHA20_POLY1305_SHA256" ],
 
 	% A priori non-TLV 1.3 recommended ciphers (source:
-	% https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices):
+	% [https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices]):
 	%
 	BaseOtherCiphers = [ "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
 						 "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
@@ -911,6 +915,8 @@ get_recommended_ciphers() ->
 % Helper section.
 
 
+% @doc Returns SNI information regarding specified virtual host.
+%
 % No domain-level wildcard certificate:
 get_virtual_host_sni_infos( _Hostname=default_domain_catch_all,
 							_VHostInfos, _BinCertDir ) ->
@@ -976,7 +982,7 @@ get_vh_pair( Hostname, VHostname, BinCertDir ) ->
 
 
 
-% Returns transport options suitable for specified FQDN.
+% @doc Returns transport options suitable for specified FQDN.
 -spec get_transport_opts_for( net_utils:string_fqdn(), bin_directory_path() ) ->
 								static_return( [ ssl_option() ] ).
 get_transport_opts_for( FQDN, BinCertDir ) ->
@@ -988,11 +994,11 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 	PrivKeyFilePath = file_utils:join( BinCertDir, PrivKeyFilename ),
 
 	wooper:return_static(
-	    [ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
+		[ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
 
 
 
-% Returns a textual description of this server.
+% @doc Returns a textual description of this server.
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 

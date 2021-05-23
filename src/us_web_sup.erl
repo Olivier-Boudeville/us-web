@@ -20,7 +20,7 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% Root supervisor of the us_web application.
+% @doc <b>Root OTP supervisor</b> of the us_web application.
 %
 % Directly created by us_web_app.
 %
@@ -61,7 +61,7 @@
 
 
 
-% OTP conventions:
+% Starts and links the US-Web supervisor, with OTP conventions.
 %
 % (function probably useless)
 %
@@ -71,7 +71,8 @@ start_link() ->
 						   _Default=[ as_otp_release ] ).
 
 
-% OTP or not conventions:
+
+% Starts and links the US-Web supervisor, with OTP conventionsor not.
 -spec start_link( application_run_context() ) -> otp_utils:supervisor_pid().
 start_link( AppRunContext ) ->
 	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
@@ -79,7 +80,7 @@ start_link( AppRunContext ) ->
 
 
 
-% Initialization of this OTP supervisor.
+% @doc Initialises this OTP supervisor.
 -spec init( [ application_run_context() ] ) ->
 				{ 'ok', { supervisor:sup_flags(), supervisor:child_spec() } }.
 init( _Args=[ AppRunContext ] ) ->

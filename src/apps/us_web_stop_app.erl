@@ -20,7 +20,7 @@
 % Creation date: Sunday, November 15, 2020.
 
 
-% Actual US-Web stopping logic.
+% @doc Actual US-Web <b>stopping logic</b>, as a (Myriad) application.
 %
 % Typically called through the us_web/priv/bin/stop-us-web-native-build.sh
 % script.
@@ -40,7 +40,7 @@
 
 
 
-% Runs the app.
+% @doc Runs this stop application.
 -spec exec() -> no_return().
 exec() ->
 
@@ -111,6 +111,7 @@ exec() ->
 
 
 
+% @doc Initialises this application from the command line.
 init_from_command_line() ->
 
 	% To force options for testing:

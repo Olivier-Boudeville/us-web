@@ -20,7 +20,9 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
-% Generic, cowboy-compliant handler for US-Web:
+% @doc <b>Generic, Cowboy-compliant handler</b> for US-Web.
+%
+% This handler:
 %
 % - provides static dispatches so that the (static) websites corresponding to
 % the virtual hosts can be appropriately served; see the US-Web configuration
@@ -42,15 +44,15 @@
 		  manage_access_log/3, manage_error_log/4 ]).
 
 
-
-% Module to handle web content through dispatch rules (ex: 'cowboy_rest'):
 -type handler_module() :: basic_utils:module_name().
+% Module to handle web content through dispatch rules (ex: 'cowboy_rest').
 
 
-% State carried by the process in charge of a request, for most handlers:
 -type handler_state() :: maybe( maps:map() ).
+% State carried by the process in charge of a request, for most handlers.
 
 
+-type us_handler_state() :: handler_state().
 % A US-Web specialised handler, a map which may notably contain entries with
 % following keys:
 %
@@ -61,18 +63,15 @@
 % - image_404 :: file_utils:bin_file_path(), a path relative to the content root
 % of the corresponding virtual host pointing to an image (ex: PNG) to be used
 % when generating a 404 error page
-%
--type us_handler_state() :: handler_state().
 
 
-
-% The (binary) path for a web content:
 -type bin_content_path() :: file_utils:bin_file_path().
+% The (binary) path for a web content.
 
 
-% See https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/:
 -type handler_return() :: { 'ok' | handler_module(), cowboy_req:req(),
 							handler_state() | 'error' }.
+% See [https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/].
 
 
 -export_type([ handler_module/0, handler_state/0, us_handler_state/0,
@@ -91,8 +90,8 @@
 
 
 
-% Returns a suitable term to notify the request initiator that a 404 error was
-% triggered (meaning that the requested content could not be found).
+% @doc Returns a suitable term to notify the request initiator that a 404 error
+% was triggered (meaning that the requested content could not be found).
 %
 % Maybe this dynamic implementation could be too resource-demanding (prone to
 % denial of service attack) and may be replaced with a static binary string (yet
@@ -199,7 +198,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 
 
-% Returns a suitable document header.
+% @doc Returns a suitable document header.
 get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 	CSSString = case MaybeBinCssFile of
@@ -242,7 +241,7 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 
 
-% Returns a base HTML footer.
+% @doc Returns a base HTML footer.
 get_base_footer() ->
 	"
  </body>
@@ -250,7 +249,7 @@ get_base_footer() ->
 ".
 
 
-% Returns a suitable document footer.
+% @doc Returns a suitable document footer.
 get_footer( VHost, Scheme, Port ) ->
 	text_utils:format( <<"
 	<p>
@@ -260,7 +259,7 @@ get_footer( VHost, Scheme, Port ) ->
 ~ts">>, [ Scheme, VHost, Port, get_base_footer() ]).
 
 
-% Returns a suitable document header.
+% @doc Returns a suitable document header.
 get_http_headers( Body ) ->
 	#{ <<"content-type">> => <<"text/html">>,
 	   <<"content-length">> => integer_to_list( iolist_size( Body ) ),
@@ -272,8 +271,10 @@ get_http_headers( Body ) ->
 % Test handler possibly called through routing.
 
 
+% @doc Inits specified handler.
+%
 % Typically called because a dispatch rule mentioned that module as a (debug)
-% handler:
+% handler.
 %
 -spec init( cowboy_req:req(), handler_state() ) -> handler_return().
 init( Req, HandlerState ) ->
@@ -291,6 +292,8 @@ init( Req, HandlerState ) ->
 % Facilities.
 
 
+% @doc Manages specified handler access log.
+%
 % Access log facility offered to web handlers, taking advantage of the
 % request-specific process in order to further parallelize their processing.
 %
@@ -322,7 +325,7 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 
 
 
-% Returns a binary access log line from specified request information.
+% @doc Returns a binary access log line from specified request information.
 -spec generate_access_log( handler_return(), http_status_code() ) -> log_line().
 generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
@@ -405,6 +408,8 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
 
 
+% @doc Manages specified handler error log.
+%
 % Error log facility offered to web handlers, taking advantage of the
 % request-specific process in order to further parallelize their processing.
 %
@@ -442,7 +447,7 @@ manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
 
 
-% Returns a textual description of specified request.
+% @doc Returns a textual description of specified request.
 -spec request_to_string( cowboy_req:req() ) -> text_utils:ustring().
 request_to_string( Req ) ->
 

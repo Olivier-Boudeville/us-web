@@ -20,6 +20,9 @@
 % Creation date: Wednesday, December 25, 2019.
 
 
+% @doc Singleton server holding the <b>configuration information</b> of the
+% US-Web framework.
+%
 -module(class_USWebConfigServer).
 
 
@@ -33,13 +36,16 @@
 
 
 
+-type web_kind() :: 'static' | 'meta' | 'nitrogen'.
 % The various kinds of websites:
+%
 % - static: a basic, static website to be served (the default)
+%
 % - meta: a website generated, if requested, by US-Web, to browse conveniently
 % all the other hosted websites
-% - nitrogen: a Nitrogen-based, dynamic website (see http://nitrogenproject.com)
 %
--type web_kind() :: 'static' | 'meta' | 'nitrogen'.
+% - nitrogen: a Nitrogen-based, dynamic website (see
+% [http://nitrogenproject.com])
 
 
 
@@ -53,10 +59,11 @@
 
 		% To match any non-explicitly matched "XXX.foobar.org":
 		|'default_vhost_catch_all'.
+% Identifier of a virtual host.
 
 
-% Ex: 'awstats'.
 -type log_analysis_tool_name() :: atom().
+% Ex: 'awstats'.
 
 
 % For the vhost_config_entry and web_analysis_info records:
@@ -206,11 +213,10 @@
 % other related services.
 
 
-
-% To identify a domain name (or a catch-all for them):
 -type domain_id() :: bin_domain_name() | 'default_domain_catch_all'.
+% To identify a domain name (or a catch-all for them).
 
-% The domain-specific information kept by this server:
+
 -type domain_info() :: {
 
 	% The identifier of this domain (intentional duplicate):
@@ -225,17 +231,17 @@
 	% within this domain:
 	%
 	vhost_config_table() }.
+% The domain-specific information kept by this server.
 
 
-% A table, associating to each domain name (ex: <<"foo.org">>), the
-% configuration table regarding its virtual hosts (ex: regarding "bar.foo.org",
-% a <<"bar">> key would correspond, associated to its vhost_config() value):
-%
 -type domain_config_table() :: table( domain_id(), domain_info() ).
+% A table, associating to each domain name (ex: `<<"foo.org">>'), the
+% configuration table regarding its virtual hosts (ex: regarding "bar.foo.org",
+% a `<<"bar">>' key would correspond, associated to its vhost_config() value).
 
 
-% A table, associating, to each virtual host identifier, its settings:
 -type vhost_config_table() :: table( vhost_id(), vhost_config_entry() ).
+% A table, associating, to each virtual host identifier, its settings.
 
 
 -type vhost_config_entry() :: #vhost_config_entry{}.
@@ -245,9 +251,9 @@
 		maybe( { domain_id(), vhost_id(), bin_directory_path() } ).
 
 
-% Tells whether the generation of a log analysis report succeeded.
 -type report_generation_outcome() :: 'report_generation_success'
 			| { 'report_generation_failed', error_reason() }.
+% Tells whether the generation of a log analysis report succeeded.
 
 
 % Notably for us_web_meta:
@@ -266,31 +272,37 @@
 -type dispatch_routes() :: cowboy_router:dispatch_routes().
 
 
-% See https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/:
 -type dispatch_rules() :: cowboy_router:dispatch_rules().
+% See [https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/].
 
 
-% A table holding US-Web configuration information:
 -type us_web_config_table() :: table( atom(), term() ).
+% A table holding US-Web configuration information.
 
 
+-type log_analysis_settings() :: { log_analysis_tool_name(),
+			maybe( bin_directory_path() ), maybe( bin_directory_path() ) }.
 % Settings about any web access log analysis, i.e. our canonical name for the
 % analysis tool, its (main) root directory and the directory of this helper (if
 % any were specified): {ToolName, MaybeAnalysisToolRoot,
 % MaybeAnalysisHelperRoot}.
-%
--type log_analysis_settings() :: { log_analysis_tool_name(),
-			maybe( bin_directory_path() ), maybe( bin_directory_path() ) }.
 
 
-% Tells whether certificates shall be used, and how:
--type cert_support() :: 'no_certificates' % Hence no https
-					  | 'use_existing_certificates' % Hence use, but no renewal
-					  | 'renew_certificates'. % Hence use, generate and renew
+-type cert_support() ::
+
+		% Hence no https:
+		'no_certificates'
+
+		% Hence use, but no renewal:
+	  | 'use_existing_certificates'
+
+		% Hence use, generate and renew:
+	  | 'renew_certificates'.
+% Tells whether certificates shall be used, and how.
 
 
-% Tells whether certificate generation is in testing/staging mode or not:
 -type cert_mode() :: 'development' | 'production'.
+% Tells whether certificate generation is in testing/staging mode or not.
 
 
 -type https_transport_options() :: ranch_ssl:opts().
@@ -305,9 +317,9 @@
 			   https_transport_options/0, https_transport_info/0 ]).
 
 
-% User-specified tuple for a virtual host in the context of a domain:
 -type vhost_info() :: { vhost_id(), directory_path() }
 					| { vhost_id(), directory_path(), web_kind() }.
+% User-specified tuple for a virtual host in the context of a domain.
 
 
 % Shorthands:
@@ -330,6 +342,7 @@
 -type bin_domain_name() :: net_utils:bin_domain_name().
 
 -type bin_host_name() :: net_utils:bin_host_name().
+
 %-type tcp_port() :: net_utils:tcp_port().
 
 -type supervisor_pid() :: otp_utils:supervisor_pid().
@@ -497,7 +510,7 @@
 
 
 
-% Constructs the US-Web configuration server.
+% @doc Constructs the US-Web configuration server.
 %
 % SupervisorPid is the PID of the main US-Web OTP supervisor, and AppRunContext
 % tells how US-Web is being run.
@@ -595,7 +608,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 
 
 
-% Overridden destructor.
+% @doc Overridden destructor.
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
@@ -623,8 +636,8 @@ destruct( State ) ->
 % Method section.
 
 
-% Returns basic, general web configuration settings (typically for the us_web
-% supervisor).
+% @doc Returns basic, general web configuration settings (typically for the
+% us_web supervisor).
 %
 -spec getWebConfigSettings( wooper:state() ) ->
 								const_request_return( general_web_settings() ).
@@ -677,7 +690,7 @@ getWebConfigSettings( State ) ->
 
 
 
-% Triggers and waits for a parallel certificate renewal from all known
+% @doc Triggers and waits for a parallel certificate renewal from all known
 % certificate managers (may be done for example at server startup).
 %
 -spec renewCertificates( wooper:state() ) ->
@@ -723,7 +736,7 @@ renewCertificates( State ) ->
 
 
 
-% Requests the TLS certificate of specified virtual host to be renewed.
+% @doc Requests the TLS certificate of specified virtual host to be renewed.
 -spec renewCertificate( wooper:state(), domain_id(), vhost_id() ) ->
 							const_oneway_return().
 renewCertificate( State, DomainId, VHostId ) ->
@@ -737,8 +750,8 @@ renewCertificate( State, DomainId, VHostId ) ->
 
 
 
-% Requests the access log analysis reports to be generated for the specified
-% domain(s) / virtual host(s).
+% @doc Requests the access log analysis reports to be generated for the %
+% specified % domain(s) / virtual host(s).
 %
 -spec generateLogAnalysisReports( wooper:state(), maybe( bin_domain_name() ),
 								  maybe( bin_host_name() ) ) ->
@@ -904,8 +917,9 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 
 
 
-% Activates the specified loggers in turn: triggers a log rotation to update the
-% state of the tool for log analysis, then the generated of the reports as such.
+% @doc Activates the specified loggers in turn: triggers a log rotation to
+% update the state of the tool for log analysis, then the generated of the
+% reports as such.
 %
 % (helper)
 %
@@ -928,7 +942,7 @@ activate_loggers( Loggers ) ->
 
 
 
-% Callback triggered whenever a linked process stops.
+% @doc Callback triggered whenever a linked process stops.
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 						basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
@@ -958,8 +972,8 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % Helper section.
 
 
-% Loads and applies the relevant configuration settings first from the overall
-% US configuration file, then from the more web/vhost specific one.
+% @doc Loads and applies the relevant configuration settings first from the
+% overall US configuration file, then from the more web/vhost specific one.
 %
 % As a result, the US configuration file is not fully checked as such (ex: no
 % extracting and check that no entry remains), we just select the relevant
@@ -1110,8 +1124,8 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 
 
-% Loads web configuration information (i.e. the US-Web configuration file, as
-% identified from the US one), notably about virtual hosts.
+% @doc Loads web configuration information (that is the US-Web configuration
+% file, as identified from the US one), notably about virtual hosts.
 %
 -spec load_web_config( bin_directory_path(), maybe( bin_file_path() ),
 			wooper:state() ) -> { dispatch_routes(), wooper:state() }.
@@ -1196,12 +1210,12 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% Creates a certificate manager for the specified domain (ex: foobar.org),
+% @doc Creates a certificate manager for the specified domain (ex: foobar.org),
 % including for all its virtual hosts (ex: baz.foobar.org), as SANs (Subject
 % Alternative Names).
 %
 % We used to create one single, standalone certificate per virtual host, yet the
-% Let's Encrypt rate limits (see https://letsencrypt.org/docs/rate-limits/)
+% Let's Encrypt rate limits (see [https://letsencrypt.org/docs/rate-limits/])
 % could quite easily be hit (ex: if having a total of more than 50 virtual hosts
 % and/or domains).
 %
@@ -1264,7 +1278,7 @@ handle_certificate_manager_for( _BinDomainName, _BinSans, _OtherCertSupport,
 % Helper section.
 
 
-% Returns a domain table and dispatch routes corresponding to the specified
+% @doc Returns a domain table and dispatch routes corresponding to the specified
 % domain information list, and a possibly updated state.
 %
 -spec process_domain_info( [ { domain_name(), [ vhost_info() ] } ],
@@ -1293,8 +1307,8 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 
 
 
-% Returns the web analysis information, if needed, to be able to generate on the
-% fly the web analysis configuration files afterwards.
+% @doc Returns the web analysis information, if needed, to be able to generate
+% on the fly the web analysis configuration files afterwards.
 %
 -spec prepare_web_analysis( maybe( log_analysis_settings() ), list(),
 							maybe( bin_directory_path() ), wooper:state() ) ->
@@ -1441,7 +1455,7 @@ prepare_web_analysis(
 
 
 
-% Determines the (absolute) meta web root to use.
+% @doc Determines the (absolute) meta web root to use.
 %
 % Returns the first found, supposing only one is defined (build_vhost_table/8
 % will perform an exhaustive search thereof).
@@ -1489,7 +1503,7 @@ determine_meta_web_root_for( _VHostInfos=[ _ | T ], DomainId,
 
 
 
-% Here we go through domains then through virtual hosts, notably to prepare
+% @doc Goes through domains then through virtual hosts, notably to prepare
 % routes and any certificate management needed.
 %
 % (helper)
@@ -1585,7 +1599,7 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 
 
 
-% Builds a vhost table corresponding to specified domain identifier.
+% @doc Builds a vhost table corresponding to specified domain identifier.
 %
 % Multiple operations have to be done in one pass as they are quite interlinked.
 %
@@ -1763,7 +1777,7 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 
 
 
-% Returns the corresponding {VHostEntry, VHostRoute} pair.
+% @doc Returns the corresponding {VHostEntry, VHostRoute} pair.
 %
 % (centralising helper)
 %
@@ -1909,7 +1923,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 
 
-% Checks and returns an absolute version of the specified content root.
+% @doc Checks and returns an absolute version of the specified content root.
 -spec get_content_root( directory_path(), maybe( bin_directory_path() ),
 		vhost_id(), domain_id(), wooper:state() ) -> bin_directory_path().
 get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
@@ -1957,8 +1971,8 @@ get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 
 
 
-% Returns an absolute version of the corresponding meta content root, creating
-% it if necessary.
+% @doc Returns an absolute version of the corresponding meta content root,
+% creating it if necessary.
 %
 -spec ensure_meta_content_root_exists( directory_path(),
 	maybe( bin_directory_path() ), vhost_id(), domain_id(), wooper:state() ) ->
@@ -2010,7 +2024,7 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 
 
 
-% Returns a description of specified vhost spec.
+% @doc Returns a description of the specified vhost spec.
 describe_host( _VHostId=without_vhost, DomainId ) ->
 
 	DomainString = case DomainId of
@@ -2049,10 +2063,10 @@ describe_host( VHostId, BinDomainName ) ->
 
 
 
-% Returns a static dispatch route rule corresponding to the specified virtual
-% host identifier, domain identifier and content root.
+% @doc Returns a static dispatch route rule corresponding to the specified
+% virtual host identifier, domain identifier and content root.
 %
-% See https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/ for more details.
+% See [https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/] for more details.
 %
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
 		logger_pid(), cert_support(), maybe( cert_manager_pid() ) ) ->
@@ -2062,8 +2076,8 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 	% We prepare, once for all, all settings for a given static (virtual) host.
 
-	% Refer to https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/ and
-	% https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/:
+	% Refer to [https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/]
+	% and [https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/]:
 
 	% Plain strings wanted, if not catch-alls:
 	HostMatch = get_host_match_for( DomainId, VHostId ),
@@ -2150,8 +2164,8 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 
-% Returns a Nitrogen-specific dispatch route rule corresponding to the specified
-% virtual host identifier, domain identifier and content root.
+% @doc Returns a Nitrogen-specific dispatch route rule corresponding to the
+% specified virtual host identifier, domain identifier and content root.
 %
 % See, in simple_bridge, cowboy_simple_bridge_sup.erl for more details.
 %
@@ -2240,7 +2254,9 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 
-% Returns the host match corresponding to specified domain and virtual host.
+% @doc Returns the host match corresponding to specified domain and virtual
+% host.
+%
 -spec get_host_match_for( domain_id(), vhost_id() ) -> host_match().
 get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=without_vhost ) ->
@@ -2275,8 +2291,9 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
 
 
 
-% Transforms specified dispatch routes into corresponding rules, i.e. replaces
-% the original handlers (name and initial state) with specified forwarding ones.
+% @doc Transforms specified dispatch routes into corresponding rules, that is
+% replaces the original handlers (name and initial state) with specified
+% forwarding ones.
 %
 % Typically useful to mimic routes to be used for https into purely-forwarding
 % ones to be used as their http counterparts.
@@ -2360,10 +2377,10 @@ set_as_forward_paths(
 
 
 
-% Returns the path match that shall be used in order to answer ACME challenges
-% from Let's Encrypt from a LEEC FSM.
+% @doc Returns the path match that shall be used in order to answer ACME
+% challenges from Let's Encrypt from a LEEC FSM.
 %
-% See https://leec.esperide.org/#usage-example
+% See [https://leec.esperide.org/#usage-example].
 %
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
@@ -2376,7 +2393,7 @@ get_challenge_path_match( Unexpected ) ->
 
 
 
-% Checks specified web kind.
+% @doc Checks specified web kind.
 check_kind( _WebKind=static, _VHost, _DomainId, _State ) ->
 	static;
 
@@ -2400,7 +2417,7 @@ check_kind( WebKind, VHost, DomainId, State ) ->
 
 
 
-% Manages any user-configured registration names for this instance, for the
+% @doc Manages any user-configured registration names for this instance, for the
 % US-Web server and their related services, which may be created here.
 %
 -spec manage_registrations( us_web_config_table(), wooper:state() ) ->
@@ -2442,7 +2459,7 @@ manage_registrations( ConfigTable, State ) ->
 
 
 
-% Manages any user-configured specification regarding the (operating-system
+% @doc Manages any user-configured specification regarding the (operating-system
 % level) US user.
 %
 -spec manage_os_user( us_web_config_table(), wooper:state() ) -> wooper:state().
@@ -2485,7 +2502,7 @@ manage_os_user( ConfigTable, State ) ->
 
 
 
-% Manages any user-configured application base directory, and sets related
+% @doc Manages any user-configured application base directory, and sets related
 % directories.
 %
 -spec manage_app_base_directories( us_web_config_table(), wooper:state() ) ->
@@ -2659,7 +2676,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 
 
-% Tries to guess the US-Web application directory.
+% @doc Tries to guess the US-Web application directory.
 guess_app_dir( AppRunContext, State ) ->
 
 	CurrentDir = file_utils:get_current_directory(),
@@ -2705,7 +2722,7 @@ guess_app_dir( AppRunContext, State ) ->
 
 
 
-% Manages any user-configured data directory to rely on, creating it if
+% @doc Manages any user-configured data directory to rely on, creating it if
 % necessary.
 %
 -spec manage_data_directory( us_web_config_table(), wooper:state() ) ->
@@ -2795,7 +2812,7 @@ manage_data_directory( ConfigTable, State ) ->
 
 
 
-% Manages any user-configured log directory to rely on, creating it if
+% @doc Manages any user-configured log directory to rely on, creating it if
 % necessary.
 %
 -spec manage_log_directory( us_web_config_table(), wooper:state() ) ->
@@ -2879,14 +2896,14 @@ manage_log_directory( ConfigTable, State ) ->
 	setAttribute( State, log_directory, BinLogDir ).
 
 
-% To centralise the definition of the directory where to store all web logs:
+% @doc Centralises the definition of the directory where to store all web logs.
 -spec get_web_log_dir( any_directory_path() ) -> bin_directory_path().
 get_web_log_dir( LogDir ) ->
 	text_utils:string_to_binary( file_utils:join( LogDir, ?web_log_subdir ) ).
 
 
 
-% Manages any user-configured default web root.
+% @doc Manages any user-configured default web root.
 -spec manage_web_root( us_web_config_table(), wooper:state() ) ->
 			wooper:state().
 manage_web_root( ConfigTable, State ) ->
@@ -2930,7 +2947,7 @@ manage_web_root( ConfigTable, State ) ->
 
 
 
-% Manages any user-configured TCP ports.
+% @doc Manages any user-configured TCP ports.
 -spec manage_ports( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_ports( ConfigTable, State ) ->
 
@@ -2989,7 +3006,7 @@ manage_ports( ConfigTable, State ) ->
 
 
 
-% Prepares the meta support.
+% @doc Prepares the meta support.
 -spec manage_pre_meta( us_web_config_table(), wooper:state() ) ->
 							wooper:state().
 manage_pre_meta( ConfigTable, State ) ->
@@ -3008,7 +3025,7 @@ manage_pre_meta( ConfigTable, State ) ->
 
 
 
-% Determines the settings of the web log analysis tool.
+% @doc Determines the settings of the web log analysis tool.
 set_log_tool_settings( undefined, State ) ->
 	set_log_tool_settings( _DefaultToolName=awstats, State );
 
@@ -3072,7 +3089,7 @@ set_log_tool_settings( Unexpected, State ) ->
 
 
 
-% Manages how X.509 certificates shall be handled.
+% @doc Manages how X.509 certificates shall be handled.
 -spec manage_certificates( us_web_config_table(), wooper:state() ) ->
 									wooper:state().
 manage_certificates( ConfigTable, State ) ->
@@ -3204,7 +3221,7 @@ manage_certificates( ConfigTable, State ) ->
 
 
 
-% Manages user-configured web dispatch routes.
+% @doc Manages user-configured web dispatch routes.
 -spec manage_routes( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_routes( ConfigTable, State ) ->
 
@@ -3304,7 +3321,7 @@ manage_routes( ConfigTable, State ) ->
 
 
 
-% Initialises Nitrogen for the specified content roots.
+% @doc Initialises Nitrogen for the specified content roots.
 -spec initialise_nitrogen_for_contents( [ bin_directory_path() ],
 										wooper:state() ) -> void().
 initialise_nitrogen_for_contents( _ContentRoots=[], _State ) ->
@@ -3355,9 +3372,11 @@ initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 			%                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
 
 			%OtherPrereqApps =
-			%	otp_utils:prepare_for_execution( nitrogen_core, BinContentRoot ),
+			%	otp_utils:prepare_for_execution( nitrogen_core,
+			%  BinContentRoot ),
 
-			%debug_fmt( "Other prerequisite applications: ~p.", [ OtherPrereqApps ] ),
+			%debug_fmt( "Other prerequisite applications: ~p.",
+			%           [ OtherPrereqApps ] ),
 
 			%otp_utils:start_application( nitrogen_core ),
 
@@ -3384,7 +3403,7 @@ initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 	end.
 
 
-% Applies the meta support.
+% @doc Applies the meta support.
 -spec manage_post_meta( wooper:state() ) -> wooper:state().
 manage_post_meta( State ) ->
 
@@ -3440,7 +3459,7 @@ manage_post_meta( State ) ->
 
 
 
-% Generates the meta website.
+% @doc Generates the meta website.
 -spec generate_meta( meta_web_settings(), boolean(), domain_config_table(),
 					 wooper:state() ) -> wooper:state().
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
@@ -3471,8 +3490,8 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 
 
 
-% Returns a list of the Subject Alternative Names for specified domain, based on
-% the specified information regarding its virtual hosts.
+% @doc Returns a list of the Subject Alternative Names for specified domain,
+% based on the specified information regarding its virtual hosts.
 %
 % Note that a per-virtual host list for SAN is preferred to a wildcard
 % certificate, as, at least currently, the latter can only be obtained from
@@ -3528,9 +3547,9 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 % Static section.
 
 
-% Returns, based on the US main configuration table and the US configuration
-% directory, the US-Web configuration table, as read from the US-Web
-% configuration file, together with the path of this file.
+% @doc Returns, based on the US main configuration table and the US
+% configuration directory, the US-Web configuration table, as read from the
+% US-Web configuration file, together with the path of this file.
 %
 % Static method, to be available from external code such as clients or tests.
 %
@@ -3586,7 +3605,8 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 
 
 
-% Returns information about the naming registration of various US-Web servers.
+% @doc Returns information about the naming registration of various US-Web
+% servers.
 %
 % Static for sharing with clients, tests, etc.
 %
@@ -3683,7 +3703,7 @@ get_registration_info( ConfigTable ) ->
 
 
 
-% Returns the allowed protocol versions in the context of https.
+% @doc Returns the allowed protocol versions in the context of https.
 -spec get_protocol_versions() -> static_return( [ ssl:protocol_version() ] ).
 get_protocol_versions() ->
 
@@ -3696,7 +3716,7 @@ get_protocol_versions() ->
 
 
 
-% Returns a textual description of this domain table.
+% @doc Returns a textual description of this domain table.
 -spec domain_table_to_string( domain_config_table() ) -> ustring().
 domain_table_to_string( DomainTable ) ->
 	% No ellipsing wanted:
@@ -3704,7 +3724,7 @@ domain_table_to_string( DomainTable ) ->
 		++ table:to_string( DomainTable, _DescriptionType=full ).
 
 
-% Returns a list of all the PIDs of the webloggers.
+% @doc Returns a list of all the PIDs of the webloggers.
 -spec get_all_logger_pids( wooper:state() ) -> [ logger_pid() ].
 get_all_logger_pids( State ) ->
 	get_all_logger_pids_from( ?getAttr(domain_config_table) ).
@@ -3720,7 +3740,7 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 	list_utils:filter_out_undefined( MaybePids ).
 
 
-% Returns a list of all the PIDs of the certificate managers.
+% @doc Returns a list of all the PIDs of the certificate managers.
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
 		  [ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->
@@ -3737,7 +3757,7 @@ get_all_certificate_manager_pids_from( DomainCfgTable ) ->
 
 
 
-% Returns a textual description of this server.
+% @doc Returns a textual description of this server.
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 

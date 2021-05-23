@@ -21,7 +21,7 @@
 
 
 
-% Actual US-Web trace monitoring logic.
+% @doc Actual US-Web <b>trace monitoring logic</b>, as a (Myriad) application.
 %
 % Typically called through the us_web/priv/bin/monitor-us-web.sh script.
 %
@@ -43,7 +43,7 @@
 
 
 
-% Runs the app.
+% @doc uns this monitoring app.
 -spec exec() -> no_return().
 exec() ->
 
@@ -150,6 +150,7 @@ exec() ->
 
 
 
+% @doc Initialises this application from the command line.
 init_from_command_line() ->
 
 	% To force options for testing:
@@ -222,8 +223,8 @@ init_from_command_line() ->
 
 
 
-% Returns the possible node names (main or user-based one) corresponding to the
-% target server US-Web instance.
+% @doc Returns the possible node names (main or user-based one) corresponding to
+% the target server US-Web instance.
 %
 % Two names are considered, as two approaches can be used to launch US-Web
 % nodes.
@@ -262,7 +263,7 @@ get_target_node_names( Cfg ) ->
 
 
 
-% Returns the TCP port range to use (if any).
+% @doc Returns the TCP port range to use (if any).
 get_tcp_port_range( Cfg ) ->
 
 	MaybePortRange = list_table:get_value_with_defaults( _K=tcp_port_range,

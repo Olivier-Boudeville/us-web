@@ -16,6 +16,8 @@
 
 
 
+% @doc Handler <b>to manage static content</b>.
+%
 % This is a US-Web custom, derived version of cowboy_static.erl, modified
 % (mostly stripped-down) in order to comply with the conventions of Universal
 % Server and to support 404 errors and logging.
@@ -70,9 +72,9 @@
 -type access_type() :: 'direct' | 'archive'.
 
 
-% State for the cowboy_rest handler:
 -type rest_handler_state() :: { bin_content_path(),
 		{ access_type(), file_info() } | basic_utils:error_term(), extra() }.
+% State for the cowboy_rest handler.
 
 
 % See our web_utils module:
@@ -84,7 +86,7 @@
 
 
 
-% Resolves the file that will be sent, and gets its file information.
+% @doc Resolves the file that will be sent, and gets its file information.
 %
 % If the handler is configured to manage a directory, checks that the requested
 % file is inside the configured directory.
@@ -132,7 +134,7 @@ init( Req, HState ) ->
 
 
 
-% Handles the request for a file.
+% @doc Handles the request for a file.
 init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
 	%trace_utils:debug_fmt( "init_info for file '~ts' (opts: ~p)",
@@ -173,7 +175,7 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
 
 
-% Handles the request for a directory.
+% @doc Handles the request for a directory.
 %
 % RelContentRoot is the path of the target directory relatively to the absolute
 % website root.
@@ -257,7 +259,7 @@ init_dir( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 
 
 
-% Validates specified path information.
+% @doc Validates specified path information.
 -spec validate_reserved( path_info() ) -> 'ok' | 'error'.
 validate_reserved( _PathInfo=[] ) ->
 	ok;
@@ -297,7 +299,7 @@ validate_reserved_helper( <<_, Rest/bits>> ) ->
 	validate_reserved_helper( Rest ).
 
 
-% Normalises specified path.
+% @doc Normalises specified path.
 normalise_path( Path ) ->
 	normalise_path( filename:split( Path ), _Acc=[] ).
 
@@ -322,8 +324,8 @@ normalise_path( [ Segment | T ], Acc ) ->
 
 
 
-% Reject requests that tried to access a file outside the target directory, or
-% used reserved characters.
+% @doc Rejects requests that tried to access a file outside the target
+% directory, or used reserved characters.
 %
 -spec malformed_request( Req, State ) -> { boolean(), Req, State }.
 malformed_request( Req, State ) ->
@@ -331,6 +333,8 @@ malformed_request( Req, State ) ->
 
 
 
+% @doc Forbids relevant content.
+%
 % Directories, files that cannot be accessed at all, and files with no read flag
 % are forbidden.
 %
@@ -352,7 +356,7 @@ forbidden( Req, State ) ->
 
 
 
-% Detects the mimetype of the file.
+% @doc Detects the mimetype of the file.
 -spec content_types_provided( Req, State ) ->
 							{ [ { binary(), get_file } ], Req, State }
 	when State::rest_handler_state().
@@ -372,7 +376,8 @@ content_types_provided( Req, State={ Path, _, Extra } ) when is_list( Extra ) ->
 	end.
 
 
-% Detects the charset of the file.
+
+% @doc Detects the charset of the file.
 -spec charsets_provided( Req, State ) -> { [ binary() ], Req, State }
 	when State::rest_handler_state().
 charsets_provided( Req, State={ Path, _, Extra } ) ->
@@ -392,14 +397,14 @@ charsets_provided( Req, State={ Path, _, Extra } ) ->
 	end.
 
 
-% Enables support for range requests.
+% @doc Enables support for range requests.
 -spec ranges_provided( Req, State ) -> { [ { binary(), auto } ], Req, State }
 	when State::rest_handler_state().
 ranges_provided( Req, State ) ->
 	{ [ { <<"bytes">>, auto } ], Req, State }.
 
 
-% Assumes the resource doesn't exist if it's not a regular file.
+% @doc Assumes the resource does not exist if it is not a regular file.
 -spec resource_exists( Req, State ) -> { boolean(), Req, State }
 										 when State::rest_handler_state().
 resource_exists( Req, State={ _, { _, #file_info{ type=regular } }, _ } ) ->
@@ -410,7 +415,7 @@ resource_exists( Req, State ) ->
 
 
 
-% Generates an etag for the handler-referenced file.
+% @doc Generates an etag for the handler-referenced file.
 -spec generate_etag( Req, State ) -> { { strong | weak, binary() }, Req, State }
 									   when State::rest_handler_state().
 generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
@@ -431,14 +436,14 @@ generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
 
 
 
-% Generates a default etag.
+% @doc Generates a default etag.
 generate_default_etag( Size, Mtime ) ->
 	{ strong, integer_to_binary( erlang:phash2( { Size, Mtime },
 												16#ffffffff ) ) }.
 
 
 
-% Returns the time of last modification of the handler-referenced file.
+% @doc Returns the time of last modification of the handler-referenced file.
 -spec last_modified( cowboy_req:req(), rest_handler_state() ) ->
 		{ calendar:datetime(), cowboy_req:req(), rest_handler_state() }.
 last_modified( Req, HState={ _BinContenPath,
@@ -447,7 +452,7 @@ last_modified( Req, HState={ _BinContenPath,
 
 
 
-% Streams the handler-referenced file.
+% @doc Streams the handler-referenced file.
 -spec get_file( cowboy_req:req(), rest_handler_state() ) ->
 			{ { 'sendfile', 0, non_neg_integer(), binary() }, cowboy_req:req(),
 			  rest_handler_state() }.

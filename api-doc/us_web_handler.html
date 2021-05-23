@@ -1,0 +1,137 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Module us_web_handler</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module us_web_handler</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul><b>Generic, Cowboy-compliant handler</b> for US-Web.
+
+
+<h2><a name="description">Description</a></h2><p><b>Generic, Cowboy-compliant handler</b> for US-Web.</p>
+
+ <p>This handler:</p>
+
+ <p>- provides static dispatches so that the (static) websites corresponding to 
+the virtual hosts can be appropriately served; see the US-Web configuration 
+file (ex: priv/for-testing/us-web-for-tests.config), which holds the data 
+relative to virtual hosts</p>
+
+ <p>- handles HTTP errors (notably 404 ones, thanks to a specifically-generated 
+web page)</p>
+
+ Note that this handler is mostly a library (a toolbox centralising helpers on
+ behalf of the other handlers), knowing that its sole purpose as an handler is
+ to act as a placeholder.
+
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-bin_content_path">bin_content_path()</a></h3>
+<p><tt>bin_content_path() = <a href="file_utils.html#type-bin_file_path">file_utils:bin_file_path()</a></tt></p>
+<p> The (binary) path for a web content.</p>
+
+<h3 class="typedecl"><a name="type-handler_module">handler_module()</a></h3>
+<p><tt>handler_module() = <a href="basic_utils.html#type-module_name">basic_utils:module_name()</a></tt></p>
+<p> Module to handle web content through dispatch rules (ex: 'cowboy_rest').</p>
+
+<h3 class="typedecl"><a name="type-handler_return">handler_return()</a></h3>
+<p><tt>handler_return() = {ok | <a href="#type-handler_module">handler_module()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-handler_state">handler_state()</a> | error}</tt></p>
+<p> See <a href="https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/" target="_top"><tt>https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/</tt></a>.</p>
+
+<h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
+<p><tt>handler_state() = <a href="#type-maybe">maybe</a>(<a href="http://www.erlang.org/edoc/doc/stdlib/doc/maps.html#type-map">maps:map()</a>)</tt></p>
+<p> State carried by the process in charge of a request, for most handlers.</p>
+
+<h3 class="typedecl"><a name="type-http_status_code">http_status_code()</a></h3>
+<p><tt>http_status_code() = <a href="web_utils.html#type-http_status_code">web_utils:http_status_code()</a></tt></p>
+
+
+<h3 class="typedecl"><a name="type-us_handler_state">us_handler_state()</a></h3>
+<p><tt>us_handler_state() = <a href="#type-handler_state">handler_state()</a></tt></p>
+<p><p> A US-Web specialised handler, a map which may notably contain entries with 
+following keys:</p>
+
+ <p>- css_path: file_utils:bin_file_path(), a path relative to the content root of 
+the corresponding virtual host pointing to the default CSS file to be used 
+(ex: for the 404 page)</p>
+
+ - image_404 :: file_utils:bin_file_path(), a path relative to the content root
+ of the corresponding virtual host pointing to an image (ex: PNG) to be used
+ when generating a 404 error page</p>
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#get_base_footer-0">get_base_footer/0</a></td><td>Returns a base HTML footer.</td></tr>
+<tr><td valign="top"><a href="#get_header-3">get_header/3</a></td><td>Returns a suitable document header.</td></tr>
+<tr><td valign="top"><a href="#init-2">init/2</a></td><td>Inits specified handler.</td></tr>
+<tr><td valign="top"><a href="#manage_access_log-3">manage_access_log/3</a></td><td>Manages specified handler access log.</td></tr>
+<tr><td valign="top"><a href="#manage_error_log-4">manage_error_log/4</a></td><td>Manages specified handler error log.</td></tr>
+<tr><td valign="top"><a href="#return_404-3">return_404/3</a></td><td>Returns a suitable term to notify the request initiator that a 404 error 
+was triggered (meaning that the requested content could not be found).</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="get_base_footer-0">get_base_footer/0</a></h3>
+<div class="spec">
+<p><tt>get_base_footer() -&gt; any()</tt></p>
+<p> </p>
+</div><p>Returns a base HTML footer.</p>
+
+<h3 class="function"><a name="get_header-3">get_header/3</a></h3>
+<div class="spec">
+<p><tt>get_header(Title, MaybeBinCssFile, MaybeBinIconFile) -&gt; any()</tt></p>
+<p> </p>
+</div><p>Returns a suitable document header.</p>
+
+<h3 class="function"><a name="init-2">init/2</a></h3>
+<div class="spec">
+<p><tt>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></tt><br></p>
+<p> </p>
+</div><p><p>Inits specified handler.</p>
+
+ Typically called because a dispatch rule mentioned that module as a (debug)
+ handler.
+</p>
+
+<h3 class="function"><a name="manage_access_log-3">manage_access_log/3</a></h3>
+<div class="spec">
+<p><tt>manage_access_log(HandlerReturn::<a href="#type-handler_return">handler_return()</a>, HttpStatusCode::<a href="#type-http_status_code">http_status_code()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-void">void()</a></tt><br></p>
+<p> </p>
+</div><p><p>Manages specified handler access log.</p>
+
+ Access log facility offered to web handlers, taking advantage of the
+ request-specific process in order to further parallelize their processing.
+</p>
+
+<h3 class="function"><a name="manage_error_log-4">manage_error_log/4</a></h3>
+<div class="spec">
+<p><tt>manage_error_log(Error::<a href="basic_utils.html#type-error_reason">basic_utils:error_reason()</a>, Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, BinFullFilePath::<a href="#type-bin_content_path">bin_content_path()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-void">void()</a></tt><br></p>
+<p> </p>
+</div><p><p>Manages specified handler error log.</p>
+
+ Error log facility offered to web handlers, taking advantage of the
+ request-specific process in order to further parallelize their processing.
+</p>
+
+<h3 class="function"><a name="return_404-3">return_404/3</a></h3>
+<div class="spec">
+<p><tt>return_404(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, BinFullFilepath::<a href="#type-bin_content_path">bin_content_path()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></tt><br></p>
+<p> </p>
+</div><p><p>Returns a suitable term to notify the request initiator that a 404 error 
+was triggered (meaning that the requested content could not be found).</p>
+
+ Maybe this dynamic implementation could be too resource-demanding (prone to
+ denial of service attack) and may be replaced with a static binary string (yet
+ then copied to each per-request process), determined once for all.
+</p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc</i></p>
+</body>
+</html>

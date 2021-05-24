@@ -3330,7 +3330,8 @@ initialise_nitrogen_for_contents( _ContentRoots=[], _State ) ->
 
 initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 
-	NitroEbin = file_utils:bin_join( BinContentRoot, "ebin" ),
+	% Conventional layout:
+	NitroEbin = file_utils:bin_join( [ BinContentRoot, "site", "ebin" ] ),
 
 	case file_utils:is_existing_directory_or_link( NitroEbin ) of
 
@@ -3382,6 +3383,8 @@ initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 			%otp_utils:start_application( nitrogen_core ),
 
 			otp_utils:start_application( nitro_cache ),
+
+			otp_utils:start_application( nprocreg ),
 
 			%PrereqApps =
 			%	otp_utils:prepare_for_execution( nitrogen, BinContentRoot ),

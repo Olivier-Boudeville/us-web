@@ -1567,13 +1567,14 @@ process_domain_routes(
 	% We cannot create a wildcard certificate for any domain, so here no https
 	% to expect, and no certificate manager.
 
+	MaybeCertManagerPid = undefined,
+
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table(
-		CatchAllDomainId, VHostInfos, _MaybeCertManagerPid=undefined, BinLogDir,
+		CatchAllDomainId, VHostInfos, MaybeCertManagerPid, BinLogDir,
 		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVtable=table:new(),
 		_AccRoutes=[], CertSupport, State ),
 
-	DomainInfo = { CatchAllDomainId, _MaybeCertManagerPid=undefined,
-				   VHostTable },
+	DomainInfo = { CatchAllDomainId, MaybeCertManagerPid, VHostTable },
 
 	NewAccVTable = table:add_new_entry( _K=CatchAllDomainId, _V=DomainInfo,
 										AccVTable ),

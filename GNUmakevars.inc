@@ -100,7 +100,7 @@ endif
 
 # PROJECT_SHORT_NAME should be defined on a per-project basis.
 ifndef PROJECT_SHORT_NAME
-    PROJECT_SHORT_NAME := us_web
+	PROJECT_SHORT_NAME := us_web
 endif
 
 
@@ -237,7 +237,7 @@ else
 		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/us_common/.),)
 			US_COMMON_TOP = $(US_WEB_TOP)/_build/default/lib/us_common
 		else
-			FORCE_EVAL := $(error Unable to find the build root of US-Common from $(realpath .).)
+			FORCE_EVAL := $(error Unable to find the build root of US-Common from '$(realpath .)'.)
 		endif
 	endif
 endif

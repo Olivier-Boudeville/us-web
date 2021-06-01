@@ -8,9 +8,10 @@ US_WEB_TOP = .
 		release release-dev release-prod                                       \
 		export-release just-export-release upgrade-us-common                   \
 		sync-full-us-web                                                       \
-		start debug start-as-release debug-as-release status                   \
+		start debug debug-batch debug-interactive debug-msg                    \
+		start-as-release debug-as-release status                               \
 		stop stop-as-release                                                   \
-		log cat-log tail-log check-web-availability                            \
+		log cat-log tail-log check-web-availability check-nitrogen-testing     \
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive test-ci                               \
 		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
@@ -253,10 +254,28 @@ start: kill clean-logs compile
 	@sleep 1; $(MAKE) -s log
 
 
-debug:
-	@echo " Running us_web for debug natively (EPMD port: $(EPMD_PORT))"
+# Launches a debug instance:
+debug: debug-batch
+
+
+# Launches a debug instance, in batch mode:
+debug-batch:
+	@echo " Running us_web for debug natively, in batch mode (EPMD port: $(EPMD_PORT))"
 	@cd src && $(MAKE) -s us_web_exec CMD_LINE_OPT="--batch"
+	@$(MAKE) -s debug-msg
+
+
+# Launches a debug instance, with interactive traces:
+debug-interactive:
+	@echo " Running us_web for debug natively, with interactive traces (EPMD port: $(EPMD_PORT))"
+	@cd src && $(MAKE) -s us_web_exec &y
+	@$(MAKE) -s debug-msg
+	@v ./priv/for-testing/log/us_web.traces
+
+
+debug-msg:
 	@echo "You may point a browser to (possibly) http://localhost:$(DEBUG_TEST_PORT)/ or http://baz.localhost:$(DEBUG_TEST_PORT)/ or even, if enabled, http://nitrogen-testing.localhost:$(DEBUG_TEST_PORT)/"
+
 
 
 # Not tested yet, as we use releases in production mode, through systemd.
@@ -337,6 +356,10 @@ check-web-availability:
 	@wget http://localhost:$(DEBUG_TEST_PORT) -O -
 
 
+check-nitrogen-testing:
+	@wget http://nitrogen-testing.localhost:$(DEBUG_TEST_PORT) -O -
+
+
 # run_erl here, not beam.smp:
 inspect:
 	-@ps -edf | grep run_erl | grep -v grep 2>/dev/null || echo "(no run_erl process)"
@@ -358,8 +381,10 @@ monitor-production:
 	@$(MONITOR_SCRIPT) us-monitor-for-production.config
 
 
+# A lot too wide:
+# -@killall epmd run_erl 2>/dev/null || true
 kill:
-	-@killall epmd run_erl 2>/dev/null || true
+	-@us_web_pid=$$(ps -edf | grep -v grep | grep beam.smp | grep us_web_app | awk '{printf $$2}'); if [ -z "$${us_web_pid}" ]; then echo "(no US-Web process found)"; else echo "  Killing US-Web process $${us_web_pid}..."; kill $${us_web_pid}; fi
 
 
 test: test-interactive

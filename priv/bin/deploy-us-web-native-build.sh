@@ -271,7 +271,7 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A lot safer than relying on the tip of the master branch:
-	cowboy_tag="2.8.0"
+	cowboy_tag="2.9.0"
 
 	if [ -n "${cowboy_tag}" ]; then
 
@@ -808,7 +808,7 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 
 	echo " Changing the permissions of deployed root '${abs_native_install_dir}' itself to ${dir_perms}."
-	if ! sudo chmod ${dir_perms} ${abs_native_install_dir}; then
+	if ! sudo chmod ${dir_perms} "${abs_native_install_dir}"; then
 
 		echo "Error, changing permissions of deployed root '${abs_native_install_dir}' itself to ${dir_perms} failed." 1>&2
 

@@ -171,6 +171,13 @@ NITROGEN_DEPS_BEAM_DIRS = $(patsubst %, $(NITROGEN_CORE_TOP)/deps/%/ebin, $(NITR
 BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(NITROGEN_BEAM_DIRS)
 
 
+# As behaviour-defining modules (such as the nitrogen_core's route_handler one)
+# must be found when *compiling* modules (such as us_web_nitrogen_route_handler)
+# implementing these behaviours:
+#
+NITROGEN_BEHAVIOUR_OPT = -pz $(NITROGEN_CORE_TOP)/ebin
+
+ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
 
 
 ifndef VM_NAME

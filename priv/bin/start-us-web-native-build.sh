@@ -70,7 +70,7 @@ fi
 # We need first to locate the us-web-common.sh script:
 
 # Location expected also by us-common.sh afterwards:
-cd "${us_web_install_root}"
+cd "${us_web_install_root}" || exit
 
 # As expected by us-web-common.sh for the VM logs:
 log_dir="${us_web_install_root}/log"
@@ -98,7 +98,7 @@ us_launch_type="native"
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
 
-read_us_config_file $1 1>/dev/null
+read_us_config_file "$1" 1>/dev/null
 
 read_us_web_config_file 1>/dev/null
 
@@ -106,7 +106,7 @@ secure_authbind
 
 prepare_us_web_launch
 
-cd src
+cd src || exit
 
 
 # Note that a former instance of EPMD may wrongly report that a node with the
@@ -131,7 +131,7 @@ res=$?
 # If a launch time-out keeps on progressing, this might be the sign that a
 # previous US-Web instance is running.
 
-if [ $res -eq 0 ]; then
+if [ ${res} -eq 0 ]; then
 
 	# Unfortunately may still be a failure (ex: if a VM with the same name was
 	# already running, start failed, not to be reported as a success)
@@ -174,6 +174,6 @@ else
 
 	inspect_us_web_log
 
-	exit $res
+	exit ${res}
 
 fi

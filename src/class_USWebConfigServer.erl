@@ -2235,7 +2235,7 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	InitialNitroHandlerState = BinContentRoot,
 
 	AllNitroMatches = StaticMatches
-		++ [ { '_', [], _NitroHandler=cowboy_simple_bridge_anchor,
+		++ [ { '_', [], _NitroHandler=us_web_nitrogen_anchor,
 			   InitialNitroHandlerState } ],
 
 	PathMatches = case CertSupport =:= renew_certificates

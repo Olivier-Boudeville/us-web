@@ -27,7 +27,7 @@
 %
 {deps, [
 
-	{cowboy, {git, "git://github.com/ninenines/cowboy", {tag, "2.8.0"}}},
+	{cowboy, {git, "git://github.com/ninenines/cowboy", {tag, "2.9.0"}}},
 
 	% To support the generation of X.509 certificates thanks to LetsEncrypt:
 	{leec, {git, "git://github.com/Olivier-Boudeville/Ceylan-LEEC",
@@ -37,12 +37,12 @@
 	%
 	% (specifying only 'nitrogen_core' should be sufficient)
 	%
-	%{simple_bridge, {git, "git://github.com/nitrogen/simple_bridge",{tag, "v2.1.0"}}},
 	%{qdate,         {git, "git://github.com/choptastic/qdate",      {tag, "0.5.0"}}},
 	%{nprocreg,      {git, "git://github.com/nitrogen/nprocreg",     {tag, "v0.3.0"}}},
-	%{nitrogen_core, {git, "git://github.com/nitrogen/nitrogen_core",{tag, "v2.4.0"}}},
 	%{sync,          {git, "git://github.com/rustyio/sync",          {tag, "v0.2.0"}}},
 	%{nitro_cache,   {git, "git://github.com/nitrogen/nitro_cache",  {tag, "0.4.0"}}}
+	%{nitrogen_core, {git, "git://github.com/Olivier-Boudeville/nitrogen_core", {branch, "master"}}},
+	%{simple_bridge, {git, "git://github.com/Olivier-Boudeville/simple_bridge", {branch, "master"}}},
 
 	% Our toolbox dependencies:
 	{myriad,         {git, "git://github.com/Olivier-Boudeville/Ceylan-Myriad",

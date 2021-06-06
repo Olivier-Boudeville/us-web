@@ -465,7 +465,7 @@ info-versions:
 	@echo "WOOPER_VERSION    = $(WOOPER_VERSION)"
 	@echo "TRACES_VERSION    = $(TRACES_VERSION)"
 	@echo "US_COMMON_VERSION = $(US_COMMON_VERSION)"
-	@echo "LEEC_TOP_VERSION  = $(LEEC_TOP_VERSION)"
+	@echo "LEEC_VERSION      = $(LEEC_VERSION)"
 
 
 info-deps:

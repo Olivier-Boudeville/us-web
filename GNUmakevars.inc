@@ -157,6 +157,9 @@ MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
 
 # Nitrogen section.
 
+USE_NITROGEN = false
+#USE_NITROGEN = true
+
 NITROGEN_BEAM_DIRS = $(NITROGEN_CORE_TOP)/ebin $(NITROGEN_DEPS_BEAM_DIRS)
 
 NITROGEN_DEPS_DIRS = cf erlware_commons nitro_cache nprocreg qdate \
@@ -269,20 +272,24 @@ else
 endif
 
 
-# And for any nitrogen_core available:
-ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/nitrogen_core/.),)
-	# By default, expect a checkout directory:
-	NITROGEN_CORE_TOP = $(US_WEB_TOP)/_checkouts/nitrogen_core
-else
-	# Second, a sibling one is searched for:
-	ifneq ($(wildcard $(US_WEB_TOP)/../nitrogen_core/.),)
-		NITROGEN_CORE_TOP = $(US_WEB_TOP)/../nitrogen_core
-   else
-		# Otherwise most probably in a 'rebar3 compile' context:
-		ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/nitrogen_core/.),)
-			NITROGEN_CORE_TOP = $(US_WEB_TOP)/_build/default/lib/nitrogen_core
+ifeq ($(USE_NITROGEN),true)
+
+	# And for any nitrogen_core available:
+	ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/nitrogen_core/.),)
+		# By default, expect a checkout directory:
+		NITROGEN_CORE_TOP = $(US_WEB_TOP)/_checkouts/nitrogen_core
+	else
+		# Second, a sibling one is searched for:
+		ifneq ($(wildcard $(US_WEB_TOP)/../nitrogen_core/.),)
+			NITROGEN_CORE_TOP = $(US_WEB_TOP)/../nitrogen_core
 		else
-			FORCE_EVAL := $(warning Warning: unable to find a build root for Nitrogen-core from '$(realpath .)'.)
+			# Otherwise most probably in a 'rebar3 compile' context:
+			ifneq ($(wildcard $(US_WEB_TOP)/_build/default/lib/nitrogen_core/.),)
+				NITROGEN_CORE_TOP = $(US_WEB_TOP)/_build/default/lib/nitrogen_core
+			else
+				FORCE_EVAL := $(warning Warning: unable to find a build root for Nitrogen-core from '$(realpath .)'.)
+			endif
 		endif
 	endif
+
 endif

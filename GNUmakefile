@@ -15,7 +15,7 @@ US_WEB_TOP = .
 		inspect monitor-development monitor-production                         \
 		kill shell test test-interactive test-ci                               \
 		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
-		info info-local info-conditionals info-deps
+		info info-local info-context info-versions info-deps info-conditionals
 
 
 MODULES_DIRS = src doc conf priv test
@@ -453,6 +453,19 @@ info-local:
 	@echo "RELEASE_PATH = $(RELEASE_PATH)"
 	@echo "MYRIAD_REBAR_EXEC = $(MYRIAD_REBAR_EXEC)"
 	@echo "REBAR_INCS = $(REBAR_INCS)"
+	@echo "NITROGEN_BEAM_DIRS = $(NITROGEN_BEAM_DIRS)"
+
+
+# Typically useful to know the software context for continuous integration:
+info-context: info-platform info-versions info-source-layout
+
+
+info-versions:
+	@echo "MYRIAD_VERSION    = $(MYRIAD_VERSION)"
+	@echo "WOOPER_VERSION    = $(WOOPER_VERSION)"
+	@echo "TRACES_VERSION    = $(TRACES_VERSION)"
+	@echo "US_COMMON_VERSION = $(US_COMMON_VERSION)"
+	@echo "LEEC_TOP_VERSION  = $(LEEC_TOP_VERSION)"
 
 
 info-deps:
@@ -461,7 +474,6 @@ info-deps:
 	@echo "TRACES_TOP = $(TRACES_TOP)) (i.e. $$(realpath $(TRACES_TOP)))"
 	@echo "US_COMMON_TOP = $(US_COMMON_TOP) (i.e. $$(realpath $(US_COMMON_TOP)))"
 	@echo "LEEC_TOP = $(LEEC_TOP) (i.e. $$(realpath $(LEEC_TOP)))"
-	@echo "NITROGEN_BEAM_DIRS = $(NITROGEN_BEAM_DIRS)"
 
 
 info-conditionals:

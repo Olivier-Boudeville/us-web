@@ -149,7 +149,33 @@ US_WEB_RELEASE_ARCHIVE_XZ  := $(US_WEB_RELEASE_BASE).tar.xz
 US_WEB_SRC := $(US_WEB_TOP)/src
 
 # BEAM path section.
-US_WEB_BEAM := $(US_WEB_TOP)/src
+US_WEB_BEAM_DIR := $(US_WEB_TOP)/src
+
+
+# In an OTP/rebar3-style application layout (a convention now used by our native
+# build as well), at compilation time, libraries making use of US-Common will
+# expect its includes to be located in:
+#
+# (lower layers taken in charge in turn)
+#
+US_COMMON_OTP_INC := -I$(US_COMMON_TOP)/../us_common/include/
+
+INC += $(US_COMMON_OTP_INC)
+
+
+ifndef VM_NAME
+	VM_NAME := us_web_debug
+endif
+
+
+ifndef VM_TEST_NAME
+	VM_TEST_NAME := us_web_test
+endif
+
+
+ifndef US_CONFIG_FILE
+	US_CONFIG_FILE := $(US_TOP)/conf/us.config
+endif
 
 
 MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
@@ -168,6 +194,11 @@ NITROGEN_DEPS_DIRS = cf erlware_commons nitro_cache nprocreg qdate \
 NITROGEN_DEPS_BEAM_DIRS = $(patsubst %, $(NITROGEN_CORE_TOP)/deps/%/ebin, $(NITROGEN_DEPS_DIRS))
 
 
+
+# See Myriad counterpart variable (MYRIAD_BEAM_DIRS) for explanations:
+US_WEB_BEAM_DIRS := $(US_WEB_BEAM_DIR) $(US_WEB_TOP)/..
+
+
 # We rely on Myriad, WOOPER, Traces and US-Common as well, and, if enabled,
 # Nitrogen:
 #
@@ -182,24 +213,6 @@ NITROGEN_BEHAVIOUR_OPT = -pz $(NITROGEN_CORE_TOP)/ebin
 
 ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
 
-
-ifndef VM_NAME
-	VM_NAME := us_web_debug
-endif
-
-
-ifndef VM_TEST_NAME
-	VM_TEST_NAME := us_web_test
-endif
-
-
-ifndef US_CONFIG_FILE
-	US_CONFIG_FILE := $(US_TOP)/conf/us.config
-endif
-
-
-# See Myriad counterpart variable (MYRIAD_BEAM_DIRS) for explanations:
-US_WEB_BEAM_DIRS := $(US_WEB_BEAM)
 
 
 # The default path where a US-Web native build is to be deployed on a server:

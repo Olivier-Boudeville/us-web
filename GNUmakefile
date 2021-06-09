@@ -461,11 +461,11 @@ info-context: info-platform info-versions info-source-layout
 
 
 info-versions:
-	@echo "MYRIAD_VERSION    = $(MYRIAD_VERSION)"
-	@echo "WOOPER_VERSION    = $(WOOPER_VERSION)"
-	@echo "TRACES_VERSION    = $(TRACES_VERSION)"
+	@echo "MYRIAD_VERSION = $(MYRIAD_VERSION)"
+	@echo "WOOPER_VERSION = $(WOOPER_VERSION)"
+	@echo "TRACES_VERSION = $(TRACES_VERSION)"
 	@echo "US_COMMON_VERSION = $(US_COMMON_VERSION)"
-	@echo "LEEC_VERSION      = $(LEEC_VERSION)"
+	@echo "LEEC_VERSION = $(LEEC_VERSION)"
 
 
 info-deps:

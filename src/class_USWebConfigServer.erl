@@ -477,9 +477,6 @@
 	{ scheduler_registration_scope, registration_scope(),
 	  "the scope under which the dedicated scheduler is registered" },
 
-	{ start_timestamp, time_utils:timestamp(),
-	  "the start timestamp of this server" },
-
 	{ log_analysis_settings, maybe( log_analysis_settings() ),
 	  "the settings to use for any analysis of web access logs" } ] ).
 
@@ -518,8 +515,6 @@
 -spec construct( wooper:state(), supervisor_pid(),
 				 application_run_context() ) -> wooper:state().
 construct( State, SupervisorPid, AppRunContext ) ->
-
-	StartTimestamp = time_utils:get_timestamp(),
 
 	TraceCateg = ?trace_categorize("Configuration Server"),
 
@@ -578,7 +573,6 @@ construct( State, SupervisorPid, AppRunContext ) ->
 					{ us_web_supervisor_pid, SupervisorPid },
 					{ dispatch_routes, undefined },
 					{ dispatch_rules, undefined },
-					{ start_timestamp, StartTimestamp },
 					{ cert_directory, undefined },
 					{ leec_agents_key_path, undefined },
 					{ dh_key_path, undefined },
@@ -3483,9 +3477,12 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 
 	end,
 
+	StartTimestamp = time_utils:gregorian_ms_to_timestamp(
+						?getAttr(server_gregorian_start) ),
+
 	IndexContent = us_web_meta:get_page_header()
 		++ us_web_meta:get_page_body( Scheme, WebPort, DomainCfgTable,
-			?getAttr(start_timestamp), MetaWebSettings, LogAnalysisEnabled )
+			StartTimestamp, MetaWebSettings, LogAnalysisEnabled )
 		++ us_web_meta:get_page_footer(),
 
 	file_utils:write_whole( IndexPath, IndexContent ),

@@ -19,7 +19,7 @@
 
 
 
-:raw-html:`<center><img src="us-web-title.png" width="65%"></img></center>`
+:raw-html:`<center><img src="us-web-title.png" id="responsive-image-medium"></img></center>`
 :raw-latex:`\centering \includegraphics[scale=1.6]{us-web-title.png}`
 
 
@@ -604,7 +604,7 @@ Then running the aforementioned ``monitor-us-web.sh`` script should launch a tra
 
 Here is a user-submitted screenshot (edited for confidentiality) of the LogMX-based trace browser corresponding to the native US-Web trace interface (refer to `Ceylan-Traces <https://traces.esperide.com>`_ for further details):
 
-:raw-html:`<center><img src="us-web-trace-monitoring-contributed-example.png" width="90%"></img></center>`
+:raw-html:`<center><img src="us-web-trace-monitoring-contributed-example.png" id="responsive-image-full"></img></center>`
 :raw-latex:`\includegraphics[scale=0.18]{us-web-trace-monitoring-contributed-example.png}`
 
 
@@ -1142,7 +1142,7 @@ About Nitrogen (possibly future) Support
 - `How Nitrogen processes requests <https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/>`_
 - `How to add Nitrogen and Cowboy as dependency libs to your erlang application <https://rshestakov.wordpress.com/2013/03/03/how-to-add-nitrogen-and-cowboy-as-dependecy-libs-to-your-erlang-application/>`_
 
-
+We finally forked ``nitrogen``, ``nitrogen_core``, ``simple_bridge`` and implemented our own US-Web handler (` <>`_, following `this documentation <https://nitrogenproject.com/doc/handlers.html>`_)
 
 
 .. comment - a universal server and a universal webserver must be able to run independently (knowing that, at build time, only the US Webserver depends on the US Server); as a consequence, for example the US-Web configuration server should not request its overall US counterpart about the location of the configuration directory, but it should determine it by itself; so the elected design is that both use the same logic (as a static method) to locate the US configuration file; as a result, storing in that file the registration name of the US configuration server is meaningful for both: the US server can register itself accordingly, and the webserver can locate it if it exists; if not, the US web will create an instance thereof and use it afterwards
@@ -1171,7 +1171,7 @@ Ending Word
 Have fun with the Universal Webserver!
 
 
-:raw-html:`<center><img src="us-web-title.png" width="30%"></img></center>`
+:raw-html:`<center><img src="us-web-title.png" id="responsive-image-small"></img></center>`
 :raw-latex:`\begin{figure}[h] \centering \includegraphics[scale=0.8]{us-web-title.png} \end{figure}`
 
 :raw-html:`<a name="universal-webserver_bottom"></a>`

@@ -61,7 +61,7 @@
 
 
 
-% Starts and links the US-Web supervisor, with OTP conventions.
+% @doc Starts and links the US-Web supervisor, with OTP conventions.
 %
 % (function probably useless)
 %
@@ -72,7 +72,7 @@ start_link() ->
 
 
 
-% Starts and links the US-Web supervisor, with OTP conventionsor not.
+% @doc Starts and links the US-Web supervisor, with OTP conventions or not.
 -spec start_link( application_run_context() ) -> otp_utils:supervisor_pid().
 start_link( AppRunContext ) ->
 	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
@@ -93,8 +93,8 @@ init( _Args=[ AppRunContext ] ) ->
 
 	BinTraceCategory = <<"US.US-Web.Supervision">>,
 
-	AggregatorPid = class_TraceAggregator:get_aggregator(
-						_LaunchAggregator=false ),
+	AggregatorPid =
+		class_TraceAggregator:get_aggregator( _LaunchAggregator=false ),
 
 	BridgeSpec = { BinTraceEmitterName, BinTraceCategory, AggregatorPid },
 
@@ -330,14 +330,14 @@ init( _Args=[ AppRunContext ] ) ->
 					_RestartStrategy=one_for_one,
 					class_USWebConfigServer:get_execution_target() ),
 
-	%% WebManagerSpec = #{ id => us_web_manager,
-	%%					start => { us_web, start_link, [] },
-	%%					restart => permanent,
-	%%					shutdown => 2000,
-	%%					type => worker,
-	%%					modules => [ us_web ] },
+	% WebManagerSpec = #{ id => us_web_manager,
+	%					   start => { us_web, start_link, [] },
+	%					   restart => permanent,
+	%					   shutdown => 2000,
+	%					   type => worker,
+	%					   modules => [ us_web ] },
 
-	%% ChildSpecs = [ WebManagerSpec ],
+	% ChildSpecs = [ WebManagerSpec ],
 
 	% Currently no worker or lower-level supervisor to supervise:
 	ChildSpecs = [],

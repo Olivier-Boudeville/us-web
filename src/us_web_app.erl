@@ -33,7 +33,9 @@
 
 -behaviour(application).
 
+
 -export([ exec/0, start/2, stop/1 ]).
+
 
 % Shorthands:
 -type application_name() :: otp_utils:application_name().
@@ -42,8 +44,10 @@
 % Implementation notes:
 %
 % We define two starting procedures here:
+%
 %  - the direct, native one (yet OTP-compliant for prerequisites), through our
-%  Ceylan make system
+%  Ceylan-Myriad make system
+%
 %  - the OTP release-based one (generally based on rebar3)
 
 % Calls to io:format/{1,2} shall not be replaced typically by trace_bridge ones,
@@ -64,7 +68,7 @@ exec() ->
 
 	% Expecting Myriad to be already available in this branch:
 	trace_bridge:info(
-	  "Starting the US-Web application natively (not as a release)." ),
+		"Starting the US-Web application natively (not as a release)." ),
 
 	cond_utils:if_defined( us_web_debug_execution,
 		trace_bridge:debug_fmt( "Initially, the ~ts",
@@ -129,6 +133,7 @@ exec() ->
 % elli) and on us_web itself.
 %
 % Note that it may easier/more reliable to add these applications directly in
+% the OTP release / rebar configuration.
 %
 start( StartType, StartArgs ) ->
 
@@ -141,7 +146,7 @@ start( StartType, StartArgs ) ->
 
 	% They used to be started by LEEC afterwards, but now not anymore:
 	%_OrderedAppNames = otp_utils:prepare_for_execution( [ shotgun, elli ],
-	%													BuildRootDir ),
+	%													 BuildRootDir ),
 
 	% To debug any dependency-related 'undef' problem, or to ensure
 	% concurrently-emitted messages can be seen (otherwise many outputs may be
@@ -149,12 +154,12 @@ start( StartType, StartArgs ) ->
 	%
 	%io:format( "Current code path:~n~p~n", [ code:get_path() ] ),
 	%io:format( "undef interpretation: ~ts~n",
-	%  [ code_utils:interpret_undef_exception( M, F, A ) ] ),
+	%           [ code_utils:interpret_undef_exception( M, F, A ) ] ),
 	%
 	%timer:sleep( 2000 ),
 
 	%basic_utils:display( "Prerequisites started; loaded applications:~n~p~n",
-	%		   [ application:loaded_applications() ] ),
+	%					  [ application:loaded_applications() ] ),
 
 	% See http://erlang.org/doc/design_principles/applications.html:
 	us_web_sup:start_link( as_otp_release ).
@@ -175,7 +180,7 @@ stop( _State ) ->
 % Internal functions:
 
 
-% @doc Starts required applications (not used currently)/
+% @doc Starts required applications (not used currently).
 -spec start_application( application_name() ) -> void().
 start_application( simple_bridge ) ->
 

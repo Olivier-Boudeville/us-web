@@ -13,14 +13,14 @@
 # We expect us_web_install_root to be already set by the caller:
 if [ -z "${us_web_install_root}" ]; then
 
-	echo "Error, no us_web_install_root set by the caller." 1>&2
+	echo "  Error, no us_web_install_root set by the caller." 1>&2
 	exit 10
 
 fi
 
 if [ ! -d "${us_web_install_root}/priv" ]; then
 
-	echo "Error, invalid us_web_install_root ('$(realpath ${us_web_install_root})') set by the caller." 1>&2
+	echo "  Error, invalid us_web_install_root ('$(realpath ${us_web_install_root})') set by the caller." 1>&2
 	exit 11
 
 fi

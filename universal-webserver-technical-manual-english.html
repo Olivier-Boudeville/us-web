@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.16: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
 <title>Welcome to the Universal Webserver documentation</title>
 <meta content="Universal Webserver" name="keywords" />
 <link rel="stylesheet" href="pygments-default.css" type="text/css" />
@@ -17,7 +17,7 @@
 
 <span class="target" id="top"></span><p><span class="raw-html"><a name="universal-webserver_top"></a></span></p>
 <p><span class="raw-html"><div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://us-web.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#universal-webserver_top">go to top</a> <a href="#universal-webserver_toc">go to toc</a> <a href="#universal-webserver_bottom">go to bottom</a> <a href="api-doc/index.html">browse API</a> <a href="https://github.com/Olivier-Boudeville/us-web">go to project</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div></span></p>
-<p><span class="raw-html"><center><img src="us-web-title.png" width="65%"></img></center></span>
+<p><span class="raw-html"><center><img src="us-web-title.png" id="responsive-image-medium"></img></center></span>
 </p>
 <div class="section" id="technical-manual-of-the-universal-webserver">
 <h1><a class="toc-backref" href="#id66">Technical Manual of the <tt class="docutils literal">Universal Webserver</tt></a></h1>
@@ -34,7 +34,7 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, May 23, 2021</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Wednesday, June 16, 2021</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.0.13</p>
@@ -519,7 +519,7 @@ $ wget http://baz.foobar.org -O -
 </pre>
 <p>Then running the aforementioned <tt class="docutils literal"><span class="pre">monitor-us-web.sh</span></tt> script should launch a trace browser synchronised to the trace aggregator of the targeted US-Web instance, displaying all traces (i.e. both all that have been emitted since the start of that instance and all newer ones, being then displayed in direct).</p>
 <p>Here is a user-submitted screenshot (edited for confidentiality) of the LogMX-based trace browser corresponding to the native US-Web trace interface (refer to <a class="reference external" href="https://traces.esperide.com">Ceylan-Traces</a> for further details):</p>
-<p><span class="raw-html"><center><img src="us-web-trace-monitoring-contributed-example.png" width="90%"></img></center></span>
+<p><span class="raw-html"><center><img src="us-web-trace-monitoring-contributed-example.png" id="responsive-image-full"></img></center></span>
 </p>
 </div>
 <div class="section" id="remote-action">
@@ -1079,6 +1079,7 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <li><a class="reference external" href="https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/">How Nitrogen processes requests</a></li>
 <li><a class="reference external" href="https://rshestakov.wordpress.com/2013/03/03/how-to-add-nitrogen-and-cowboy-as-dependecy-libs-to-your-erlang-application/">How to add Nitrogen and Cowboy as dependency libs to your erlang application</a></li>
 </ul>
+<p>We finally forked <tt class="docutils literal">nitrogen</tt>, <tt class="docutils literal">nitrogen_core</tt>, <tt class="docutils literal">simple_bridge</tt> and implemented our own US-Web handler (` &lt;&gt;`_, following <a class="reference external" href="https://nitrogenproject.com/doc/handlers.html">this documentation</a>)</p>
 </div>
 <div class="section" id="support">
 <h2><a class="toc-backref" href="#id116">Support</a></h2>
@@ -1091,7 +1092,7 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <div class="section" id="ending-word">
 <h2><a class="toc-backref" href="#id118">Ending Word</a></h2>
 <p>Have fun with the Universal Webserver!</p>
-<p><span class="raw-html"><center><img src="us-web-title.png" width="30%"></img></center></span>
+<p><span class="raw-html"><center><img src="us-web-title.png" id="responsive-image-small"></img></center></span>
 </p>
 <p><span class="raw-html"><a name="universal-webserver_bottom"></a></span></p>
 </div>

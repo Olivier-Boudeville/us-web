@@ -98,6 +98,7 @@ us_launch_type="native"
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
 
+# We expect a pre-installed US configuration file to exist:
 read_us_config_file "$1" 1>/dev/null
 
 read_us_web_config_file 1>/dev/null

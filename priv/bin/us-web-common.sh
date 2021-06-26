@@ -64,7 +64,7 @@ else
 
 fi
 
-us_common_root=$(realpath ${us_common_root})
+us_common_root="$(realpath ${us_common_root})"
 
 echo "US-Common root found as '${us_common_root}'."
 
@@ -115,7 +115,7 @@ read_us_web_config_file()
 
 	if [ ! -f "${us_web_config_file}" ]; then
 
-		echo "  Error, US-Web configuration filename '${us_web_config_filename}' not found." 1>&2
+		echo "  Error, US-Web configuration filename '${us_web_config_filename}' not found (looked up as '${us_web_config_file}')." 1>&2
 		exit 110
 
 	fi
@@ -281,6 +281,7 @@ read_us_web_config_file()
 		else
 
 			echo "Rebar3 build tree detected, US-Web VM log directory found as '${us_web_vm_log_dir}'."
+
 		fi
 
 	else

@@ -80,7 +80,7 @@ fi
 # Finally disabled, as a host that does not answer to ping would trigger a too
 # long time-out:
 #
-#if ! ping -c 1 ${us_web_hostname} 1>/dev/null 2>&1 ; then
+#if ! ping -c 1 ${us_web_hostname} 1>/dev/null 2>&1; then
 
 	# Not a fatal error, as not all servers answer pings:
 	#echo "  Error, unable to ping the '${us_web_hostname}' remote US-Web hostname." 1>&2

@@ -43,7 +43,7 @@
 
 
 
-% @doc uns this monitoring app.
+% @doc Runs this monitoring app.
 -spec exec() -> no_return().
 exec() ->
 
@@ -63,7 +63,7 @@ exec() ->
 	Cfg = file_utils:read_terms( CfgFilePath ),
 
 	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
-	%					   [ CfgFilePath, Cfg ] ),
+	%						[ CfgFilePath, Cfg ] ),
 
 	{ MainTargetNodeName, UserTargetNodeName } = get_target_node_names( Cfg ),
 
@@ -106,15 +106,15 @@ exec() ->
 	global:sync(),
 
 	%app_facilities:display( "Globally registered names: ~w.",
-	%						[ global:registered_names() ] ),
+	%						 [ global:registered_names() ] ),
 
 	AggregatorName = ?trace_aggregator_name,
 
 	%app_facilities:display( "Looking up aggregator by name: ~ts.",
-	%						[ AggregatorName ] ),
+	%						 [ AggregatorName ] ),
 
-	AggregatorPid = naming_utils:get_registered_pid_for( AggregatorName,
-														 global ),
+	AggregatorPid =
+		naming_utils:get_registered_pid_for( AggregatorName, global ),
 
 	app_facilities:display( "Creating now a local trace listener." ),
 
@@ -159,7 +159,7 @@ init_from_command_line() ->
 	ArgTable = shell_utils:get_argument_table(),
 
 	%trace_utils:debug_fmt( "Argument table: ~ts",
-	%					   [ list_table:to_string( ArgTable ) ] ),
+	%						[ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
 	{ CfgFilePath, ConfigShrunkTable } =

@@ -215,6 +215,16 @@ ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
 
 
 
+# US-Web will not be correctly built by rebar if hiding build files (precisely:
+# "*** No rule to make target '../myriad/src/utils/basic_utils.erl', needed by
+# '../myriad/src/utils/basic_utils.beam'.  Stop." in a spurious rebuild of
+#  Myriad when building LEEC).
+#
+# See the 'rebar3-bulletproof-compile-pre-hook' for details.
+#
+REBAR_HOOK_EXTRA_OPTS := --no-hiding-for-rebar --verbose
+
+
 # The default path where a US-Web native build is to be deployed on a server:
 # (useful to synchronise sources)
 #

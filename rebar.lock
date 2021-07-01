@@ -10,11 +10,11 @@
  {<<"jsx">>,{pkg,<<"jsx">>,<<"3.0.0">>},1},
  {<<"leec">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-LEEC",
-       {ref,"48bdcf0fa8a7f56303faadee6db36da6db359a52"}},
+       {ref,"5dbcbc6318c9417ecb78e4438d12794734c773ab"}},
   0},
  {<<"myriad">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-Myriad",
-       {ref,"8f44bac459c997f6b2b2a1c853af5c694a5e8672"}},
+       {ref,"eaae06171cf9cf38ec046cd1dcd1ea903722f172"}},
   0},
  {<<"ranch">>,
   {git,"https://github.com/ninenines/ranch",
@@ -22,7 +22,7 @@
   1},
  {<<"traces">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-Traces",
-       {ref,"5b169bf71a379f33362b70f04f35c24376245e21"}},
+       {ref,"9868dc29d7f4b12b5462a4b0fae883fee2f082bc"}},
   0},
  {<<"us_common">>,
   {git,"git://github.com/Olivier-Boudeville/us-common",
@@ -30,7 +30,7 @@
   0},
  {<<"wooper">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
-       {ref,"98a120d75c61d3f89aab63bb59fcc18fbca60841"}},
+       {ref,"3ee2863d6735bdab4dcc93fbdb11b6d466afc9f0"}},
   0}]}.
 [
 {pkg_hash,[

@@ -6,6 +6,12 @@
 .. comment stylesheet specified through GNUmakefile
 
 
+
+===============================================
+Technical Manual of the ``Universal Webserver``
+===============================================
+
+
 .. role:: raw-html(raw)
    :format: html
 
@@ -19,14 +25,9 @@
 
 
 
-:raw-html:`<center><img src="us-web-title.png" id="responsive-image-medium"></img></center>`
+:raw-html:`<center><img src="us-web-title.png" id="responsive-image-medium"></img>`
 :raw-latex:`\centering \includegraphics[scale=1.6]{us-web-title.png}`
 
-
-
-===============================================
-Technical Manual of the ``Universal Webserver``
-===============================================
 
 
 :Organisation: Copyright (C) 2019-GENERATION_YEAR_TAG Olivier Boudeville
@@ -48,6 +49,8 @@ Technical Manual of the ``Universal Webserver``
 .. meta::
    :keywords: Universal Webserver
 
+:raw-html:`</center>`
+
 
 :raw-latex:`\pagebreak`
 
@@ -56,7 +59,7 @@ Technical Manual of the ``Universal Webserver``
 .. _`table of contents`:
 
 .. contents:: **Table of Contents**
-  :depth: 3
+  :depth: 2
 
 
 :raw-latex:`\pagebreak`

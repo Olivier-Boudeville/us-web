@@ -34,7 +34,7 @@ conf/us_web.app.src; see start/2)</p>
  release.</td></tr>
 <tr><td valign="top"><a href="#start-2">start/2</a></td><td>Called when US-Web itself is started as an OTP application (as opposed to 
 natively, "manually", see exec/0).</td></tr>
-<tr><td valign="top"><a href="#start_application-1">start_application/1</a></td><td>Starts required applications (not used currently)/.</td></tr>
+<tr><td valign="top"><a href="#start_application-1">start_application/1</a></td><td>Starts required applications (not used currently).</td></tr>
 <tr><td valign="top"><a href="#stop-1">stop/1</a></td><td>Stops the US-Web application.</td></tr>
 </table>
 
@@ -62,13 +62,14 @@ applications not listed whereas possibly useful in this context (shotgun,
 elli) and on us_web itself.</p>
 
  Note that it may easier/more reliable to add these applications directly in
+ the OTP release / rebar configuration.
 </p>
 
 <h3 class="function"><a name="start_application-1">start_application/1</a></h3>
 <div class="spec">
 <p><tt>start_application(App::<a href="#type-application_name">application_name()</a>) -&gt; <a href="#type-void">void()</a></tt><br></p>
 <p> </p>
-</div><p>Starts required applications (not used currently)/</p>
+</div><p>Starts required applications (not used currently).</p>
 
 <h3 class="function"><a name="stop-1">stop/1</a></h3>
 <div class="spec">

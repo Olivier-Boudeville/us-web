@@ -116,14 +116,14 @@ div.banner {
   position: absolute;
   background: #ecad77;
   margin: 0;
-  font-size: 70%;
+  font-size: 65%;
   font-weight: bold;
   line-height: 1.0;
   text-align: left;
   position: fixed;
   top: 1em;
   left: auto;
-  width: 11em;
+  width: 12em;
   right: 1em;
 }
 

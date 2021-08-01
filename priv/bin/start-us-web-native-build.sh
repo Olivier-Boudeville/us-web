@@ -19,6 +19,8 @@
 #  - deploy-us-web-native-build.sh
 #  - stop-us-web-native-build.sh
 #  - start-universal-server.sh
+#  - kill-us-web.sh: to ensure, for a proper testing, that no previous instance
+#    lingers
 
 
 # Either this script is called during development, directly from within a US-Web

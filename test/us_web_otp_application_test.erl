@@ -20,9 +20,9 @@
 % Creation date: Friday, February 26, 2021.
 
 
-% Testing of US-Web as an OTP active application, directly from within its
-% code base (hence without needing to create a separate, mock-up test OTP
-% release for that).
+% @doc Testing of <b>US-Web as an OTP active application</b>, directly from
+% within its code base (hence without needing to create a separate, mock-up test
+% OTP release for that).
 %
 -module(us_web_otp_application_test).
 
@@ -30,15 +30,15 @@
 % For run/0 export and test traces:
 -include_lib("traces/include/traces_for_tests.hrl").
 
+
 % For default_us_web_{config,scheduler}_server_registration_name:
 % (path not set yet from here)
 %
-%-include_lib("us_web/include/us_web_defines.hrl").
 -include("us_web_defines.hrl").
 
 
 
-% Actual test:
+% @doc Runs the actual test.
 test_us_web_application( OrderedAppNames ) ->
 
 	test_facilities:display( "Starting the US-Web OTP active application." ),
@@ -86,8 +86,8 @@ test_us_web_application( OrderedAppNames ) ->
 							 [ USWebCfgFilePath ] ),
 
 	{ USWebCfgRegName, USWebCfgRegScope, USWebSchedRegName, USWebSchedRegScope,
-	  USWebRegMsg } = case class_USWebConfigServer:get_registration_info(
-								USWebCfgTable ) of
+	  USWebRegMsg } = case
+			class_USWebConfigServer:get_registration_info( USWebCfgTable ) of
 
 		{ ok, Q } ->
 			Q;
@@ -162,7 +162,7 @@ test_us_web_application( OrderedAppNames ) ->
 	URI = text_utils:format( "http://localhost:~B/~ts", [ TestPort, TestUrl ] ),
 
 	ExpectedContentStr = text_utils:binary_to_string( file_utils:read_whole(
-				   "../priv/for-testing/test-static-website-D/index.html" ) ),
+				"../priv/for-testing/test-static-website-D/index.html" ) ),
 
 	web_utils:start(),
 
@@ -213,9 +213,12 @@ test_us_web_application( OrderedAppNames ) ->
 
 
 
-% Note that the {us_web, traces, wooper, myriad}.app files will have to be
-% found and used for this test to succeed: US-Web, Traces, WOOPER and Myriad
-% must be already available as prerequisite, fully-built OTP applications.
+% @doc Runs this application test.
+%
+% Note that the {us_web, us_common, traces, wooper, myriad}.app files will have
+% to be found and used for this test to succeed: US-Web, US-Common, Traces,
+% WOOPER and Myriad must be already available as prerequisite, fully-built OTP
+% applications.
 %
 -spec run() -> no_return().
 run() ->

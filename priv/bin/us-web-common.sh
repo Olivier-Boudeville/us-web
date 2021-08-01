@@ -68,6 +68,11 @@ us_common_root="$(realpath ${us_common_root})"
 
 echo "US-Common root found as '${us_common_root}'."
 
+# Defined to avoid that us-common.sh sets paths like app or log relative to its
+# own root:
+#
+us_actual_root="${us_web_install_root}"
+
 
 # As depends on it:
 us_common_script="${us_common_root}/priv/bin/us-common.sh"

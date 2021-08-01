@@ -134,9 +134,9 @@ init( _Args=[ AppRunContext ] ) ->
 				GenWebSettings
 
 			%after 15000 ->
-			%	trace_bridge:error(
-			%	  "Time-out while waiting for web settings." ),
-			%	throw( us_web_sup_settings_time_out )
+			%   trace_bridge:error(
+			%       "Time-out while waiting for web settings." ),
+			%   throw( us_web_sup_settings_time_out )
 
 	end,
 
@@ -327,15 +327,16 @@ init( _Args=[ AppRunContext ] ) ->
 	% for https.
 
 	SupSettings = otp_utils:get_supervisor_settings(
-					_RestartStrategy=one_for_one,
-					class_USWebConfigServer:get_execution_target() ),
+		% If a child process terminates, only that process is restarted:
+		_RestartStrategy=one_for_one,
+		class_USWebConfigServer:get_execution_target() ),
 
 	% WebManagerSpec = #{ id => us_web_manager,
-	%					   start => { us_web, start_link, [] },
-	%					   restart => permanent,
-	%					   shutdown => 2000,
-	%					   type => worker,
-	%					   modules => [ us_web ] },
+	%					  start => { us_web, start_link, [] },
+	%					  restart => permanent,
+	%					  shutdown => 2000,
+	%					  type => worker,
+	%					  modules => [ us_web ] },
 
 	% ChildSpecs = [ WebManagerSpec ],
 

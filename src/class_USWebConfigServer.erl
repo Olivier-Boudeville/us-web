@@ -35,7 +35,6 @@
 -define( superclasses, [ class_USServer ] ).
 
 
-
 -type web_kind() :: 'static' | 'meta' | 'nitrogen'.
 % The various kinds of websites:
 %
@@ -543,7 +542,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	% Should a module be a problem:
 	%Module = cow_http2,
 	%?send_debug_fmt( TraceState, "For module '~ts': ~p",
-	%	[ Module, code_utils:is_beam_in_path( Module ) ] ),
+	%   [ Module, code_utils:is_beam_in_path( Module ) ] ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
@@ -583,14 +582,14 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	?send_info( CfgState, "Constructed: " ++ to_string( CfgState ) ),
 
 	% Done rather late on purpose, so that the existence of that file can be
-	% seen as a sign that the initialisation went well (used by start-us-web.sh)
+	% seen as a sign that the initialisation went well (used by
+	% start-us-web-{native-build,release}.sh).
 	%
 	% Now that the log directory is known, we can properly redirect the traces.
 	% Already a trace emitter:
 
-	NewBinTraceFilePath = text_utils:string_to_binary(
-			file_utils:join( getAttribute( CfgState, log_directory ),
-							 "us_web.traces" ) ),
+	NewBinTraceFilePath = file_utils:bin_join(
+		getAttribute( CfgState, log_directory ), "us_web.traces" ),
 
 	?send_debug_fmt( CfgState, "Requesting the renaming of trace file "
 					 "to '~ts'.", [ NewBinTraceFilePath ] ),

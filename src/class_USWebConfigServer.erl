@@ -426,7 +426,7 @@
 
 	{ config_base_directory, bin_directory_path(),
 	  "the base directory where all US configuration is to be found "
-	  "(not the us_web/priv/conf internal directory)"},
+	  "(not the us_web/priv/conf internal directory)" },
 
 	{ app_base_directory, bin_directory_path(),
 	  "the base directory of the US-Web application (the root from whence "
@@ -550,21 +550,6 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	%io:format( "code: ~ts", [ code_utils:get_code_path_as_string() ] ),
 	%timer:sleep( 1000 ),
 
-	% Same logic as the overall US configuration server, notably to obtain the
-	% same registration name for it:
-	%
-	BinCfgDir = case class_USConfigServer:get_us_config_directory() of
-
-		{ undefined, CfgMsg } ->
-			?send_error_fmt( TraceState, "Unable to determine the US "
-							 "configuration directory: ~ts", [ CfgMsg ] ),
-			throw( us_configuration_directory_not_found );
-
-		{ FoundCfgDir, CfgMsg } ->
-			?send_info( TraceState, CfgMsg ),
-			FoundCfgDir
-
-	end,
 
 	% Other attributes set by the next function:
 	SupState = setAttributes( TraceState, [
@@ -577,7 +562,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 					{ dh_key_path, undefined },
 					{ ca_cert_key_path, undefined } ] ),
 
-	CfgState = load_and_apply_configuration( BinCfgDir, SupState ),
+	CfgState = load_and_apply_configuration( SupState ),
 
 	?send_info( CfgState, "Constructed: " ++ to_string( CfgState ) ),
 
@@ -935,25 +920,26 @@ activate_loggers( Loggers ) ->
 
 
 
-% @doc Callback triggered whenever a linked process stops.
+% @doc Callback triggered whenever a linked process exits.
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 						basic_utils:exit_reason() ) -> const_oneway_return().
-onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
+onWOOPERExitReceived( State, _StoppedPid, _ExitType=normal ) ->
 
 	% Not even a trace sent for that, as too many of them.
 	%
-	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StoppedPid ] ),
 
 	wooper:const_return();
 
-onWOOPERExitReceived( State, CrashPid, ExitType ) ->
+
+onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 
 	% Typically: "Received exit message '{{nocatch,
 	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
 	%							FunName,Arity,Args,AtomCause}}, [...]}"
 
 	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
-				[ ExitType, CrashPid ] ),
+				[ ExitType, CrashedPid ] ),
 
 	wooper:const_return().
 
@@ -972,105 +958,10 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % extracting and check that no entry remains), we just select the relevant
 % information from it.
 %
--spec load_and_apply_configuration( bin_directory_path(), wooper:state() ) ->
-			wooper:state().
-load_and_apply_configuration( BinCfgDir, State ) ->
+-spec load_and_apply_configuration( wooper:state() ) -> wooper:state().
+load_and_apply_configuration( State ) ->
 
-	% Static settings regarding the overall US configuration server:
-	{ USCfgFilename, USCfgRegNameKey, USCfgDefRegName, USCfgRegScope } =
-		class_USConfigServer:get_default_settings(),
-
-	USCfgFilePath = file_utils:join( BinCfgDir, USCfgFilename ),
-
-	% Should, by design, never happen:
-	case file_utils:is_existing_file_or_link( USCfgFilePath ) of
-
-		true ->
-			ok;
-
-		false ->
-			?error_fmt( "The overall US configuration file ('~ts') "
-						"could not be found.", [ USCfgFilePath ] ),
-			% Must have disappeared then:
-			throw( { us_config_file_not_found, USCfgFilePath } )
-
-	end,
-
-	?info_fmt( "Reading the Universal Server configuration from '~ts'.",
-			   [ USCfgFilePath ] ),
-
-	% Ensures as well that all top-level terms are only pairs:
-	ConfigTable = table:new_from_unique_entries(
-					file_utils:read_terms( USCfgFilePath ) ),
-
-	?info_fmt( "Read US configuration ~ts",
-			   [ table:to_string( ConfigTable ) ] ),
-
-	% We check whether a proper US configuration server already exists (and then
-	% we use it) or if it shall be created; for that we just extract its
-	% expected registration name:
-	%
-	% (important side-effects, such as updating the VM cookie)
-
-	USCfgRegName = case table:lookup_entry( USCfgRegNameKey, ConfigTable ) of
-
-		key_not_found ->
-			?info_fmt( "No user-configured registration name to locate the "
-			   "overall US configuration server, using default name '~ts'.",
-			   [ USCfgDefRegName ] ),
-			USCfgDefRegName;
-
-		{ value, UserRegName } when is_atom( UserRegName ) ->
-			?info_fmt( "To locate the overall US configuration server, will "
-				"rely on the user-configured registration name '~ts'.",
-				[ UserRegName ] ),
-			UserRegName;
-
-		{ value, InvalidRegName } ->
-			?error_fmt( "Read invalid user-configured registration name to "
-						"locate the overall US configuration server: '~p'.",
-						[ InvalidRegName ] ),
-			throw( { invalid_us_config_server_registration_name, InvalidRegName,
-					 USCfgRegNameKey } )
-
-	end,
-
-	% Now we are able to look it up; either the overall US configuration server
-	% already exists, or it shall be created:
-	%
-	CfgServerPid =
-			case naming_utils:is_registered( USCfgRegName, USCfgRegScope ) of
-
-		not_registered ->
-
-			% Second try, if ever there were concurrent start-ups:
-			timer:sleep( 500 ),
-
-			case naming_utils:is_registered( USCfgRegName, USCfgRegScope ) of
-
-				not_registered ->
-					?info_fmt( "There is no ~ts registration of '~ts'; "
-						"creating thus a new overall US configuration server.",
-						[ USCfgRegScope, USCfgRegName ] ),
-					% Not linked to have an uniform semantics:
-					class_USConfigServer:new();
-
-				DelayedCfgPid ->
-					?info_fmt( "Found (after some delay) an already running "
-						"overall US configuration server, using it: "
-						"~ts registration look-up for '~ts' returned ~w.",
-						[ USCfgRegScope, USCfgRegName, DelayedCfgPid ] ),
-					DelayedCfgPid
-
-				end;
-
-		CfgPid ->
-			?info_fmt( "Found an already running overall US configuration "
-				"server, using it: ~ts registration look-up for '~ts' "
-				"returned ~w.", [ USCfgRegScope, USCfgRegName, CfgPid ] ),
-			CfgPid
-
-	end,
+	CfgServerPid = class_USConfigServer:get_us_config_server( State ),
 
 	% This web configuration server is not supposed to read more the US
 	% configuration file; it should request it to the overall configuration
@@ -1083,24 +974,9 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 	% No possible interleaving:
 	receive
 
-		{ wooper_result, { RecvBinCfgDir, ExecContext, MaybeWebCfgFilename,
+		{ wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename,
 						   MaybeUSServerPid } } ->
 
-			% Check:
-			case RecvBinCfgDir of
-
-				BinCfgDir ->
-					ok;
-
-				_ ->
-					?error_fmt( "Mismatching US configuration directories: had "
-						"'~ts', yet received from US configuration server: "
-						"'~ts'.", [ BinCfgDir, RecvBinCfgDir ] ),
-
-					throw( { us_config_dir_mismatch,
-								{ BinCfgDir, RecvBinCfgDir } } )
-
-			end,
 
 			StoreState = setAttributes( State, [
 				{ execution_context, ExecContext },
@@ -1119,6 +995,10 @@ load_and_apply_configuration( BinCfgDir, State ) ->
 
 % @doc Loads web configuration information (that is the US-Web configuration
 % file, as identified from the US one), notably about virtual hosts.
+%
+% As a result, the US configuration file is not fully checked as such (ex: no
+% extracting and check that no entry remains; it is the job of the US config
+% server), we just select the relevant information from it.
 %
 -spec load_web_config( bin_directory_path(), maybe( bin_file_path() ),
 			wooper:state() ) -> { dispatch_routes(), wooper:state() }.

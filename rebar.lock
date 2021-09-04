@@ -1,4 +1,3 @@
-{"1.2.0",
 [{<<"cowboy">>,
   {git,"git://github.com/ninenines/cowboy",
        {ref,"04ca4c5d31a92d4d3de087bbd7d6021dc4a6d409"}},
@@ -7,14 +6,13 @@
   {git,"https://github.com/ninenines/cowlib",
        {ref,"e9448e5628c8c1d9083223ff973af8de31a566d1"}},
   1},
- {<<"jsx">>,{pkg,<<"jsx">>,<<"3.0.0">>},1},
  {<<"leec">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-LEEC",
-       {ref,"cdb6fa0ffc8f7ad9444e793a2a39a6548f1b6d31"}},
+       {ref,"15651ab80e31639743e7cc1629a218c7e08693d9"}},
   0},
  {<<"myriad">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-Myriad",
-       {ref,"be5a10056a7a74609c1774945c8aea3f1ffd1639"}},
+       {ref,"905d9032e93ea251d4da9197ef68df8c8f293709"}},
   0},
  {<<"ranch">>,
   {git,"https://github.com/ninenines/ranch",
@@ -22,19 +20,13 @@
   1},
  {<<"traces">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-Traces",
-       {ref,"70b20c73142639a2dba775378f1250e2739d6b4c"}},
+       {ref,"3922849043087be968ec524bb96bb073098f965d"}},
   0},
  {<<"us_common">>,
   {git,"git://github.com/Olivier-Boudeville/us-common",
-       {ref,"cb38cb9d8d61440fbb5e4dea8e3140ab4cfa0132"}},
+       {ref,"aee00fcc08577a3757be01a484677d7c95a25091"}},
   0},
  {<<"wooper">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
-       {ref,"19fae2df865467615bcaf43bdd17145c0a0cff90"}},
-  0}]}.
-[
-{pkg_hash,[
- {<<"jsx">>, <<"20A170ABD4335FC6DB24D5FAD1E5D677C55DADF83D1B20A8A33B5FE159892A39">>}]},
-{pkg_hash_ext,[
- {<<"jsx">>, <<"37BECA0435F5CA8A2F45F76A46211E76418FBEF80C36F0361C249FC75059DC6D">>}]}
-].
+       {ref,"0519c08cdcff698b75bd0d1e96e5c760534ccf02"}},
+  0}].

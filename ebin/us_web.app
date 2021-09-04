@@ -20,7 +20,7 @@
 
 {application, us_web,
  [{description, "US-Web, the OTP active application offering web services in the context of the Universal Server framework (see http://us-web.esperide.org)"},
-  {vsn, "0.0.13"},
+  {vsn, "1.0.15"},
   {registered, [us_web]},
 
  % Active application:
@@ -44,7 +44,7 @@
   {env,[]},
 
   % Flat hierarchy in ebin here:
-  {modules, [class_USCertificateManager, class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_generate_report_app, us_web_handler, us_web_leec_handler, us_web_meta, us_web_monitor_app, us_web_port_forwarder, us_web_static, us_web_stop_app, us_web_sup]},
+  {modules, [class_USCertificateManager, class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_generate_report_app, us_web_handler, us_web_leec_handler, us_web_meta, us_web_monitor_app, us_web_nitrogen_anchor, us_web_port_forwarder, us_web_static, us_web_stop_app, us_web_sup]},
 
   {licenses, ["US-Web is licensed by its author (Olivier Boudeville) under the GNU Affero General Public License (AGPL), version 3.0 or later"]},
 

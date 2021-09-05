@@ -91,7 +91,7 @@ Standard, basic firewall settings are sufficient to enable interactions of US-We
 The US-Web server must be able to write in the web content tree, precisely to write files in the ``well-known/acme-challenge/`` subdirectory of the web root.
 
 
-Troubleshooting
-===============
+HTTPS Troubleshooting
+=====================
 
 If trying to connect with the https scheme whereas it has not been enabled, ``wget https://baz.foobar.org/ -O -`` is to report ``Connection refused``.

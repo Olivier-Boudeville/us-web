@@ -335,8 +335,8 @@ if [ $do_clone -eq 0 ]; then
 		# ${git} clone ${clone_opts} git://github.com/nitrogen/simple_bridge
 		# if [ ! $? -eq 0 ]; then
 
-		#	echo " Error, unable to obtain ." 1>&2
-		#	exit 60
+		# echo " Error, unable to obtain simple_bridge." 1>&2
+		# exit 60
 
 		# fi
 
@@ -551,7 +551,8 @@ if [ $do_clone -eq 0 ]; then
 	# Rare option needed, otherwise apparently mistook for a directory resulting
 	# in an incorrect link:
 	#
-	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-latest
+	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native
+	sudo /bin/ln -sf --no-target-directory us_web-native us_web-latest
 
 fi
 

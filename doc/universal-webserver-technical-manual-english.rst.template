@@ -855,7 +855,12 @@ Most common sources of failures are:
 
 - there is **already a program listening at the target TCP port** (typically port 80) designated for US-Web; one may check for example with ``lsof -i:80``, otherwise with ``netstat -ltpn | grep ':80'``; of course use the same procedures for TCP port ``443`` if having enabled ``https`` on its standard port
 - check that no firewall is in the way (ex: thanks to ``iptables -nL | gr ':80'``)
-- there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf | grep us_web``; in incrementally brutal ways, one may rely on ``systemctl stop us-web-as-native-build.service``, or on `stop-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web-native-build.sh>`_ or even on `kill-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/kill-us-web.sh>`_; note that, as discussed in the next point, EPMD will then be slaughtered as well
+- there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf | grep us_web``; in incrementally brutal ways, one may rely on:
+
+  - ``systemctl stop us-web-as-native-build.service``; note that if any prior US-Web instance will be shutdown indeed, at least one some cases EPMD will still believe it is running and will thus block any next launch; then the only solution is to kill EPMD as well, even if unfortunately it may impact other running Erlang applications
+  - or on `stop-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web-native-build.sh>`_ (the EPMD gotcha of the previous point still applies)
+  - or even on `kill-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/kill-us-web.sh>`_; note that, as discussed in the next point, EPMD will then be slaughtered as well
+
 - the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd`` (unfortunately no more selective solution is known in such a case that may easily happen; the risk is that any other Erlang application running might be impacted as well)
 - check your ``authbind`` local configuration (refer to `this section <#authbind>`_)
 

@@ -190,7 +190,12 @@ fi
 #/bin/cp -f "${backup_vm_args_file}" "${vm_args_file}"
 
 
-# Will generally not work (-relaxed_command_check not having been used):
+# Unfortunately, at least in some cases, EPMD will believe that this just
+# shutdown US-Web instance is still running; as the next command will generally
+# not work (-relaxed_command_check not having been used at EPMD startup, for
+# good reasons), the only remaining solution would be to kill EPMD; yet this may
+# impact other running Erlang applications, thus it is not done here:
+#
 epmd -port ${erl_epmd_port} -stop us_web 1>/dev/null
 
 # So 'killall epmd' may also be your friend, although it may affect other

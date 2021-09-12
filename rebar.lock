@@ -10,7 +10,7 @@
  {<<"jsx">>,{pkg,<<"jsx">>,<<"3.0.0">>},1},
  {<<"leec">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-LEEC",
-       {ref,"a99743eea9f0b226d60a10412fcae4b04f513414"}},
+       {ref,"3ff73521b842d31f64356d49c41ee061dc21cc5f"}},
   0},
  {<<"myriad">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-Myriad",

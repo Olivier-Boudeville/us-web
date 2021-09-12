@@ -128,11 +128,55 @@ Server Deployment
 Native Deployment
 =================
 
-This procedure relies on our native build/run system, which is the only one that is supported in the context of US-Web.
+This procedure relies on our native build/run system, which is the only one that is officially supported in the context of US-Web.
 
-Once having ensured that no prior webserver is running at the target port(s), it mostly boils down to executing (as a normal user - sudo permissions requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script and creating a ``/etc/xdg/universal-server`` directory, in which an overall US configuration file (``us.config``) will have to be set, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) in the same directory.
+First step is to:
 
-The installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
+- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) located in the same directory
+
+- to ensure that no prior webserver is running at the target port(s)
+
+
+After deployment the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
+
+
+
+Direct, Ad Hoc Deployment
+-------------------------
+
+It boils down to executing (as a normal user - sudo permissions requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument.
+
+
+
+Deployment for Systemd Integration
+----------------------------------
+
+If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), following procedure shall be preferred::
+
+ $ sudo systemctl stop us-web-as-native-build.service
+
+ # If EPMD still thinks a previous US-Web instance is running:
+ # (this is probably the case)
+ $ sudo killall epmd
+
+ $ ./deploy-us-web-native-build.sh --no-launch
+
+ $ sudo systemctl start us-web-as-native-build.service
+
+
+Then, as a first check of that launch, one may execute::
+
+ $ sudo systemctl status us-web-as-native-build.service
+
+
+
+Checking Launch Outcome
+-----------------------
+
+If having requested the renewal of SSL certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully only once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
+These certificates can be checked (ex: in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically ``/opt/universal-server/us_web-data/certificates``).
+
+Finally, from a client host, one may also check the availability of the target webserver(s); refer to the `Remote Monitoring`_ section for that.
 
 
 
@@ -571,11 +615,31 @@ Remote Monitoring
 
 Here the state of a US-Web instance will be inspected remotely, with no shell connection to its server.
 
+
+HTTP Client Check
+-----------------
+
 First of all, is this US-Web instance available? Check with:
 
 .. code:: bash
 
  $ wget http://baz.foobar.org -O -
+
+
+One may define one's dedicated convenience script for that, like a ``check-baz-website-availability.sh`` script whose content would be:
+
+.. code:: bash
+
+ #!/bin/sh
+ target_url="http://baz.foobar.org"
+ echo "  Checking whether '${target_url}' is available:"
+ wget ${target_url} -O - | head
+
+
+
+
+Trace Listener Check
+--------------------
 
 As for the applicative traces, they may be monitored remotely as well, thanks to the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
 

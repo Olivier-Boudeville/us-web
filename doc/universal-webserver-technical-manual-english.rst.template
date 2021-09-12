@@ -73,7 +73,7 @@ We present here a short overview of the services offered by the *Universal Webse
 
 The goal of **US-Web** is to provide an integrated, extensible web framework in order:
 
-- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, using/generating/renewing certificates, etc.
+- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, using/generating/renewing automatically SSL certificates, etc.
 - to link to the `Universal Server <https://github.com/Olivier-Boudeville/us-main>`_ optionally (i.e. if available, knowing both should be able to run in the absence of the other), in order to offer a web front-end for it
 
 Beyond this document, the next level of information about US-Web is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web/src>`_, which are intensely commented and generally straightforward.
@@ -130,7 +130,7 @@ Native Deployment
 
 This procedure relies on our native build/run system, which is the only one that is supported in the context of US-Web.
 
-It mostly boils down to running (as a normal user - sudo permissions requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script and creating a ``/etc/xdg/universal-server`` directory, in which an overall US configuration file (``us.config``) will have to be set, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) in the same directory.
+Once having ensured that no prior webserver is running at the target port(s), it mostly boils down to executing (as a normal user - sudo permissions requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script and creating a ``/etc/xdg/universal-server`` directory, in which an overall US configuration file (``us.config``) will have to be set, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) in the same directory.
 
 The installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
 

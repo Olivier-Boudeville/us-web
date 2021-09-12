@@ -3055,8 +3055,8 @@ manage_certificates( ConfigTable, State ) ->
 
 			BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
 
-			BinCAKeyPath =
-				leec_tls:obtain_ca_cert_file( CertDir ),
+			BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
+														 get_http_options() ),
 
 			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
 				"CA (Certificate Authority) key path is '~ts'.",
@@ -3071,8 +3071,8 @@ manage_certificates( ConfigTable, State ) ->
 			BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
 
 			% Not sure relevant here:
-			BinCAKeyPath =
-				leec_tls:obtain_ca_cert_file( CertDir ),
+			BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
+														 get_http_options() ),
 
 			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
 				"CA (Certificate Authority) key path is '~ts'.",
@@ -3593,6 +3593,18 @@ get_protocol_versions() ->
 	wooper:return_static( cond_utils:switch_set_to( us_web_security,
 		[ { relaxed, [ 'tlsv1.3', 'tlsv1.2', 'tlsv1.1', 'tlsv1' ] },
 		  { strict,  [ 'tlsv1.3', 'tlsv1.2' ] } ] ) ).
+
+
+
+% @doc Returns the HTTP options suitable for operations such as the downloading
+% of the CA certificates.
+%
+-spec get_http_options() -> static_return( web_utils:http_options() ).
+get_http_options() ->
+
+	HttpOptions=[ { ssl, web_utils:get_ssl_verify_options() } ],
+
+	wooper:return_static( HttpOptions ).
 
 
 

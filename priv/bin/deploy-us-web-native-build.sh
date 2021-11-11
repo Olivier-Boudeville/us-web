@@ -48,7 +48,7 @@ nitrogen_option="--support-nitrogen"
 usage="
 Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
-The '${nitrogen_option}' option enables the support for Nitrogen-based websites.
+The '${nitrogen_option}' option will enable the support for Nitrogen-based websites (not done yet).
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
@@ -111,10 +111,18 @@ ${usage}" 1>&2
 
 fi
 
+
+# Selects the (build-time) execution target for all Ceylan layers:
+#execution_target="development"
+execution_target="production"
+
+ceylan_opts="EXECUTION_TARGET=${execution_target}"
+
+
 #echo "support_nitrogen = ${support_nitrogen}"
 #echo "do_launch = ${do_launch}"
 #echo "base_us_dir = ${base_us_dir}"
-
+#echo "ceylan_opts = ${ceylan_opts}"
 
 
 # Just to avoid error messages if running from a non-existing directory:
@@ -123,7 +131,7 @@ cd /
 
 # Checking first:
 
-if [ $(id -u ) -eq 0 ]; then
+if [ "$(id -u)" = "0" ]; then
 
 	echo "  Error, this script must not be run as root (sudo will be requested only when necessary)." 1>&2
 	exit 5
@@ -163,7 +171,7 @@ if [ ! -x "${make}" ]; then
 
 fi
 
-echo "Requesting sudoer rights for the operations that require it:"
+echo "Securing sudoer rights for the upcoming operations that require it."
 sudo echo
 
 base_us_dir_created=1
@@ -200,7 +208,7 @@ if [ $do_clone -eq 0 ]; then
 
 	if [ -d "${native_install_dir}" ]; then
 
-		echo "  Error, target installation directory, '${base_us_dir}/${native_install_dir}', already exists. Remove it first." 1>&2
+		echo "  Error, target installation directory, '${base_us_dir}/${native_install_dir}', already exists. Remove it first (preferably as root, as US-Web may be set to run as a specific user that would then own some log files in this tree)." 1>&2
 
 		exit 20
 
@@ -213,7 +221,7 @@ if [ $do_clone -eq 0 ]; then
 
 	clone_opts="--quiet"
 
-	git=$(which git 2>/dev/null)
+	git="$(which git 2>/dev/null)"
 
 	if [ ! -x "${git}" ]; then
 
@@ -228,9 +236,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning US-Web"
 
-	${git} clone ${clone_opts} ${github_base}/us-web us_web
-
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${github_base}/us-web us_web; then
 
 		echo " Error, unable to obtain US-Web." 1>&2
 	exit 40
@@ -262,8 +268,7 @@ if [ $do_clone -eq 0 ]; then
 	#cowboy_git_id="git@github.com:ninenines/cowboy.git"
 	cowboy_git_id="https://github.com/ninenines/cowboy.git"
 
-	${git} clone ${clone_opts} ${cowboy_git_id}
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${cowboy_git_id}; then
 
 		echo " Error, unable to obtain Cowboy." 1>&2
 		exit 50
@@ -278,8 +283,8 @@ if [ $do_clone -eq 0 ]; then
 		echo " - setting Cowboy to tag '${cowboy_tag}'"
 
 		cd cowboy
-		${git} -c advice.detachedHead=false checkout tags/${cowboy_tag}
-		if [ ! $? -eq 0 ]; then
+
+		if ! ${git} -c advice.detachedHead=false checkout tags/${cowboy_tag}; then
 
 			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
 			exit 52
@@ -302,8 +307,7 @@ if [ $do_clone -eq 0 ]; then
 
 		echo " - cloning nitrogen_core"
 
-		${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core
-		if [ ! $? -eq 0 ]; then
+		if ! ${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core; then
 
 			echo " Error, unable to obtain nitrogen_core." 1>&2
 			exit 80
@@ -317,8 +321,8 @@ if [ $do_clone -eq 0 ]; then
 			echo " - setting nitrogen_core to tag '${nitrogen_core_tag}'"
 
 			cd nitrogen_core
-			${git} checkout tags/${nitrogen_core_tag}
-			if [ ! $? -eq 0 ]; then
+
+			if ! ${git} checkout tags/${nitrogen_core_tag}; then
 
 				echo " Error, unable to set nitrogen_core to tag '${nitrogen_core_tag}'." 1>&2
 				exit 82
@@ -332,8 +336,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning simple_bridge"
 
-		# ${git} clone ${clone_opts} git://github.com/nitrogen/simple_bridge
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${git} clone ${clone_opts} git://github.com/nitrogen/simple_bridge; then
 
 		# echo " Error, unable to obtain simple_bridge." 1>&2
 		# exit 60
@@ -347,8 +350,8 @@ if [ $do_clone -eq 0 ]; then
 		#	echo " - setting simple_bridge to tag '${simple_bridge_tag}'"
 
 		#	cd simple_bridge
-		#	${git} checkout tags/${simple_bridge_tag}
-		#	if [ ! $? -eq 0 ]; then
+		#
+		#	if ! ${git} checkout tags/${simple_bridge_tag}; then
 
 		#		echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
 		#		exit 62
@@ -362,8 +365,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning qdate"
 
-		# ${git} clone ${clone_opts} git://github.com/choptastic/qdate
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${git} clone ${clone_opts} git://github.com/choptastic/qdate; then
 
 		#	echo " Error, unable to obtain qdate." 1>&2
 		#	exit 70
@@ -377,8 +379,7 @@ if [ $do_clone -eq 0 ]; then
 		#	echo " - setting qdate to tag '${qdate_tag}'"
 
 		#	cd qdate
-		#	${git} checkout tags/${qdate_tag}
-		#	if [ ! $? -eq 0 ]; then
+		#	if ! ${git} checkout tags/${qdate_tag}; then
 
 		#		echo " Error, unable to set qdate to tag '${qdate_tag}'." 1>&2
 		#		exit 72
@@ -392,8 +393,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning nprocreg"
 
-		# ${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core; then
 
 		#	echo " Error, unable to obtain nprocreg." 1>&2
 		#	exit 70
@@ -407,8 +407,7 @@ if [ $do_clone -eq 0 ]; then
 		#	echo " - setting nprocreg to tag '${nprocreg_tag}'"
 
 		#	cd nprocreg
-		#	${git} checkout tags/${nprocreg_tag}
-		#	if [ ! $? -eq 0 ]; then
+		#	if ! ${git} checkout tags/${nprocreg_tag}; then
 
 		#		echo " Error, unable to set nprocreg to tag '${nprocreg_tag}'." 1>&2
 		#		exit 72
@@ -421,8 +420,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning sync"
 
-		# ${git} clone ${clone_opts} git://github.com/rustyio/sync
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${git} clone ${clone_opts} git://github.com/rustyio/sync; then
 
 		#	echo " Error, unable to obtain sync." 1>&2
 		#	exit 90
@@ -436,8 +434,8 @@ if [ $do_clone -eq 0 ]; then
 		#	echo " - setting sync to tag '${sync_tag}'"
 
 		#	cd sync
-		#	${git} checkout tags/${sync_tag}
-		#	if [ ! $? -eq 0 ]; then
+		#
+		#	if !${git} checkout tags/${sync_tag}; then
 
 		#		echo " Error, unable to set sync to tag '${sync_tag}'." 1>&2
 		#		exit 92
@@ -451,8 +449,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning nitro_cache"
 
-		# ${git} clone ${clone_opts} git://github.com/choptastic/nitro_cache
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${git} clone ${clone_opts} git://github.com/choptastic/nitro_cache; then
 
 		#	echo " Error, unable to obtain nitro_cache." 1>&2
 		#	exit 100
@@ -466,8 +463,7 @@ if [ $do_clone -eq 0 ]; then
 		#	echo " - setting nitro_cache to tag '${nitro_cache_tag}'"
 
 		#	cd nitro_cache
-		#	${git} checkout tags/${nitro_cache_tag}
-		#	if [ ! $? -eq 0 ]; then
+		#	if !${git} checkout tags/${nitro_cache_tag}; then
 
 		#		echo " Error, unable to set nitro_cache to tag '${nitro_cache_tag}'." 1>&2
 		#		exit 102
@@ -483,9 +479,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning US-Common"
 
-	${git} clone ${clone_opts} ${github_base}/us-common us_common
-
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${github_base}/us-common us_common; then
 
 		echo " Error, unable to obtain US-Common." 1>&2
 		exit 35
@@ -495,9 +489,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-LEEC (Ceylan fork of letsencrypt-erlang)"
 
-	${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec
-
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec; then
 
 		echo " Error, unable to obtain Ceylan-LEEC." 1>&2
 		exit 32
@@ -507,9 +499,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-Traces"
 
-	${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces
-
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces; then
 
 		echo " Error, unable to obtain Ceylan-Traces." 1>&2
 		exit 30
@@ -519,9 +509,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-WOOPER"
 
-	${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper
-
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper; then
 
 		echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
 		exit 25
@@ -531,10 +519,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-Myriad"
 
-	${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad
-
-
-	if [ ! $? -eq 0 ]; then
+	if ! ${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad; then
 
 		echo " Error, unable to obtain Ceylan-Myriad." 1>&2
 		exit 20
@@ -563,13 +548,13 @@ if [ ${do_build} -eq 0 ]; then
 	cd "${abs_native_install_dir}"
 
 	echo
-	echo "Building these packages (as $(id -un)):"
+	echo "Building these packages (as $(id -un), with following Ceylan options: ${ceylan_opts}):"
 
 	# For Myriad, WOOPER and Traces, we prefer to rely on our own good old build
 	# system (i.e. not on rebar3).
 
 	echo " - building Ceylan-Myriad"
-	cd myriad && ${make} all 1>/dev/null
+	cd myriad && ${make} all ${ceylan_opts} 1>/dev/null
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Ceylan-Myriad failed." 1>&2
 		exit 50
@@ -578,7 +563,7 @@ if [ ${do_build} -eq 0 ]; then
 
 	# Our build; uses Myriad's sibling tree:
 	echo " - building Ceylan-WOOPER"
-	cd wooper && ${make} all 1>/dev/null
+	cd wooper && ${make} ${ceylan_opts} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Ceylan-WOOPER failed." 1>&2
 		exit 55
@@ -587,7 +572,7 @@ if [ ${do_build} -eq 0 ]; then
 
 	# Our build; uses Myriad's and WOOPER's sibling trees:
 	echo " - building Ceylan-Traces"
-	cd traces && ${make} all 1>/dev/null
+	cd traces && ${make} ${ceylan_opts} all 1>/dev/null
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of Ceylan-Traces failed." 1>&2
 		exit 60
@@ -616,8 +601,7 @@ if [ ${do_build} -eq 0 ]; then
 
 		cd nitrogen_core
 
-		${make} all
-		if [ ! $? -eq 0 ]; then
+		if ! ${make} all; then
 			echo " Error, the build of nitrogen_core failed." 1>&2
 			exit 70
 		fi
@@ -631,8 +615,7 @@ if [ ${do_build} -eq 0 ]; then
 
 		# cd simple_bridge
 
-		# ${make} all
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${make} all; then
 		#	echo " Error, the build of simple_bridge failed." 1>&2
 		#	exit 70
 		# fi
@@ -644,8 +627,7 @@ if [ ${do_build} -eq 0 ]; then
 
 		# cd qdate
 
-		# ${make} all
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${make} all; then
 		#	echo " Error, the build of qdate failed." 1>&2
 		#	exit 75
 		# fi
@@ -657,8 +639,7 @@ if [ ${do_build} -eq 0 ]; then
 
 		# cd nprocreg
 
-		# ${make} all
-		# if [ ! $? -eq 0 ]; then
+		# if ! ${make} all; then
 		#	echo " Error, the build of nprocreg failed." 1>&2
 		#	exit 80
 		# fi
@@ -698,12 +679,10 @@ if [ ${do_build} -eq 0 ]; then
 	# managed (otherwise our native build could be used, yet then the extra
 	# dependencies - namely JSX - shall be available separately):
 	#
-	${make} all-rebar3 USE_SHOTGUN=false 1>/dev/null
-
 	# Relying on Erlang-native httpc instead (through Myriad's web_utils):
 	#${make} all USE_SHOTGUN=false 1>/dev/null
 
-	if [ ! $? -eq 0 ]; then
+	if ! ${make} all-rebar3 ${ceylan_opts} USE_SHOTGUN=false 1>/dev/null; then
 		echo " Error, the build of LEEC failed." 1>&2
 		exit 66
 	fi
@@ -714,7 +693,7 @@ if [ ${do_build} -eq 0 ]; then
 	# trees:
 	#
 	echo " - building US-Common"
-	cd us_common && ${make} all 1>/dev/null
+	cd us_common && ${make} all ${ceylan_opts} 1>/dev/null
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of US-Common failed." 1>&2
 		exit 70
@@ -733,8 +712,7 @@ if [ ${do_build} -eq 0 ]; then
 	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
 
 	# Our build; uses Ceylan's sibling trees:
-	${make} all 1>/dev/null
-	if [ ! $? -eq 0 ]; then
+	if ! ${make} all ${ceylan_opts} 1>/dev/null; then
 		echo " Error, the build of US-Web failed." 1>&2
 		exit 75
 	fi
@@ -798,7 +776,7 @@ if [ ${do_build} -eq 0 ]; then
 	echo " Changing the permissions of deployed roots in '${abs_native_install_dir}' to ${dir_perms}."
 
 	# Not wanting to select non-directories:
-	dirs=$(/bin/ls -d ${abs_native_install_dir}/*/)
+	dirs="$(/bin/ls -d ${abs_native_install_dir}/*/)"
 
 	if ! sudo chmod ${dir_perms} ${dirs}; then
 
@@ -916,7 +894,7 @@ if [ $do_launch -eq 0 ]; then
 	# Automatic shutdown (that was deferred as much as possible) of any prior
 	# US-Web release running:
 	#
-	for d in $(/bin/ls -d us_web-*.*.* 2>/dev/null) ; do
+	for d in $(/bin/ls -d us_web-*.*.* 2>/dev/null); do
 
 		exec="${d}/bin/us_web"
 
@@ -942,9 +920,9 @@ if [ $do_launch -eq 0 ]; then
 		echo " US-Web launched (start script reported success)."
 
 	else
-		echo " Error, start script ('${start_script}') failed (code: $res)." 1>&2
+		echo " Error, start script ('${start_script}') failed (code: ${res})." 1>&2
 
-		exit $res
+		exit ${res}
 
 	fi
 

@@ -45,10 +45,10 @@
 %
 % We define two starting procedures here:
 %
-%  - the direct, native one (yet OTP-compliant for prerequisites), through our
-%  Ceylan-Myriad make system
+% - the direct, native one (yet OTP-compliant for prerequisites), through our
+% Ceylan-Myriad make system
 %
-%  - the OTP release-based one (generally based on rebar3)
+% - the OTP release-based one (generally based on rebar3)
 
 % Calls to io:format/{1,2} shall not be replaced typically by trace_bridge ones,
 % in order to better diagnose problems with dependencies (typically should

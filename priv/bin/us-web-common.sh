@@ -302,9 +302,6 @@ read_us_web_config_file()
 
 	fi
 
-	# Defined for all script users:
-	trace_file="${us_web_log_dir}/us_web.traces"
-
 
 	# If not in a native build (where no 'us_web_exec' applies), hunting down
 	# the us_web executable:
@@ -380,6 +377,9 @@ read_us_web_config_file()
 	fi
 
 	echo "US-Web (web-level) logs expected in the '${us_web_log_dir}' directory."
+
+	# Defined for all script users:
+	trace_file="${us_web_log_dir}/us_web.traces"
 
 }
 

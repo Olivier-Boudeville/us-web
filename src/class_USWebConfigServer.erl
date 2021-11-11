@@ -961,7 +961,7 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 load_and_apply_configuration( State ) ->
 
 	CfgServerPid = class_USConfigServer:get_us_config_server(
-						_CreateIfNeeded=false, State ),
+						_CreateIfNeeded=true, State ),
 
 	% This web configuration server is not supposed to read more the US
 	% configuration file; it should request it to the overall configuration

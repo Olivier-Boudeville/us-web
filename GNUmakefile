@@ -13,7 +13,7 @@ US_WEB_TOP = .
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability check-nitrogen-testing     \
 		inspect monitor-development monitor-production                         \
-		kill shell test test-interactive test-ci                               \
+		kill shell test test-interactive-local test-ci                         \
 		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
 		info info-local info-context info-versions info-deps info-conditionals
 
@@ -387,11 +387,11 @@ kill:
 	-@us_web_pid=$$(ps -edf | grep -v grep | grep beam.smp | grep us_web_app | awk '{printf $$2}'); if [ -z "$${us_web_pid}" ]; then echo "(no US-Web process found)"; else echo "  Killing US-Web process $${us_web_pid}..."; kill $${us_web_pid}; fi
 
 
-test: test-interactive
+test: test-interactive-local
 
 
 # Shorthand:
-shell: test-interactive
+shell: test-interactive-local
 
 
 # us_web auto-booted:
@@ -399,7 +399,7 @@ shell: test-interactive
 # One may paste 'io:format(\"~s\", [us_web:get_runtime_configuration()]).'
 # in following shell:
 #
-test-interactive: compile
+test-interactive-local: compile
 	@$(MYRIAD_REBAR_EXEC) shell
 
 

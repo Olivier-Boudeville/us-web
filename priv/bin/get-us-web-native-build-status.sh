@@ -3,12 +3,13 @@
 # Script typically meant to be placed in /usr/local/bin of a gateway, for a
 # native US-Web release (the kind of release that is recommended now).
 #
-# Complementary to running, as root: 'systemctl status us-web.service'
+# Complementary to running, as root:
+# 'systemctl status us-web-as-native-build.service'
 
 
-# See also start-us-web.sh and stop-us-web.sh.
+# See also start-us-web-native-build.sh and stop-us-web-native-build.sh.
 
-usage="Usage: $(basename $0): returns the status of a supposedly locally-running US-Web release."
+usage="Usage: $(basename $0): returns the status of a supposedly locally-running US-Web native release."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -23,7 +24,7 @@ fi
 
 # We need first to locate the us-web-common.sh script:
 
-release_base="/opt/universal-server/us_web"
+release_base="/opt/universal-server/us_web-native"
 
 us_web_rel_root="$(/bin/ls -d -t ${release_base}-* 2>/dev/null | head -n 1)"
 
@@ -50,7 +51,7 @@ cd "${us_web_rel_root}"
 
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
-us_web_common_script="lib/us_web-latest/priv/bin/${us_web_common_script_name}"
+us_web_common_script="lib/us_web-native/priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
@@ -66,15 +67,15 @@ fi
 
 # Comment redirections for more details:
 
-read_us_config_file $1 #1>/dev/null
+read_us_config_file "$1" 1>/dev/null
 
-read_us_web_config_file #1>/dev/null
+read_us_web_config_file 1>/dev/null
 
 
 # No specific update/check needs regarding vm.args (no VM launched).
 
 echo
-echo " -- Getting status of the us_web application possibly running as user '${us_web_username}' (EPMD port: ${erl_epmd_port}), from '${us_web_rel_dir}'..."
+echo " -- Getting status of the us_web native application possibly running as user '${us_web_username}' (EPMD port: ${erl_epmd_port}), from '${us_web_rel_dir}'..."
 
 
 # Yes, twice:
@@ -109,7 +110,7 @@ fi
 epmd ${epmd_port_opt} -names
 echo
 
-journalctl -xe --unit us-web.service --no-pager --lines=20
+journalctl -xe --unit us-web-as-native-build.service --no-pager --lines=20
 
 # If not finding a us-web log file, might be the sign that us-web is actually
 # not running:
@@ -118,12 +119,12 @@ inspect_us_web_log
 
 
 # Would not be easy to implement, as it would require to extract from the US-Web
-# configuration file at least 'http_tcp_port' and a virtual host from 'routes'...
+# configuration file at least 'http_tcp_port' and a virtual host from
+# 'routes'...
 
 #sleep 1
 #echo
 #echo "Checking website availability:"
 #wget http://localhost:8080 -O - | head
-
 
 exit 0

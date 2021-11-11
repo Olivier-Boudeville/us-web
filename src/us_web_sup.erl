@@ -146,10 +146,12 @@ init( _Args=[ AppRunContext ] ) ->
 						 max_connections => infinity,
 						 env => #{ dispatch => HttpDispatchRules } },
 
-	case MaybeHttpTCPPort of
+	HttpMsg = case MaybeHttpTCPPort of
 
 		undefined ->
-			trace_bridge:info( "No HTTP listening enabled." );
+			NoHttpMsg = "No HTTP listening enabled.",
+			trace_bridge:info( NoHttpMsg ),
+			NoHttpMsg;
 
 		HttpTCPPort ->
 
@@ -171,8 +173,11 @@ init( _Args=[ AppRunContext ] ) ->
 									 HttpProtoOptMap ) of
 
 				{ ok, _HttpRanchListenerSupPid } ->
-					trace_bridge:notice_fmt( "One may now access this server "
-						"running at http://localhost:~p.", [ HttpTCPPort ] );
+					StartHttpMsg = text_utils:format( "One may now access this "
+						"server running at http://localhost:~p.",
+						[ HttpTCPPort ] ),
+					trace_bridge:notice( StartHttpMsg ),
+					StartHttpMsg;
 
 				{ error, HttpError } ->
 
@@ -219,16 +224,18 @@ init( _Args=[ AppRunContext ] ) ->
 
 	end,
 
-	case MaybeHttpsTCPPort of
+	HttpsMsg = case MaybeHttpsTCPPort of
 
 		undefined ->
-			trace_bridge:info( "No HTTPS listening enabled." );
+			NoHttpsMsg = "No HTTPS listening enabled.",
+			trace_bridge:info( NoHttpsMsg ),
+			NoHttpsMsg;
 
 	   % Using TLS here:
 		HttpsTCPPort ->
-
-			trace_bridge:debug_fmt( "Listening for the HTTPS scheme "
-									"at port #~B.", [ HttpsTCPPort ] ),
+			% No StartHttpsMsg useful here:
+			trace_bridge:debug( "Listening for the HTTPS scheme at port #~B.",
+								[ HttpsTCPPort ] ),
 
 			HttpsProtoOptMap = #{ max_keepalive => 1024,
 				max_connections => infinity,
@@ -277,8 +284,8 @@ init( _Args=[ AppRunContext ] ) ->
 
 				BinDHKeyFilePath ->
 					[ { dhfile,
-						text_utils:binary_to_string( BinDHKeyFilePath ) }
-					  | GenericHttpsOpts ]
+							text_utils:binary_to_string( BinDHKeyFilePath ) }
+						| GenericHttpsOpts ]
 
 			end,
 
@@ -289,8 +296,8 @@ init( _Args=[ AppRunContext ] ) ->
 
 				BinCaKeyPath ->
 					[ { cacertfile,
-						text_utils:binary_to_string( BinCaKeyPath ) }
-					  | BaseHttpsOpts ]
+							text_utils:binary_to_string( BinCaKeyPath ) }
+						| BaseHttpsOpts ]
 
 			end,
 
@@ -300,12 +307,16 @@ init( _Args=[ AppRunContext ] ) ->
 				"~nThe https protocol options are:~n  ~p",
 				[ HttpsTransportOpts, HttpsProtoOptMap ] ),
 
-			case cowboy:start_tls( us_web_https_listener, HttpsTransportOpts,
-								   HttpsProtoOptMap ) of
+			case cowboy:start_tls( us_web_https_listener,
+								HttpsTransportOpts, HttpsProtoOptMap ) of
 
 				{ ok, _HttpsRanchListenerSupPid } ->
-					trace_bridge:notice_fmt( "One may access this server "
-						"running at https://localhost:~p.", [ HttpsTCPPort ] );
+					URLMsg = text_utils:format( "One may access this server "
+						"running at https://localhost:~p.", [ HttpsTCPPort ] ),
+
+					trace_bridge:notice( URLMsg ),
+
+					URLMsg;
 
 				{ error, HttpsError } ->
 					trace_bridge:error_fmt( "Unable to start a cowboy HTTPS "
@@ -331,16 +342,21 @@ init( _Args=[ AppRunContext ] ) ->
 		_RestartStrategy=one_for_one,
 		class_USWebConfigServer:get_execution_target() ),
 
-	% WebManagerSpec = #{ id => us_web_manager,
-	%					  start => { us_web, start_link, [] },
-	%					  restart => permanent,
-	%					  shutdown => 2000,
-	%					  type => worker,
-	%					  modules => [ us_web ] },
+	% WebManagerSpec = #{
+	%   id => us_web_manager_bridge_id,
+	%   start => { us_web, start_link, [] },
+	%   restart => otp_utils:get_restart_setting( ExecTarget ),
+	%   shutdown => infinity,
+	%   type => supervisor,
+	%   modules => [ us_web_manager_bridge_sup ] },
 
 	% ChildSpecs = [ WebManagerSpec ],
 
-	% Currently no worker or lower-level supervisor to supervise:
+	% Currently no worker or lower-level supervisor to supervise (we rely on
+	% the cowboy supervision tree for that):
+	%
 	ChildSpecs = [],
+
+	trace_utils:info_fmt( "~ts ~ts", [ HttpMsg, HttpsMsg ] ),
 
 	{ ok, { SupSettings, ChildSpecs } }.

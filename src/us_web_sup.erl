@@ -173,8 +173,8 @@ init( _Args=[ AppRunContext ] ) ->
 									 HttpProtoOptMap ) of
 
 				{ ok, _HttpRanchListenerSupPid } ->
-					StartHttpMsg = text_utils:format( "One may now access this "
-						"server running at http://localhost:~p.",
+					StartHttpMsg = text_utils:format( "The HTTP server is now "
+						"ready, running at http://localhost:~p.",
 						[ HttpTCPPort ] ),
 					trace_bridge:notice( StartHttpMsg ),
 					StartHttpMsg;
@@ -311,8 +311,8 @@ init( _Args=[ AppRunContext ] ) ->
 								HttpsTransportOpts, HttpsProtoOptMap ) of
 
 				{ ok, _HttpsRanchListenerSupPid } ->
-					URLMsg = text_utils:format( "One may access this server "
-						"running at https://localhost:~p.", [ HttpsTCPPort ] ),
+					URLMsg = text_utils:format( "The HTTPS server is now ready,"
+						" running at https://localhost:~p.", [ HttpsTCPPort ] ),
 
 					trace_bridge:notice( URLMsg ),
 
@@ -358,6 +358,6 @@ init( _Args=[ AppRunContext ] ) ->
 	ChildSpecs = [],
 
 	% Intentionally not trace_bridge:
-	trace_utils:info_fmt( "~ts ~ts", [ HttpMsg, HttpsMsg ] ),
+	trace_utils:info_fmt( "~ts~n~ts", [ HttpMsg, HttpsMsg ] ),
 
 	{ ok, { SupSettings, ChildSpecs } }.

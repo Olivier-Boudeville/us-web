@@ -125,16 +125,16 @@ Server Deployment
 
 
 
-Native Deployment
-=================
+Native Deployment (recommended)
+===============================
 
-This procedure relies on our native build/run system, which is the only one that is officially supported in the context of US-Web.
+This procedure relies on our *native* build/run system, which is the only one that is officially supported in the context of US-Web.
 
 First step is to:
 
-- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) located in the same directory
+- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
 
-- to ensure that no prior webserver is running at the target port(s)
+- ensure that no prior webserver is running at the target port(s) (otherwise specify the ``--no-launch`` option below)
 
 
 After deployment the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
@@ -144,22 +144,25 @@ After deployment the installation itself will be located by default in the ``/op
 Direct, Ad Hoc Deployment
 -------------------------
 
-It boils down to executing (as a normal user - sudo permissions requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument.
+It boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument.
 
 
 
-Deployment for Systemd Integration
-----------------------------------
+Deployment for Systemd Integration (recommended)
+------------------------------------------------
 
 If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), following procedure shall be preferred::
 
+ # Stop properly any prior US-Web instance:
  $ sudo systemctl stop us-web-as-native-build.service
 
  # If EPMD still thinks a previous US-Web instance is running:
- # (this is probably the case)
  $ sudo killall epmd
 
  $ ./deploy-us-web-native-build.sh --no-launch
+
+ # Useful as Systemd shall detect the update of the US-Web service file:
+ $ sudo systemctl daemon-reload
 
  $ sudo systemctl start us-web-as-native-build.service
 
@@ -174,7 +177,8 @@ Checking Launch Outcome
 -----------------------
 
 If having requested the renewal of SSL certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully only once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
-These certificates can be checked (ex: in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically ``/opt/universal-server/us_web-data/certificates``).
+
+These certificates can be checked (ex: in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically in ``/opt/universal-server/us_web-data/certificates``).
 
 Finally, from a client host, one may also check the availability of the target webserver(s); refer to the `Remote Monitoring`_ section for that.
 
@@ -183,7 +187,7 @@ Finally, from a client host, one may also check the availability of the target w
 Deployment based on rebar3
 ==========================
 
-Note that we currently do not recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.
+.. Note:: We currently do *not* recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.
 
 If wanting nevertheless to rely on rebar3, the ``prod`` profile defined in the context of ``rebar3`` shall be used.
 
@@ -516,7 +520,7 @@ Otherwise an exception will be raised (about ``eperm`` / ``not owner``) when US-
 Running the Universal-Webserver
 -------------------------------
 
-Note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using *exactly* the same version).
+In this section we suppose that a native deployment is being used, with uniform conventions between the development and server settings; if using a release-based deployment, note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using *exactly* the same version).
 
 Supposing a vhost to be served by US-Web is ``baz.foobar.org``, to avoid being confused by your browser, a better way is to test whether a US-Web instance is already running thanks to ``wget`` or ``links``:
 
@@ -538,29 +542,29 @@ Stopping any prior instance first
 
 From now on, we will suppose the current directory is ``US_WEB_APP_ROOT``.
 
-The ``stop-us-web.sh`` script can be used for stopping a US-Web release, typically simply as:
+The ``stop-us-web-native-build.sh`` script can be used for stopping a US-Web instance, typically simply as:
 
 .. code:: bash
 
- $ priv/bin/stop-us-web.sh
+ $ priv/bin/stop-us-web-native-build.sh
 
 
 In development mode, still from the root of US-Web, one might use ``make stop-brutal`` to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for:
 
 .. code:: bash
 
- $ systemctl stop us-web.service
+ $ systemctl stop us-web-as-native-build.service
 
 
 
 Launching the US-Web Server
 ===========================
 
-In development mode, from the root of US-Web, one may use ``make debug``, while, in production mode, the US-Web server can be launched either with its dedicated script ``start-us-web.sh`` or, even better, directly through:
+In development mode, from the root of US-Web, one may use ``make debug``, while, in production mode, the US-Web server can be launched either with its dedicated script ``start-us-web-native-build.sh`` or, even better, directly through:
 
 .. code:: bash
 
- $ systemctl start us-web.service
+ $ systemctl start us-web-as-native-build.service
 
 
 
@@ -573,15 +577,15 @@ Monitoring the US-Web Server
 Local Monitoring
 ================
 
-Here operations will be done directly on the server.
+Here operations will be done directly on the server, and supposing a native build.
 
 
 Overall Local Inquiry
 ---------------------
 
-The ``get-us-web-status.sh`` script (still in ``priv/bin``, as all US-Web shell scripts) may then be used to investigate any problem in a streamlined, integrated way.
+The ``get-us-web-native-build-status.sh`` script (still in ``priv/bin``, as all US-Web shell scripts) may then be used to investigate any problem in a streamlined, integrated way.
 
-Alternate (yet often less convenient) solutions are to run ``systemctl status us-web.service`` or, often with better results, ``journalctl -xe --unit us-web.service --no-pager`` to get some insights.
+Alternate (yet often less convenient) solutions are to run ``systemctl status us-web-as-native-build.service`` or, often with better results, ``journalctl -xe --unit us-web-as-native-build.service --no-pager`` to get some insights.
 
 
 General Logs
@@ -589,7 +593,14 @@ General Logs
 
 A deeper level of detail can be obtained by inspecting the *general* logs (as opposed to the *webserver* ones, discussed in next section), which regroup the VM-level, technical ones and/or the applicative ones.
 
-**VM logs** are written in the ``${REL_BASE_ROOT}/log`` directory (ex: ``/opt/universal-server/us_web-latest/log``), which is created when the release is started first. Generally, ``run_erl.log`` (if launched as a daemon) will not help much, whereas the latest Erlang log file (``ls -lrt erlang.log.*``) is likely to contain relevant information.
+**VM logs** are written in the ``${REL_BASE_ROOT}/log`` directory (ex: ``/opt/universal-server/us_web-latest/us_web/log``), which is created when the release is started first. Generally, ``run_erl.log`` (if launched as a daemon) will not help much, whereas the latest Erlang log file (``ls -lrt erlang.log.*``) is likely to contain relevant information.
+
+So one may consult them for example with:
+
+.. code:: bash
+
+ $ tail -n 50 -f /opt/universal-server/us_web-latest/us_web/log/erlang.log.1
+
 
 As for our higher-level, **applicative traces**, they are stored in the the ``us_web.traces`` file, in the directory defined in the ``us_web_log_dir`` entry of the US-Web configuration file. This last file is specified in turn in the relevant ``us.config`` configuration file (see the ``us_web_config_filename`` key for that), which, in development mode, is itself typically found in ``~/.config/universal-server`` while, in production mode, is likely located in ``/etc/xdg/universal-server``.
 

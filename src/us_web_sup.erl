@@ -234,8 +234,8 @@ init( _Args=[ AppRunContext ] ) ->
 	   % Using TLS here:
 		HttpsTCPPort ->
 			% No StartHttpsMsg useful here:
-			trace_bridge:debug( "Listening for the HTTPS scheme at port #~B.",
-								[ HttpsTCPPort ] ),
+			trace_bridge:debug_fmt(
+			  "Listening for the HTTPS scheme at port #~B.", [ HttpsTCPPort ] ),
 
 			HttpsProtoOptMap = #{ max_keepalive => 1024,
 				max_connections => infinity,
@@ -357,6 +357,7 @@ init( _Args=[ AppRunContext ] ) ->
 	%
 	ChildSpecs = [],
 
+	% Intentionally not trace_bridge:
 	trace_utils:info_fmt( "~ts ~ts", [ HttpMsg, HttpsMsg ] ),
 
 	{ ok, { SupSettings, ChildSpecs } }.

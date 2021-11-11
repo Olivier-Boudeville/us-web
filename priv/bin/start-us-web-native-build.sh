@@ -146,13 +146,13 @@ if [ ${res} -eq 0 ]; then
 
 	# Better diagnosis than the previous res code:
 	# (only renamed once construction is mostly finished)
-	trace_file="${us_web_log_dir}/us_web.traces"
-
+	#
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:
 	#
 	sleep 4
 
+	# trace_file supposedly inherited from us-web-common.sh:
 	if [ -f "${trace_file}" ]; then
 
 		echo "  (success assumed, as '${trace_file}' found)"

@@ -960,8 +960,12 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 -spec load_and_apply_configuration( wooper:state() ) -> wooper:state().
 load_and_apply_configuration( State ) ->
 
+	% The US config server shall not be launched by US-Web, as US and US-Web are
+	% launched concurrently and US-Web must not trigger a creation whereas the
+	% base, default one is still in progress:
+	%
 	CfgServerPid = class_USConfigServer:get_us_config_server(
-						_CreateIfNeeded=true, State ),
+						_CreateIfNeeded=false, State ),
 
 	% This web configuration server is not supposed to read more the US
 	% configuration file; it should request it to the overall configuration

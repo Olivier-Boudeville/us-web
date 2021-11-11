@@ -216,7 +216,7 @@
 
 
 
-% @doc Constructs the US web logger for the specified host.
+% @doc Constructs the US-Web logger for the specified host.
 %
 % A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
 % (i.e. not set to 'undefined').
@@ -231,7 +231,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 
 
-% @doc Constructs the US web logger (possibly a singleton) for the specified
+% @doc Constructs the US-Web logger (possibly a singleton) for the specified
 % host in the specified domain, using specified directory to write access and
 % error log, and any specified scheduler and period for log rotation.
 %
@@ -1196,7 +1196,7 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US web logger for '~ts', using log directory '~ts' "
+	text_utils:format( "US-Web logger for '~ts', using log directory '~ts' "
 		"(writing there '~ts' and '~ts'); ~ts", [ HostDesc, ?getAttr(log_dir),
 		?getAttr(access_log_file_path), ?getAttr(error_log_file_path),
 		ConfString ] ).

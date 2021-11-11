@@ -89,7 +89,6 @@ else
 fi
 
 
-
 # Sets notably: us_web_config_file, us_web_username, us_web_app_base_dir,
 # us_web_log_dir, us_web_rel_dir, us_web_exec.
 #
@@ -302,6 +301,9 @@ read_us_web_config_file()
 		fi
 
 	fi
+
+	# Defined for all script users:
+	trace_file="${us_web_log_dir}/us_web.traces"
 
 
 	# If not in a native build (where no 'us_web_exec' applies), hunting down
@@ -523,7 +525,6 @@ prepare_us_web_launch()
 	# Not removing the state files of a log analyzer, to keep history.
 
 	# Needed as a sign that any future start succeeded:
-	trace_file="${us_web_vm_log_dir}/us_web.traces"
 	echo "Removing any '${trace_file}' trace file."
 	/bin/rm -f "${trace_file}" 2>/dev/null
 

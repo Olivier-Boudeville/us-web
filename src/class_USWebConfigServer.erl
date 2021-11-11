@@ -83,13 +83,14 @@
 
 
 
-% The default (binary) filename for information about virtual hosts, to be found
-% from the overall US configuration directory:
+% The default filename (as a binary string) for the US-Web configuration (ex:
+% virtual hosts and all), to be found from the overall US configuration
+% directory:
 %
 -define( default_us_web_cfg_filename, <<"us-web.config">> ).
 
 
-% The default registration name of the US-Web server:
+% The default registration name of the US-Web configuration server:
 -define( us_web_config_server_registration_name_key,
 		 us_web_config_server_registration_name ).
 
@@ -111,7 +112,7 @@
 
 
 
-% All known, licit keys for the US-Web configuration file:
+% All known, licit (top-level) keys for the US-Web configuration file:
 -define( known_config_keys, [ ?us_web_config_server_registration_name_key,
 			?us_web_scheduler_registration_name_key,
 			?us_web_username_key, ?us_web_app_base_dir_key,
@@ -153,17 +154,18 @@
 
 % Design notes:
 %
-% This US-Web configuration server will ensure that an overall US configuration
-% is running, either by fetching its PID if already existing, otherwise by
-% launching it accordingly.
+% This US-Web configuration server will ensure that an overall US
+% (i.e. US-Common) configuration server is running, either by fetching its PID
+% if already existing (which is most probably the case), otherwise by launching
+% it accordingly.
 %
 % In both cases the PID of the overall server will be known, but no link will be
-% created between these two, as their life-cycles are mostly independant.
+% created between these two, as their life-cycles are mostly independent.
 %
-% The filename of the virtual host configuration file will be obtained from the
-% overall US configuration table (see the vhost_filename_key define), either as
-% an absolute path or, most preferably, thanks to one relative to the overall US
-% configuration directory.
+% The name of the US-Web configuration file will be obtained from the overall US
+% configuration table (see the us_web_config_filename_key defined in
+% class_USConfigServer), either as an absolute path or, most preferably, thanks
+% to one relative to the overall US configuration directory.
 %
 % The Cowboy webserver (see https://github.com/ninenines/cowboy) is used
 % internally.
@@ -399,9 +401,6 @@
 	  "the TCP port (if any) at which the webserver is to listen for the https "
 	  "scheme" },
 
-	{ us_server_pid, maybe( server_pid() ),
-	  "the PID of the associated US server (if any)" },
-
 	{ us_config_server_pid, server_pid(),
 	  "the PID of the overall US configuration server" },
 
@@ -429,8 +428,8 @@
 	  "(not the us_web/priv/conf internal directory)" },
 
 	{ app_base_directory, bin_directory_path(),
-	  "the base directory of the US-Web application (the root from whence "
-	  "src, priv, ebin, etc. can be found" },
+	  "the base directory of the US-Web application (the root where "
+	  "src, priv, ebin, etc. can be found)" },
 
 	{ conf_directory, bin_directory_path(),
 	  "the US-Web internal configuration directory, 'us_web/priv/conf'" },
@@ -530,7 +529,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 		"running ~ts, in ~ts security mode.",
 		[ otp_utils:application_run_context_to_string( AppRunContext ),
 		  cond_utils:switch_set_to( us_web_security,
-				[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ]),
+				[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ] ),
 
 	?send_debug_fmt( TraceState, "Running Erlang ~ts, whose ~ts",
 		[ system_utils:get_interpreter_version(),
@@ -542,7 +541,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	% Should a module be a problem:
 	%Module = cow_http2,
 	%?send_debug_fmt( TraceState, "For module '~ts': ~p",
-	%   [ Module, code_utils:is_beam_in_path( Module ) ] ),
+	%    [ Module, code_utils:is_beam_in_path( Module ) ] ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
 	% displayed:
@@ -961,7 +960,8 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 -spec load_and_apply_configuration( wooper:state() ) -> wooper:state().
 load_and_apply_configuration( State ) ->
 
-	CfgServerPid = class_USConfigServer:get_us_config_server( State ),
+	CfgServerPid = class_USConfigServer:get_us_config_server(
+						_CreateIfNeeded=false, State ),
 
 	% This web configuration server is not supposed to read more the US
 	% configuration file; it should request it to the overall configuration
@@ -974,8 +974,7 @@ load_and_apply_configuration( State ) ->
 	% No possible interleaving:
 	receive
 
-		{ wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename,
-						   MaybeUSServerPid } } ->
+		{ wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename } } ->
 
 
 			StoreState = setAttributes( State, [
@@ -983,7 +982,6 @@ load_and_apply_configuration( State ) ->
 				{ nitrogen_roots, [] },
 				{ meta_web_settings, undefined },
 				{ config_base_directory, BinCfgDir },
-				{ us_server_pid, MaybeUSServerPid },
 				{ us_config_server_pid, CfgServerPid },
 				{ log_analysis_settings, undefined } ] ),
 
@@ -993,15 +991,11 @@ load_and_apply_configuration( State ) ->
 
 
 
-% @doc Loads web configuration information (that is the US-Web configuration
+% @doc Loads the web configuration information (that is the US-Web configuration
 % file, as identified from the US one), notably about virtual hosts.
 %
-% As a result, the US configuration file is not fully checked as such (ex: no
-% extracting and check that no entry remains; it is the job of the US config
-% server), we just select the relevant information from it.
-%
 -spec load_web_config( bin_directory_path(), maybe( bin_file_path() ),
-			wooper:state() ) -> { dispatch_routes(), wooper:state() }.
+			wooper:state() ) -> wooper:state().
 load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
 
 	DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
@@ -3546,7 +3540,7 @@ get_registration_info( ConfigTable ) ->
 						"registration name for the US-Web scheduler, "
 						"defaulting to '~ts'.", [ CfgMsg, DefSchedRegName ] ),
 
-					Info = { CfgRegName, CfgRegScope, default,
+					Info = { CfgRegName, CfgRegScope, DefSchedRegName,
 							 SchedRegScope, FullMsg },
 
 					{ ok, Info };
@@ -3649,7 +3643,7 @@ get_all_certificate_manager_pids_from( DomainCfgTable ) ->
 
 
 
-% @doc Returns a textual description of this server.
+% @doc Returns a textual description of this configuration server.
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 
@@ -3699,16 +3693,6 @@ to_string( State ) ->
 
 	end,
 
-	SrvString = case ?getAttr(us_server_pid) of
-
-		undefined ->
-			"no US server";
-
-		SrvPid ->
-			text_utils:format( "US server ~w", [ SrvPid ] )
-
-	end,
-
 	NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_roots) of
 
 		[] ->
@@ -3720,16 +3704,16 @@ to_string( State ) ->
 	end,
 
 	text_utils:format( "US-Web configuration ~ts, running ~ts, ~ts, ~ts, ~ts, "
-		"running in the ~ts execution context, ~ts, knowing: ~ts, "
+		"running in the ~ts execution context, ~ts, knowing "
 		"US overall configuration server ~w and "
 		"OTP supervisor ~w, relying on the '~ts' configuration directory and "
 		"on the '~ts' log directory, ~ts.~n~nIn terms of routes, using ~ts~n~n"
 		"Corresponding dispatch rules:~n~p",
 		[ class_USServer:to_string( State ),
 		  otp_utils:application_run_context_to_string(
-			?getAttr(app_run_context ) ),
+			?getAttr(app_run_context) ),
 		  HttpString, HttpsString,
-		  WebRootString, ?getAttr(execution_context), CertString, SrvString,
+		  WebRootString, ?getAttr(execution_context), CertString,
 		  ?getAttr(us_config_server_pid), ?getAttr(us_web_supervisor_pid),
 		  ?getAttr(config_base_directory), ?getAttr(log_directory), NitroString,
 		  domain_table_to_string( ?getAttr(domain_config_table) ),

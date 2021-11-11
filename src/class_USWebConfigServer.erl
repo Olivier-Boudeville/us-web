@@ -412,7 +412,7 @@
 	  "the PID of the task ring in charge of sequencing the webloggers" },
 
 	{ us_web_username, basic_utils:user_name(),
-	  "the user (if any) who shall launch the US web application" },
+	  "the user (if any) who shall launch the US-Web application" },
 
 	{ us_web_supervisor_pid, supervisor_pid(),
 	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },

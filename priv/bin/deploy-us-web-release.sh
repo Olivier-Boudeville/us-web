@@ -2,10 +2,11 @@
 
 usage="Usage: $(basename $0): deploys (installs and runs) locally a US-Web release."
 
-# See also the deploy-us-web-native-build.sh script to deploy instead a native
-# (locally built from sources) version of US-Web.
+# This script is at least currently deprecated in favor of
+# deploy-us-web-native-build.sh, which deploys instead a native (locally built
+# from sources) version of US-Web.
 
-# TO-DO: do not run as root and use sudo whenever necessary.
+# TO-DO: does not run as root and uses sudo whenever necessary.
 
 
 # Disabled since my https://github.com/erlware/relx/pull/809 pull request has
@@ -25,7 +26,7 @@ patch_for_cookie_env()
 --- us_web.source       2020-08-11 21:51:04.724167964 +0200
 +++ us_web.target       2020-08-11 21:56:14.507137897 +0200
 @@ -647,17 +647,19 @@
- 
+
  # Extract the target cookie
  # Do this before relx_get_nodename so we can use it and not create a ~/.erlang.cookie
 -COOKIE_ARG="$(grep '^-setcookie' "$VMARGS_PATH" || true)"
@@ -42,16 +43,16 @@ patch_for_cookie_env()
 +        else
 +            echo "No cookie is set or found. This limits the scripts functionality, installing, upgrading, rpc and getting a list of versions will not work."
 +        fi
-     else
+	 else
 -        echo "No cookie is set or found. This limits the scripts functionality, installing, upgrading, rpc and getting a list of versions will not work."
 +        # Extract cookie name from COOKIE_ARG
 +        COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
-     fi
+	 fi
 -else
 -    # Extract cookie name from COOKIE_ARG
 -    COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
  fi
- 
+
  # User can specify an sname without @hostname
 __HERE_DOC__
 

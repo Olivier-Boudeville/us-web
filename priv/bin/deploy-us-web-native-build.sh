@@ -3,7 +3,7 @@
 # See also:
 # - the get-us-web-from-sources.sh script to install a test version of US-Web
 # - the deploy-us-web-release.sh script to deploy OTP releases of US-Web instead
-
+#
 # (we prefer and better support the current, native mode of operation enforced
 # by this script, though)
 

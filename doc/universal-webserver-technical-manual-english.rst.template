@@ -123,6 +123,10 @@ Server Deployment
 
 .. Note:: Please ensure that no prior instance of US-Web is already running, otherwise the new one will not be able to auto-launch, with an error message like: ``Protocol 'inet_tcp': the name us_web@YOUR_SERVER seems to be in use by another Erlang node``. Refer to the Troubleshooting_ section for further guidance.
 
+In all cases, if opting for the generation of certificates, in order to avoid hitting, in case of problem, any rate limit enforced by the ACME servers, we recommend to perform first a "dry run" by setting in your US-Web configuration file ``{certificate_mode, development}`` so that the staging ACME infrastructure is targeted first, leading only to temporary certificates.
+
+If the whole deployment procedure went smoothly, then only switch back to ``{certificate_mode, production}`` and restart US-Web, in order to rely on the actual ACME servers and thus obtain the intended final certificates.
+
 
 
 Native Deployment (recommended)
@@ -153,30 +157,35 @@ Deployment for Systemd Integration (recommended)
 
 If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), following procedure shall be preferred::
 
- # Stop properly any prior US-Web instance:
+ # Get ready first:
+ $ ./deploy-us-web-native-build.sh --no-launch
+
+ # Then stop properly any prior US-Web instance:
  $ sudo systemctl stop us-web-as-native-build.service
 
  # If EPMD still thinks a previous US-Web instance is running:
- $ sudo killall epmd
-
- $ ./deploy-us-web-native-build.sh --no-launch
+ # (generally not needed, and could impact any other running
+ # Erlang program, so be cautious...)
+ #
+ #$ sudo killall epmd
 
  # Useful as Systemd shall detect the update of the US-Web service file:
  $ sudo systemctl daemon-reload
 
  $ sudo systemctl start us-web-as-native-build.service
 
-
 Then, as a first check of that launch, one may execute::
 
  $ sudo systemctl status us-web-as-native-build.service
 
 
+See the next section for more in-depth checking and monitoring.
+
 
 Checking Launch Outcome
 -----------------------
 
-If having requested the renewal of SSL certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully only once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
+If having requested the renewal of SSL certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully *only* once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
 
 These certificates can be checked (ex: in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically in ``/opt/universal-server/us_web-data/certificates``).
 
@@ -624,13 +633,13 @@ These files will be written in the directory designated by the ``us_web_log_dir`
 Remote Monitoring
 =================
 
-Here the state of a US-Web instance will be inspected remotely, with no shell connection to its server.
+Here the state of a US-Web instance will be inspected remotely, with no need for a shell connection to its server.
 
 
 HTTP Client Check
 -----------------
 
-First of all, is this US-Web instance available? Check with:
+First of all, is this US-Web instance available at all? Check with:
 
 .. code:: bash
 
@@ -654,7 +663,7 @@ Trace Listener Check
 
 As for the applicative traces, they may be monitored remotely as well, thanks to the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
 
-This script operates based on a configuration file, ``us-web-for-remote-access.config`` (typically located in ``~/.config/universal-server``), that allows to designate the US-Web instance to access and the various settings for that.
+This script operates based on a configuration file, ``us-web-for-remote-access.config`` (typically located in ``~/.config/universal-server``), that allows to designate the US-Web instance to access for the client host, and the various settings for that.
 
 For example:
 
@@ -666,9 +675,10 @@ For example:
  % instance (ex: a production server to be reached from a client host), typically
  % to monitor traces, to trigger the generation of log access reports, etc.
 
- % The hostname where the US-web instance of interest runs:
+ % The hostname where the US-Web instance of interest runs:
  {us_web_hostname, "baz.foobar.org"}.
 
+ % Its cookie, as set in its configuration file:
  {remote_vm_cookie, 'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'}.
 
  % If specifically overridden for thay server:

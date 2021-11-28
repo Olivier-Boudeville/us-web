@@ -47,7 +47,7 @@
 % read the thumbprints from the well-known ACME URL).
 %
 -spec init( cowboy_req:req(), handler_state() ) ->
-					us_web_handler:handler_return().
+								  us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
@@ -105,9 +105,9 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 		% Just for debugging:
 		%Other ->
-		%	trace_bridge:error_fmt( "Unexpected answer while waiting for "
-		%		"thumbprints: ~p.", [ Other ] ),
-		%	throw( { unexpected_thumbprint_answer, Other } )
+		%   trace_bridge:error_fmt( "Unexpected answer while waiting for "
+		%       "thumbprints: ~p.", [ Other ] ),
+		%   throw( { unexpected_thumbprint_answer, Other } )
 
 	after ChallengeTimeout ->
 		trace_bridge:error_fmt( "Time-out, no challenge received "
@@ -128,7 +128,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 		TokenThumbprint ->
 
 			cond_utils:if_defined( us_web_debug_handlers,
-			  trace_bridge:debug_fmt( "For host '~ts', token '~p' found "
+				trace_bridge:debug_fmt( "For host '~ts', token '~p' found "
 					"associated to '~p', among thumbprints '~p'.",
 					[ BinHost, Token, TokenThumbprint, Thumbprints ] ) ),
 
@@ -141,10 +141,12 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	{ ok, Reply, no_state }.
 
 
+
 % @doc Handles specified request (not expected to be used).
 handle( Req, HandlerState ) ->
 	trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
+
 
 
 % @doc Terminates this handler.

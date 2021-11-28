@@ -32,10 +32,10 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, September 12, 2021</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, November 28, 2021</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.0.15</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.0.17</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Stable</p>
@@ -61,7 +61,7 @@
 <li><a class="reference internal" href="#easy-testing-of-us-web" id="id67">Easy Testing of US-Web</a></li>
 <li><a class="reference internal" href="#layer-stack" id="id68">Layer Stack</a></li>
 <li><a class="reference internal" href="#server-deployment" id="id69">Server Deployment</a><ul>
-<li><a class="reference internal" href="#native-deployment" id="id70">Native Deployment</a></li>
+<li><a class="reference internal" href="#native-deployment-recommended" id="id70">Native Deployment (recommended)</a></li>
 <li><a class="reference internal" href="#deployment-based-on-rebar3" id="id71">Deployment based on rebar3</a></li>
 </ul>
 </li>
@@ -171,30 +171,39 @@
 <p class="first admonition-title">Note</p>
 <p class="last">Please ensure that no prior instance of US-Web is already running, otherwise the new one will not be able to auto-launch, with an error message like: <tt class="docutils literal">Protocol 'inet_tcp': the name us_web&#64;YOUR_SERVER seems to be in use by another Erlang node</tt>. Refer to the <a class="reference internal" href="#troubleshooting">Troubleshooting</a> section for further guidance.</p>
 </div>
-<div class="section" id="native-deployment">
-<h2><a class="toc-backref" href="#id70">Native Deployment</a></h2>
-<p>This procedure relies on our native build/run system, which is the only one that is officially supported in the context of US-Web.</p>
+<p>In all cases, if opting for the generation of certificates, in order to avoid hitting, in case of problem, any rate limit enforced by the ACME servers, we recommend to perform first a &quot;dry run&quot; by setting in your US-Web configuration file <tt class="docutils literal">{certificate_mode, development}</tt> so that the staging ACME infrastructure is targeted first, leading only to temporary certificates.</p>
+<p>If the whole deployment procedure went smoothly, then only switch back to <tt class="docutils literal">{certificate_mode, production}</tt> and restart US-Web, in order to rely on the actual ACME servers and thus obtain the intended final certificates.</p>
+<div class="section" id="native-deployment-recommended">
+<h2><a class="toc-backref" href="#id70">Native Deployment (recommended)</a></h2>
+<p>This procedure relies on our <em>native</em> build/run system, which is the only one that is officially supported in the context of US-Web.</p>
 <p>First step is to:</p>
 <ul class="simple">
-<li>create a <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt> directory in which a relevant US configuration file (<tt class="docutils literal">us.config</tt>) is added, referencing a suitable US-Web configuration file (ex: <tt class="docutils literal"><span class="pre">foobar-us-web.config</span></tt>) located in the same directory</li>
-<li>to ensure that no prior webserver is running at the target port(s)</li>
+<li>create a <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt> directory in which a relevant US configuration file (<tt class="docutils literal">us.config</tt>) is added, referencing a suitable US-Web configuration file (ex: <tt class="docutils literal"><span class="pre">foobar-us-web.config</span></tt>) located in the same directory; refer to the <a class="reference internal" href="#configuring-the-universal-webserver">Configuring the Universal-Webserver</a> section</li>
+<li>ensure that no prior webserver is running at the target port(s) (otherwise specify the <tt class="docutils literal"><span class="pre">--no-launch</span></tt> option below)</li>
 </ul>
 <p>After deployment the installation itself will be located by default in the <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-native</span></tt> directory.</p>
 <div class="section" id="direct-ad-hoc-deployment">
 <h3>Direct, Ad Hoc Deployment</h3>
-<p>It boils down to executing (as a normal user - sudo permissions requested only whenever necessary) our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh">deploy-us-web-native-build.sh</a> script, with no specific argument.</p>
+<p>It boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh">deploy-us-web-native-build.sh</a> script, with no specific argument.</p>
 </div>
-<div class="section" id="deployment-for-systemd-integration">
-<h3>Deployment for Systemd Integration</h3>
+<div class="section" id="deployment-for-systemd-integration-recommended">
+<h3>Deployment for Systemd Integration (recommended)</h3>
 <p>If relying on <tt class="docutils literal">systemctl</tt> (hence on our <tt class="docutils literal"><span class="pre">us-web-as-native-build.service</span></tt> file), following procedure shall be preferred:</p>
 <pre class="literal-block">
+# Get ready first:
+$ ./deploy-us-web-native-build.sh --no-launch
+
+# Then stop properly any prior US-Web instance:
 $ sudo systemctl stop us-web-as-native-build.service
 
 # If EPMD still thinks a previous US-Web instance is running:
-# (this is probably the case)
-$ sudo killall epmd
+# (generally not needed, and could impact any other running
+# Erlang program, so be cautious...)
+#
+#$ sudo killall epmd
 
-$ ./deploy-us-web-native-build.sh --no-launch
+# Useful as Systemd shall detect the update of the US-Web service file:
+$ sudo systemctl daemon-reload
 
 $ sudo systemctl start us-web-as-native-build.service
 </pre>
@@ -202,17 +211,21 @@ $ sudo systemctl start us-web-as-native-build.service
 <pre class="literal-block">
 $ sudo systemctl status us-web-as-native-build.service
 </pre>
+<p>See the next section for more in-depth checking and monitoring.</p>
 </div>
 <div class="section" id="checking-launch-outcome">
 <h3>Checking Launch Outcome</h3>
-<p>If having requested the renewal of SSL certificates (the <tt class="docutils literal">certificate_support</tt> entry of the US-Web configuration file being set to <tt class="docutils literal">renew_certificates</tt>), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully only once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
-These certificates can be checked (ex: in terms of timestamps) in the <tt class="docutils literal">certificates</tt> subdirectory of the one designated by the <tt class="docutils literal">us_web_data_dir</tt> entry (typically <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-data/certificates</span></tt>).</p>
+<p>If having requested the renewal of SSL certificates (the <tt class="docutils literal">certificate_support</tt> entry of the US-Web configuration file being set to <tt class="docutils literal">renew_certificates</tt>), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully <em>only</em> once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).</p>
+<p>These certificates can be checked (ex: in terms of timestamps) in the <tt class="docutils literal">certificates</tt> subdirectory of the one designated by the <tt class="docutils literal">us_web_data_dir</tt> entry (typically in <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-data/certificates</span></tt>).</p>
 <p>Finally, from a client host, one may also check the availability of the target webserver(s); refer to the <a class="reference internal" href="#remote-monitoring">Remote Monitoring</a> section for that.</p>
 </div>
 </div>
 <div class="section" id="deployment-based-on-rebar3">
 <h2><a class="toc-backref" href="#id71">Deployment based on rebar3</a></h2>
-<p>Note that we currently do not recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We currently do <em>not</em> recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.</p>
+</div>
 <p>If wanting nevertheless to rely on rebar3, the <tt class="docutils literal">prod</tt> profile defined in the context of <tt class="docutils literal">rebar3</tt> shall be used.</p>
 <p>Currently we prefer re-using the (supposedly already installed) local Erlang environment on the server (to be shared across multiple services), so by default ERTS is <em>not</em> included in a US-Web release.</p>
 <p>Sources are not included either, as we prefer re-rolling a release to editing and compiling code directly on a server.</p>
@@ -462,7 +475,7 @@ $ chown us-web-user:us-group <span class="m">443</span>
 </div>
 <div class="section" id="running-the-universal-webserver">
 <h1><a class="toc-backref" href="#id77">Running the Universal-Webserver</a></h1>
-<p>Note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using <em>exactly</em> the same version).</p>
+<p>In this section we suppose that a native deployment is being used, with uniform conventions between the development and server settings; if using a release-based deployment, note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using <em>exactly</em> the same version).</p>
 <p>Supposing a vhost to be served by US-Web is <tt class="docutils literal">baz.foobar.org</tt>, to avoid being confused by your browser, a better way is to test whether a US-Web instance is already running thanks to <tt class="docutils literal">wget</tt> or <tt class="docutils literal">links</tt>:</p>
 <pre class="code bash literal-block">
 $ wget http://baz.foobar.org -O -
@@ -473,20 +486,20 @@ $ wget http://baz.foobar.org -O -
 <div class="section" id="stopping-any-prior-instance-first">
 <h2><a class="toc-backref" href="#id78">Stopping any prior instance first</a></h2>
 <p>From now on, we will suppose the current directory is <tt class="docutils literal">US_WEB_APP_ROOT</tt>.</p>
-<p>The <tt class="docutils literal"><span class="pre">stop-us-web.sh</span></tt> script can be used for stopping a US-Web release, typically simply as:</p>
+<p>The <tt class="docutils literal"><span class="pre">stop-us-web-native-build.sh</span></tt> script can be used for stopping a US-Web instance, typically simply as:</p>
 <pre class="code bash literal-block">
-$ priv/bin/stop-us-web.sh
+$ priv/bin/stop-us-web-native-build.sh
 </pre>
 <p>In development mode, still from the root of US-Web, one might use <tt class="docutils literal">make <span class="pre">stop-brutal</span></tt> to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for:</p>
 <pre class="code bash literal-block">
-$ systemctl stop us-web.service
+$ systemctl stop us-web-as-native-build.service
 </pre>
 </div>
 <div class="section" id="launching-the-us-web-server">
 <h2><a class="toc-backref" href="#id79">Launching the US-Web Server</a></h2>
-<p>In development mode, from the root of US-Web, one may use <tt class="docutils literal">make debug</tt>, while, in production mode, the US-Web server can be launched either with its dedicated script <tt class="docutils literal"><span class="pre">start-us-web.sh</span></tt> or, even better, directly through:</p>
+<p>In development mode, from the root of US-Web, one may use <tt class="docutils literal">make debug</tt>, while, in production mode, the US-Web server can be launched either with its dedicated script <tt class="docutils literal"><span class="pre">start-us-web-native-build.sh</span></tt> or, even better, directly through:</p>
 <pre class="code bash literal-block">
-$ systemctl start us-web.service
+$ systemctl start us-web-as-native-build.service
 </pre>
 </div>
 </div>
@@ -494,16 +507,20 @@ $ systemctl start us-web.service
 <h1><a class="toc-backref" href="#id80">Monitoring the US-Web Server</a></h1>
 <div class="section" id="local-monitoring">
 <h2><a class="toc-backref" href="#id81">Local Monitoring</a></h2>
-<p>Here operations will be done directly on the server.</p>
+<p>Here operations will be done directly on the server, and supposing a native build.</p>
 <div class="section" id="overall-local-inquiry">
 <h3>Overall Local Inquiry</h3>
-<p>The <tt class="docutils literal"><span class="pre">get-us-web-status.sh</span></tt> script (still in <tt class="docutils literal">priv/bin</tt>, as all US-Web shell scripts) may then be used to investigate any problem in a streamlined, integrated way.</p>
-<p>Alternate (yet often less convenient) solutions are to run <tt class="docutils literal">systemctl status <span class="pre">us-web.service</span></tt> or, often with better results, <tt class="docutils literal">journalctl <span class="pre">-xe</span> <span class="pre">--unit</span> <span class="pre">us-web.service</span> <span class="pre">--no-pager</span></tt> to get some insights.</p>
+<p>The <tt class="docutils literal"><span class="pre">get-us-web-native-build-status.sh</span></tt> script (still in <tt class="docutils literal">priv/bin</tt>, as all US-Web shell scripts) may then be used to investigate any problem in a streamlined, integrated way.</p>
+<p>Alternate (yet often less convenient) solutions are to run <tt class="docutils literal">systemctl status <span class="pre">us-web-as-native-build.service</span></tt> or, often with better results, <tt class="docutils literal">journalctl <span class="pre">-xe</span> <span class="pre">--unit</span> <span class="pre">us-web-as-native-build.service</span> <span class="pre">--no-pager</span></tt> to get some insights.</p>
 </div>
 <div class="section" id="general-logs">
 <h3>General Logs</h3>
 <p>A deeper level of detail can be obtained by inspecting the <em>general</em> logs (as opposed to the <em>webserver</em> ones, discussed in next section), which regroup the VM-level, technical ones and/or the applicative ones.</p>
-<p><strong>VM logs</strong> are written in the <tt class="docutils literal"><span class="pre">${REL_BASE_ROOT}/log</span></tt> directory (ex: <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-latest/log</span></tt>), which is created when the release is started first. Generally, <tt class="docutils literal">run_erl.log</tt> (if launched as a daemon) will not help much, whereas the latest Erlang log file (<tt class="docutils literal">ls <span class="pre">-lrt</span> erlang.log.*</tt>) is likely to contain relevant information.</p>
+<p><strong>VM logs</strong> are written in the <tt class="docutils literal"><span class="pre">${REL_BASE_ROOT}/log</span></tt> directory (ex: <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-latest/us_web/log</span></tt>), which is created when the release is started first. Generally, <tt class="docutils literal">run_erl.log</tt> (if launched as a daemon) will not help much, whereas the latest Erlang log file (<tt class="docutils literal">ls <span class="pre">-lrt</span> erlang.log.*</tt>) is likely to contain relevant information.</p>
+<p>So one may consult them for example with:</p>
+<pre class="code bash literal-block">
+$ tail -n <span class="m">50</span> -f /opt/universal-server/us_web-latest/us_web/log/erlang.log.1
+</pre>
 <p>As for our higher-level, <strong>applicative traces</strong>, they are stored in the the <tt class="docutils literal">us_web.traces</tt> file, in the directory defined in the <tt class="docutils literal">us_web_log_dir</tt> entry of the US-Web configuration file. This last file is specified in turn in the relevant <tt class="docutils literal">us.config</tt> configuration file (see the <tt class="docutils literal">us_web_config_filename</tt> key for that), which, in development mode, is itself typically found in <tt class="docutils literal"><span class="pre">~/.config/universal-server</span></tt> while, in production mode, is likely located in <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt>.</p>
 <p>In practice, this trace file is generally found:</p>
 <ul class="simple">
@@ -520,10 +537,10 @@ $ systemctl start us-web.service
 </div>
 <div class="section" id="remote-monitoring">
 <h2><a class="toc-backref" href="#id82">Remote Monitoring</a></h2>
-<p>Here the state of a US-Web instance will be inspected remotely, with no shell connection to its server.</p>
+<p>Here the state of a US-Web instance will be inspected remotely, with no need for a shell connection to its server.</p>
 <div class="section" id="http-client-check">
 <h3>HTTP Client Check</h3>
-<p>First of all, is this US-Web instance available? Check with:</p>
+<p>First of all, is this US-Web instance available at all? Check with:</p>
 <pre class="code bash literal-block">
 $ wget http://baz.foobar.org -O -
 </pre>
@@ -538,7 +555,7 @@ wget <span class="si">${</span><span class="nv">target_url</span><span class="si
 <div class="section" id="trace-listener-check">
 <h3>Trace Listener Check</h3>
 <p>As for the applicative traces, they may be monitored remotely as well, thanks to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh">monitor-us-web.sh</a> script.</p>
-<p>This script operates based on a configuration file, <tt class="docutils literal"><span class="pre">us-web-for-remote-access.config</span></tt> (typically located in <tt class="docutils literal"><span class="pre">~/.config/universal-server</span></tt>), that allows to designate the US-Web instance to access and the various settings for that.</p>
+<p>This script operates based on a configuration file, <tt class="docutils literal"><span class="pre">us-web-for-remote-access.config</span></tt> (typically located in <tt class="docutils literal"><span class="pre">~/.config/universal-server</span></tt>), that allows to designate the US-Web instance to access for the client host, and the various settings for that.</p>
 <p>For example:</p>
 <pre class="code erlang literal-block">
 <span class="c">% This file is used by the US-Web framework.
@@ -547,10 +564,11 @@ wget <span class="si">${</span><span class="nv">target_url</span><span class="si
 % instance (ex: a production server to be reached from a client host), typically
 % to monitor traces, to trigger the generation of log access reports, etc.
 </span>
-<span class="c">% The hostname where the US-web instance of interest runs:
+<span class="c">% The hostname where the US-Web instance of interest runs:
 </span><span class="p">{</span><span class="n">us_web_hostname</span><span class="p">,</span> <span class="s">&quot;baz.foobar.org&quot;</span><span class="p">}.</span>
 
-<span class="p">{</span><span class="n">remote_vm_cookie</span><span class="p">,</span> <span class="n">'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'</span><span class="p">}.</span>
+<span class="c">% Its cookie, as set in its configuration file:
+</span><span class="p">{</span><span class="n">remote_vm_cookie</span><span class="p">,</span> <span class="n">'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'</span><span class="p">}.</span>
 
 <span class="c">% If specifically overridden for thay server:
 </span><span class="p">{</span><span class="n">us_web_config_server_registration_name</span><span class="p">,</span> <span class="n">foobar_prod_us_web_cfg_srv</span><span class="p">}.</span>

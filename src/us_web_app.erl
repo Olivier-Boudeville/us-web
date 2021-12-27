@@ -146,7 +146,7 @@ start( StartType, StartArgs ) ->
 
 	% They used to be started by LEEC afterwards, but now not anymore:
 	%_OrderedAppNames = otp_utils:prepare_for_execution( [ shotgun, elli ],
-	%													 BuildRootDir ),
+	%                                                    BuildRootDir ),
 
 	% To debug any dependency-related 'undef' problem, or to ensure
 	% concurrently-emitted messages can be seen (otherwise many outputs may be
@@ -159,7 +159,7 @@ start( StartType, StartArgs ) ->
 	%timer:sleep( 2000 ),
 
 	%basic_utils:display( "Prerequisites started; loaded applications:~n~p~n",
-	%					  [ application:loaded_applications() ] ),
+	%                     [ application:loaded_applications() ] ),
 
 	% See http://erlang.org/doc/design_principles/applications.html:
 	us_web_sup:start_link( as_otp_release ).

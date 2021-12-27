@@ -205,7 +205,7 @@ init( _Args=[ AppRunContext ] ) ->
 		renew_certificates ->
 
 			trace_bridge:debug(
-			  "Requesting the renewal of the X.509 certificates." ),
+				"Requesting the renewal of the X.509 certificates." ),
 
 			USWebCfgServerPid ! { renewCertificates, [], self() },
 
@@ -235,7 +235,8 @@ init( _Args=[ AppRunContext ] ) ->
 		HttpsTCPPort ->
 			% No StartHttpsMsg useful here:
 			trace_bridge:debug_fmt(
-			  "Listening for the HTTPS scheme at port #~B.", [ HttpsTCPPort ] ),
+				"Listening for the HTTPS scheme at port #~B.",
+				[ HttpsTCPPort ] ),
 
 			HttpsProtoOptMap = #{ max_keepalive => 1024,
 				max_connections => infinity,

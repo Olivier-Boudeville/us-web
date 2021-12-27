@@ -2474,7 +2474,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 							%?warning_fmt( "The US-Web application base "
 							%  "directory '~ts' does not seem legit (it "
 							%  "should end with 'us_web'), thus considering "
-							%   "knowing none.", [ BaseDir ] ),
+							%  "knowing none.", [ BaseDir ] ),
 							%undefined
 							throw( { incorrect_us_web_app_base_directory,
 									 BaseDir, ?us_web_app_base_dir_key,

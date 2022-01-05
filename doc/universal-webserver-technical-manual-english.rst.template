@@ -155,7 +155,9 @@ It boils down to executing (as a normal user - the sudo permissions will be requ
 Deployment for Systemd Integration (recommended)
 ------------------------------------------------
 
-If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), following procedure shall be preferred::
+If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), following procedure shall be preferred:
+
+.. code:: bash
 
  # Get ready first:
  $ ./deploy-us-web-native-build.sh --no-launch
@@ -1269,7 +1271,7 @@ Ending Word
 Have fun with the Universal Webserver!
 
 
-:raw-html:`<center><img src="us-web-title.png" id="responsive-image-small"></img></center>`
+:raw-html:`<center><img src="us-web-title.png" id="responsive-image-medium"></img></center>`
 :raw-latex:`\begin{figure}[h] \centering \includegraphics[scale=0.8]{us-web-title.png} \end{figure}`
 
 :raw-html:`<a name="universal-webserver_bottom"></a>`

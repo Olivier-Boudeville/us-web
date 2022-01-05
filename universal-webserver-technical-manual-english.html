@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.16: http://docutils.sourceforge.net/" />
 <title>Welcome to the Universal Webserver documentation</title>
 <meta content="Universal Webserver" name="keywords" />
 <link rel="stylesheet" href="pygments-default.css" type="text/css" />
@@ -23,7 +23,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2021 Olivier Boudeville</p>
+<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2022 Olivier Boudeville</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Contact:</th><td class="field-body"><p class="first">about (dash) universal-webserver (at) esperide (dot) com</p>
@@ -32,7 +32,7 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, November 28, 2021</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Wednesday, January 5, 2022</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.0.17</p>
@@ -189,21 +189,21 @@
 <div class="section" id="deployment-for-systemd-integration-recommended">
 <h3>Deployment for Systemd Integration (recommended)</h3>
 <p>If relying on <tt class="docutils literal">systemctl</tt> (hence on our <tt class="docutils literal"><span class="pre">us-web-as-native-build.service</span></tt> file), following procedure shall be preferred:</p>
-<pre class="literal-block">
-# Get ready first:
-$ ./deploy-us-web-native-build.sh --no-launch
+<pre class="code bash literal-block">
+<span class="c1"># Get ready first:
+</span>$ ./deploy-us-web-native-build.sh --no-launch
 
-# Then stop properly any prior US-Web instance:
-$ sudo systemctl stop us-web-as-native-build.service
+<span class="c1"># Then stop properly any prior US-Web instance:
+</span>$ sudo systemctl stop us-web-as-native-build.service
 
-# If EPMD still thinks a previous US-Web instance is running:
+<span class="c1"># If EPMD still thinks a previous US-Web instance is running:
 # (generally not needed, and could impact any other running
 # Erlang program, so be cautious...)
 #
 #$ sudo killall epmd
-
-# Useful as Systemd shall detect the update of the US-Web service file:
-$ sudo systemctl daemon-reload
+</span>
+<span class="c1"># Useful as Systemd shall detect the update of the US-Web service file:
+</span>$ sudo systemctl daemon-reload
 
 $ sudo systemctl start us-web-as-native-build.service
 </pre>
@@ -362,51 +362,51 @@ $ chmod <span class="m">770</span> <span class="si">${</span><span class="nv">LO
 <p>Such a route definition consists mostly on enumerating each hostname that is to manage (ex: <tt class="docutils literal">&quot;foobar.org&quot;</tt> - knowing that the <tt class="docutils literal">default_domain_catch_all</tt> atom designates all hostnames that could not be matched specifically otherwise) and enumerating then all the virtual hosts to manage for this domain (ex: the <tt class="docutils literal">&quot;hurricane&quot;</tt> host, whose FQDN is thus <tt class="docutils literal">hurricane.foobar.org</tt> - knowing that the <tt class="docutils literal">default_vhost_catch_all</tt> atom designates all hostnames that could not be matched specifically otherwise, in the form <tt class="docutils literal">*.foobar.org</tt>, and that the <tt class="docutils literal">without_vhost</tt> atom designates the hostname itself, i.e. <tt class="docutils literal">foobar.org</tt> ).</p>
 <p>For example:</p>
 <pre class="code erlang literal-block">
-<span class="p">{</span> <span class="n">default_web_root</span><span class="p">,</span> <span class="s">&quot;/var/web-storage/www&quot;</span> <span class="p">}.</span>
+<span class="p">{</span><span class="w"> </span><span class="n">default_web_root</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/var/web-storage/www&quot;</span><span class="w"> </span><span class="p">}.</span><span class="w">
 
-<span class="c">%{ log_analysis, awstats }.
-</span>
-<span class="p">{</span> <span class="n">certificate_support</span><span class="p">,</span> <span class="n">use_existing_certificates</span> <span class="p">}.</span>
-<span class="p">{</span> <span class="n">certificate_mode</span><span class="p">,</span> <span class="n">production</span> <span class="p">}.</span>
+</span><span class="c">%{ log_analysis, awstats }.</span><span class="w">
 
-<span class="p">{</span> <span class="n">routes</span><span class="p">,</span> <span class="p">[</span>
+</span><span class="p">{</span><span class="w"> </span><span class="n">certificate_support</span><span class="p">,</span><span class="w"> </span><span class="n">use_existing_certificates</span><span class="w"> </span><span class="p">}.</span><span class="w">
+</span><span class="p">{</span><span class="w"> </span><span class="n">certificate_mode</span><span class="p">,</span><span class="w"> </span><span class="n">production</span><span class="w"> </span><span class="p">}.</span><span class="w">
 
-  <span class="c">% Note that the first hostname listed will be, regarding
-</span>  <span class="c">% https (SNI), the main, default one:
-</span>
-  <span class="p">{</span> <span class="s">&quot;foobar.org&quot;</span><span class="p">,</span> <span class="p">[</span>
+</span><span class="p">{</span><span class="w"> </span><span class="n">routes</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="w">
 
-      <span class="c">% So any content requested regarding the www.foobar.org
-</span>      <span class="c">% FQDN (ex: http://www.foobar.org/index.html) will be
-</span>      <span class="c">% looked-up relatively to the
-</span>      <span class="c">% /var/web-storage/www/Foobar-main directory:
-</span>      <span class="c">%
-</span>      <span class="p">{</span> <span class="s">&quot;www&quot;</span><span class="p">,</span> <span class="s">&quot;Foobar-main&quot;</span> <span class="p">},</span>
-      <span class="p">{</span> <span class="s">&quot;club&quot;</span><span class="p">,</span> <span class="s">&quot;Foobar-club&quot;</span> <span class="p">},</span>
-      <span class="p">{</span> <span class="s">&quot;archives&quot;</span><span class="p">,</span> <span class="s">&quot;/var/web-storage/Archives-for-Foobar&quot;</span> <span class="p">},</span>
+  </span><span class="c">% Note that the first hostname listed will be, regarding</span><span class="w">
+  </span><span class="c">% https (SNI), the main, default one:</span><span class="w">
 
-      <span class="c">% If just the domain is specified:
-</span>      <span class="p">{</span> <span class="n">without_vhost</span><span class="p">,</span> <span class="s">&quot;Foobar&quot;</span> <span class="p">}</span>
+  </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foobar.org&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="w">
 
-      <span class="c">% With https, catch-all shall be best avoided:
-</span>      <span class="c">%{ default_vhost_catch_all, &quot;Foobar&quot; }
-</span>
-                  <span class="p">]</span> <span class="p">},</span>
+      </span><span class="c">% So any content requested regarding the www.foobar.org</span><span class="w">
+      </span><span class="c">% FQDN (ex: http://www.foobar.org/index.html) will be</span><span class="w">
+      </span><span class="c">% looked-up relatively to the</span><span class="w">
+      </span><span class="c">% /var/web-storage/www/Foobar-main directory:</span><span class="w">
+      </span><span class="c">%</span><span class="w">
+      </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;www&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Foobar-main&quot;</span><span class="w"> </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;club&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Foobar-club&quot;</span><span class="w"> </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;archives&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;/var/web-storage/Archives-for-Foobar&quot;</span><span class="w"> </span><span class="p">},</span><span class="w">
 
-  <span class="p">{</span> <span class="s">&quot;foobar.net&quot;</span><span class="p">,</span> <span class="p">[</span>
-      <span class="c">% (similar rules may be defined)
-</span>                  <span class="p">]</span> <span class="p">}</span>
+      </span><span class="c">% If just the domain is specified:</span><span class="w">
+      </span><span class="p">{</span><span class="w"> </span><span class="n">without_vhost</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Foobar&quot;</span><span class="w"> </span><span class="p">}</span><span class="w">
 
-  <span class="c">% Best avoided as well with https:
-</span>  <span class="c">%{ default_domain_catch_all, [
-</span>  <span class="c">%
-</span>  <span class="c">%           { default_vhost_catch_all, &quot;Foobar&quot; }
-</span>  <span class="c">%
-</span>  <span class="c">%                ] }
-</span>
-        <span class="p">]</span>
+      </span><span class="c">% With https, catch-all shall be best avoided:</span><span class="w">
+      </span><span class="c">%{ default_vhost_catch_all, &quot;Foobar&quot; }</span><span class="w">
 
-<span class="p">}.</span>
+                  </span><span class="p">]</span><span class="w"> </span><span class="p">},</span><span class="w">
+
+  </span><span class="p">{</span><span class="w"> </span><span class="s">&quot;foobar.net&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="c">% (similar rules may be defined)</span><span class="w">
+                  </span><span class="p">]</span><span class="w"> </span><span class="p">}</span><span class="w">
+
+  </span><span class="c">% Best avoided as well with https:</span><span class="w">
+  </span><span class="c">%{ default_domain_catch_all, [</span><span class="w">
+  </span><span class="c">%</span><span class="w">
+  </span><span class="c">%           { default_vhost_catch_all, &quot;Foobar&quot; }</span><span class="w">
+  </span><span class="c">%</span><span class="w">
+  </span><span class="c">%                ] }</span><span class="w">
+
+        </span><span class="p">]</span><span class="w">
+
+</span><span class="p">}.</span>
 </pre>
 <div class="section" id="us-web-application-base-directory">
 <h3>US-Web Application Base Directory</h3>
@@ -558,28 +558,28 @@ wget <span class="si">${</span><span class="nv">target_url</span><span class="si
 <p>This script operates based on a configuration file, <tt class="docutils literal"><span class="pre">us-web-for-remote-access.config</span></tt> (typically located in <tt class="docutils literal"><span class="pre">~/.config/universal-server</span></tt>), that allows to designate the US-Web instance to access for the client host, and the various settings for that.</p>
 <p>For example:</p>
 <pre class="code erlang literal-block">
-<span class="c">% This file is used by the US-Web framework.
-%
-% This is a configuration file to enable the interaction with a remote US-Web
-% instance (ex: a production server to be reached from a client host), typically
-% to monitor traces, to trigger the generation of log access reports, etc.
-</span>
-<span class="c">% The hostname where the US-Web instance of interest runs:
-</span><span class="p">{</span><span class="n">us_web_hostname</span><span class="p">,</span> <span class="s">&quot;baz.foobar.org&quot;</span><span class="p">}.</span>
+<span class="c">% This file is used by the US-Web framework.</span><span class="w">
+</span><span class="c">%</span><span class="w">
+</span><span class="c">% This is a configuration file to enable the interaction with a remote US-Web</span><span class="w">
+</span><span class="c">% instance (ex: a production server to be reached from a client host), typically</span><span class="w">
+</span><span class="c">% to monitor traces, to trigger the generation of log access reports, etc.</span><span class="w">
 
-<span class="c">% Its cookie, as set in its configuration file:
-</span><span class="p">{</span><span class="n">remote_vm_cookie</span><span class="p">,</span> <span class="n">'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'</span><span class="p">}.</span>
+</span><span class="c">% The hostname where the US-Web instance of interest runs:</span><span class="w">
+</span><span class="p">{</span><span class="n">us_web_hostname</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;baz.foobar.org&quot;</span><span class="p">}.</span><span class="w">
 
-<span class="c">% If specifically overridden for thay server:
-</span><span class="p">{</span><span class="n">us_web_config_server_registration_name</span><span class="p">,</span> <span class="n">foobar_prod_us_web_cfg_srv</span><span class="p">}.</span>
+</span><span class="c">% Its cookie, as set in its configuration file:</span><span class="w">
+</span><span class="p">{</span><span class="n">remote_vm_cookie</span><span class="p">,</span><span class="w"> </span><span class="n">'foobar-8800a3f8-7545-4a83-c925-ca115a7b014b'</span><span class="p">}.</span><span class="w">
 
-<span class="c">% A range of TCP ports that may be used for out-of-band inter-VM communication
-% (not using the Erlang carrier; ex: for send_file):
-%
-% (this range must be typically in-line with any one set at the level of
-% firewalls)
-%
-</span><span class="p">{</span><span class="n">tcp_port_range</span><span class="p">,</span> <span class="p">{</span><span class="mi">50000</span><span class="p">,</span> <span class="mi">55000</span><span class="p">}}.</span>
+</span><span class="c">% If specifically overridden for thay server:</span><span class="w">
+</span><span class="p">{</span><span class="n">us_web_config_server_registration_name</span><span class="p">,</span><span class="w"> </span><span class="n">foobar_prod_us_web_cfg_srv</span><span class="p">}.</span><span class="w">
+
+</span><span class="c">% A range of TCP ports that may be used for out-of-band inter-VM communication</span><span class="w">
+</span><span class="c">% (not using the Erlang carrier; ex: for send_file):</span><span class="w">
+</span><span class="c">%</span><span class="w">
+</span><span class="c">% (this range must be typically in-line with any one set at the level of</span><span class="w">
+</span><span class="c">% firewalls)</span><span class="w">
+</span><span class="c">%</span><span class="w">
+</span><span class="p">{</span><span class="n">tcp_port_range</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="mi">50000</span><span class="p">,</span><span class="w"> </span><span class="mi">55000</span><span class="p">}}.</span>
 </pre>
 <p>Then running the aforementioned <tt class="docutils literal"><span class="pre">monitor-us-web.sh</span></tt> script should launch a trace browser synchronised to the trace aggregator of the targeted US-Web instance, displaying all traces (i.e. both all that have been emitted since the start of that instance and all newer ones, being then displayed in direct).</p>
 <p>Here is a user-submitted screenshot (edited for confidentiality) of the LogMX-based trace browser corresponding to the native US-Web trace interface (refer to <a class="reference external" href="https://traces.esperide.com">Ceylan-Traces</a> for further details):</p>
@@ -600,7 +600,7 @@ wget <span class="si">${</span><span class="nv">target_url</span><span class="si
 <p>If requested, at server start-up, a &quot;meta&quot; website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.</p>
 <p>For that, in the US-Web configuration file, among the user-specified <tt class="docutils literal">routes</tt>, one may add the following element in the list of virtual host entries associated to a given domain (ex: <tt class="docutils literal">foobar.org</tt>):</p>
 <pre class="code erlang literal-block">
-<span class="p">{</span><span class="s">&quot;mymeta&quot;</span><span class="p">,</span> <span class="s">&quot;My-meta-generated&quot;</span><span class="p">,</span> <span class="n">meta</span><span class="p">}</span>
+<span class="p">{</span><span class="s">&quot;mymeta&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;My-meta-generated&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">meta</span><span class="p">}</span>
 </pre>
 <p>This will generate a suitable website in the <tt class="docutils literal"><span class="pre">My-meta-generated</span></tt> subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as <tt class="docutils literal">mymeta.foobar.org</tt> (of course both <tt class="docutils literal">mymeta</tt> and <tt class="docutils literal"><span class="pre">My-meta-generated</span></tt> are examples; these names can be freely chosen).</p>
 <p>Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).</p>
@@ -1162,7 +1162,7 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <div class="section" id="ending-word">
 <h1><a class="toc-backref" href="#id117">Ending Word</a></h1>
 <p>Have fun with the Universal Webserver!</p>
-<p><span class="raw-html"><center><img src="us-web-title.png" id="responsive-image-small"></img></center></span>
+<p><span class="raw-html"><center><img src="us-web-title.png" id="responsive-image-medium"></img></center></span>
 </p>
 <p><span class="raw-html"><a name="universal-webserver_bottom"></a></span></p>
 </div>

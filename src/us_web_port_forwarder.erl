@@ -47,13 +47,13 @@
 %
 % This handler initialisation performs the requested TCP port redirection.
 -spec init( cowboy_req:req(), handler_state() ) ->
-								   us_web_handler:handler_return().
+									us_web_handler:handler_return().
 init( Req, HandlerState=TargetTCPPort ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-			 _Name=text_utils:format( "Port forward handler for port #~B",
-									  [ TargetTCPPort ] ),
+			_Name=text_utils:format( "Port forward handler for port #~B",
+									 [ TargetTCPPort ] ),
 			_Categ="Port forwarder handler" ) ),
 
 	%trace_bridge:debug_fmt( "Request ~p to be redirected to port #~B.",
@@ -66,9 +66,9 @@ init( Req, HandlerState=TargetTCPPort ) ->
 	% Using 301 ("Moved Permanently") is the best practice for upgrading users
 	% from HTTP to HTTPS (see https://en.wikipedia.org/wiki/HTTP_301):
 	%
-	RedirectedReq = cowboy_req:reply( 301,
-									  #{ <<"location">> => FixedURI,
-										 <<"server">> => ?server_header_id },
-									  Req ),
+	RedirectedReq = cowboy_req:reply( _Status=301,
+		_Headers=#{ <<"location">> => FixedURI,
+					<<"server">> => ?server_header_id },
+		Req ),
 
 	{ ok, RedirectedReq, HandlerState }.

@@ -47,13 +47,14 @@
 % read the thumbprints from the well-known ACME URL).
 %
 -spec init( cowboy_req:req(), handler_state() ) ->
-								  us_web_handler:handler_return().
+									us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-		  _Name=text_utils:format( "LEEC handler corresponding to certificate "
-			  "manager ~w", [ CertManagerPid ] ), _Categ="LEEC handler" ) ),
+			_Name=text_utils:format( "LEEC handler corresponding to "
+				"certificate manager ~w", [ CertManagerPid ] ),
+				_Categ="LEEC handler" ) ),
 
 	% We request the corresponding challenge to the associated (stable, fixed)
 	% certificate manager, which will send in turn a corresponding request to
@@ -123,7 +124,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 		undefined ->
 			trace_bridge:error_fmt( "For host '~ts', token '~p' not found "
 				"among thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
-			cowboy_req:reply( 404, Req#{ <<"server">> => ?server_header_id } );
+			cowboy_req:reply( 404, Req#{ server => ?server_req_id } );
 
 		TokenThumbprint ->
 
@@ -134,7 +135,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 			cowboy_req:reply( 200,
 				#{ <<"content-type">> => <<"text/plain">> },
-				TokenThumbprint, Req#{ <<"server">> => ?server_header_id } )
+				TokenThumbprint, Req#{ server => ?server_req_id } )
 
 	end,
 

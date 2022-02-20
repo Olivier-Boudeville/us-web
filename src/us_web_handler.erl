@@ -106,7 +106,7 @@
 return_404( Req, BinFullFilepath, HState ) ->
 
 	%trace_bridge:debug_fmt( "Returning 404 for full path '~ts' and "
-	%                       "request:~n~p", [ BinFullFilepath, Req ] ),
+	%                        "request:~n~p", [ BinFullFilepath, Req ] ),
 
 	[ Scheme, VHost, TCPPort, PathInfo ] =
 		[ maps:get( K, Req ) || K <- [ scheme, host, port, path_info ] ],
@@ -152,7 +152,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 			% server); so:
 			%
 			RootRelImgPath = file_utils:join(
-				   [ ".." || _PathElem <- tl( PathInfo ) ], ImagePath ),
+				[ ".." || _PathElem <- tl( PathInfo ) ], ImagePath ),
 
 			text_utils:format( "<td><center><img src=\"~ts\" border=\"0\" "
 				"width=\"50%\"></center></td>", [ RootRelImgPath ] )
@@ -161,7 +161,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 
 	PageBody = text_utils:format(
-	  <<"<h1>Requested content '~ts' not found</h1>
+		<<"<h1>Requested content '~ts' not found</h1>
   <p>I could not find the document you wanted, sorry.</p>
   <p style=\"padding-left:10%\">       --- The ~ts server.</p>
   <p>
@@ -208,8 +208,8 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 		BinCssFile ->
 			text_utils:format(
-			  "<link rel=\"stylesheet\" type=\"text/css\" href=\"~ts\">",
-			  [ BinCssFile ] )
+				"<link rel=\"stylesheet\" type=\"text/css\" href=\"~ts\">",
+				[ BinCssFile ] )
 
 	end,
 
@@ -260,10 +260,14 @@ get_footer( VHost, Scheme, Port ) ->
 
 
 % @doc Returns a suitable document header.
-get_http_headers( Body ) ->
+get_http_headers( _Body ) ->
 	#{ <<"content-type">> => <<"text/html">>,
-	   <<"content-length">> => integer_to_list( iolist_size( Body ) ),
-	   % A bit of obfuscation:
+
+	   % No (computed by Cowboy):
+	   %<<"content-length">> => integer_to_list( iolist_size( Body ) ),
+
+	   % A bit of obfuscation (not taken into account, unfortunately):
+	   % (see also https://arjanvandergaag.nl/blog/cowboy-server-signature.html)
 	   <<"server">> => ?server_header_id }.
 
 
@@ -282,8 +286,10 @@ init( Req, HandlerState ) ->
 	trace_bridge:debug_fmt( "Request ~p to be handled, while handler state "
 							"is ~p...", [ Req, HandlerState ] ),
 
-	Reply = cowboy_req:reply( 200, #{ <<"content-type">> => <<"text/plain">> },
-							  <<"Hello from the US-Web server!">>, Req ),
+	Body = <<"<html lang=\"en\"><body>Hello from the US-Web server!</body></html>">>,
+
+	Reply = cowboy_req:reply( _Status=200, get_http_headers( Body ), Body,
+							  Req ),
 
 	{ ok, Reply, HandlerState }.
 
@@ -330,7 +336,7 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
 	%trace_bridge:debug_fmt( "Generating access log for following handler "
-	%                       "return:~n~p", [ HandlerReturn ] ),
+	%                        "return:~n~p", [ HandlerReturn ] ),
 
 	% We target here the "NCSA combined with several virtualhostname sharing
 	% same log file" log format, except that we replaced the clumsy '%time1'
@@ -418,7 +424,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
 	%trace_bridge:debug_fmt( "Logging error for full path '~ts' and "
-	%					   "request:~n~p", [ BinFullFilePath, Req ] ),
+	%                        "request:~n~p", [ BinFullFilePath, Req ] ),
 
 	% Unlike accesses, no specific log format seems to apply here:
 
@@ -441,7 +447,7 @@ manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 			LoggerPid ! { reportError, [ BinErrorMsg ] }
 
 			%trace_bridge:debug_fmt( "[~w] reported ~ts.",
-			%					   [ self(), BinErrorMsg ] )
+			%                        [ self(), BinErrorMsg ] )
 
 	end.
 

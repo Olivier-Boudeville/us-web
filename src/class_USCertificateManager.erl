@@ -95,6 +95,12 @@
 % detect for example the crash of the associated LEEC FSM, and manage such a
 % crash (resisting and relaunching it).
 
+% Finally, because a long time is to elapse between two certificate renewals for
+% a given domain, no LEEC instance must be re-used (the lastly used nonce must
+% have expired a long time ago), and thus after a renewal LEEC must be stopped
+% (a new nonce will be obtained as soon as the next instance starts).
+
+
 
 -type manager_pid() :: class_UniversalServer:server_pid().
 
@@ -143,6 +149,10 @@
 
 -type https_transport_info() :: class_USWebConfigServer:https_transport_info().
 
+-type leec_start_options() :: [ leec:start_option() ].
+
+-type bridge_spec() :: trace_bridge:bridge_spec().
+
 
 
 % The class-specific attributes:
@@ -173,7 +183,17 @@
 	  "the PID of the process (if any) to notify once the next certificate is "
 	  "obtained" },
 
-	{ leec_pid, leec_pid(), "the PID of our private LEEC FSM" },
+
+	{ leec_pid, maybe( leec_pid() ),
+	  "the PID of our private LEEC FSM (if any currently exists)" },
+
+	{ leec_start_opts, leec_start_options(),
+	  "the start options to be re-used for the next created LEEC instance" },
+
+	{ bridge_spec, bridge_spec(),
+	  "the specification of a corresponding trace bridge, typically for "
+	  "the next created LEEC instance" },
+
 
 	{ scheduler_pid, scheduler_pid(),
 	  "the PID of the scheduler used by this manager" },
@@ -314,7 +334,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
 	%
-	{ LEECFsmPid, RenewPeriodSecs } =
+	{ LEECFsmPid, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
 		init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, TraceState ),
 
 	% Registration to scheduler to happen in next (first) renewCertificate/1
@@ -330,6 +350,8 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 		{ cert_renewal_period, RenewPeriodSecs },
 		{ renew_listener, undefined },
 		{ leec_pid, LEECFsmPid },
+		{ leec_start_opts, LEECStartOpts },
+		{ bridge_spec, BridgeSpec },
 		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
@@ -347,7 +369,8 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 
 % @doc Initializes our LEEC private instance.
 -spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(), bin_file_path(),
-				 wooper:state() ) -> leec_pid().
+				 wooper:state() ) ->
+			{ leec_pid(), seconds(), leec_start_options(), bridge_spec() }.
 init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	case file_utils:is_existing_directory( BinCertDir ) of
@@ -437,7 +460,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	end,
 
-	{ LEECFsmPid, RenewPeriodSecs }.
+	{ LEECFsmPid, RenewPeriodSecs, StartOpts, BridgeSpec }.
 
 
 
@@ -509,16 +532,16 @@ destruct( State ) ->
 
 
 % @doc Renews asynchronously a certificate for the managed hostname.
--spec renewCertificate( wooper:state() ) -> const_oneway_return().
+-spec renewCertificate( wooper:state() ) -> oneway_return().
 renewCertificate( State ) ->
 
 	?debug( "Requested to renew certificate asynchronously." ),
 
-	request_certificate( State ),
+	ReqState = request_certificate( State ),
 
 	% onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	wooper:const_return().
+	wooper:return_state( ReqState ).
 
 
 
@@ -530,7 +553,7 @@ renewCertificate( State ) ->
 % regarding ACME servers).
 %
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
-											oneway_return().
+												oneway_return().
 renewCertificateSynchronisable( State, ListenerPid ) ->
 
 	% Note that these managers must not be frozen here in the waiting of a
@@ -545,16 +568,16 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 	{ ListenState, undefined } =
 		swapInAttribute( State, renew_listener, ListenerPid ),
 
-	request_certificate( ListenState ),
+	ReqState = request_certificate( ListenState ),
 
 	% onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	wooper:return_state( ListenState ).
+	wooper:return_state( ReqState ).
 
 
 
 % (helper)
--spec request_certificate( wooper:state() ) -> void().
+-spec request_certificate( wooper:state() ) ->  wooper:state().
 request_certificate( State ) ->
 
 	% The task_id attribute may or may not be defined.
@@ -585,20 +608,55 @@ request_certificate( State ) ->
 	?debug_fmt( "Requesting certificate for '~ts', with following SAN "
 				"information:~n  ~p.", [ FQDN, ActualSans ] ),
 
-	async = leec:obtain_certificate_for( FQDN, ?getAttr(leec_pid),
-		_CertReqOptionMap=#{ async => true,
-							 callback => Callback,
-							 sans => ActualSans } ),
+	% We used to request a certificate directly from the initial LEEC instance,
+	% yet this is not a proper solution as months may elapse between renewals,
+	% and at least the nonce is bound to have expired in the meantime.
+	%
+	% So now we shut down once onver, and recreate a LEEC instance at each
+	% renewal.
 
-	?debug( "Certificate creation request initiated." ).
+	% Check:
+	case ?getAttr(leec_pid) of
+
+		undefined ->
+			ok;
+
+		LPid ->
+			?error_fmt( "Ignoring unexpected former LEEC PID ~w.", [ LPid ] )
+
+	end,
+
+	case leec:start( ?getAttr(leec_start_opts), ?getAttr(bridge_spec) ) of
+
+		{ ok, LEECPid } ->
+			?debug_fmt( "New LEEC FSM ~w created for '~ts'.",
+						[ LEECPid, FQDN ] ),
+
+			async = leec:obtain_certificate_for( FQDN, LEECPid,
+				_CertReqOptionMap=#{ async => true,
+									 callback => Callback,
+									 sans => ActualSans } ),
+
+			?debug( "Certificate creation request initiated." ),
+
+			setAttribute( State, leec_pid, LEECPid );
+
+		Error ->
+			?critical_fmt( "Error when (re)starting LEEC: ~p, "
+						   "no certificate recreation triggered.", [ Error ] ),
+			State
+
+	end.
 
 
 
-% @doc Oneway called back whenever a certificate was requested.
+% @doc Oneway called back whenever the outcome of a certificate request is
+% known.
+%
 -spec onCertificateRequestOutcome( wooper:state(),
 			leec:cert_creation_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
-			_CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
+		_CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
 
 	FQDN = ?getAttr(fqdn),
 
@@ -665,12 +723,29 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 					  wooper:state() ) -> wooper:state().
 manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
-	NewState = case ?getAttr(scheduler_pid) of
+	% In all cases we shut down our LEEC instance, as it cannot linger between
+	% longer renewals:
+	%
+	ShutState = case ?getAttr(leec_pid) of
+
+		undefined ->
+			% Surprising:
+			?error( "No LEEC PID was available when managing a possible "
+					"renewal." ),
+			State;
+
+		LEECFsmPid ->
+			leec:stop( LEECFsmPid ),
+			setAttribute( State, leec_pid, undefined )
+
+	end,
+
+	SchedState = case ?getAttr(scheduler_pid) of
 
 		undefined ->
 			?info( "No certificate renewal will be attempted "
 				   "(no scheduler registered)." ),
-			State;
+			ShutState;
 
 		SchedPid ->
 			case MaybeRenewDelay of
@@ -678,7 +753,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 				undefined ->
 					?info( "No certificate renewal will be attempted "
 						   "(no periodicity defined)." ),
-					State;
+					ShutState;
 
 
 				RenewDelay ->
@@ -691,18 +766,18 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 						time_utils:get_timestamp(), RenewDelay ),
 
 					?debug_fmt( "Next attempt of certificate renewal to "
-					  "take place in ~ts, i.e. at ~ts.",
-					  [ time_utils:duration_to_string( 1000 * RenewDelay ),
-						time_utils:timestamp_to_string( NextTimestamp ) ] ),
+						"take place in ~ts, i.e. at ~ts.",
+						[ time_utils:duration_to_string( 1000 * RenewDelay ),
+						  time_utils:timestamp_to_string( NextTimestamp ) ] ),
 
 					receive
 
 						{ wooper_result, { task_registered, TaskId } } ->
-							setAttribute( State, task_id, TaskId );
+							setAttribute( ShutState, task_id, TaskId );
 
 						% Quite unlikely, yet possible:
 						{ wooper_result, task_done } ->
-							State
+							ShutState
 
 					end
 
@@ -710,7 +785,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 	end,
 
-	setAttribute( NewState, cert_path, MaybeBinCertFilePath ).
+	setAttribute( SchedState, cert_path, MaybeBinCertFilePath ).
 
 
 

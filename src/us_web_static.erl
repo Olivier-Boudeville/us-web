@@ -1,4 +1,4 @@
-%% Copyright (c) 2019-2020, Olivier Boudeville <olivier.boudeville@esperide.com>
+%% Copyright (c) 2019-2022, Olivier Boudeville <olivier.boudeville@esperide.com>
 %% Copyright (c) 2013-2017, Loïc Hoguin <essen@ninenines.eu>
 %% Copyright (c) 2011, Magnus Klaar <magnus.klaar@gmail.com>
 %%
@@ -13,7 +13,6 @@
 %% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 %% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 %% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
 
 
 % @doc Handler <b>to manage static content</b>.
@@ -55,7 +54,7 @@
 -include_lib("kernel/include/file.hrl").
 
 
--type path_info()  :: [ text_utils:bin_string() ].
+-type path_info() :: [ text_utils:bin_string() ].
 
 
 % Shorthands:
@@ -102,9 +101,9 @@ init( Req, HState ) ->
 
 	cond_utils:if_defined( us_web_debug_handlers,
 		class_TraceEmitter:register_as_bridge(
-		  _Name=text_utils:format( "Static handler for path '~ts'",
-								   [ BinPath ] ),
-		  _Categ="US.US-Web.Static Handler" ) ),
+			_Name=text_utils:format( "Static handler for path '~ts'",
+									 [ BinPath ] ),
+			_Categ="US.US-Web.Static Handler" ) ),
 
 	%trace_utils:debug_fmt(
 	%  "[~ts:~w] Serving request as a ~ts~nInitial handler state being ~ts",
@@ -112,20 +111,22 @@ init( Req, HState ) ->
 
 	CowboyOpts = maps:get( cowboy_opts, HState ),
 
-	% To return such information:
-	SpoofedReq = Req#{ <<"server">> => ?server_header_id },
+	% To return such information (atom, not binary):
+	SpoofedReq = Req#{ server => ?server_req_id },
 
 	HReturn = case maps:get( _Key=type, HState ) of
 
 		file ->
-			init_info( SpoofedReq, _BinIndex=BinPath, CowboyOpts, HState );
+			handle_file_request( SpoofedReq, _BinIndex=BinPath, CowboyOpts,
+								 HState );
 
 		directory ->
-			init_dir( SpoofedReq, _BinContentRoot=BinPath, CowboyOpts, HState )
+			handle_dir_request( SpoofedReq, _BinContentRoot=BinPath, CowboyOpts,
+								HState )
 
 	end,
 
-	% Logging already done in the init_* functions above.
+	% Logging already done in the handle_* functions above.
 
 	%trace_utils:debug_fmt( "[~ts:~w] Returning:~n~p",
 	%                       [ ?MODULE, self(), HReturn ] ),
@@ -135,9 +136,9 @@ init( Req, HState ) ->
 
 
 % @doc Handles the request for a file.
-init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
+handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
-	%trace_utils:debug_fmt( "init_info for file '~ts' (opts: ~p)",
+	%trace_utils:debug_fmt( "handle_file_request for file '~ts' (opts: ~p)",
 	%                       [ BinFullFilePath, CowboyOpts ] ),
 
 	case file:read_file_info( BinFullFilePath, [ { time, universal } ] ) of
@@ -159,17 +160,28 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 			% Performs logging as well:
 			us_web_handler:return_404( Req, BinFullFilePath, HState );
 
+		% Happens whenever a request to an existing page yet designated as a
+		% directory (ex: "foobar.org/index.html/") is done; without this clause,
+		% the root index.html was returned, as if read from this
+		% pseudo-directory.
+		%
+		{ error, enotdir } ->
+			us_web_handler:return_404( Req, BinFullFilePath, HState );
+
 		{ error, Error } ->
 			us_web_handler:manage_error_log( Error, Req, BinFullFilePath,
 											 HState ),
-			% error
-
 			% Supposedly better (no ranch crash report); wget reports "ERROR
 			% 500: Internal Server Error." as intented, yet a browser just
 			% displays a blank page; a nice "Internal server error" page could
-			% be generated and returned instead?
+			% be generated and returned instead.
 			%
-			{ ok, cowboy_req:reply( ?internal_server_error, Req ), error }
+			% Possible return:
+			{ ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
+			  error }
+
+			% Or:
+			%{ cowboy_rest, Req, error }
 
 	end.
 
@@ -180,14 +192,14 @@ init_info( Req, BinFullFilePath, CowboyOpts, HState ) ->
 % RelContentRoot is the path of the target directory relatively to the absolute
 % website root.
 %
-init_dir( Req, RelContentRoot, CowboyOpts, HState )
-  when is_list( RelContentRoot ) ->
+handle_dir_request( Req, RelContentRoot, CowboyOpts, HState )
+										when is_list( RelContentRoot ) ->
 	BinRelContentRoot = text_utils:string_to_binary( RelContentRoot ),
-	init_dir( Req, BinRelContentRoot, CowboyOpts, HState );
+	handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState );
 
-init_dir( Req, BinRelContentRoot, CowboyOpts, HState ) ->
+handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 
-	trace_utils:debug_fmt( "us_web_static:init_dir/4 for:~n"
+	trace_utils:debug_fmt( "us_web_static:handle_dir_request/4 for:~n"
 		" - Req = ~p~n - BinRelContentRoot = ~p~n"
 		" - CowboyOpts = ~p~n - HState = ~p~n",
 		[ Req, BinRelContentRoot, CowboyOpts, HState ] ),
@@ -200,7 +212,8 @@ init_dir( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 		undefined ->
 			us_web_handler:manage_error_log( _Error=no_path_info_for_dir, Req,
 											 BinRelContentRoot, HState ),
-			{ ok, cowboy_req:reply( ?internal_server_error, Req ), error };
+			{ ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
+			  error };
 
 		PathInfo ->
 			case validate_reserved( PathInfo ) of
@@ -224,31 +237,35 @@ init_dir( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 					case normalise_path( BinFullFilepath ) of
 
 						<< BinBasePath:BaseLen/binary, $/, _/binary >> ->
-							%trace_utils:debug( "init_dir: case A." ),
-							init_info( Req, BinFullFilepath, CowboyOpts,
-									   HState );
+							%trace_utils:debug( "handle_dir_request: case A." ),
+							handle_file_request( Req, BinFullFilepath,
+												 CowboyOpts, HState );
 
 						<< BinBasePath:BaseLen/binary >> ->
-							%trace_utils:debug( "init_dir: case B." ),
-							init_info( Req, BinFullFilepath, CowboyOpts,
+							%trace_utils:debug( "handle_dir_request: case B." ),
+							handle_file_request( Req, BinFullFilepath, CowboyOpts,
 									   HState );
 
 						Other ->
-							%trace_utils:debug( "init_dir: case C." ),
+							%trace_utils:debug( "handle_dir_request: case C." ),
 							us_web_handler:manage_error_log(
-							  _Error={ invalid_path_for, PathInfo,
-									   Other, BinFullFilepath },
-							  Req, BinRelContentRoot, HState ),
+								_Error={ invalid_path_for, PathInfo,
+										 Other, BinFullFilepath },
+								Req, BinRelContentRoot, HState ),
 							{ cowboy_rest, Req, error }
 
 					end;
 
 
 				error ->
-					%trace_utils:debug( "init_dir: case D." ),
+					%trace_utils:debug( "handle_dir_request: case D." ),
+
+					% Often attacks like:
+					% <<"chkisg.htm?Sip=1.1.1.1 | cat /etc/passwd">>
+					%
 					us_web_handler:manage_error_log(
-					  _Error={ invalid_path_info, PathInfo }, Req,
-					  BinRelContentRoot, HState ),
+						_Error={ invalid_path_info, PathInfo }, Req,
+						BinRelContentRoot, HState ),
 					{ cowboy_rest, Req, error }
 
 
@@ -323,7 +340,6 @@ normalise_path( [ Segment | T ], Acc ) ->
 
 
 
-
 % @doc Rejects requests that tried to access a file outside the target
 % directory, or used reserved characters.
 %
@@ -379,7 +395,7 @@ content_types_provided( Req, State={ Path, _, Extra } ) when is_list( Extra ) ->
 
 % @doc Detects the charset of the file.
 -spec charsets_provided( Req, State ) -> { [ binary() ], Req, State }
-	when State::rest_handler_state().
+								when State::rest_handler_state().
 charsets_provided( Req, State={ Path, _, Extra } ) ->
 
 	case lists:keyfind( charset, 1, Extra ) of
@@ -399,14 +415,14 @@ charsets_provided( Req, State={ Path, _, Extra } ) ->
 
 % @doc Enables support for range requests.
 -spec ranges_provided( Req, State ) -> { [ { binary(), auto } ], Req, State }
-	when State::rest_handler_state().
+								when State::rest_handler_state().
 ranges_provided( Req, State ) ->
 	{ [ { <<"bytes">>, auto } ], Req, State }.
 
 
 % @doc Assumes the resource does not exist if it is not a regular file.
 -spec resource_exists( Req, State ) -> { boolean(), Req, State }
-										 when State::rest_handler_state().
+											when State::rest_handler_state().
 resource_exists( Req, State={ _, { _, #file_info{ type=regular } }, _ } ) ->
 	{ true, Req, State };
 
@@ -417,7 +433,7 @@ resource_exists( Req, State ) ->
 
 % @doc Generates an etag for the handler-referenced file.
 -spec generate_etag( Req, State ) -> { { strong | weak, binary() }, Req, State }
-									   when State::rest_handler_state().
+										when State::rest_handler_state().
 generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
 							Extra } ) ->
 
@@ -447,7 +463,7 @@ generate_default_etag( Size, Mtime ) ->
 -spec last_modified( cowboy_req:req(), rest_handler_state() ) ->
 		{ calendar:datetime(), cowboy_req:req(), rest_handler_state() }.
 last_modified( Req, HState={ _BinContenPath,
-		 { _AccessType, #file_info{ mtime=ModifiedTime } }, _Extra } ) ->
+		{ _AccessType, #file_info{ mtime=ModifiedTime } }, _Extra } ) ->
 	{ ModifiedTime, Req, HState }.
 
 

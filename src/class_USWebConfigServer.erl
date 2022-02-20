@@ -1248,8 +1248,9 @@ prepare_web_analysis(
 
 	% Validates the target Awstats scripts:
 
-	UpdateToolPath =
-	  file_utils:join( [ BinAnalysisUpdateToolRoot, "cgi-bin", "awstats.pl" ] ),
+	% A binary better made later:
+	UpdateToolPath = file_utils:join( [ BinAnalysisUpdateToolRoot, "cgi-bin",
+										"awstats.pl" ] ),
 
 	BinUpdateToolPath = case file_utils:is_user_executable( UpdateToolPath ) of
 
@@ -2002,8 +2003,7 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 					  cowboy_opts => CowboyOpts,
 					  logger_pid => LoggerPid },
 
-	BinIndex = text_utils:string_to_binary(
-				text_utils:format( "~ts/index.html", [ BinContentRoot ] ) ),
+	BinIndex = text_utils:bin_format( "~ts/index.html", [ BinContentRoot ] ),
 
 	% Allows to expand a requested 'http://foobar.org' into
 	% 'http://foobar.org/index.html':
@@ -2059,8 +2059,8 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	% To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
 	%
 	%io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n"
-	%		   "Resulting in: BaseDispatch = ~p~n",
-	%		   [ StaticDispatches, HandlerModule, HandlerOpts, BaseDispatch ] ),
+	%   "Resulting in: BaseDispatch = ~p~n",
+	%   [ StaticDispatches, HandlerModule, HandlerOpts, BaseDispatch ] ),
 	%
 	% Then 'make all', 'bin/nitrogen restart' and
 	% 'grep StaticDispatches log/erlang.log.*'.
@@ -2071,18 +2071,18 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	StaticCowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
 
 	BaseStaticHandlerState = #{ content_root => BinContentRoot,
-					  %css_path => MaybeBinCssFile,
-					  %icon_path => MaybeBinIconFile,
-					  %image_404 => MaybeBin404,
-					  cowboy_opts => StaticCowboyOpts,
-					  logger_pid => LoggerPid },
+								%css_path => MaybeBinCssFile,
+								%icon_path => MaybeBinIconFile,
+								%image_404 => MaybeBin404,
+								cowboy_opts => StaticCowboyOpts,
+								logger_pid => LoggerPid },
 
 	StaticDirs = [ "js", "css", "images", "nitrogen" ],
 
 	StaticDirDispatches = [ { text_utils:format( "/~ts/[...]", [ D ] ),
 		StaticHandlerModule, BaseStaticHandlerState#{
-				type => directory,
-				path => text_utils:format( "site/static/~ts/", [ D ] ) } }
+			type => directory,
+			path => text_utils:format( "site/static/~ts/", [ D ] ) } }
 							|| D <- StaticDirs ],
 
 
@@ -2090,8 +2090,8 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 	StaticFileDispatches = [ { text_utils:format( "/~ts", [ F ] ),
 		StaticHandlerModule, BaseStaticHandlerState#{
-				type => file,
-				path => text_utils:format( "site/static/~ts", [ F ] ) } }
+			type => file,
+			path => text_utils:format( "site/static/~ts", [ F ] ) } }
 							|| F <- StaticFiles ],
 
 	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
@@ -2158,7 +2158,7 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
 	text_utils:format( "[...].~ts", [ BinDomainName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
-	  when is_binary( BinDomainName ) andalso is_binary( BinVHostName ) ->
+			when is_binary( BinDomainName ) andalso is_binary( BinVHostName ) ->
 	text_utils:format( "~ts.~ts", [ BinVHostName, BinDomainName ] ).
 
 
@@ -2467,7 +2467,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 						"us_web" ++ _ ->
 							?info_fmt( "US-Web (release) application base "
-							  "directory set to '~ts'.", [ BaseDir ] ),
+								"directory set to '~ts'.", [ BaseDir ] ),
 							BinBaseDir;
 
 						_Other ->
@@ -2518,8 +2518,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 		false ->
 			%?warning_fmt( "The US-Web application base directory '~ts' does "
-			%			  "not exist, thus considering knowing none.",
-			%			  [ BaseDir ] ),
+			%   "not exist, thus considering knowing none.", [ BaseDir ] ),
 			%undefined
 			throw( { non_existing_us_web_app_base_directory, BaseDir,
 					 ?us_web_app_base_dir_key } )
@@ -2539,8 +2538,8 @@ manage_app_base_directories( ConfigTable, State ) ->
 	%TargetMod = us_web_app,
 	TargetMod = us_web_sup,
 
-	ConfBinDir = text_utils:string_to_binary( file_utils:join(
-		otp_utils:get_priv_root( TargetMod, _BeSilent=true ), "conf" ) ),
+	ConfBinDir = file_utils:bin_join(
+		otp_utils:get_priv_root( TargetMod, _BeSilent=true ), "conf" ),
 
 	% Set in all cases:
 	setAttributes( State, [ { app_base_directory, MaybeBaseBinDir },
@@ -3140,8 +3139,8 @@ manage_routes( ConfigTable, State ) ->
 
 		NitroRoots ->
 			?info_fmt( "Initializing Nitrogen for the following corresponding "
-					   "content-root: ~ts",
-					   [ text_utils:binaries_to_binary( NitroRoots ) ] ),
+				"content-root: ~ts",
+				[ text_utils:binaries_to_binary( NitroRoots ) ] ),
 
 			initialise_nitrogen_for_contents( NitroRoots, State )
 
@@ -3185,11 +3184,11 @@ manage_routes( ConfigTable, State ) ->
 	  [ DispatchRoutes, DispatchRules ] ),
 
 	setAttributes( ProcessState, [
-							{ domain_config_table, DomainCfgTable },
-							{ dispatch_routes, DispatchRoutes },
-							{ dispatch_rules, DispatchRules },
-							{ logger_task_ring, TaskRingPid },
-							{ https_transp_info, MaybeHttpsTranspInfo } ] ).
+		{ domain_config_table, DomainCfgTable },
+		{ dispatch_routes, DispatchRoutes },
+		{ dispatch_rules, DispatchRules },
+		{ logger_task_ring, TaskRingPid },
+		{ https_transp_info, MaybeHttpsTranspInfo } ] ).
 
 
 
@@ -3245,8 +3244,8 @@ initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 			%                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
 
 			%OtherPrereqApps =
-			%	otp_utils:prepare_for_execution( nitrogen_core,
-			%  BinContentRoot ),
+			%   otp_utils:prepare_for_execution( nitrogen_core,
+			%                                    BinContentRoot ),
 
 			%debug_fmt( "Other prerequisite applications: ~p.",
 			%           [ OtherPrereqApps ] ),
@@ -3624,8 +3623,8 @@ get_all_logger_pids( State ) ->
 get_all_logger_pids_from( DomainCfgTable ) ->
 	MaybePids = list_utils:flatten_once( [
 			[ VHCfgE#vhost_config_entry.logger_pid
-			  || VHCfgE <- table:values( VHCfgTable ) ]
-					   || { _DomainId, _MaybeCertManagerPid, VHCfgTable }
+				|| VHCfgE <- table:values( VHCfgTable ) ]
+						|| { _DomainId, _MaybeCertManagerPid, VHCfgTable }
 								<- table:values( DomainCfgTable ) ] ),
 	list_utils:filter_out_undefined( MaybePids ).
 
@@ -3641,7 +3640,7 @@ get_all_certificate_manager_pids( State ) ->
 % (helper)
 get_all_certificate_manager_pids_from( DomainCfgTable ) ->
 	MaybePids = [ MaybeCertManagerPid
-				  || { _DomainId, MaybeCertManagerPid, _VHCfgTable }
+					|| { _DomainId, MaybeCertManagerPid, _VHCfgTable }
 								<- table:values( DomainCfgTable ) ],
 	list_utils:filter_out_undefined( MaybePids ).
 

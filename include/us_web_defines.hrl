@@ -38,7 +38,10 @@
 % (typically instead of "Cowboy")
 %
 %-define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
--define( server_header_id, <<"Apache">> ).
+-define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
+
+% To discriminate with headers:
+-define( server_req_id, <<"Apache/2.4.2 (Unix)">> ).
 
 
 % Same from the upper US-Common level:

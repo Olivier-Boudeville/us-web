@@ -199,10 +199,10 @@ handle_dir_request( Req, RelContentRoot, CowboyOpts, HState )
 
 handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 
-	trace_utils:debug_fmt( "us_web_static:handle_dir_request/4 for:~n"
-		" - Req = ~p~n - BinRelContentRoot = ~p~n"
-		" - CowboyOpts = ~p~n - HState = ~p~n",
-		[ Req, BinRelContentRoot, CowboyOpts, HState ] ),
+	%trace_utils:debug_fmt( "us_web_static:handle_dir_request/4 for:~n"
+	%   " - Req = ~p~n - BinRelContentRoot = ~p~n"
+	%   " - CowboyOpts = ~p~n - HState = ~p~n",
+	%   [ Req, BinRelContentRoot, CowboyOpts, HState ] ),
 
 	case cowboy_req:path_info( Req ) of
 
@@ -243,8 +243,8 @@ handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 
 						<< BinBasePath:BaseLen/binary >> ->
 							%trace_utils:debug( "handle_dir_request: case B." ),
-							handle_file_request( Req, BinFullFilepath, CowboyOpts,
-									   HState );
+							handle_file_request( Req, BinFullFilepath,
+												 CowboyOpts, HState );
 
 						Other ->
 							%trace_utils:debug( "handle_dir_request: case C." ),

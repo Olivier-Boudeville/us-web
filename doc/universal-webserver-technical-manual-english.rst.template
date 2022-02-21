@@ -161,22 +161,24 @@ If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` fil
 
 .. code:: bash
 
- # Get ready first:
+ # Get ready first (as a regular user):
  $ ./deploy-us-web-native-build.sh --no-launch
+
+ # Useful, as Systemd shall detect the update of the US-Web service file:
+ $ sudo systemctl daemon-reload
 
  # Then stop properly any prior US-Web instance:
  $ sudo systemctl stop us-web-as-native-build.service
 
  # If EPMD still thinks a previous US-Web instance is running:
- # (generally not needed, and could impact any other running
+ # (unlikely to be needed, and could impact any other running
  # Erlang program, so be cautious...)
  #
  #$ sudo killall epmd
 
- # Useful as Systemd shall detect the update of the US-Web service file:
- $ sudo systemctl daemon-reload
-
+ # Relaunch US-Web, and initiate the certificate renewal process:
  $ sudo systemctl start us-web-as-native-build.service
+
 
 Then, as a first check of that launch, one may execute::
 
@@ -184,6 +186,7 @@ Then, as a first check of that launch, one may execute::
 
 
 See the next section for more in-depth checking and monitoring.
+
 
 
 Checking Launch Outcome

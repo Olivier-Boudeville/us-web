@@ -1,4 +1,4 @@
-% Copyright (C) 2020-2022 Olivier Boudeville
+% Copyright (C) 2021-2022 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -161,8 +161,8 @@ test_us_web_application( OrderedAppNames ) ->
 
 	URI = text_utils:format( "http://localhost:~B/~ts", [ TestPort, TestUrl ] ),
 
-	ExpectedContentStr = text_utils:binary_to_string( file_utils:read_whole(
-				"../priv/for-testing/test-static-website-D/index.html" ) ),
+	ExpectedContentBin = file_utils:read_whole(
+		"../priv/for-testing/test-static-website-D/index.html" ),
 
 	web_utils:start(),
 
@@ -171,15 +171,15 @@ test_us_web_application( OrderedAppNames ) ->
 		{ _StatusCode=200, _HeaderMap, Body } ->
 			case Body of
 
-				ExpectedContentStr ->
+				ExpectedContentBin ->
 					?test_info_fmt( "Read, from the US-Web test instance, the "
-					  "expected content ('~ts'), end-to-end test succeeded.",
-					  [ Body ] );
+						"expected content ('~ts'), end-to-end test succeeded.",
+						[ Body ] );
 
 				OtherStr ->
 					trace_bridge:error_fmt( "Read a content from the US-Web "
 						"test instance, yet not the expected one: read '~ts' "
-						"instead of '~ts'.", [ OtherStr, ExpectedContentStr ] ),
+						"instead of '~ts'.", [ OtherStr, ExpectedContentBin ] ),
 					throw( { unexpected_web_content, OtherStr } )
 
 			end;
@@ -230,8 +230,8 @@ run() ->
 	%
 	BuildRootDir = "..",
 
-	OrderedAppNames = otp_utils:prepare_for_execution( _ThisApp=us_web,
-													   BuildRootDir ),
+	OrderedAppNames =
+		otp_utils:prepare_for_execution( _ThisApp=us_web, BuildRootDir ),
 
 	trace_bridge:info_fmt( "Resulting applications to start, in order: ~w.",
 						   [ OrderedAppNames ] ),

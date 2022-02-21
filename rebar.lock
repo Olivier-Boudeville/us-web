@@ -12,7 +12,7 @@
   0},
  {<<"myriad">>,
   {git,"git://github.com/Olivier-Boudeville/Ceylan-Myriad",
-       {ref,"4fad72c32375cbea8c9402b8b350eeb9dbf96d3a"}},
+       {ref,"8ad1766f185d015dbe8450f14fbf7d97d61a4f13"}},
   0},
  {<<"ranch">>,
   {git,"https://github.com/ninenines/ranch",

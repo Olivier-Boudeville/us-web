@@ -87,7 +87,9 @@ Easy Testing of US-Web
 
 Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter (ex: ``sh get-us-web-from-sources.sh``, as a normal user) should suffice.
 
-This should result in US-Web being cloned and built, and a test server (if requested, see the ``--help`` script option for usage) should be configured and run. It should be then available at `http://localhost:8080 <`http://localhost:8080>`_.
+This should result in US-Web being cloned and built, and a test server (if requested, see the ``--help`` script option for usage) should be configured and run. It should be then available at `http://localhost:8080 <http://localhost:8080>`_.
+
+Another way of testing, this time from a US-Web Git compiled with its prerequisites, is simply to execute ``make debug`` from its root.
 
 See also the `Server Deployment`_ section for, beyond a mere testing of US-Web, a setting up of it in a production context.
 

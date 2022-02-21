@@ -246,7 +246,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 	% Relies first on the next, main constructor:
 	InitState = construct( State, BinHostId, DomainId, BinLogDir,
-		   MaybeSchedulerPid, UserPeriod, MaybeWebAnalysisInfo, false ),
+		MaybeSchedulerPid, UserPeriod, MaybeWebAnalysisInfo, false ),
 
 	% Then self-registering:
 	RegName = ?registration_name,
@@ -270,7 +270,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			ok;
 
 		SchedPid ->
-			 SchedPid ! { registerTask, [ _TaskCmd=rotateLogs,
+			SchedPid ! { registerTask, [ _TaskCmd=rotateLogs,
 				_StartTime=flexible, UserPeriod, _Count=unlimited,
 				_ActPid=self() ], self() }
 
@@ -870,7 +870,7 @@ rotate_logs( State ) ->
 rotate_log_files( State ) ->
 
 	[ basic_utils:check_undefined( ?getAttr(FAttr) )
-	  || FAttr <- [ access_log_file, error_log_file ] ],
+			|| FAttr <- [ access_log_file, error_log_file ] ],
 
 	RotCount = ?getAttr(rotation_count),
 
@@ -1108,7 +1108,7 @@ rotate_basic_log_file( FilePath, RotCount, _State ) ->
 				time_utils:get_textual_timestamp_for_path() ] ),
 
 	%?debug_fmt( "Rotating '~ts' to a compressed version: '~ts'.",
-	%			[ FilePath, ArchiveFilePath ] ),
+	%            [ FilePath, ArchiveFilePath ] ),
 
 	file_utils:move_file( FilePath, ArchiveFilePath ),
 

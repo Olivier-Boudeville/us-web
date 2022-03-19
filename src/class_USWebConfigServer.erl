@@ -50,14 +50,14 @@
 
 -type vhost_id() ::
 
-		% For example <<"bar">>:
-		bin_host_name()
+	% For example <<"bar">>:
+	bin_host_name()
 
-		% To designate directly "foobar.org", not any "XXX.foobar.org":
-		| 'without_vhost'
+	% To designate directly "foobar.org", not any "XXX.foobar.org":
+	| 'without_vhost'
 
-		% To match any non-explicitly matched "XXX.foobar.org":
-		|'default_vhost_catch_all'.
+	% To match any non-explicitly matched "XXX.foobar.org":
+	|'default_vhost_catch_all'.
 % Identifier of a virtual host.
 
 
@@ -602,7 +602,9 @@ destruct( State ) ->
 
 	% Includes the LEEC FSM shutdown:
 	[ CMPid ! delete
-	  || CMPid <- get_all_certificate_manager_pids( State ) ],
+		|| CMPid <- get_all_certificate_manager_pids( State ) ],
+
+	?getAttr(us_web_scheduler_pid) ! delete,
 
 	?info( "Deleted." ),
 	State.
@@ -931,11 +933,20 @@ onWOOPERExitReceived( State, _StoppedPid, _ExitType=normal ) ->
 	wooper:const_return();
 
 
+onWOOPERExitReceived( State, _StoppedPid, _ExitType=shutdown ) ->
+
+	% Typically from the supervisor:
+	%
+	%?notice_fmt( "Ignoring shutdown exit from process ~w.", [ StoppedPid ] ),
+
+	wooper:const_return();
+
+
 onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 
-	% Typically: "Received exit message '{{nocatch,
-	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
-	%							FunName,Arity,Args,AtomCause}}, [...]}"
+	% Typically: "Received exit message '{ { nocatch,
+	%   { wooper_oneway_failed, <0.44.0>, class_XXX,
+	%      FunName, Arity, Args, AtomCause } }, [...] }"
 
 	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
 				[ ExitType, CrashedPid ] ),

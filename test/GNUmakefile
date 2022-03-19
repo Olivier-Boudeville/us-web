@@ -1,12 +1,16 @@
 US_WEB_TOP = ..
 
-.PHONY: test-ci
+.PHONY: all test-ci
 
 
 # As us_web_otp_application_test.beam depends on
 # us_common_otp_application_test.beam:
 #
 BEAM_DIRS += $(US_COMMON_TOP)/test
+
+
+# Needed to avoid calling the next, unrelated rule:
+all:
 
 
 # Defined for continuous integration; does not include

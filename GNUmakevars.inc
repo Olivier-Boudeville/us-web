@@ -111,7 +111,7 @@ endif
 
 
 # The uniquely-defined version of this layer, for all uses, including rebar:
-US_WEB_VERSION := 1.0.18
+US_WEB_VERSION := 1.0.19
 
 
 # PROJECT_VERSION should be defined on a per-project basis:
@@ -186,13 +186,16 @@ MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
 USE_NITROGEN = false
 #USE_NITROGEN = true
 
-NITROGEN_BEAM_DIRS = $(NITROGEN_CORE_TOP)/ebin $(NITROGEN_DEPS_BEAM_DIRS)
+ifeq ($(USE_NITROGEN),true)
 
-NITROGEN_DEPS_DIRS = cf erlware_commons nitro_cache nprocreg qdate \
+	NITROGEN_BEAM_DIRS = $(NITROGEN_CORE_TOP)/ebin $(NITROGEN_DEPS_BEAM_DIRS)
+
+	NITROGEN_DEPS_DIRS = cf erlware_commons nitro_cache nprocreg qdate \
 					 qdate_localtime rekt simple_bridge stacktrace_compat
 
-NITROGEN_DEPS_BEAM_DIRS = $(patsubst %, $(NITROGEN_CORE_TOP)/deps/%/ebin, $(NITROGEN_DEPS_DIRS))
+	NITROGEN_DEPS_BEAM_DIRS = $(patsubst %, $(NITROGEN_CORE_TOP)/deps/%/ebin, $(NITROGEN_DEPS_DIRS))
 
+endif
 
 
 # See Myriad counterpart variable (MYRIAD_BEAM_DIRS) for explanations:

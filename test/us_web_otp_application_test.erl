@@ -202,8 +202,52 @@ test_us_web_application( OrderedAppNames ) ->
 				"application." ),
 
 	% Including US-Web:
-	?test_info( "Stopping all user applications." ),
+	?test_info_fmt( "Stopping all user applications (~p).",
+					[ OrderedAppNames ] ),
+
 	otp_utils:stop_user_applications( OrderedAppNames ),
+
+
+	trace_utils:debug_fmt( "Waiting for the termination of the US-Web "
+						   "configuration server (~w).", [ USWebCfgSrvPid ] ),
+
+	receive
+
+		{ 'EXIT', USWebCfgSrvPid, normal } ->
+			ok
+
+		after 1000 ->
+			ok
+
+	end,
+
+
+	trace_utils:debug_fmt( "Waiting for the termination of the US-Web "
+						   "scheduler (~w).", [ USWebSchedPid ] ),
+
+	receive
+
+		{ 'EXIT', USWebSchedPid, normal } ->
+			ok
+
+		after 1000 ->
+			ok
+
+	end,
+
+
+	trace_utils:debug_fmt( "Waiting for the termination of the US-Common "
+						   "configuration server (~w).", [ USCfgSrvPid ] ),
+
+	receive
+
+		{ 'EXIT', USCfgSrvPid, normal } ->
+			ok
+
+		after 1000 ->
+			ok
+
+	end,
 
 	% None expected to be left:
 	basic_utils:check_no_pending_message(),

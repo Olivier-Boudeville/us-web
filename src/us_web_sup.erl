@@ -29,12 +29,12 @@
 -behaviour(supervisor).
 
 
--export([ start_link/0, start_link/1 ]).
+-export([ start_link/0, start_link/1, stop/0 ]).
 
 -export([ init/1 ]).
 
 -define( server_registration_name, ?MODULE ).
-
+-define( server_registration_scope, local ).
 
 % For the general_web_settings record:
 -include("class_USWebConfigServer.hrl").
@@ -67,20 +67,20 @@
 %
 -spec start_link() -> otp_utils:supervisor_pid().
 start_link() ->
-	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
-						   _Default=[ as_otp_release ] ).
+	supervisor:start_link( { ?server_registration_scope,
+		?server_registration_name }, ?MODULE, _DefaultArgs=[ as_otp_release ] ).
 
 
 
 % @doc Starts and links the US-Web supervisor, with OTP conventions or not.
 -spec start_link( application_run_context() ) -> otp_utils:supervisor_pid().
 start_link( AppRunContext ) ->
-	supervisor:start_link( { local, ?server_registration_name }, ?MODULE,
-						   _Default=[ AppRunContext ] ).
+	supervisor:start_link( { ?server_registration_scope,
+		?server_registration_name }, ?MODULE, _DefaultArgs=[ AppRunContext ] ).
 
 
 
-% @doc Initialises this OTP supervisor.
+% @doc Initialises the main US-Web OTP supervisor.
 -spec init( [ application_run_context() ] ) ->
 				{ 'ok', { supervisor:sup_flags(), supervisor:child_spec() } }.
 init( _Args=[ AppRunContext ] ) ->
@@ -361,4 +361,31 @@ init( _Args=[ AppRunContext ] ) ->
 	% Intentionally not trace_bridge:
 	trace_utils:info_fmt( "~ts~n~ts", [ HttpMsg, HttpsMsg ] ),
 
+	% A problem is that the US-Web configuration server shall be created from
+	% here (to access configuration information from that supervisor), but then
+	% it should be terminated from the stop/0 function - which thus shall have
+	% some means to know the PID of this server). Only pragmatic solution found
+	% is to use the application environment for that:
+	%
+	Env = [ { _Param=us_web_config_server_pid, _V=USWebCfgServerPid } ],
+
+	application:set_env( _Config=[ { us_web, Env } ] ),
+
 	{ ok, { SupSettings, ChildSpecs } }.
+
+
+
+% @doc Stops the US-Web main supervisor, with OTP conventions or not.
+%
+% Note: unlike supervisor_bridge, no supervisor:terminate/* callback exists.
+%
+-spec stop() -> void().
+stop() ->
+
+	{ ok, USWebCfgSrvPid } =
+		application:get_env( _Param=us_web_config_server_pid ),
+
+	trace_bridge:warning_fmt( "Stopping US-Web, including its configuration "
+							  "server ~w.", [ USWebCfgSrvPid ] ),
+
+	USWebCfgSrvPid ! delete.

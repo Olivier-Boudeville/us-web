@@ -138,7 +138,7 @@ exec() ->
 start( StartType, StartArgs ) ->
 
 	% Myriad may be already available in this branch as well, though:
-	io:format( "Starting us_web application "
+	io:format( "Starting the us_web application "
 		"(start type: ~p, arguments: ~p)...~n", [ StartType, StartArgs ] ),
 
 	% Location to check:
@@ -168,10 +168,12 @@ start( StartType, StartArgs ) ->
 
 % @doc Stops the US-Web application.
 stop( _State ) ->
-	trace_bridge:info( "Stopping us_web application." ),
+	trace_bridge:info( "Stopping the us_web application." ),
 
 	% In native context, explicit stopping should be done, with the same
 	% blacklisting.
+
+	us_web_sup:stop(),
 
 	ok.
 

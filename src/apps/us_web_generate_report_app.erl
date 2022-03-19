@@ -20,7 +20,6 @@
 % Creation date: Sunday, January 19, 2020.
 
 
-
 % @doc Actual US-Web trigger logic for the <b>generation of reports about access
 % logs</b>, as a (Myriad) application.
 %
@@ -35,11 +34,12 @@
 %
 -module(us_web_generate_report_app).
 
+
+-export([ exec/0 ]).
+
+
 % For default_us_web_config_server_registration_name:
 -include("us_web_defines.hrl").
-
-% For exec/0 export:
--include_lib("myriad/include/app_facilities.hrl").
 
 % For update_code_path_for_myriad/0 and all:
 -include_lib("myriad/include/myriad_script_include.hrl").
@@ -62,7 +62,7 @@ exec() ->
 	Cfg = file_utils:read_terms( CfgFilePath ),
 
 	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
-	%					   [ CfgFilePath, Cfg ] ),
+	%                       [ CfgFilePath, Cfg ] ),
 
 	TargetNodeName = get_target_node_name( Cfg ),
 
@@ -90,12 +90,12 @@ exec() ->
 	% Note: us_web_config_server_registration_name
 
 	%app_facilities:display( "Globally registered names: ~w.",
-	%						[ global:registered_names() ] ),
+	%                        [ global:registered_names() ] ),
 
 	UWCfgRegName = get_us_web_cfg_server_name( Cfg ),
 
 	%app_facilities:display( "Looking up US-Web config server by name: ~ts.",
-	%						[ UWCfgRegName ] ),
+	%                        [ UWCfgRegName ] ),
 
 	UWCfgRegScope = ?us_web_config_server_registration_scope,
 
@@ -103,7 +103,7 @@ exec() ->
 		naming_utils:registration_to_look_up_scope( UWCfgRegScope ) ),
 
 	%trace_utils:debug_fmt( "Found PID of US-Web configuration server: ~w.",
-	%					   [ UWCfgPid ] ),
+	%                       [ UWCfgPid ] ),
 
 	UWCfgPid ! { generateLogAnalysisReports,
 					[ MaybeDomainBinStr, MaybeHostBinStr ], self() },
@@ -135,7 +135,7 @@ init_from_command_line() ->
 	ArgTable = shell_utils:get_argument_table(),
 
 	%trace_utils:debug_fmt( "Argument table: ~ts",
-	%					   [ list_table:to_string( ArgTable ) ] ),
+	%                       [ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
 	{ CfgFilePath, ConfigShrunkTable } =
@@ -203,7 +203,7 @@ init_from_command_line() ->
 	end,
 
 	%trace_utils:debug_fmt( "Selected target domain: '~ts'.",
-	%					   [ MaybeDomainBinStr ] ),
+	%                       [ MaybeDomainBinStr ] ),
 
 
 	{ MaybeHostBinStr, HostShrunkTable } =
@@ -222,7 +222,7 @@ init_from_command_line() ->
 	end,
 
 	%trace_utils:debug_fmt( "Selected target host: '~ts'.",
-	%					   [ MaybeHostBinStr ] ),
+	%                       [ MaybeHostBinStr ] ),
 
 
 	case list_table:is_empty( HostShrunkTable ) of
@@ -276,15 +276,15 @@ get_us_web_cfg_server_name( Cfg ) ->
 		true ->
 			RegName = list_table:get_value( RegNameKey, Cfg ),
 			%trace_utils:debug_fmt( "Registration name of the US-Web "
-			%	"configuration read from configuration file: '~ts'.",
-			%	[ RegName ] ),
+			%   "configuration read from configuration file: '~ts'.",
+			%   [ RegName ] ),
 			RegName;
 
 		false ->
 			DefRegName = ?default_us_web_config_server_registration_name,
 			%trace_utils:debug_fmt( "No registration name for the US-Web "
-			%	"configuration found in configuration file, using "
-			%	"default one: '~ts'.", [ DefRegName ] ),
+			%   "configuration found in configuration file, using "
+			%   "default one: '~ts'.", [ DefRegName ] ),
 			DefRegName
 
 	end.

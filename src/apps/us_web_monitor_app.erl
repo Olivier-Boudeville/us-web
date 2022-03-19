@@ -20,7 +20,6 @@
 % Creation date: Sunday, January 19, 2020.
 
 
-
 % @doc Actual US-Web <b>trace monitoring logic</b>, as a (Myriad) application.
 %
 % Typically called through the us_web/priv/bin/monitor-us-web.sh script.
@@ -30,13 +29,12 @@
 %
 -module(us_web_monitor_app).
 
-% For exec/0 export:
--include_lib("myriad/include/app_facilities.hrl").
+
+-export([ exec/0 ]).
+
 
 % For update_code_path_for_myriad/0 and all:
 -include_lib("myriad/include/myriad_script_include.hrl").
-
-
 
 % For trace_aggregator_name:
 -include_lib("traces/include/class_TraceAggregator.hrl").
@@ -96,7 +94,7 @@ exec() ->
 						[ MainTargetNodeName, UserTargetNodeName ] ),
 
 					throw( { unable_to_connect_to,
-							 { MainTargetNodeName, UserTargetNodeName } } )
+								{ MainTargetNodeName, UserTargetNodeName } } )
 
 			end
 
@@ -143,7 +141,6 @@ exec() ->
 
 	end,
 
-
 	% ?app_stop should not be used here as its wait_for_any_trace_supervisor
 	% macro would wait for a non-launched supervisor.
 	%
@@ -163,7 +160,7 @@ init_from_command_line() ->
 	ArgTable = shell_utils:get_argument_table(),
 
 	%trace_utils:debug_fmt( "Argument table: ~ts",
-	%						[ list_table:to_string( ArgTable ) ] ),
+	%                       [ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
 	{ CfgFilePath, ConfigShrunkTable } =
@@ -260,7 +257,7 @@ get_target_node_names( Cfg ) ->
 	% an app, typically for testing):
 
 	BaseNodeNames = [ "us_web", text_utils:format( "us_web_exec-~ts",
-										[ system_utils:get_user_name() ] ) ],
+									[ system_utils:get_user_name() ] ) ],
 
 	% Returns relevant, ordered candidates
 	[ net_utils:get_complete_node_name( N, RemoteHostname, NodeNamingMode )

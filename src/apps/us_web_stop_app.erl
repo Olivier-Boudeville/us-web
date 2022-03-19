@@ -27,12 +27,12 @@
 %
 -module(us_web_stop_app).
 
-% For exec/0 export:
--include_lib("myriad/include/app_facilities.hrl").
+
+-export([ exec/0 ]).
+
 
 % For update_code_path_for_myriad/0 and all:
 -include_lib("myriad/include/myriad_script_include.hrl").
-
 
 
 % For trace_aggregator_name:

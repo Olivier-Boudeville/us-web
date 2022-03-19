@@ -27,10 +27,10 @@
 %
 {deps, [
 
-	{cowboy, {git, "git://github.com/ninenines/cowboy", {tag, "2.9.0"}}},
+	{cowboy, {git, "https://github.com/ninenines/cowboy.git", {tag, "2.9.0"}}},
 
 	% To support the generation of X.509 certificates thanks to LetsEncrypt:
-	{leec, {git, "git://github.com/Olivier-Boudeville/Ceylan-LEEC",
+	{leec, {git, "https://github.com/Olivier-Boudeville/Ceylan-LEEC.git",
 						{branch, "master"}}},
 
 	% Uncomment to enable the support for Nitrogen-based websites:
@@ -45,13 +45,13 @@
 	%{simple_bridge, {git, "git://github.com/Olivier-Boudeville/simple_bridge", {branch, "master"}}},
 
 	% Our toolbox dependencies:
-	{myriad,         {git, "git://github.com/Olivier-Boudeville/Ceylan-Myriad",
+	{myriad,         {git, "https://github.com/Olivier-Boudeville/Ceylan-Myriad.git",
 						{branch, "master"}}},
-	{wooper,         {git, "git://github.com/Olivier-Boudeville/Ceylan-WOOPER",
+	{wooper,         {git, "https://github.com/Olivier-Boudeville/Ceylan-WOOPER.git",
 						{branch, "master"}}},
-	{traces,         {git, "git://github.com/Olivier-Boudeville/Ceylan-Traces",
+	{traces,         {git, "https://github.com/Olivier-Boudeville/Ceylan-Traces.git",
 						{branch, "master"}}},
-	{us_common,      {git, "git://github.com/Olivier-Boudeville/us-common",
+	{us_common,      {git, "https://github.com/Olivier-Boudeville/us-common.git",
 						{branch, "master"}}}
 
 ]}.

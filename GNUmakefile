@@ -387,9 +387,6 @@ kill:
 	-@us_web_pid=$$(ps -edf | grep -v grep | grep beam.smp | grep us_web_app | awk '{printf $$2}'); if [ -z "$${us_web_pid}" ]; then echo "(no US-Web process found)"; else echo "  Killing US-Web process $${us_web_pid}..."; kill $${us_web_pid}; fi
 
 
-test: test-interactive-local
-
-
 # Shorthand:
 shell: test-interactive-local
 

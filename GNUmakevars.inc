@@ -308,3 +308,7 @@ ifeq ($(USE_NITROGEN),true)
 	endif
 
 endif
+
+ifndef PREDECESSOR_LAYER_TOPS
+	PREDECESSOR_LAYER_TOPS := $(US_COMMON_TOP) $(LEEC_TOP)
+endif

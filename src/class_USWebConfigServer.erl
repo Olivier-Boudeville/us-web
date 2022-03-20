@@ -984,7 +984,7 @@ load_and_apply_configuration( State ) ->
 	% possibly inconsistent reading/interpretation (and in order to declare
 	% itself in the same move):
 	%
-	CfgServerPid ! { getWebRuntimeSettings, [], self() },
+	CfgServerPid ! { getUSWebRuntimeSettings, [], self() },
 
 	% No possible interleaving:
 	receive
@@ -1035,7 +1035,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 		false ->
 			% Possibly user/group permission issue:
-			?error_fmt( "No web configuration file found or accessible "
+			?error_fmt( "No US-Web configuration file found or accessible "
 				"(ex: symbolic link to an inaccessible file); tried '~ts'.",
 				[ WebCfgFilePath ] ),
 			throw( { us_web_config_file_not_found,
@@ -1058,7 +1058,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	DataState = manage_data_directory( WebCfgTable, AppState ),
 
-	LogState = manage_log_directory( WebCfgTable,DataState  ),
+	LogState = manage_log_directory( WebCfgTable, DataState ),
 
 	PortState = manage_ports( WebCfgTable, LogState ),
 
@@ -1677,7 +1677,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 	% maintained by any analysis tool, and it balances better the load.
 	%
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
-			_MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
+		_MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
@@ -2460,8 +2460,8 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 	BaseDir = file_utils:ensure_path_is_absolute( RawBaseDir ),
 
-	% We check not only that this candidate app directory exists, but also it is
-	% a right one, expecting to have a 'priv' direct subdirectory then:
+	% We check not only that this candidate app directory exists, but also that
+	% it is a right one, expecting to have a 'priv' direct subdirectory then:
 
 	MaybeBaseBinDir =
 			case file_utils:is_existing_directory_or_link( BaseDir ) of
@@ -2703,12 +2703,13 @@ manage_log_directory( ConfigTable, State ) ->
 
 	% Longer paths if defined as relative, yet finally preferred as
 	% '/var/log/universal-server/us-web' (rather than
-	% '/var/log/universal-server') allows to separate US-Web from any other US-*
-	% services:
+	% '/var/log/universal-server') as it allows separating US-Web from any other
+	% US-* services:
 	%
 	LogDir = case table:lookup_entry( ?us_web_log_dir_key, ConfigTable ) of
 
 		key_not_found ->
+			% Bound to require special permissions:
 			?default_log_base_dir;
 
 		{ value, D } when is_list( D ) ->
@@ -2751,7 +2752,7 @@ manage_log_directory( ConfigTable, State ) ->
 	% Enforce security in all cases ("chmod 700"); if it fails here, the
 	% combined path/user configuration must be incorrect; however we might not
 	% be the owner of that directory (ex: if the us-web user is different from
-	% the us one)
+	% the US-Common one).
 	%
 	% So:
 	%
@@ -2764,8 +2765,8 @@ manage_log_directory( ConfigTable, State ) ->
 			Perms = [ owner_read, owner_write, owner_execute,
 					  group_read, group_write, group_execute ],
 
-			file_utils:change_permissions( LogDir, Perms ),
-			file_utils:change_permissions( BinWebLogDir, Perms );
+			[ file_utils:change_permissions( D, Perms )
+				|| D <- [ LogDir, BinWebLogDir ] ];
 
 		% Not owned, do nothing:
 		_OtherId ->
@@ -2776,6 +2777,7 @@ manage_log_directory( ConfigTable, State ) ->
 	BinLogDir = text_utils:ensure_binary( LogDir ),
 
 	setAttribute( State, log_directory, BinLogDir ).
+
 
 
 % @doc Centralises the definition of the directory where to store all web logs.
@@ -3241,7 +3243,7 @@ initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 
 			[ ok = application:set_env( _App=simple_bridge, Param, Value,
 										_Opts=[ { persistent, true } ] )
-			  || { Param, Value } <- Settings ],
+				|| { Param, Value } <- Settings ],
 
 			%[notice][erlang_logger]     args: [{throw,
 			%               {handler_not_found_in_context,crash_handler,

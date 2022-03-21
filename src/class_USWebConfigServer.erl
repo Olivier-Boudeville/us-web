@@ -2472,11 +2472,18 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 				as_otp_release ->
 					% As, if run as a release, it may end with a version (ex:
-					% "us_web-0.0.1") or as a "us_web-latest" symlink thereof:
+					% "us_web-0.0.1") or as a "us_web-latest" symlink thereof,
+					% or directly as "us-web":
 					%
 					case filename:basename( BaseDir ) of
 
 						"us_web" ++ _ ->
+							?info_fmt( "US-Web (release) application base "
+								"directory set to '~ts'.", [ BaseDir ] ),
+							BinBaseDir;
+
+						% For a clone made to a default directory (ex: by CI):
+						"us-web" ++ _ ->
 							?info_fmt( "US-Web (release) application base "
 								"directory set to '~ts'.", [ BaseDir ] ),
 							BinBaseDir;

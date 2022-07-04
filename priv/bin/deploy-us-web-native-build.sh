@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# A script to automatically deploy a US-Web native build from scratch (provided
+# that Erlang is already available).
+#
+# This is the most common procedure, especially if using the '--no-launch'
+# command-line option.
+
+
 # See also:
 # - the get-us-web-from-sources.sh script to install a test version of US-Web
 # - the deploy-us-web-release.sh script to deploy OTP releases of US-Web instead
@@ -548,7 +555,7 @@ if [ ${do_build} -eq 0 ]; then
 	cd "${abs_native_install_dir}"
 
 	echo
-	echo "Building these packages (as $(id -un), with following Ceylan options: ${ceylan_opts}):"
+	echo "Building these packages (as $(id -un), with Erlang $(erl -eval '{ok, V} = file:read_file( filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"]) ), io:fwrite(V), halt().' -noshell) and following Ceylan options: ${ceylan_opts}):"
 
 	# For Myriad, WOOPER and Traces, we prefer to rely on our own good old build
 	# system (i.e. not on rebar3).
@@ -933,6 +940,6 @@ if [ $do_launch -eq 0 ]; then
 
 else
 
-	echo "(no auto-launch enabled; one may execute, as root, 'systemctl restart us-web-as-native-build.service')"
+	echo "(no auto-launch enabled; one may execute, as root, 'systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)"
 
 fi

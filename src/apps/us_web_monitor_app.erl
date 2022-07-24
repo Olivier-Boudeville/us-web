@@ -209,16 +209,9 @@ init_from_command_line() ->
 
 	net_utils:set_cookie( RemoteCookie ),
 
-	case list_table:is_empty( CookieShrunkTable ) of
-
-		true ->
-			ok;
-
-		false ->
+	list_table:is_empty( CookieShrunkTable ) orelse
 			throw( { unexpected_arguments,
-					 list_table:enumerate( CookieShrunkTable ) } )
-
-	end,
+					 list_table:enumerate( CookieShrunkTable ) } ),
 
 	CfgFilePath.
 
@@ -236,16 +229,8 @@ get_target_node_names( Cfg ) ->
 
 	%trace_utils:debug_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
 
-	case net_utils:localnode() of
-
-		local_node ->
-			throw( { node_not_networked, node() } );
-
-		_N ->
-			%text_utils:atom_to_string( N )
-			ok
-
-	end,
+	net_utils:localnode() =/= local_node orelse
+		throw( { node_not_networked, node() } ),
 
 	% Supposing here uniform client/server conventions in terms of short or long
 	% names:

@@ -25,9 +25,10 @@
 
 
 <h2><a name="index">Function Index</a></h2>
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#init-1">init/1</a></td><td>Initialises this OTP supervisor.</td></tr>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#init-1">init/1</a></td><td>Initialises the main US-Web OTP supervisor.</td></tr>
 <tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td>Starts and links the US-Web supervisor, with OTP conventions.</td></tr>
 <tr><td valign="top"><a href="#start_link-1">start_link/1</a></td><td>Starts and links the US-Web supervisor, with OTP conventions or not.</td></tr>
+<tr><td valign="top"><a href="#stop-0">stop/0</a></td><td>Stops the US-Web main supervisor, with OTP conventions or not.</td></tr>
 </table>
 
 <h2><a name="functions">Function Details</a></h2>
@@ -36,7 +37,7 @@
 <div class="spec">
 <p><tt>init(Args::[<a href="#type-application_run_context">application_run_context()</a>]) -&gt; {ok, {<a href="http://www.erlang.org/edoc/doc/stdlib/doc/supervisor.html#type-sup_flags">supervisor:sup_flags()</a>, <a href="http://www.erlang.org/edoc/doc/stdlib/doc/supervisor.html#type-child_spec">supervisor:child_spec()</a>}}</tt><br></p>
 <p> </p>
-</div><p>Initialises this OTP supervisor.</p>
+</div><p>Initialises the main US-Web OTP supervisor.</p>
 
 <h3 class="function"><a name="start_link-0">start_link/0</a></h3>
 <div class="spec">
@@ -52,6 +53,15 @@
 <p><tt>start_link(AppRunContext::<a href="#type-application_run_context">application_run_context()</a>) -&gt; <a href="otp_utils.html#type-supervisor_pid">otp_utils:supervisor_pid()</a></tt><br></p>
 <p> </p>
 </div><p>Starts and links the US-Web supervisor, with OTP conventions or not.</p>
+
+<h3 class="function"><a name="stop-0">stop/0</a></h3>
+<div class="spec">
+<p><tt>stop() -&gt; <a href="#type-void">void()</a></tt><br></p>
+<p> </p>
+</div><p><p>Stops the US-Web main supervisor, with OTP conventions or not.</p>
+
+ Note: unlike supervisor_bridge, no supervisor:terminate/* callback exists.
+</p>
 <hr>
 
 <div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>

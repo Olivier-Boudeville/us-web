@@ -126,7 +126,7 @@
 -define( us_web_app_env_variable, "US_WEB_APP_BASE_DIR" ).
 
 
-% Preferring a default local directory to an absolute one requiring privileges:
+% Preferring a default local directory to an absolute one requiring priviledges:
 %-define( default_data_base_dir, "/var/local/us-web/data" ).
 -define( default_data_base_dir, "us-web-data" ).
 
@@ -683,7 +683,8 @@ renewCertificates( State ) ->
 	% 1  minute and 30 seconds per manager:
 	MaxDurationInMs = 90*1000,
 
-	?info_fmt( "Renewing all certificates, through their ~B managers (~w); "
+	% So that it is visible even in production mode:
+	?warning_fmt( "Renewing all certificates, through their ~B managers (~w); "
 		"setting a (large) ~ts for each of them.", [ CertManagerCount,
 		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
 
@@ -701,7 +702,8 @@ renewCertificates( State ) ->
 			_AckAtom=certificate_renewal_over ) of
 
 		[] ->
-			?debug_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
+			%?debug_fmt
+			?warning_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
 
 		FailedCertPids ->
 			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "

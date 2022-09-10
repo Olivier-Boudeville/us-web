@@ -548,7 +548,8 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 	% challenges can be returned to the ACME server for this procedure to
 	% complete.
 
-	?debug( "Requested to renew certificate in a synchronisable manner." ),
+	% So that it is visible even in production mode:
+	?warning( "Requested to renew certificate in a synchronisable manner." ),
 
 	% Also a check:
 	{ ListenState, undefined } =
@@ -591,14 +592,15 @@ request_certificate( State ) ->
 
 	end,
 
-	?debug_fmt( "Requesting certificate for '~ts', with following SAN "
-				"information:~n  ~p.", [ FQDN, ActualSans ] ),
+	% So that it is visible even in production mode:
+	?warning_fmt( "Requesting certificate for '~ts', with following SAN "
+				  "information:~n  ~p.", [ FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
-	% yet this is not a proper solution as months may elapse between renewals,
-	% and at least the nonce is bound to have expired in the meantime.
+	% yet this is not a proper solution, as months are likely elapse between
+	% renewals, and at least the nonce is bound to have expired in the meantime.
 	%
-	% So now we shut down once onver, and recreate a LEEC instance at each
+	% So now we shut down LEEC instances once over, and recreate them at each
 	% renewal.
 
 	% Check:
@@ -615,7 +617,8 @@ request_certificate( State ) ->
 	case leec:start( ?getAttr(leec_start_opts), ?getAttr(bridge_spec) ) of
 
 		{ ok, LEECPid } ->
-			?debug_fmt( "New LEEC FSM ~w created for '~ts'.",
+			%?debug_fmt
+			?warning_fmt( "New LEEC FSM ~w created for '~ts'.",
 						[ LEECPid, FQDN ] ),
 
 			async = leec:obtain_certificate_for( FQDN, LEECPid,
@@ -623,7 +626,8 @@ request_certificate( State ) ->
 									 callback => Callback,
 									 sans => ActualSans } ),
 
-			?debug( "Certificate creation request initiated." ),
+			%?debug
+			?warning( "Certificate creation request initiated." ),
 
 			setAttribute( State, leec_pid, LEECPid );
 
@@ -646,7 +650,8 @@ onCertificateRequestOutcome( State,
 
 	FQDN = ?getAttr(fqdn),
 
-	?info_fmt( "Certificate generation success for '~ts', "
+	%?info_fmt
+	?warning_fmt( "Certificate generation success for '~ts', "
 			   "certificate stored in '~ts'.", [ FQDN, BinCertFilePath ] ),
 
 	SetState = case ?getAttr(renew_listener) of
@@ -722,14 +727,17 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 		LEECFsmPid ->
 			leec:stop( LEECFsmPid ),
+			% No more reuse between renewals:
 			setAttribute( State, leec_pid, undefined )
 
 	end,
 
+	% Switching to warning to remain available in production mode:
 	SchedState = case ?getAttr(scheduler_pid) of
 
 		undefined ->
-			?info( "No certificate renewal will be attempted "
+			%?info
+			?warning( "No certificate renewal will be attempted "
 				   "(no scheduler registered)." ),
 			ShutState;
 
@@ -737,7 +745,8 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 			case MaybeRenewDelay of
 
 				undefined ->
-					?info( "No certificate renewal will be attempted "
+					%?info
+					?warning( "No certificate renewal will be attempted "
 						   "(no periodicity defined)." ),
 					ShutState;
 
@@ -751,7 +760,8 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 					NextTimestamp = time_utils:offset_timestamp(
 						time_utils:get_timestamp(), RenewDelay ),
 
-					?debug_fmt( "Next attempt of certificate renewal to "
+					%?debug_fmt
+					?warning_fmt( "Next attempt of certificate renewal to "
 						"take place in ~ts, i.e. at ~ts.",
 						[ time_utils:duration_to_string( 1000 * RenewDelay ),
 						  time_utils:timestamp_to_string( NextTimestamp ) ] ),
@@ -788,7 +798,8 @@ getChallenge( State, TargetPid ) ->
 
 	FSMPid = ?getAttr(leec_pid),
 
-	?debug_fmt( "Requested to return the current thumbprint challenges "
+	%?debug_fmt
+	?warning_fmt( "Requested to return the current thumbprint challenges "
 		"from LEEC FSM ~w, on behalf of (and to) ~w.", [ FSMPid, TargetPid ] ),
 
 	leec:send_ongoing_challenges( FSMPid, TargetPid ),

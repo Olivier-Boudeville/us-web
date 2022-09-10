@@ -397,7 +397,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	% Only positive (delaying) jitter, as random value in [0.0, 1.0[:
 	RenewPeriodSecs = BaseRenewPeriodSecs
-		+ round( JitterMaxSecs * random_utils:get_random_value() ),
+		+ round( JitterMaxSecs * random_utils:get_uniform_value() ),
 
 	% Let's start LEEC now:
 

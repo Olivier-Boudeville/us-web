@@ -90,10 +90,10 @@
 % directory map, nonces, etc.). So the creation of certificate managers shall
 % preferably done with a synchronous new operator.
 
-% Initially certificate managers did not trapped exit messages, so that any
-% crash was to propagate to the US-Web config server; now managers trap them to
-% detect for example the crash of the associated LEEC FSM, and manage such a
-% crash (resisting and relaunching it).
+% Initially certificate managers did not trap exit messages, so that any crash
+% was to propagate to the US-Web config server; now managers trap them to detect
+% for example the crash of the associated LEEC FSM, and manage such a crash
+% (resisting and relaunching it).
 
 % Finally, because a long time is to elapse between two certificate renewals for
 % a given domain, no LEEC instance must be re-used (the lastly used nonce must
@@ -219,10 +219,10 @@
 % Let’s Encrypt certificate lifetime is 90 days (cf. duration in
 % [https://letsencrypt.org/docs/faq/]); we trigger a renewal with some margin:
 
-% For development:
+% For development, each hour:
 -define( dhms_cert_renewal_period_development, { 0, 1, 0, 0 } ).
 
-% Every 70 days (minimum being 60 days, as lasting for 90 days and only
+% Every 70 days (minimum being 60 days, as lasting for up to 90 days and only
 % renewable in the last 30 days), for production:
 %
 -define( dhms_cert_renewal_period_production, { 70, 0, 0, 0 } ).
@@ -373,16 +373,9 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 			{ leec_pid(), seconds(), leec_start_options(), bridge_spec() }.
 init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
-	case file_utils:is_existing_directory( BinCertDir ) of
-
-		true ->
-			ok;
-
-		false ->
-			throw( { non_existing_certificate_directory,
-					 text_utils:binary_to_string( BinCertDir ) } )
-
-	end,
+	file_utils:is_existing_directory( BinCertDir ) orelse
+		throw( { non_existing_certificate_directory,
+				 text_utils:binary_to_string( BinCertDir ) } ),
 
 	{ BaseRenewPeriodDHMS, JitterMaxDHMS } = case CertMode of
 
@@ -502,24 +495,17 @@ destruct( State ) ->
 	end,
 
 	% End of interleaving:
-	case MaybeSchedPid of
+	MaybeSchedPid =/= undefined andalso
+		receive
 
-		undefined ->
-			ok;
+			task_unregistered ->
+				ok;
 
-		_ ->
-			receive
+			{ task_unregistration_failed, Error } ->
+				?error_fmt( "Unregistration of task #~B failed "
+							"at deletion: ~p.", [ CertTaskId, Error ] )
 
-				task_unregistered ->
-					ok;
-
-				{ task_unregistration_failed, Error } ->
-					?error_fmt( "Unregistration of task #~B failed "
-								"at deletion: ~p.", [ CertTaskId, Error ] )
-
-			end
-
-	end,
+		end,
 
 	?info( "Deleted." ),
 
@@ -827,8 +813,8 @@ onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
 onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	% Typically: "Received exit message '{{nocatch,
-	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
-	%							FunName,Arity,Args,AtomCause}}, [...]}"
+	%   {wooper_oneway_failed,<0.44.0>,class_XXX,
+	%       FunName,Arity,Args,AtomCause}}, [...]}"
 
 	FQDN = ?getAttr(fqdn),
 

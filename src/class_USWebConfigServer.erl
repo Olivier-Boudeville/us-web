@@ -552,14 +552,14 @@ construct( State, SupervisorPid, AppRunContext ) ->
 
 	% Other attributes set by the next function:
 	SupState = setAttributes( TraceState, [
-					{ app_run_context, AppRunContext },
-					{ us_web_supervisor_pid, SupervisorPid },
-					{ dispatch_routes, undefined },
-					{ dispatch_rules, undefined },
-					{ cert_directory, undefined },
-					{ leec_agents_key_path, undefined },
-					{ dh_key_path, undefined },
-					{ ca_cert_key_path, undefined } ] ),
+		{ app_run_context, AppRunContext },
+		{ us_web_supervisor_pid, SupervisorPid },
+		{ dispatch_routes, undefined },
+		{ dispatch_rules, undefined },
+		{ cert_directory, undefined },
+		{ leec_agents_key_path, undefined },
+		{ dh_key_path, undefined },
+		{ ca_cert_key_path, undefined } ] ),
 
 	CfgState = load_and_apply_configuration( SupState ),
 
@@ -696,9 +696,9 @@ renewCertificates( State ) ->
 	% proceeding to the next one:
 	%
 	case wooper:send_acknowledged_oneway_in_turn(
-	  _OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
-	  _TargetInstancePIDs=CertManagers, MaxDurationInMs,
-	  _AckAtom=certificate_renewal_over ) of
+			_OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
+			_TargetInstancePIDs=CertManagers, MaxDurationInMs,
+			_AckAtom=certificate_renewal_over ) of
 
 		[] ->
 			?debug_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
@@ -869,8 +869,8 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 								"in domain '~ts', no report generated.",
 								[ BinHostName, BinDomainName ] ),
 							Host = text_utils:binary_to_string( BinHostName ),
-							Domain = text_utils:binary_to_string(
-										BinDomainName ),
+							Domain =
+								text_utils:binary_to_string( BinDomainName ),
 							{ report_generation_failed, {
 								{ host_not_found, Host }, { domain, Domain } } }
 
@@ -1220,30 +1220,18 @@ prepare_web_analysis(
 
 	ConfTemplatePath = file_utils:join( BinAwConfDir, "awstats.template.conf" ),
 
-	case file_utils:is_existing_file_or_link( ConfTemplatePath ) of
-
-		true ->
-			ok;
-
-		false ->
-			throw( { awstats_conf_template_not_found, ConfTemplatePath } )
-
-	end,
+	file_utils:is_existing_file_or_link( ConfTemplatePath ) orelse
+		throw( { awstats_conf_template_not_found, ConfTemplatePath } ),
 
 	LogAnalysisStateDir = file_utils:join( ?getAttr(data_directory),
 										   "log-analysis-state" ),
 
-	case file_utils:is_existing_directory_or_link( LogAnalysisStateDir ) of
-
-		true ->
-			ok;
-
-		false ->
+	file_utils:is_existing_directory_or_link( LogAnalysisStateDir ) orelse
+		begin
 			?debug_fmt( "Creating the directory to store the state of "
 				"the log analysis tool, '~ts'.", [ LogAnalysisStateDir ] ),
 			file_utils:create_directory( LogAnalysisStateDir )
-
-	end,
+		end,
 
 	% Common to all virtual hosts:
 	BaseTranslationTable = table:new(
@@ -1260,8 +1248,8 @@ prepare_web_analysis(
 	% Validates the target Awstats scripts:
 
 	% A binary better made later:
-	UpdateToolPath = file_utils:join( [ BinAnalysisUpdateToolRoot, "cgi-bin",
-										"awstats.pl" ] ),
+	UpdateToolPath = file_utils:join(
+		[ BinAnalysisUpdateToolRoot, "cgi-bin", "awstats.pl" ] ),
 
 	BinUpdateToolPath = case file_utils:is_user_executable( UpdateToolPath ) of
 
@@ -1323,18 +1311,16 @@ prepare_web_analysis(
 	end,
 
 	% Expanded from log_analysis_settings and returned;
-	#web_analysis_info{ tool=awstats,
-						update_tool_path=BinUpdateToolPath,
-						report_tool_path=BinReportToolPath,
-						template_content=TemplateContent,
+	#web_analysis_info{
+		tool=awstats,
+		update_tool_path=BinUpdateToolPath,
+		report_tool_path=BinReportToolPath,
+		template_content=TemplateContent,
 
-						% Where per-vhost configuration files shall be
-						% generated:
-						%
-						conf_dir=text_utils:string_to_binary( GenAwCfgDir ),
-						state_dir=text_utils:string_to_binary(
-									LogAnalysisStateDir ),
-						web_content_dir=BinMetaWebRoot }.
+		% Where per-vhost configuration files shall be generated:
+		conf_dir=text_utils:string_to_binary( GenAwCfgDir ),
+		state_dir=text_utils:string_to_binary( LogAnalysisStateDir ),
+		web_content_dir=BinMetaWebRoot }.
 
 
 
@@ -1375,8 +1361,8 @@ determine_meta_web_root_for( _VHostInfos=[], _DomainId, _MaybeBinDefaultWebRoot,
 
 % Meta found:
 determine_meta_web_root_for(
-  _VHostInfos=[ { VHostId, ContentRoot, _WebKind=meta } | _T ],
-  DomainId, MaybeBinDefaultWebRoot, State ) ->
+		_VHostInfos=[ { VHostId, ContentRoot, _WebKind=meta } | _T ],
+		DomainId, MaybeBinDefaultWebRoot, State ) ->
 	ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot,
 									 VHostId, DomainId, State );
 
@@ -1429,8 +1415,8 @@ process_domain_routes( _UserRoutes=[ { DomainName, VHostInfos } | T ],
 
 	DomainInfo = { BinDomainName, MaybeCertManagerPid, VHostTable },
 
-	NewAccVTable = table:add_new_entry( _K=BinDomainName, _V=DomainInfo,
-										AccVTable ),
+	NewAccVTable =
+		table:add_new_entry( _K=BinDomainName, _V=DomainInfo, AccVTable ),
 
 	% Order matters:
 	NewAccRoutes = VHostRoutes ++ AccRoutes,
@@ -1587,7 +1573,7 @@ build_vhost_table( DomainId,
 	undefined = ?getAttr(meta_web_settings),
 
 	SetState = setAttribute( State, meta_web_settings,
-		{ DomainId, BinVHost, BinMetaContentRoot } ),
+							 { DomainId, BinVHost, BinMetaContentRoot } ),
 
 	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
 		DomainId, BinVHost, MaybeCertManagerPid, BinLogDir, CertSupport,
@@ -1654,8 +1640,8 @@ build_vhost_table( _DomainId,
 	throw( { unknown_web_kind, UnknownWebKind } );
 
 build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
-	   _MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
-	   _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
+		_MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
+		_MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
 	throw( { invalid_virtual_host_config, InvalidVHostConfig, DomainId } ).
 
 
@@ -1765,7 +1751,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 		text_utils:update_with_keywords( TemplateContent, TranslationTable ),
 
 	%LogConfFilename = class_USWebLogger:get_file_prefix_for( DomainId, VHostId,
-	%											LogAnalysisTool ) ++ ".conf",
+	%                                   LogAnalysisTool ) ++ ".conf",
 
 	LogConfFilename = class_USWebLogger:get_conf_filename_for( DomainId,
 							VHostId, LogAnalysisTool ),
@@ -1890,19 +1876,14 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 
 	NormContentRoot = file_utils:normalise_path( ActualContentRoot ),
 
-	case file_utils:is_existing_directory_or_link( NormContentRoot ) of
-
-		true ->
-			ok;
-
-		false ->
+	file_utils:is_existing_directory_or_link( NormContentRoot ) orelse
+		begin
 			HostDesc = describe_host( VHostId, DomainId ),
 			?warning_fmt( "For the ~ts, the specified meta content root "
-						  "('~ts') does not exist, creating it.",
-						  [ HostDesc, NormContentRoot ] ),
+				"('~ts') does not exist, creating it.",
+				[ HostDesc, NormContentRoot ] ),
 			file_utils:create_directory( NormContentRoot )
-
-	end,
+		end,
 
 	text_utils:string_to_binary( NormContentRoot ).
 
@@ -2249,8 +2230,8 @@ set_as_forward_paths(
 						  [ FWPath | Acc ] );
 
 set_as_forward_paths(
-  _PathsList=[ { PathMatch, Constraints, _Handler, _InitialState } | T ],
-  NewHandlerModule, NewHandlerInitialState, Acc ) ->
+		_PathsList=[ { PathMatch, Constraints, _Handler, _InitialState } | T ],
+		NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
 	FWPath = { PathMatch, Constraints, NewHandlerModule,
 			   NewHandlerInitialState },
@@ -2332,13 +2313,13 @@ manage_registrations( ConfigTable, State ) ->
 		[ CfgRegName, CfgRegScope, SchedPid, SchedRegName, SchedRegScope ] ),
 
 	setAttributes( State, [
-			% Inherited:
-			{ registration_name, CfgRegName },
-			{ registration_scope, CfgRegScope },
+		% Inherited:
+		{ registration_name, CfgRegName },
+		{ registration_scope, CfgRegScope },
 
-			{ scheduler_registration_name, SchedRegName },
-			{ scheduler_registration_scope, SchedRegScope },
-			{ us_web_scheduler_pid, SchedPid } ] ).
+		{ scheduler_registration_name, SchedRegName },
+		{ scheduler_registration_scope, SchedRegScope },
+		{ us_web_scheduler_pid, SchedPid } ] ).
 
 
 
@@ -2935,8 +2916,8 @@ set_log_tool_settings( { awstats, _MaybeAnalysisUpdateToolRoot=undefined,
 % Supposing both are defined or neither:
 set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
 						 AnalysisReportToolRoot }, State )
-  when is_list( AnalysisUpdateToolRoot )
-	   andalso is_list( AnalysisReportToolRoot ) ->
+			when is_list( AnalysisUpdateToolRoot )
+				 andalso is_list( AnalysisReportToolRoot ) ->
 
 	BinUpdateToolRoot =
 			case file_utils:is_existing_directory_or_link(
@@ -3250,7 +3231,7 @@ initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
 
 			[ ok = application:set_env( _App=simple_bridge, Param, Value,
 										_Opts=[ { persistent, true } ] )
-				|| { Param, Value } <- Settings ],
+						|| { Param, Value } <- Settings ],
 
 			%[notice][erlang_logger]     args: [{throw,
 			%               {handler_not_found_in_context,crash_handler,

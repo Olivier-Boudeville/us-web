@@ -155,27 +155,32 @@ read_us_web_config_file()
 
 	#echo "us_web_username = $us_web_username"
 
-
 	us_web_app_base_dir=$(echo "${us_web_base_content}" | grep us_web_app_base_dir | sed 's|^{[[:space:]]*us_web_app_base_dir,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
 	if [ -z "${us_web_app_base_dir}" ]; then
+
+		echo "(us_web_app_base_dir not set in '${us_web_config_file}')"
 
 		# Environment variable as last-resort:
 		if [ -z "${US_WEB_APP_BASE_DIR}" ]; then
 
 			if [ "${us_launch_type}" = "native" ]; then
 
-				# As sourced from us_web directly:
-				us_web_app_base_dir="$(pwd)"
+				us_web_app_base_dir="${us_web_install_root}"
 
 				echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it, in a native context, from the current directory, and trying '${us_web_app_base_dir}'."
 
 			else
 
 				# Wild guess:
-				us_web_app_base_dir=$(/bin/ls -d ${us_app_base_dir}/../../*/us_web 2>/dev/null | xargs realpath)
+				us_web_app_base_dir=$(/bin/ls -d ${us_app_base_dir}/../../*/us_web 2>/dev/null | xargs realpath 2>/dev/null)
 
-				echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it from the release-dependent US application one: trying '${us_web_app_base_dir}'."
+				if [ -z "${us_web_app_base_dir}" ]; then
+					echo "Failed to extrapolate US-Web base directory from the US one ('${us_app_base_dir}')." 1>&2
+					exit 44
+				else
+					echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it from the release-dependent US application one: trying '${us_web_app_base_dir}'."
+				fi
 
 			fi
 
@@ -562,6 +567,7 @@ inspect_us_web_log()
 	# files:
 	#
 	us_web_vm_log_file=$(/bin/ls -t ${us_web_vm_log_dir}/erlang.log.* 2>/dev/null | head -n 1)
+
 	# Apparently a log file may vanish/be replaced, so:
 	attempts=1
 	max_attempts=8
@@ -569,10 +575,10 @@ inspect_us_web_log()
 	while [ ! ${attempts} -eq ${max_attempts} ] && [ ! -f "${us_web_vm_log_file}" ]; do
 
 		if [ -z "${us_web_vm_log_file}" ]; then
-			echo "(no VM log file found, attempt ${attempts}/${max_attempts})"
+			echo "  (no VM log file found in '${us_web_vm_log_dir}', attempt ${attempts}/${max_attempts})"
 		else
 			# Might happen:
-			echo "(VM log file '${us_web_vm_log_file}' not found, attempt ${attempts}/${max_attempts})"
+			echo "  (warning: VM log file '${us_web_vm_log_file}' not found, attempt ${attempts}/${max_attempts})"
 		fi
 
 		sleep 1

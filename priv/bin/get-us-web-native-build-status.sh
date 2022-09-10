@@ -9,7 +9,11 @@
 
 # See also start-us-web-native-build.sh and stop-us-web-native-build.sh.
 
-usage="Usage: $(basename $0): returns the status of a supposedly locally-running US-Web native release."
+# To debug such scripts, comment out the silencing redirections around the calls
+# to read_us_*config_file calls.
+
+
+usage="Usage: $(basename $0): returns the status of a supposedly-running US-Web native release."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -26,6 +30,9 @@ fi
 
 release_base="/opt/universal-server/us_web-native"
 
+# The release is the parent directory containing myriad, wooper, us_common,
+# us_web, etc.:
+#
 us_web_rel_root="$(/bin/ls -d -t ${release_base}-* 2>/dev/null | head -n 1)"
 
 if [ ! -d "${us_web_rel_root}" ]; then
@@ -49,9 +56,12 @@ fi
 # Location expected also by us-common.sh afterwards:
 cd "${us_web_rel_root}"
 
+us_common_root="${us_web_rel_root}/us_common"
+
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
-us_web_common_script="lib/us_web-native/priv/bin/${us_web_common_script_name}"
+
+us_web_common_script="us_web/priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
@@ -60,12 +70,14 @@ if [ ! -f "${us_web_common_script}" ]; then
 
 fi
 
+# Read by next script:
+us_web_install_root="${us_web_rel_root}/us_web"
+us_launch_type="native"
+
+# Comment out redirections for more details:
+
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" 1>/dev/null
-
-
-
-# Comment redirections for more details:
 
 read_us_config_file "$1" 1>/dev/null
 
@@ -75,7 +87,7 @@ read_us_web_config_file 1>/dev/null
 # No specific update/check needs regarding vm.args (no VM launched).
 
 echo
-echo " -- Getting status of the us_web native application possibly running as user '${us_web_username}' (EPMD port: ${erl_epmd_port}), from '${us_web_rel_dir}'..."
+echo " -- Getting status of the us_web native application possibly running as user '${us_web_username}' (EPMD port: ${erl_epmd_port}), from '${us_web_install_root}'..."
 
 
 # Yes, twice:

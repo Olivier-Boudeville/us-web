@@ -26,7 +26,7 @@ Technical Manual of the ``Universal Webserver``
 
 
 :raw-html:`<center><img src="us-web-title.png" id="responsive-image-medium"></img>`
-:raw-latex:`\centering \includegraphics[scale=1.6]{us-web-title.png}`
+:raw-latex:`\begin{center} \includegraphics[scale=1.6]{us-web-title.png} \end{center}`
 
 
 

@@ -439,7 +439,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
 		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
 
-	LEECFsmPid = case leec:start( StartOpts, BridgeSpec ) of
+	LEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
 
 		{ ok, FsmPid } ->
 			?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
@@ -450,6 +450,12 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 			?error_fmt( "Initialization of LEEC failed: ~p.~n"
 				"Start options were:~n  ~p", [ Reason, StartOpts ] ),
 			throw( { leec_initialization_failed, Reason } )
+
+
+			catch AnyClass:Exception ->
+				?error_fmt( "Starting failed, with a thrown exception ~p "
+							"(of class: ~p).", [ Exception, AnyClass ] ),
+				throw( { leec_initialization_failed, Exception, AnyClass } )
 
 	end,
 
@@ -468,20 +474,16 @@ destruct( State ) ->
 
 	CertTaskId = ?getAttr(cert_task_id),
 
-	case MaybeSchedPid of
-
-		undefined ->
-			ok;
-
-		_ ->
-			?debug( "Being destructed, unregistering from schedule." ),
+	MaybeSchedPid =:= undefined orelse
+		begin
+			?debug( "Being destructed, unregistering from scheduler." ),
 
 			% Any extra schedule trigger sent will be lost; not a problem, as it
 			% is a oneway:
 			%
 			MaybeSchedPid ! { unregisterTask, [ CertTaskId ], self() }
 
-	end,
+		end,
 
 	case ?getAttr(leec_pid) of
 
@@ -489,8 +491,19 @@ destruct( State ) ->
 			ok;
 
 		LeecPid ->
-			?debug( "Shutting down LEEC." ),
-			leec:stop( LeecPid )
+			%?debug
+			?warning_fmt( "Shutting down LEEC (~w).", [ LeecPid ] ),
+			try
+
+				leec:terminate( LeecPid )
+
+			catch AnyClass:Exception ->
+				?error_fmt( "Final termination failed, with a thrown "
+					"exception ~p (of class: ~p).", [ Exception, AnyClass ] )
+
+			end,
+
+			?warning_fmt( "LEEC (~w) shut down.", [ LeecPid ] )
 
 	end,
 
@@ -517,7 +530,7 @@ destruct( State ) ->
 % Method section.
 
 
-% @doc Renews asynchronously a certificate for the managed hostname.
+% @doc Renews asynchronously the certificate for the managed hostname.
 -spec renewCertificate( wooper:state() ) -> oneway_return().
 renewCertificate( State ) ->
 
@@ -531,7 +544,8 @@ renewCertificate( State ) ->
 
 
 
-% @doc Renews a certificate for the managed hostname on a synchronisable manner.
+% @doc Renews the certificate for the managed hostname on a synchronisable
+% manner.
 %
 % The specified listener is typically the US-Web configuration server, so that
 % HTTPS support can be triggered only when certificates are ready and/or to
@@ -564,7 +578,7 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 
 
 % (helper)
--spec request_certificate( wooper:state() ) ->  wooper:state().
+-spec request_certificate( wooper:state() ) -> wooper:state().
 request_certificate( State ) ->
 
 	% The task_id attribute may or may not be defined.
@@ -572,8 +586,8 @@ request_certificate( State ) ->
 	FQDN = ?getAttr(fqdn),
 
 	% We used to rely on a synchronous (blocking) call (no callback was used),
-	% which was a mistake (this certificate must remain responsive here; see
-	% implementation notes). Now using an asynchronous call instead.
+	% which was a mistake (this certificate manager must remain responsive here;
+	% see implementation notes); now using an asynchronous call instead.
 
 	% Closure:
 	Self = self(),
@@ -621,15 +635,21 @@ request_certificate( State ) ->
 			?warning_fmt( "New LEEC FSM ~w created for '~ts'.",
 						[ LEECPid, FQDN ] ),
 
-			async = leec:obtain_certificate_for( FQDN, LEECPid,
-				_CertReqOptionMap=#{ async => true,
-									 callback => Callback,
-									 sans => ActualSans } ),
+			try
+				async = leec:obtain_certificate_for( FQDN, LEECPid,
+							_CertReqOptionMap=#{ async => true,
+												 callback => Callback,
+												 sans => ActualSans } ),
+				%?debug
+				?warning( "Certificate creation request initiated." ),
+				setAttribute( State, leec_pid, LEECPid )
 
-			%?debug
-			?warning( "Certificate creation request initiated." ),
+			catch AnyClass:Exception ->
+				?error_fmt( "Certificate request failed, with a thrown "
+					"exception ~p (of class: ~p).", [ Exception, AnyClass ] ),
+				State
 
-			setAttribute( State, leec_pid, LEECPid );
+			end;
 
 		Error ->
 			?critical_fmt( "Error when (re)starting LEEC: ~p, "
@@ -726,7 +746,18 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 			State;
 
 		LEECFsmPid ->
-			leec:stop( LEECFsmPid ),
+			% Not just stopping it:
+			try
+
+				leec:terminate( LEECFsmPid )
+
+			catch AnyClass:Exception ->
+				?error_fmt( "Termination after renewal failed, "
+							"with a thrown exception ~p (of class: ~p).",
+							[ Exception, AnyClass ] )
+
+			end,
+
 			% No more reuse between renewals:
 			setAttribute( State, leec_pid, undefined )
 
@@ -749,7 +780,6 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 					?warning( "No certificate renewal will be attempted "
 						   "(no periodicity defined)." ),
 					ShutState;
-
 
 				RenewDelay ->
 
@@ -802,7 +832,15 @@ getChallenge( State, TargetPid ) ->
 	?warning_fmt( "Requested to return the current thumbprint challenges "
 		"from LEEC FSM ~w, on behalf of (and to) ~w.", [ FSMPid, TargetPid ] ),
 
-	leec:send_ongoing_challenges( FSMPid, TargetPid ),
+	try
+
+		leec:send_ongoing_challenges( FSMPid, TargetPid )
+
+	catch AnyClass:Exception ->
+		?error_fmt( "Sending of challenges failed, with a thrown "
+					"exception ~p (of class: ~p).", [ Exception, AnyClass ] )
+
+	end,
 
 	wooper:const_return().
 
@@ -844,8 +882,8 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
 				   ?getAttr(private_key_path), State ),
 
-	?info_fmt( "New LEEC instance started for '~ts': ~w; requesting new "
-			   "certificate.", [ FQDN, LEECPid ] ),
+	?warning_fmt( "New LEEC instance started for '~ts': ~w; requesting new "
+				  "certificate.", [ FQDN, LEECPid ] ),
 
 	% Immediately retries:
 	self() ! renewCertificate,

@@ -224,7 +224,7 @@ if [ $do_clone -eq 0 ]; then
 	# Parent already exists by design; ensuring any normal user can write the
 	# content to install next:
 	#
-	( sudo mkdir --mode=777 "${native_install_dir}" ) && cd "${native_install_dir}"
+	(sudo mkdir --mode=777 "${native_install_dir}") && cd "${native_install_dir}"
 
 	clone_opts="--quiet"
 
@@ -623,8 +623,8 @@ if [ ${do_build} -eq 0 ]; then
 		# cd simple_bridge
 
 		# if ! ${make} all; then
-		#	echo " Error, the build of simple_bridge failed." 1>&2
-		#	exit 70
+		#   echo " Error, the build of simple_bridge failed." 1>&2
+		#   exit 70
 		# fi
 
 		# cd ..
@@ -635,8 +635,8 @@ if [ ${do_build} -eq 0 ]; then
 		# cd qdate
 
 		# if ! ${make} all; then
-		#	echo " Error, the build of qdate failed." 1>&2
-		#	exit 75
+		#   echo " Error, the build of qdate failed." 1>&2
+		#   exit 75
 		# fi
 
 		# cd ..
@@ -647,8 +647,8 @@ if [ ${do_build} -eq 0 ]; then
 		# cd nprocreg
 
 		# if ! ${make} all; then
-		#	echo " Error, the build of nprocreg failed." 1>&2
-		#	exit 80
+		#   echo " Error, the build of nprocreg failed." 1>&2
+		#   exit 80
 		# fi
 
 		# cd ..

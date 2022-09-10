@@ -134,34 +134,39 @@ If the whole deployment procedure went smoothly, then only switch back to ``{cer
 Native Deployment (recommended)
 ===============================
 
-This procedure relies on our *native* build/run system, which is the only one that is officially supported in the context of US-Web.
+This procedure relies on our *native* build/run system, which is the only one that is officially supported in the context of US-Web, and involves only two steps.
 
-First step is to:
+**First step** is to:
 
 - create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
+
+- transfer to the target server our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script (in a US-Web clone, it is located in ``priv/bin``), possibly simply at the root of one's normal user
 
 - ensure that no prior webserver is running at the target port(s) (otherwise specify the ``--no-launch`` option below)
 
 
 After deployment the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
 
+Step #2 exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.
 
 
 Direct, Ad Hoc Deployment
 -------------------------
 
-It boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument.
+This **second step** boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument.
 
 
 
 Deployment for Systemd Integration (recommended)
 ------------------------------------------------
 
-If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), following procedure shall be preferred:
+If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` file), the following procedure shall be preferred for this **second step**:
 
 .. code:: bash
 
- # Get ready first (as a regular user):
+ # Get ready first (as a regular user; sudo permissions to be
+ # requested only whenever necessary):
+ #
  $ ./deploy-us-web-native-build.sh --no-launch
 
  # Useful, as Systemd shall detect the update of the US-Web service file:
@@ -468,18 +473,17 @@ It is useful to regularly upgrade the US-Web code while maintaining the data it 
 
 This notably includes the information such as the state of the log analysis tool (i.e. the synthesis aggregated after having processed a potentially longer history of access logs when rotating them) or the currently generated certificates (which are not always easy to renew frequently, if having to respect rate limits) [#]_.
 
-.. [#] As for access/error logs, their storage location is discussed in the `Webserver Logs`_ section.
+.. [#] Access/error logs and the own US-Web traces are not considered belonging to the application data; their storage location is discussed in the `Webserver Logs`_ section.
 
 
 These various states are stored in the **US-Web data directory**, which can be set, by decreasing order of priority:
 
-- in the ``us_web_data_dir`` entry of the US-Web configuration file, as an absolute directory, or as one that is relative to the US-Web application base directory (see `US-Web Application Base Directory`_), then as ``US_WEB_APP_BASE_DIR/us-web-data``
+- in the ``us_web_data_dir`` entry of the US-Web configuration file, as an absolute directory, or as one that is relative to the US-Web application base directory (see `US-Web Application Base Directory`_), then as ``US_WEB_APP_BASE_DIR/data``
 - otherwise in the ``US_WEB_DATA_DIR`` environment variable
 
-If the default path for this location is ``us_web/us-web-data`` (relatively to the US-Web instance, typically deployed in ``/opt/universal-server/us_web-native``), a recommended practice is nevertheless to set this location explicitly *outside* of that instance so that the instance can be upgraded/replaced without any loss of state.
+If the default path for this location is ``us-web-data`` (relatively to the US-Web instance base directory, typically deployed in ``/opt/universal-server/us_web-native``), a recommended practice is nevertheless to set this location explicitly *outside* of that instance so that the instance can be upgraded/replaced without any loss of state.
 
 So the ``us_web_data_dir`` entry might be set in the US-Web configuration file for example to ``/opt/universal-server/us_web-data``. Of course, as always, proper permissions shall be set in this data tree as well.
-
 
 Let's designate this directory from now on with the ``US_WEB_DATA_DIR`` pseudo-variable.
 
@@ -633,7 +637,7 @@ Webserver Logs
 
 These logs, which are maybe less useful for troubleshooting, designate access and error logs, per virtual host (ex: for a virtual host ``VH``, ``access-for-VH.log`` and ``error-for-VH.log``). Their previous versions are archived in timestamped, compressed files (ex: ``error-for-VH.Y-M-D-at-H-M-S.xz``).
 
-These files will be written in the directory designated by the ``us_web_log_dir`` entry of the US-Web configuration file. Refer to the previous section to locate this file.
+These files will be written in the directory designated by the ``us_web_log_dir`` entry of the US-Web configuration file. Refer to the previous section to locate this directory (for example it may be ``/var/log/universal-server/us-web``).
 
 
 
@@ -1218,6 +1222,38 @@ If desperate enough, one may also run, possibly from another host, and based on 
  pong
 
 Then one may switch to the *Job control mode* (JCL) by pressing ``Ctrl-G`` then ``r`` to start a remote job on the US-Web node.
+
+
+
+Forcing Certificate Renewal Without Restarting the Server
+=========================================================
+
+The renewal of certificates is a rather error-prone operation, as it involves third-party (ACME) servers, which additionally enforce various rate limits.
+
+Moreover this operation will be triggered automatically a long time [#]_ after the server has been launched, in the background, so its silent failure shall be considered (even though the traces should duly keep track of it).
+
+.. [#] Refer to the ``dhms_cert_renewal_period_{development,production}`` defines in ``class_USCertificateManager``; typically, in production mode, 70 days are to elapse between two renewals.
+
+So the goal is to trigger the ``renewCertificate/1`` oneway of the certificate manager of each website. This can be done simply by triggering the ``renewCertificates/1`` request of the US-Web configuration server - which happens to be a registered process.
+
+To determine the name and scope of this server and the various Erlang settings (EPMD port and Erlang cookie) that will be needed in order to connect to the US node, one may read one's US configuration, typically in ``/etc/xdg/universal-server/us.config``, for: ``vm_cookie``, ``epmd_port`` and ``us_web_config_filename``, the configuration file from which ``us_web_config_server_registration_name`` can be obtained.
+
+It may be safer to monitor remotely from then on the traces of that server, using for that the ``priv/bin/monitor-us-web.sh`` script.
+
+Then, when logged on the server, or from any client able to connect to it:
+
+.. code:: bash
+
+ # We are using short names here:
+ $ ERL_EPMD_PORT=4506 erl -sname renewer -setcookie 'MY_VM_COOKIE'
+ (renewer@tempest)1> net_adm:ping('us_web@hurricane').
+ pong
+ (renewer@tempest)2> CfgSrvPid = global:whereis_name('my_name_for_the_us_web_config_server').
+ <9385.172.0>
+ (renewer@tempest)3> CfgSrvPid ! {renewCertificates, [], self()}.
+ {renewCertificates,[],<0.94.0>}
+ % Expecting certificate_renewals_over:
+ (renewer@tempest)4> receive {wooper_result,R} -> io:format("Received: ~p~n", [R]) end.
 
 
 

@@ -16,7 +16,8 @@ After=network.target
 Type=forking
 
 
-# The two scripts below are typically symlinks pointing to an install of US-Web.
+# The two Exec scripts below are typically symlinks pointing to an install of
+# US-Web.
 
 # To inspect the outputs, use:
 # journalctl --pager-end --unit=us-web-as-native-build.service

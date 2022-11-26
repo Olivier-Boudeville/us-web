@@ -120,8 +120,8 @@ fi
 
 
 # Selects the (build-time) execution target for all Ceylan layers:
-#execution_target="development"
-execution_target="production"
+execution_target="development"
+#execution_target="production"
 
 ceylan_opts="EXECUTION_TARGET=${execution_target}"
 

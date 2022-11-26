@@ -331,6 +331,9 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 
 	%?send_info( TraceState, "Construction started." ),
 
+	% WOOPER crashes without logs?
+	logger:error( "Test from certicate manager ~w.", [ self() ] ),
+
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
 	%
@@ -358,8 +361,8 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 	?send_info_fmt( ReadyState, "Constructed: ~ts.",
 					[ to_string( ReadyState ) ] ),
 
-	% Would be too early, as the HTTP webserver needed to validate the ACME
-	% challenges is not launched yet:
+	% Would be too early, as the HTTP webserver, which is needed to validate the
+	% ACME challenges, is not launched yet:
 	%
 	% self() ! renewCertificate,
 
@@ -439,27 +442,34 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
 		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
 
-	LEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
+	% We used to create once for all a LEEC FSM, yet several months may elapse
+	% between two renewals, and keeping around a LEEC instance and its
+	% connection cache has no interest; so now we spawn such an instance for
+	% each need (see request_certificate/1):
 
-		{ ok, FsmPid } ->
-			?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
-				"following start options:~n  ~p", [ FsmPid, StartOpts ] ),
-			FsmPid;
+	%MaybeLEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
+	%
+	%	{ ok, FsmPid } ->
+	%		?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
+	%			"following start options:~n  ~p", [ FsmPid, StartOpts ] ),
+	%		FsmPid;
+	%
+	%	{ error, Reason } ->
+	%		?error_fmt( "Initialization of LEEC failed: ~p.~n"
+	%			"Start options were:~n  ~p", [ Reason, StartOpts ] ),
+	%		throw( { leec_initialization_failed, Reason } )
+	%
+	%
+	%		catch AnyClass:Exception ->
+	%			?error_fmt( "Starting failed, with a thrown exception ~p "
+	%						"(of class: ~p).", [ Exception, AnyClass ] ),
+	%			throw( { leec_initialization_failed, Exception, AnyClass } )
+	%
+	%end,
 
-		{ error, Reason } ->
-			?error_fmt( "Initialization of LEEC failed: ~p.~n"
-				"Start options were:~n  ~p", [ Reason, StartOpts ] ),
-			throw( { leec_initialization_failed, Reason } )
+	MaybeLEECFsmPid = undefined,
 
-
-			catch AnyClass:Exception ->
-				?error_fmt( "Starting failed, with a thrown exception ~p "
-							"(of class: ~p).", [ Exception, AnyClass ] ),
-				throw( { leec_initialization_failed, Exception, AnyClass } )
-
-	end,
-
-	{ LEECFsmPid, RenewPeriodSecs, StartOpts, BridgeSpec }.
+	{ MaybeLEECFsmPid, RenewPeriodSecs, StartOpts, BridgeSpec }.
 
 
 
@@ -472,7 +482,7 @@ destruct( State ) ->
 
 	MaybeSchedPid = ?getAttr(scheduler_pid),
 
-	CertTaskId = ?getAttr(cert_task_id),
+	CertTaskId = ?getAttr(task_id),
 
 	MaybeSchedPid =:= undefined orelse
 		begin
@@ -734,6 +744,9 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 					  wooper:state() ) -> wooper:state().
 manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
+	?warning_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
+				  [ MaybeRenewDelay ] ),
+
 	% In all cases we shut down our LEEC instance, as it cannot linger between
 	% longer renewals:
 	%
@@ -753,8 +766,8 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Termination after renewal failed, "
-							"with a thrown exception ~p (of class: ~p).",
-							[ Exception, AnyClass ] )
+					"with a thrown exception ~p (of class: ~p).",
+					[ Exception, AnyClass ] )
 
 			end,
 
@@ -764,6 +777,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 	end,
 
 	% Switching to warning to remain available in production mode:
+	?warning( "Continuing in manage_renewal/1" ),
 	SchedState = case ?getAttr(scheduler_pid) of
 
 		undefined ->
@@ -782,11 +796,11 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 					ShutState;
 
 				RenewDelay ->
+					?warning( "Preparing task"),
 
 					% A bit of interleaving:
 					SchedPid ! { registerOneshotTask, [ _Cmd=renewCertificate,
 								 _Delay=RenewDelay, _ActPid=self() ], self() },
-
 					NextTimestamp = time_utils:offset_timestamp(
 						time_utils:get_timestamp(), RenewDelay ),
 
@@ -1108,7 +1122,7 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 
 
 
-% @doc Returns a textual description of this server.
+% @doc Returns a textual description of this manager.
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 
@@ -1118,7 +1132,7 @@ to_string( State ) ->
 			"no periodic renewal";
 
 		PeriodSecs ->
-			text_utils:format( "with a renewal every ~ts",
+			text_utils:format( "a renewal every ~ts",
 				[ time_utils:duration_to_string( 1000 * PeriodSecs ) ] )
 
 	end,
@@ -1157,7 +1171,7 @@ to_string( State ) ->
 	end,
 
 	text_utils:format( "US certificate manager for '~ts' in ~ts mode, "
-		"using certificate directory '~ts', with ~ts, using ~ts, with ~ts; "
+		"using certificate directory '~ts', with ~ts, using ~ts, ~ts; "
 		"it is to specify ~ts",
 		[ ?getAttr(fqdn), ?getAttr(cert_mode), ?getAttr(cert_dir), PeriodStr,
 		  FSMStr, CertStr, SansStr ] ).

@@ -32,7 +32,7 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Saturday, September 10, 2022</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Saturday, November 26, 2022</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.0.21</p>
@@ -105,28 +105,29 @@
 <li><a class="reference internal" href="#configuration-hints" id="toc-entry-34">Configuration Hints</a></li>
 <li><a class="reference internal" href="#execution-hints" id="toc-entry-35">Execution Hints</a></li>
 <li><a class="reference internal" href="#monitoring-hints" id="toc-entry-36">Monitoring Hints</a></li>
+<li><a class="reference internal" href="#forcing-certificate-renewal-without-restarting-the-server" id="toc-entry-37">Forcing Certificate Renewal Without Restarting the Server</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#standard-log-generation-analysis" id="toc-entry-37">Standard Log Generation &amp; Analysis</a><ul>
-<li><a class="reference internal" href="#web-analytics-software-choice-of-tool" id="toc-entry-38">Web Analytics Software: Choice of Tool</a></li>
-<li><a class="reference internal" href="#log-format" id="toc-entry-39">Log Format</a></li>
-<li><a class="reference internal" href="#awstats-management" id="toc-entry-40">Awstats Management</a></li>
-<li><a class="reference internal" href="#geolocation-with-awstats" id="toc-entry-41">Geolocation with Awstats</a></li>
+<li><a class="reference internal" href="#standard-log-generation-analysis" id="toc-entry-38">Standard Log Generation &amp; Analysis</a><ul>
+<li><a class="reference internal" href="#web-analytics-software-choice-of-tool" id="toc-entry-39">Web Analytics Software: Choice of Tool</a></li>
+<li><a class="reference internal" href="#log-format" id="toc-entry-40">Log Format</a></li>
+<li><a class="reference internal" href="#awstats-management" id="toc-entry-41">Awstats Management</a></li>
+<li><a class="reference internal" href="#geolocation-with-awstats" id="toc-entry-42">Geolocation with Awstats</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#managing-public-key-certificates" id="toc-entry-42">Managing Public-Key Certificates</a><ul>
-<li><a class="reference internal" href="#x-509-certificates" id="toc-entry-43">X.509 Certificates</a></li>
-<li><a class="reference internal" href="#let-s-encrypt" id="toc-entry-44">Let's Encrypt</a></li>
-<li><a class="reference internal" href="#us-web-mode-of-operation" id="toc-entry-45">US-Web Mode of Operation</a></li>
-<li><a class="reference internal" href="#settings" id="toc-entry-46">Settings</a></li>
-<li><a class="reference internal" href="#https-troubleshooting" id="toc-entry-47">HTTPS Troubleshooting</a></li>
+<li><a class="reference internal" href="#managing-public-key-certificates" id="toc-entry-43">Managing Public-Key Certificates</a><ul>
+<li><a class="reference internal" href="#x-509-certificates" id="toc-entry-44">X.509 Certificates</a></li>
+<li><a class="reference internal" href="#let-s-encrypt" id="toc-entry-45">Let's Encrypt</a></li>
+<li><a class="reference internal" href="#us-web-mode-of-operation" id="toc-entry-46">US-Web Mode of Operation</a></li>
+<li><a class="reference internal" href="#settings" id="toc-entry-47">Settings</a></li>
+<li><a class="reference internal" href="#https-troubleshooting" id="toc-entry-48">HTTPS Troubleshooting</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#planned-enhancements" id="toc-entry-48">Planned Enhancements</a></li>
-<li><a class="reference internal" href="#about-nitrogen-possibly-future-support" id="toc-entry-49">About Nitrogen (possibly future) Support</a></li>
-<li><a class="reference internal" href="#support" id="toc-entry-50">Support</a></li>
-<li><a class="reference internal" href="#please-react" id="toc-entry-51">Please React!</a></li>
-<li><a class="reference internal" href="#ending-word" id="toc-entry-52">Ending Word</a></li>
+<li><a class="reference internal" href="#planned-enhancements" id="toc-entry-49">Planned Enhancements</a></li>
+<li><a class="reference internal" href="#about-nitrogen-possibly-future-support" id="toc-entry-50">About Nitrogen (possibly future) Support</a></li>
+<li><a class="reference internal" href="#support" id="toc-entry-51">Support</a></li>
+<li><a class="reference internal" href="#please-react" id="toc-entry-52">Please React!</a></li>
+<li><a class="reference internal" href="#ending-word" id="toc-entry-53">Ending Word</a></li>
 </ul>
 </div>
 <p></p>
@@ -176,22 +177,26 @@
 <p>If the whole deployment procedure went smoothly, then only switch back to <tt class="docutils literal">{certificate_mode, production}</tt> and restart US-Web, in order to rely on the actual ACME servers and thus obtain the intended final certificates.</p>
 <div class="section" id="native-deployment-recommended">
 <h2><a class="toc-backref" href="#toc-entry-5">Native Deployment (recommended)</a></h2>
-<p>This procedure relies on our <em>native</em> build/run system, which is the only one that is officially supported in the context of US-Web.</p>
-<p>First step is to:</p>
+<p>This procedure relies on our <em>native</em> build/run system, which is the only one that is officially supported in the context of US-Web, and involves only two steps.</p>
+<p><strong>First step</strong> is to:</p>
 <ul class="simple">
 <li>create a <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server</span></tt> directory in which a relevant US configuration file (<tt class="docutils literal">us.config</tt>) is added, referencing a suitable US-Web configuration file (ex: <tt class="docutils literal"><span class="pre">foobar-us-web.config</span></tt>) located in the same directory; refer to the <a class="reference internal" href="#configuring-the-universal-webserver">Configuring the Universal-Webserver</a> section</li>
+<li>transfer to the target server our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh">deploy-us-web-native-build.sh</a> script (in a US-Web clone, it is located in <tt class="docutils literal">priv/bin</tt>), possibly simply at the root of one's normal user</li>
 <li>ensure that no prior webserver is running at the target port(s) (otherwise specify the <tt class="docutils literal"><span class="pre">--no-launch</span></tt> option below)</li>
 </ul>
 <p>After deployment the installation itself will be located by default in the <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-native</span></tt> directory.</p>
+<p>Step #2 exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.</p>
 <div class="section" id="direct-ad-hoc-deployment">
 <h3>Direct, Ad Hoc Deployment</h3>
-<p>It boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh">deploy-us-web-native-build.sh</a> script, with no specific argument.</p>
+<p>This <strong>second step</strong> boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh">deploy-us-web-native-build.sh</a> script, with no specific argument.</p>
 </div>
 <div class="section" id="deployment-for-systemd-integration-recommended">
 <h3>Deployment for Systemd Integration (recommended)</h3>
-<p>If relying on <tt class="docutils literal">systemctl</tt> (hence on our <tt class="docutils literal"><span class="pre">us-web-as-native-build.service</span></tt> file), following procedure shall be preferred:</p>
+<p>If relying on <tt class="docutils literal">systemctl</tt> (hence on our <tt class="docutils literal"><span class="pre">us-web-as-native-build.service</span></tt> file), the following procedure shall be preferred for this <strong>second step</strong>:</p>
 <pre class="code bash literal-block">
-<span class="c1"># Get ready first (as a regular user):
+<span class="c1"># Get ready first (as a regular user; sudo permissions to be
+# requested only whenever necessary):
+#
 </span>$ ./deploy-us-web-native-build.sh --no-launch
 
 <span class="c1"># Useful, as Systemd shall detect the update of the US-Web service file:
@@ -426,15 +431,15 @@ $ chmod <span class="m">770</span> <span class="si">${</span><span class="nv">LO
 <table class="docutils footnote" frame="void" id="footnote-4" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-4">[4]</a></td><td>As for access/error logs, their storage location is discussed in the <a class="reference internal" href="#webserver-logs">Webserver Logs</a> section.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-4">[4]</a></td><td>Access/error logs and the own US-Web traces are not considered belonging to the application data; their storage location is discussed in the <a class="reference internal" href="#webserver-logs">Webserver Logs</a> section.</td></tr>
 </tbody>
 </table>
 <p>These various states are stored in the <strong>US-Web data directory</strong>, which can be set, by decreasing order of priority:</p>
 <ul class="simple">
-<li>in the <tt class="docutils literal">us_web_data_dir</tt> entry of the US-Web configuration file, as an absolute directory, or as one that is relative to the US-Web application base directory (see <a class="reference internal" href="#us-web-application-base-directory">US-Web Application Base Directory</a>), then as <tt class="docutils literal"><span class="pre">US_WEB_APP_BASE_DIR/us-web-data</span></tt></li>
+<li>in the <tt class="docutils literal">us_web_data_dir</tt> entry of the US-Web configuration file, as an absolute directory, or as one that is relative to the US-Web application base directory (see <a class="reference internal" href="#us-web-application-base-directory">US-Web Application Base Directory</a>), then as <tt class="docutils literal">US_WEB_APP_BASE_DIR/data</tt></li>
 <li>otherwise in the <tt class="docutils literal">US_WEB_DATA_DIR</tt> environment variable</li>
 </ul>
-<p>If the default path for this location is <tt class="docutils literal"><span class="pre">us_web/us-web-data</span></tt> (relatively to the US-Web instance, typically deployed in <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-native</span></tt>), a recommended practice is nevertheless to set this location explicitly <em>outside</em> of that instance so that the instance can be upgraded/replaced without any loss of state.</p>
+<p>If the default path for this location is <tt class="docutils literal"><span class="pre">us-web-data</span></tt> (relatively to the US-Web instance base directory, typically deployed in <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-native</span></tt>), a recommended practice is nevertheless to set this location explicitly <em>outside</em> of that instance so that the instance can be upgraded/replaced without any loss of state.</p>
 <p>So the <tt class="docutils literal">us_web_data_dir</tt> entry might be set in the US-Web configuration file for example to <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-data</span></tt>. Of course, as always, proper permissions shall be set in this data tree as well.</p>
 <p>Let's designate this directory from now on with the <tt class="docutils literal">US_WEB_DATA_DIR</tt> pseudo-variable.</p>
 <p>This directory may notably gather following elements:</p>
@@ -534,7 +539,7 @@ $ tail -n <span class="m">50</span> -f /opt/universal-server/us_web-latest/us_we
 <div class="section" id="webserver-logs">
 <h3>Webserver Logs</h3>
 <p>These logs, which are maybe less useful for troubleshooting, designate access and error logs, per virtual host (ex: for a virtual host <tt class="docutils literal">VH</tt>, <tt class="docutils literal"><span class="pre">access-for-VH.log</span></tt> and <tt class="docutils literal"><span class="pre">error-for-VH.log</span></tt>). Their previous versions are archived in timestamped, compressed files (ex: <tt class="docutils literal"><span class="pre">error-for-VH.Y-M-D-at-H-M-S.xz</span></tt>).</p>
-<p>These files will be written in the directory designated by the <tt class="docutils literal">us_web_log_dir</tt> entry of the US-Web configuration file. Refer to the previous section to locate this file.</p>
+<p>These files will be written in the directory designated by the <tt class="docutils literal">us_web_log_dir</tt> entry of the US-Web configuration file. Refer to the previous section to locate this directory (for example it may be <tt class="docutils literal"><span class="pre">/var/log/universal-server/us-web</span></tt>).</p>
 </div>
 </div>
 <div class="section" id="remote-monitoring">
@@ -942,9 +947,36 @@ pong
 <p>Then one may switch to the <em>Job control mode</em> (JCL) by pressing <tt class="docutils literal"><span class="pre">Ctrl-G</span></tt> then <tt class="docutils literal">r</tt> to start a remote job on the US-Web node.</p>
 </div>
 </div>
+<div class="section" id="forcing-certificate-renewal-without-restarting-the-server">
+<h2><a class="toc-backref" href="#toc-entry-37">Forcing Certificate Renewal Without Restarting the Server</a></h2>
+<p>The renewal of certificates is a rather error-prone operation, as it involves third-party (ACME) servers, which additionally enforce various rate limits.</p>
+<p>Moreover this operation will be triggered automatically a long time <a class="footnote-reference" href="#footnote-8" id="footnote-reference-8">[8]</a> after the server has been launched, in the background, so its silent failure shall be considered (even though the traces should duly keep track of it).</p>
+<table class="docutils footnote" frame="void" id="footnote-8" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-8">[8]</a></td><td>Refer to the <tt class="docutils literal">dhms_cert_renewal_period_{development,production}</tt> defines in <tt class="docutils literal">class_USCertificateManager</tt>; typically, in production mode, 70 days are to elapse between two renewals.</td></tr>
+</tbody>
+</table>
+<p>So the goal is to trigger the <tt class="docutils literal">renewCertificate/1</tt> oneway of the certificate manager of each website. This can be done simply by triggering the <tt class="docutils literal">renewCertificates/1</tt> request of the US-Web configuration server - which happens to be a registered process.</p>
+<p>To determine the name and scope of this server and the various Erlang settings (EPMD port and Erlang cookie) that will be needed in order to connect to the US node, one may read one's US configuration, typically in <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server/us.config</span></tt>, for: <tt class="docutils literal">vm_cookie</tt>, <tt class="docutils literal">epmd_port</tt> and <tt class="docutils literal">us_web_config_filename</tt>, the configuration file from which <tt class="docutils literal">us_web_config_server_registration_name</tt> can be obtained.</p>
+<p>It may be safer to monitor remotely from then on the traces of that server, using for that the <tt class="docutils literal"><span class="pre">priv/bin/monitor-us-web.sh</span></tt> script.</p>
+<p>Then, when logged on the server, or from any client able to connect to it:</p>
+<pre class="code bash literal-block">
+<span class="c1"># We are using short names here:
+</span>$ <span class="nv">ERL_EPMD_PORT</span><span class="o">=</span><span class="m">4506</span> erl -sname renewer -setcookie <span class="s1">'MY_VM_COOKIE'</span>
+<span class="o">(</span>renewer&#64;tempest<span class="o">)</span><span class="m">1</span>&gt; net_adm:ping<span class="o">(</span><span class="s1">'us_web&#64;hurricane'</span><span class="o">)</span>.
+pong
+<span class="o">(</span>renewer&#64;tempest<span class="o">)</span><span class="m">2</span>&gt; <span class="nv">CfgSrvPid</span> <span class="o">=</span> global:whereis_name<span class="o">(</span><span class="s1">'my_name_for_the_us_web_config_server'</span><span class="o">)</span>.
+&lt;<span class="m">9385</span>.172.0&gt;
+<span class="o">(</span>renewer&#64;tempest<span class="o">)</span><span class="m">3</span>&gt; CfgSrvPid ! <span class="o">{</span>renewCertificates, <span class="o">[]</span>, self<span class="o">()}</span>.
+<span class="o">{</span>renewCertificates,<span class="o">[]</span>,&lt;<span class="m">0</span>.94.0&gt;<span class="o">}</span>
+% Expecting certificate_renewals_over:
+<span class="o">(</span>renewer&#64;tempest<span class="o">)</span><span class="m">4</span>&gt; receive <span class="o">{</span>wooper_result,R<span class="o">}</span> -&gt; io:format<span class="o">(</span><span class="s2">&quot;Received: ~p~n&quot;</span>, <span class="o">[</span>R<span class="o">])</span> end.
+</pre>
+</div>
 </div>
 <div class="section" id="standard-log-generation-analysis">
-<h1><a class="toc-backref" href="#toc-entry-37">Standard Log Generation &amp; Analysis</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-38">Standard Log Generation &amp; Analysis</a></h1>
 <p>The objective in this section is to have US-Web generate access logs like the standard webservers do, so that standard tools able to produce log analyses can be used afterwards. They may generate HTML pages, which can in turn be appropriately hosted directly by the US-Web framework itself.</p>
 <p>US-Web (rather than a <tt class="docutils literal">crontab</tt>) takes control of log writing, for full control onto the start, stop and rotation behaviours.</p>
 <p>For write efficiency, It is done by an (Erlang) process specific to a given virtual host (see <tt class="docutils literal">class_USWebLogger</tt>), and a task ring is used for synchronicity and load balancing with regard to log report generation.</p>
@@ -957,7 +989,7 @@ pong
 <p>At the Cowboy level, logging could be done as a <a class="reference external" href="https://ninenines.eu/docs/en/cowboy/2.7/guide/middlewares/">middleware</a>, yet we preferred to perform it directly in the handler (typically the static one, <tt class="docutils literal">us_web_static</tt>), presumably for a better control.</p>
 <p>Once access logs are produced, a specific tool is to generate reports out of them, as discussed in the next section.</p>
 <div class="section" id="web-analytics-software-choice-of-tool">
-<h2><a class="toc-backref" href="#toc-entry-38">Web Analytics Software: Choice of Tool</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-39">Web Analytics Software: Choice of Tool</a></h2>
 <p>The desired properties for such a tool are mainly: available as free software, trustable, standard, actively and well-maintained, running locally (as opposed to remote services such as Google Analytics), standalone, not resource-demanding, controllable, generating a local analysis (static) website, based only on basic webserver logs (not on a dedicated database, not on markers to be added to all webpages such as 1-pixel images), virtual-host compliant.</p>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/List_of_web_analytics_software">Various tools</a> can be considered, including (best spotted candidates, by increasing level of interest):</p>
 <ul class="simple">
@@ -970,7 +1002,7 @@ pong
 <p>So we finally retained <a class="reference external" href="https://awstats.sourceforge.io/">AWStats</a>.</p>
 </div>
 <div class="section" id="log-format">
-<h2><a class="toc-backref" href="#toc-entry-39">Log Format</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-40">Log Format</a></h2>
 <p>The most suitable log format that we spotted (see <a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_faq.html#PERSONALIZEDLOG">[1]</a> and <a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_config.html#LogFormat">[2]</a> for more information) is named &quot;<em>NCSA combined with several virtualhostname sharing same log file</em>&quot;.</p>
 <p>Its correct definition is exactly:</p>
 <pre class="literal-block">
@@ -995,7 +1027,7 @@ LogFormat=&quot;%host %other %logname %time1 %methodurl %code %bytesd %refererqu
 <p>In all these cases, the log separator is a single space (hence <tt class="docutils literal">LogSeparator=&quot; &quot;</tt>).</p>
 </div>
 <div class="section" id="awstats-management">
-<h2><a class="toc-backref" href="#toc-entry-40">Awstats Management</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-41">Awstats Management</a></h2>
 <div class="section" id="awstats-installation">
 <h3>Awstats Installation</h3>
 <p>On Arch Linux, one should follow <a class="reference external" href="https://wiki.archlinux.org/index.php/AWStats">these guidelines</a> (example for version 7.8):</p>
@@ -1060,39 +1092,39 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 </div>
 </div>
 <div class="section" id="geolocation-with-awstats">
-<h2><a class="toc-backref" href="#toc-entry-41">Geolocation with Awstats</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-42">Geolocation with Awstats</a></h2>
 <p><a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_contrib.html">Multiple plugins</a> exist for that.</p>
 <p><a class="reference external" href="https://github.com/eldy/awstats/issues/86">Apparently</a>, none is able to load the new GeoIP2 format (see also <a class="reference external" href="https://github.com/eldy/awstats/issues/114">this</a>).</p>
 <p>As a consequence: topic dropped for the moment.</p>
 </div>
 </div>
 <div class="section" id="managing-public-key-certificates">
-<h1><a class="toc-backref" href="#toc-entry-42">Managing Public-Key Certificates</a></h1>
-<p>The goal here is to benefit from suitable certificates, notably for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. <a class="reference external" href="ServerNameIndication">Server Name Indication</a> <a class="footnote-reference" href="#footnote-8" id="footnote-reference-8">[8]</a>), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.</p>
-<table class="docutils footnote" frame="void" id="footnote-8" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-8">[8]</a></td><td>As a consequence, the specific visited virtual hostname (ex: <tt class="docutils literal">baz</tt>, in  <tt class="docutils literal">baz.foobar.org</tt>) is <em>not</em> encrypted, and thus might be known of an eavesdropper.</td></tr>
-</tbody>
-</table>
-<div class="section" id="x-509-certificates">
-<h2><a class="toc-backref" href="#toc-entry-43">X.509 Certificates</a></h2>
-<p>The certificates managed here are <a class="reference external" href="https://en.wikipedia.org/wiki/X.509">X.509</a> TLS certificates, which can be seen as standard containers of a public key together with an identity and a hierarchical, potentially trusted <em>Certificate Authority</em> (CA) that signed them <a class="footnote-reference" href="#footnote-9" id="footnote-reference-9">[9]</a>.</p>
+<h1><a class="toc-backref" href="#toc-entry-43">Managing Public-Key Certificates</a></h1>
+<p>The goal here is to benefit from suitable certificates, notably for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. <a class="reference external" href="ServerNameIndication">Server Name Indication</a> <a class="footnote-reference" href="#footnote-9" id="footnote-reference-9">[9]</a>), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.</p>
 <table class="docutils footnote" frame="void" id="footnote-9" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-9">[9]</a></td><td>The X.509 standard also includes certificate revocation lists and the algorithm to sign recursively certificates from a trust anchor.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-9">[9]</a></td><td>As a consequence, the specific visited virtual hostname (ex: <tt class="docutils literal">baz</tt>, in  <tt class="docutils literal">baz.foobar.org</tt>) is <em>not</em> encrypted, and thus might be known of an eavesdropper.</td></tr>
+</tbody>
+</table>
+<div class="section" id="x-509-certificates">
+<h2><a class="toc-backref" href="#toc-entry-44">X.509 Certificates</a></h2>
+<p>The certificates managed here are <a class="reference external" href="https://en.wikipedia.org/wiki/X.509">X.509</a> TLS certificates, which can be seen as standard containers of a public key together with an identity and a hierarchical, potentially trusted <em>Certificate Authority</em> (CA) that signed them <a class="footnote-reference" href="#footnote-10" id="footnote-reference-10">[10]</a>.</p>
+<table class="docutils footnote" frame="void" id="footnote-10" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-10">[10]</a></td><td>The X.509 standard also includes certificate revocation lists and the algorithm to sign recursively certificates from a trust anchor.</td></tr>
 </tbody>
 </table>
 <p>Such certificates can be used for any protocol or standard, and <a class="reference external" href="https://en.wikipedia.org/wiki/X.509#Major_protocols_and_standards_using_X.509_certificates">many</a> do so - including of course TLS and, to some extent, SSH. Being necessary to the https scheme, they are used here.</p>
 </div>
 <div class="section" id="let-s-encrypt">
-<h2><a class="toc-backref" href="#toc-entry-44">Let's Encrypt</a></h2>
-<p>US-Web relies on <a class="reference external" href="https://letsencrypt.org">Let's Encrypt</a>, a non-profit certificate authority from which one can obtain mono-domain X.509 certificates <a class="footnote-reference" href="#footnote-10" id="footnote-reference-10">[10]</a> for free, valid for 90 days and that can be renewed as long as needed.</p>
-<table class="docutils footnote" frame="void" id="footnote-10" rules="none">
+<h2><a class="toc-backref" href="#toc-entry-45">Let's Encrypt</a></h2>
+<p>US-Web relies on <a class="reference external" href="https://letsencrypt.org">Let's Encrypt</a>, a non-profit certificate authority from which one can obtain mono-domain X.509 certificates <a class="footnote-reference" href="#footnote-11" id="footnote-reference-11">[11]</a> for free, valid for 90 days and that can be renewed as long as needed.</p>
+<table class="docutils footnote" frame="void" id="footnote-11" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-10">[10]</a></td><td><tt class="docutils literal">Let's Encrypt</tt> provides <em>Domain Validation</em> (DV) certificates, but neither more general <em>Organization Validation</em> (OV) nor <em>Extended Validation</em> (EV).</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-11">[11]</a></td><td><tt class="docutils literal">Let's Encrypt</tt> provides <em>Domain Validation</em> (DV) certificates, but neither more general <em>Organization Validation</em> (OV) nor <em>Extended Validation</em> (EV).</td></tr>
 </tbody>
 </table>
 <p>Let's Encrypt follows the ACME (<em>Automatic Certificate Management Environment</em>) protocol. It relies on an agent running on the server bound to the domain for which a certificate is requested.</p>
@@ -1101,7 +1133,7 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <p>Refer to <a class="reference external" href="https://letsencrypt.org/how-it-works/">this page</a> for more information; the overall process is <a class="reference external" href="https://ietf-wg-acme.github.io/acme/draft-ietf-acme-acme.html#rfc.section.4">explained here</a> and in <a class="reference external" href="https://www.rfc-editor.org/rfc/rfc8555.html">this RFC</a>.</p>
 </div>
 <div class="section" id="us-web-mode-of-operation">
-<h2><a class="toc-backref" href="#toc-entry-45">US-Web Mode of Operation</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-46">US-Web Mode of Operation</a></h2>
 <p>Rather than using a standalone ACME agent such as the standard one, <tt class="docutils literal">certbot</tt>, we prefer driving everything from Erlang, for a better control and periodical renewal (see the scheduler provided by <a class="reference external" href="https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USScheduler.erl">US-Common</a>).</p>
 <p>Various libraries exist for that in Erlang, the most popular one being probably <a class="reference external" href="https://github.com/gbour/letsencrypt-erlang">letsencrypt-erlang</a>; we <a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang">forked</a> it (and named it LEEC, for <em>Let's Encrypt Erlang with Ceylan</em>, to tell them apart), in order notably to support newer Erlang versions and to allow for <em>concurrent</em> certificate renewals (knowing that one certificate per virtual host will be needed).</p>
 <p>Three <a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang#action-modes">action modes</a> can be considered to interact with the Let's Encrypt infrastructure and to solve its challenges. As the US-Web server is itself a webserver, the <tt class="docutils literal">slave</tt> mode is the most relevant here.</p>
@@ -1109,7 +1141,7 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <p>By default, thanks to the US-Web scheduler, certificates (which last for up to 90 days and cannot be renewed before 60 days are elapsed) will be renewed every 75 days, with some random jitter added to avoid synchronising too many certificate requests when having multiple virtual hosts - as they are done concurrently.</p>
 </div>
 <div class="section" id="settings">
-<h2><a class="toc-backref" href="#toc-entry-46">Settings</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-47">Settings</a></h2>
 <p>Various <a class="reference external" href="https://crypto.stackexchange.com/questions/43697/what-is-the-difference-between-pem-csr-key-and-crt-and-other-such-file-ext">types of files</a> are involved in the process:</p>
 <ul class="simple">
 <li>a <tt class="docutils literal">.key</tt> file contains any type of key, here this is a RSA private key; typically <tt class="docutils literal"><span class="pre">letsencrypt-agent.key-I</span></tt>, where <tt class="docutils literal">I</tt> is an increasing integer, will contain the PEM RSA private key generated by the certificate agent <tt class="docutils literal">I</tt> on behalf of the US-Webserver (so that it can sign the nonces provided by Let's Encrypt, and thus prove that it controls the corresponding key pair); for a <tt class="docutils literal">baz.foobar.org</tt> virtual host, the <tt class="docutils literal">baz.foobar.org.key</tt> file will be generated and used (another PEM RSA private key)</li>
@@ -1134,18 +1166,18 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <p>The US-Web server must be able to write in the web content tree, precisely to write files in the <tt class="docutils literal"><span class="pre">well-known/acme-challenge/</span></tt> subdirectory of the web root.</p>
 </div>
 <div class="section" id="https-troubleshooting">
-<h2><a class="toc-backref" href="#toc-entry-47">HTTPS Troubleshooting</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-48">HTTPS Troubleshooting</a></h2>
 <p>If trying to connect with the https scheme whereas it has not been enabled, <tt class="docutils literal">wget <span class="pre">https://baz.foobar.org/</span> <span class="pre">-O</span> -</tt> is to report <tt class="docutils literal">Connection refused</tt>.</p>
 </div>
 </div>
 <div class="section" id="planned-enhancements">
-<h1><a class="toc-backref" href="#toc-entry-48">Planned Enhancements</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-49">Planned Enhancements</a></h1>
 <ul class="simple">
 <li><strong>Nitrogen</strong> and/or <strong>Zotonic</strong> support, in addition to static websites</li>
 </ul>
 </div>
 <div class="section" id="about-nitrogen-possibly-future-support">
-<h1><a class="toc-backref" href="#toc-entry-49">About Nitrogen (possibly future) Support</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-50">About Nitrogen (possibly future) Support</a></h1>
 <ul class="simple">
 <li>&quot;<em>It is strongly recommended to catch static files with the static_paths setting. simple_bridge does not serve large static files in an optimal way (it loads the files into memory completely before sending)</em>&quot;</li>
 <li><a class="reference external" href="https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/">How Nitrogen processes requests</a></li>
@@ -1154,15 +1186,15 @@ $ <span class="k">for</span> f <span class="k">in</span> /usr/local/etc/awstats/
 <p>We finally forked <tt class="docutils literal">nitrogen</tt>, <tt class="docutils literal">nitrogen_core</tt>, <tt class="docutils literal">simple_bridge</tt> and implemented our own US-Web handler (` &lt;&gt;`_, following <a class="reference external" href="https://nitrogenproject.com/doc/handlers.html">this documentation</a>)</p>
 </div>
 <div class="section" id="support">
-<h1><a class="toc-backref" href="#toc-entry-50">Support</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-51">Support</a></h1>
 <p>Bugs, questions, remarks, patches, requests for enhancements, etc. are to be reported to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">project interface</a> (typically <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/issues">issues</a>) or directly at the email address mentioned at the beginning of this document.</p>
 </div>
 <div class="section" id="please-react">
-<h1><a class="toc-backref" href="#toc-entry-51">Please React!</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-52">Please React!</a></h1>
 <p>If you have information more detailed or more recent than those presented in this document, if you noticed errors, neglects or points insufficiently discussed, drop us a line! (for that, follow the <a class="reference internal" href="#support">Support</a> guidelines).</p>
 </div>
 <div class="section" id="ending-word">
-<h1><a class="toc-backref" href="#toc-entry-52">Ending Word</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-53">Ending Word</a></h1>
 <p>Have fun with the Universal Webserver!</p>
 <p><span class="raw-html"><center><img src="us-web-title.png" id="responsive-image-medium"></img></center></span>
 </p>

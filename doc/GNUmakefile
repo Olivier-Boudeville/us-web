@@ -66,7 +66,8 @@ clone-mirror:
 export-doc: clean-doc doc export-doc-to-official export-doc-to-mirror
 
 
-# Drawback: scp will not preserve symlinks, it will duplicate files instead.
+# Drawback: scp will not preserve symlinks, it will duplicate files instead
+# (which may be useful though, for example for MathJax).
 #
 # rsync would not, but requires a different source layout (copies a full tree,
 # not a set of files), so currently not used:
@@ -74,12 +75,15 @@ export-doc: clean-doc doc export-doc-to-official export-doc-to-mirror
 #
 export-doc-to-official: clean-doc create-links doc
 	@echo "   Exporting US-Web documentation to official website ($(WEB_SRV))"
-	@/bin/scp -r $(SP) $(WEB_CONTENT) $(WEB_SRV):$(WEB_ROOT)/US-Web
+	@/bin/scp $(SP) -r $(WEB_CONTENT) $(WEB_SRV):$(WEB_ROOT)/US-Web/
 
 
+# H option for 'cp', so that a local MathJax is copied (not symlinked to a local
+# directory) in target branch:
+#
 export-doc-to-mirror: clean-doc create-links doc
 	@echo "   Exporting US-Web documentation to mirror website in $(US_WEB_WEB_MIRROR_BRANCH)"
-	@/bin/cp -rf $(WEB_CONTENT) $(US_WEB_WEB_MIRROR_BRANCH) && cd $(US_WEB_WEB_MIRROR_BRANCH) && git add . && git merge -s ours && git commit -m "us-web doc updated." && git push && git pull --ff-only
+	@/bin/cp -rfH $(WEB_CONTENT) $(US_WEB_WEB_MIRROR_BRANCH) && cd $(US_WEB_WEB_MIRROR_BRANCH) && git add . && git merge -s ours && git commit -m "us-web doc updated." && git push && git pull --ff-only
 
 
 

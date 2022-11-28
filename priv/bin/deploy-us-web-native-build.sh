@@ -14,6 +14,9 @@
 # (we prefer and better support the current, native mode of operation enforced
 # by this script, though)
 
+# Note: this file has been used as a blueprint for its US-Main counterpart
+# (deploy-us-main-release.sh); they shall remain in sync as much as possible.
+
 # (standalone script)
 
 
@@ -66,6 +69,12 @@ The prerequisites expected to be already installed are:
 
 github_base="https://github.com/Olivier-Boudeville"
 
+# Will thus install the following US-Web prerequisites:
+# - Myriad, WOOPER and Traces
+# - LEEC
+# - Cowboy
+# - US-Common
+
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
 # itself, even if it used at least for some dependencies (ex: LEEC, so that its
@@ -110,7 +119,7 @@ if [ -n "$1" ]; then
 	# If specified, must exist:
 	if [ ! -d "${base_us_dir}" ]; then
 
-		echo "  Error, specified installation directory, '${base_us_dir}', does not exist.
+		echo "  Error, the specified installation directory, '${base_us_dir}', does not exist.
 ${usage}" 1>&2
 		exit 4
 
@@ -120,8 +129,8 @@ fi
 
 
 # Selects the (build-time) execution target for all Ceylan layers:
-execution_target="development"
-#execution_target="production"
+#execution_target="development"
+execution_target="production"
 
 ceylan_opts="EXECUTION_TARGET=${execution_target}"
 
@@ -193,8 +202,8 @@ if [ ! -d "${base_us_dir}" ]; then
 fi
 
 
-# Typically a release-like '/opt/universal-server/us_web-native', containing all
-# dependencies:
+# Typically a release-like '/opt/universal-server/us_web-native' tree,
+# containing all dependencies:
 #
 abs_native_install_dir="${base_us_dir}/${native_install_dir}"
 
@@ -246,7 +255,7 @@ if [ $do_clone -eq 0 ]; then
 	if ! ${git} clone ${clone_opts} ${github_base}/us-web us_web; then
 
 		echo " Error, unable to obtain US-Web." 1>&2
-	exit 40
+		exit 40
 
 	fi
 
@@ -266,6 +275,7 @@ if [ $do_clone -eq 0 ]; then
 		fi
 
 	fi
+
 
 	# The explicit build of Cowboy is needed due to a rebar3 bug encountered
 	# when building US-Web (see the comment in the 'building US-Web' section).
@@ -557,7 +567,7 @@ if [ ${do_build} -eq 0 ]; then
 	echo
 	echo "Building these packages (as $(id -un), with Erlang $(erl -eval '{ok, V} = file:read_file( filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"]) ), io:fwrite(V), halt().' -noshell) and following Ceylan options: ${ceylan_opts}):"
 
-	# For Myriad, WOOPER and Traces, we prefer to rely on our own good old build
+	# For Myriad, WOOPER and Traces, we prefer relying on our own good old build
 	# system (i.e. not on rebar3).
 
 	echo " - building Ceylan-Myriad"
@@ -728,10 +738,10 @@ if [ ${do_build} -eq 0 ]; then
 
 	# This will also by useful for any next launch:
 
-	# Not wanting the files of that US-Web install to remain owned by the
+	# Not wanting the files of this US-Web install to remain owned by the
 	# deploying user, so trying to apply a more proper user/group; for that we
-	# have to determine them from the configuration files, and this to read and
-	# use them:
+	# have to determine them from the configuration files, and thus to locate,
+	# read and use them:
 	#
 	# (will source in turn us-common.sh)
 	us_web_common_script="${priv_dir}/bin/us-web-common.sh"
@@ -861,7 +871,7 @@ fi
 
 
 # Not checking specifically the expected US and US-Web configuration files:
-# running US-Web will tell us whethe they exist and are legit.
+# running US-Web will tell us whether they exist and are legit.
 
 echo
 
@@ -918,8 +928,15 @@ if [ $do_launch -eq 0 ]; then
 
 	cd "${abs_native_install_dir}/us_web" || exit 81
 
-	# Will switch to the US-Web configured user:
-	sudo ${start_script}
+
+	# The next start script will switch to the US-Web configured user; this
+	# requires an US configuration file to be found, and we have to specify here
+	# the one that was previously selected, as otherwise running the next start
+	# script thanks to sudo may not select the proper configuration file
+	# (typically if the intended one is located in the
+	# ~/.config/universal-server directory of the launching user):
+
+	sudo ${start_script} "${us_config_file}"
 	res=$?
 
 	if [ $res -eq 0 ]; then

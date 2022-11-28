@@ -26,12 +26,12 @@ all: update
 # Updates all repositories involved (any local change being then lost):
 pull:
 	@echo "  Updating (force-pulling) sources from all repositories involved"
-	@for r in $(ALL_REPOSITORIES); do ( echo " - pulling $$r" ; cd $$r && git fetch && git reset --hard HEAD && git merge '@{u}' ) || exit 5 ; done
+	@for r in $(ALL_REPOSITORIES); do (echo " - pulling $$r"; cd $$r && git fetch && git reset --hard HEAD && git merge '@{u}' ) || exit 5; done
 
 
 build:
 	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
-	@for r in $(OUR_REPOSITORIES); do ( echo " - building $$r" ; cd $$r && $(MAKE) -s all ) || exit 15 ; done
+	@for r in $(OUR_REPOSITORIES); do (echo " - building $$r"; cd $$r && $(MAKE) -s all ) || exit 15; done
 
 
 build-cowboy:
@@ -56,7 +56,7 @@ update: pull build
 # to fail) and thus shall not be relied upon.
 #
 # As a consequence, prefer rebuilding to building, or ensure to rsync'ed BEAM
-#  files that are up-to-date (which the sync targets try to do).
+# files that are up-to-date (this is what the sync targets try to do).
 #
 rebuild: clean build build-cowboy
 
@@ -67,16 +67,21 @@ run-debug: build kill
 
 
 kill:
-	@echo "  Removing (for debug) any prior US-Web instance by killing EPMD and any Erlang VM"
-	@killall -9 epmd beam.smp 2>/dev/null || true
+	@echo "  Removing (for debug) any prior US-Web instance".
+	@cd us_web/priv/bin/kill-us-web.sh
+
+
+# Previously would kill blindly all running Erlang programs:
+#	@echo "  Removing (for debug) any prior US-Web instance by killing EPMD and any Erlang VM".
+#	@killall -9 epmd beam.smp 2>/dev/null || true
 
 
 # We do not clean/build cowboy anymore as a version thereof is not supposed to
 # change.
-
-# (unset is for Cowboy, if even included, as it is potentially troubled by an
-# unrelated define)
+#
+# (the 'unset' was for Cowboy, if even included, as it is potentially troubled
+# by an unrelated 'sp' define)
 #
 clean:
 	@echo "  Cleaning all our (Ceylan and US) repositories involved"
-	@for r in $(OUR_REPOSITORIES); do ( echo " - cleaning $$r" ; cd $$r && $(MAKE) -s clean ) || exit 10 ; done
+	@for r in $(OUR_REPOSITORIES); do (echo " - cleaning $$r"; cd $$r && $(MAKE) -s clean) || exit 10; done

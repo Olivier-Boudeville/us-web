@@ -113,7 +113,7 @@ read_us_web_config_file()
 
 	fi
 
-	us_web_config_file="${base_path}/${app_dir}/${us_web_config_filename}"
+	us_web_config_file="${us_config_dir}/${us_web_config_filename}"
 
 	echo "Looking up '${us_web_config_file}'..."
 

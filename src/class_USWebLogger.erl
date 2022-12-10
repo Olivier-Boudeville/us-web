@@ -222,7 +222,7 @@
 % (i.e. not set to 'undefined').
 %
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
-	 maybe( scheduler_pid() ), maybe( web_analysis_info() ) ) -> wooper:state().
+	maybe( scheduler_pid() ), maybe( web_analysis_info() ) ) -> wooper:state().
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   MaybeWebAnalysisInfo ) ->
 	construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
@@ -315,19 +315,12 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 			ConfPath = file_utils:join( BinConfDir,
 					get_conf_filename_for( DomainId, BinHostId, ToolName ) ),
 
-			case file_utils:is_existing_file_or_link( ConfPath ) of
-
-				true ->
-					ok;
-
-				false ->
-					% Expected to have been generated beforehand (typically by
-					% the US-Web configuration server):
-					%
-					throw( { log_analysis_conf_file_not_found, ConfPath,
-							 ToolName } )
-
-			end,
+			file_utils:is_existing_file_or_link( ConfPath ) orelse
+				% Expected to have been generated beforehand (typically by the
+				% US-Web configuration server):
+				%
+				throw( { log_analysis_conf_file_not_found, ConfPath,
+						 ToolName } ),
 
 			% Let's prepare once for all the command to run for log analysis:
 
@@ -493,24 +486,17 @@ destruct( State ) ->
 
 	rotate_log_files( ClosedState ),
 
-	case MaybeSchedPid of
+	MaybeSchedPid =:= undefined orelse
+		receive
 
-		undefined ->
-			ok;
+			task_unregistered ->
+				ok;
 
-		_ ->
-			receive
+			{ task_unregistration_failed, Error } ->
+				?error_fmt( "Unregistration of task #~B failed "
+							"at deletion: ~p.", [ LogTaskId, Error ] )
 
-				task_unregistered ->
-					ok;
-
-				{ task_unregistration_failed, Error } ->
-					?error_fmt( "Unregistration of task #~B failed "
-								"at deletion: ~p.", [ LogTaskId, Error ] )
-
-			end
-
-	end,
+		end,
 
 	?info( "Deleted." ),
 
@@ -663,7 +649,7 @@ generate_report( State ) ->
 			% First, the main HTML report:
 
 			%CfgDesc = get_host_description_for( ?getAttr(vhost_id),
-			%									?getAttr(domain_id), awstats ),
+			%                                    ?getAttr(domain_id), awstats ),
 
 			% Note: awstats_buildstaticpages.pl is now preferred to the
 			% following, less efficient, multi-exec approach.
@@ -698,22 +684,22 @@ generate_report( State ) ->
 			% (not retaining mail logs and matching filters)
 			%
 			%ReportTypes = [ "alldomains", "allhosts", "lasthosts", "unknownip",
-			%				"alllogins", "lastlogins", "allrobots",
-			%				"lastrobots", "urldetail", "urlentry", "urlexit",
-			%				"osdetail", "browserdetail", "unknownbrowser",
-			%				"unknownos", "refererse", "refererpages",
-			%				"keyphrases", "keywords", "errors404" ],
+			%                "alllogins", "lastlogins", "allrobots",
+			%                "lastrobots", "urldetail", "urlentry", "urlexit",
+			%                "osdetail", "browserdetail", "unknownbrowser",
+			%                "unknownos", "refererse", "refererpages",
+			%                "keyphrases", "keywords", "errors404" ],
 			%
 			% Targeting ultimately for example
 			% "awstats.foo.bar.org.browserdetail.html":
 			%
 			%BaseGenFile = file_utils:join( ?getAttr(web_content_dir),
-			%							   "awstats" ),
+			%                               "awstats" ),
 			%
 			% No more '-update':
 			%CmdFormatString = text_utils:format( "nice -n ~B ~ts -config=~ts "
-			%	"-output=~~ts -staticlinks > ~ts.~ts.~~ts.html",
-			%	[ Niceness, BinToolPath, CfgDesc, BaseGenFile, CfgDesc ] ),
+			%   "-output=~~ts -staticlinks > ~ts.~ts.~~ts.html",
+			%   [ Niceness, BinToolPath, CfgDesc, BaseGenFile, CfgDesc ] ),
 			%
 			%generate_other_report_pages( ReportTypes, CmdFormatString, State )
 
@@ -758,14 +744,14 @@ onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
 
 	wooper:const_return();
 
-onWOOPERExitReceived( State, CrashPid, ExitType ) ->
+onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 
 	% Typically: "Received exit message '{{nocatch,
-	%						{wooper_oneway_failed,<0.44.0>,class_XXX,
-	%							FunName,Arity,Args,AtomCause}}, [...]}"
+	%   {wooper_oneway_failed,<0.44.0>,class_XXX,
+	%      FunName,Arity,Args,AtomCause}}, [...]}"
 
-	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
-				[ ExitType, CrashPid ] ),
+	?error_fmt( "Received and ignored an exit message from ~w:~n  ~p",
+				[ CrashedPid, ExitType ] ),
 
 	wooper:const_return().
 
@@ -797,21 +783,16 @@ create_log_files( State ) ->
 create_log_file( BinLogFilePath, State ) ->
 
 	% Not supposed to be still there in nominal conditions:
-	case file_utils:is_existing_file_or_link( BinLogFilePath ) of
-
-		true ->
+	file_utils:is_existing_file_or_link( BinLogFilePath ) andalso
+		begin
 			% Used to be deemed better than rotating an unknown/unexpected file:
 			%
 			% (would deserve a warning, yet almost always happens at start-up)
 			%
 			?info_fmt( "Removing a prior '~ts' log file.", [ BinLogFilePath ] ),
 
-			file_utils:remove_file( BinLogFilePath );
-
-		false ->
-			ok
-
-	end,
+			file_utils:remove_file( BinLogFilePath )
+		end,
 
 	%?debug_fmt( "Creating log file '~ts'.", [ BinLogFilePath ] ),
 
@@ -1105,7 +1086,7 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 rotate_basic_log_file( FilePath, RotCount, _State ) ->
 
 	ArchiveFilePath = text_utils:format( "~ts.~B.~ts", [ FilePath, RotCount,
-				time_utils:get_textual_timestamp_for_path() ] ),
+		time_utils:get_textual_timestamp_for_path() ] ),
 
 	%?debug_fmt( "Rotating '~ts' to a compressed version: '~ts'.",
 	%            [ FilePath, ArchiveFilePath ] ),
@@ -1117,7 +1098,7 @@ rotate_basic_log_file( FilePath, RotCount, _State ) ->
 	file_utils:remove_file( ArchiveFilePath ),
 
 	%?debug_fmt( "Log rotation finished: archive '~ts' generated "
-	%			"(original '~ts' removed).", [ CompressedFilePath, FilePath ] ),
+	%   "(original '~ts' removed).", [ CompressedFilePath, FilePath ] ),
 
 	CompressedFilePath.
 
@@ -1162,8 +1143,10 @@ get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
 -spec get_conf_filename_for( domain_id(), vhost_id(), log_analysis_tool() ) ->
 								static_return( file_name() ).
 get_conf_filename_for( DomainId, VHostId, _Tool=awstats ) ->
+
 	Filename = text_utils:format( "awstats.~ts.conf",
 				[ get_host_description_for( VHostId, DomainId, awstats ) ] ),
+
 	wooper:return_static( Filename );
 
 get_conf_filename_for( _DomainId, _VHostId, Tool ) ->

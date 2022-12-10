@@ -36,11 +36,22 @@
   %  - Myriad, see http://myriad.esperide.org/myriad.html#otp
 
 
-  % myriad is a dependency of wooper, which is itself a dependency of traces,
-  % dependency of us_common (dependency of this us_web); as such they may not be
-  % listed here, however we stay conservative;
+  % Myriad is a dependency of Wooper, which is itself a dependency of Traces,
+  % dependency of US-Common (dependency of this US-Web); as such they may not be
+  % listed here, however we stay conservative.
   %
+  % Regarding Nitrogen and its dependencies, finally we do not list them here
+  % and have instead US-Web activate them iff a Nitrogen-based website is
+  % declared (inserting them in the standard scheme implemented by otp_utils
+  % would be tricky anyway, as for example
+  % nitrogen_core/deps/nprocreg/ebin/nprocreg.app would have to be found).
+
+  % Non-Nitrogen version:
   {applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common, leec]},
+
+  % With Nitrogen:
+  %{applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common, leec,
+  %                nprocreg, nitro_cache, nitrogen_core, simple_bridge]},
   {env,[]},
 
   % Flat hierarchy in ebin here:

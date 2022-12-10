@@ -58,7 +58,7 @@ nitrogen_option="--support-nitrogen"
 usage="
 Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
-The '${nitrogen_option}' option will enable the support for Nitrogen-based websites (not done yet).
+The '${nitrogen_option}' option will enable the support of a Nitrogen-based website.
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
@@ -321,6 +321,10 @@ if [ $do_clone -eq 0 ]; then
 		#
 		# Its rebar.config lists an additional one, sync, which is not needed in
 		# production, so ultimately only nitrogen_core is actually needed.
+		#
+		# We strongly recommend building all these dependencies through the
+		# build of nitrogen_core, as their build is rather non-standard (older
+		# rebar), fragile, complex (release-based).
 
 		echo " - cloning nitrogen_core"
 

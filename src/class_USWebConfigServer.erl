@@ -291,14 +291,14 @@
 
 -type cert_support() ::
 
-		% Hence no https:
-		'no_certificates'
+	% Hence no https:
+	'no_certificates'
 
-		% Hence use, but no renewal:
-	  | 'use_existing_certificates'
+	% Hence use, but no renewal:
+  | 'use_existing_certificates'
 
-		% Hence use, generate and renew:
-	  | 'renew_certificates'.
+	% Hence use, generate and renew:
+  | 'renew_certificates'.
 % Tells whether certificates shall be used, and how.
 
 
@@ -385,6 +385,10 @@
 	{ default_web_root, maybe( bin_directory_path() ),
 	  "the default root (if any) for the website trees" },
 
+	% Note that it is strongly recommended to have only up to one Nitrogen
+	% instance, as to each of their pages a module shall correspond, leading to
+	% likely clashes through the code path:
+	%
 	{ nitrogen_roots, [ bin_directory_path() ], "the known content roots of "
 	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, i.e. if
 	  at least one virtual host is of this type" },
@@ -948,10 +952,10 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 
 	% Typically: "Received exit message '{ { nocatch,
 	%   { wooper_oneway_failed, <0.44.0>, class_XXX,
-	%      FunName, Arity, Args, AtomCause } }, [...] }"
+	%       FunName, Arity, Args, AtomCause } }, [...] }"
 
-	?error_fmt( "Received and ignored an exit message '~p' from ~w.",
-				[ ExitType, CrashedPid ] ),
+	?error_fmt( "Received and ignored an exit message from ~w:~n  ~p",
+				[ CrashedPid, ExitType ] ),
 
 	wooper:const_return().
 
@@ -1678,11 +1682,11 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 		K when K =:= static orelse K =:= meta ->
 			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-							LoggerPid, CertSupport, MaybeCertManagerPid );
+				LoggerPid, CertSupport, MaybeCertManagerPid );
 
 		nitrogen ->
 			get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
-							LoggerPid, CertSupport, MaybeCertManagerPid )
+				LoggerPid, CertSupport, MaybeCertManagerPid )
 
 	end,
 
@@ -1765,7 +1769,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 	file_utils:write_whole( TargetConfFilePath, VHostContent ),
 
 	%trace_utils:debug_fmt( "Wrote '~ts', creating corresponding logger.",
-	%					   [ TargetConfFilePath ] ),
+	%                       [ TargetConfFilePath ] ),
 
 	% As we must create that logger *after* the configuration file it relies on:
 	% (see previous clause about scheduler)
@@ -1783,11 +1787,11 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 		K when K =:= static orelse K =:= meta ->
 			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-							LoggerPid, CertSupport, MaybeCertManagerPid );
+				LoggerPid, CertSupport, MaybeCertManagerPid );
 
 		nitrogen ->
 			get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
-							LoggerPid, CertSupport, MaybeCertManagerPid )
+				LoggerPid, CertSupport, MaybeCertManagerPid )
 
 	end,
 
@@ -2090,12 +2094,12 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
 
-	% Useful to that the Nitrogen cache can know where to look for elements
+	% Useful so that the Nitrogen cache can know where to look for elements
 	% (such as templates) that are defined as paths that are relative to the
 	% content root at hand; basic Nitrogen places its current directory at this
 	% content root, whereas the current directory of US-Web VM is necessarily
-	% elsewhere (as multiple Nitrogen-based websites can be served), so US-Web
-	% needs to locate easily where the served contents shall be found.
+	% elsewhere (as in theory multiple Nitrogen-based websites can be served),
+	% so US-Web needs to locate easily where the served contents shall be found.
 	%
 	InitialNitroHandlerState = BinContentRoot,
 
@@ -2109,7 +2113,7 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 		true ->
 			 % Be able to answer Let's Encrypt ACME challenges:
 			[ get_challenge_path_match( MaybeCertManagerPid )
-			| AllNitroMatches ];
+					| AllNitroMatches ];
 
 		false ->
 			AllNitroMatches
@@ -2197,8 +2201,8 @@ set_as_forward_host( _DispatchRoutes=[ { HostMatch, PathsList } | T ],
 						 [ { HostMatch, FWPathsList } | Acc ] );
 
 set_as_forward_host(
-  _DispatchRoutes=[ { HostMatch, Constraints, PathsList } | T ],
-  NewHandlerModule, NewHandlerInitialState, Acc ) ->
+		_DispatchRoutes=[ { HostMatch, Constraints, PathsList } | T ],
+		NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
 	FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
 										NewHandlerInitialState, _PAcc=[] ),
@@ -2223,8 +2227,8 @@ set_as_forward_paths( _PathsList=[ LEMatch={ _PathMatch,
 
 % Dropping/replacing current handler and its state:
 set_as_forward_paths(
-  _PathsList=[ { PathMatch, _Handler, _InitialState } | T ], NewHandlerModule,
-  NewHandlerInitialState, Acc ) ->
+		_PathsList=[ { PathMatch, _Handler, _InitialState } | T ],
+		NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
 	FWPath = { PathMatch, NewHandlerModule, NewHandlerInitialState },
 
@@ -2259,7 +2263,7 @@ get_challenge_path_match( Unexpected ) ->
 
 
 
-% @doc Checks specified web kind.
+% @doc Checks the specified web kind.
 check_kind( _WebKind=static, _VHost, _DomainId, _State ) ->
 	static;
 
@@ -2508,9 +2512,11 @@ manage_app_base_directories( ConfigTable, State ) ->
 					BinBaseDir;
 
 				false ->
+
 					?error_fmt( "The determined US-Web application base "
 						"directory '~ts' does not have a 'priv' subdirectory.",
 						[ BinBaseDir ] ),
+
 					throw( { no_priv_us_web_app_base_directory, BaseDir,
 							 ?us_web_app_base_dir_key } )
 
@@ -2669,8 +2675,8 @@ manage_data_directory( ConfigTable, State ) ->
 
 		CurrentUserId ->
 			file_utils:change_permissions( DataDir,
-			  [ owner_read, owner_write, owner_execute,
-				group_read, group_write, group_execute ] );
+				[ owner_read, owner_write, owner_execute,
+				  group_read, group_write, group_execute ] );
 
 		% Not owned, do nothing:
 		_OtherId ->
@@ -2713,12 +2719,8 @@ manage_log_directory( ConfigTable, State ) ->
 
 	end,
 
-	case file_utils:is_existing_directory( LogDir ) of
-
-		true ->
-			ok;
-
-		false ->
+	file_utils:is_existing_directory( LogDir ) orelse
+		begin
 
 			%throw( { non_existing_base_us_web_log_directory, LogDir } )
 
@@ -2731,7 +2733,7 @@ manage_log_directory( ConfigTable, State ) ->
 			file_utils:create_directory_if_not_existing( LogDir,
 														 create_parents )
 
-	end,
+		end,
 
 	% In addition to this US-Web log directory, we create a subdirectory thereof
 	% to store all web logs (access and error logs):
@@ -3032,7 +3034,7 @@ manage_certificates( ConfigTable, State ) ->
 			TargetKeyPath = file_utils:join( CertDir, ?leec_key_filename ),
 
 			BinKeyPath = case file_utils:is_existing_file_or_link(
-								 TargetKeyPath ) of
+									TargetKeyPath ) of
 
 				true ->
 					?debug_fmt( "A pre-existing TLS private key for the US-Web "
@@ -3047,7 +3049,7 @@ manage_certificates( ConfigTable, State ) ->
 						"generating it now.", [ TargetKeyPath ] ),
 
 					PrivKey = leec_tls:obtain_private_key(
-								{ new, ?leec_key_filename }, CertDir ),
+						{ new, ?leec_key_filename }, CertDir ),
 
 					PrivKey#tls_private_key.file_path
 
@@ -3183,8 +3185,8 @@ manage_routes( ConfigTable, State ) ->
 	DispatchRules = cowboy_router:compile( DispatchRoutes ),
 
 	?debug_fmt( "The US-Web specified base dispatch routes are:~n  ~p.~n~n~n"
-	  "They correspond, once compiled, to the following dispatch rules:~n  ~p.",
-	  [ DispatchRoutes, DispatchRules ] ),
+		"They correspond, once compiled, to the following dispatch "
+		"rules:~n  ~p.", [ DispatchRoutes, DispatchRules ] ),
 
 	setAttributes( ProcessState, [
 		{ domain_config_table, DomainCfgTable },
@@ -3199,85 +3201,162 @@ manage_routes( ConfigTable, State ) ->
 -spec initialise_nitrogen_for_contents( [ bin_directory_path() ],
 										wooper:state() ) -> void().
 initialise_nitrogen_for_contents( _ContentRoots=[], _State ) ->
+	% Weird but ok:
 	ok;
 
-initialise_nitrogen_for_contents( [ BinContentRoot | T ], State ) ->
+initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
+
+	% Taking care first of that target Nitrogen-based site:
 
 	% Conventional layout:
-	NitroEbin = file_utils:bin_join( [ BinContentRoot, "site", "ebin" ] ),
+	NitroContentEbin =
+		file_utils:bin_join( [ BinContentRoot, "site", "ebin" ] ),
 
-	case file_utils:is_existing_directory_or_link( NitroEbin ) of
+	case file_utils:is_existing_directory_or_link( NitroContentEbin ) of
 
 		true ->
-			code_utils:declare_beam_directory( NitroEbin ),
-
-			% Something akin to MY_SITE/etc/simple_bridge.config should be
-			% probably set, otherwise:
-
-			%[error][erlang_logger]     label: {proc_lib,crash}
-			%    report: [[{initial_call,
-			%                  {cowboy_stream_h,request_process,
-			%                    ['Argument__1','Argument__2','Argument__3']}},
-			%              {pid,<0.218.0>},
-			%              {registered_name,[]},
-			%              {error_info,
-			%                  {error,undef,
-			%                      [{undefined,run,
-			%                           [{sbw,cowboy_simple_bridge,
-			%                               {cowboy_bridge,
-
-			Settings = [ { handler, nitrogen }, { backend, cowboy },
-						 { max_post_size, 10 }, { max_file_size, 10 },
-						 { max_file_in_memory_size, 0 },
-						 { scratch_dir, "./scratch" } ],
-
-			[ ok = application:set_env( _App=simple_bridge, Param, Value,
-										_Opts=[ { persistent, true } ] )
-						|| { Param, Value } <- Settings ],
-
-			%[notice][erlang_logger]     args: [{throw,
-			%               {handler_not_found_in_context,crash_handler,
-			%     {handler_context,config_handler,default_config_handler,
-			%                        undefined,[]},
-			%              {handler_context,log_handler,default_log_handler,
-			%                        undefined,[]},
-			%                    {handler_context,process_registry_handler,
-			%                        nprocreg_registry_handler,undefined,[]}]},
-			%               [{wf_handler,get_handler,1,
-			%                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
-
-			%OtherPrereqApps =
-			%   otp_utils:prepare_for_execution( nitrogen_core,
-			%                                    BinContentRoot ),
-
-			%debug_fmt( "Other prerequisite applications: ~p.",
-			%           [ OtherPrereqApps ] ),
-
-			%otp_utils:start_application( nitrogen_core ),
-
-			otp_utils:start_application( nitro_cache ),
-
-			otp_utils:start_application( nprocreg ),
-
-			%PrereqApps =
-			%	otp_utils:prepare_for_execution( nitrogen, BinContentRoot ),
-
-			%?debug_fmt( "Prerequisite applications: ~p.", [ PrereqApps ] ),
-
-			% Possibly to perform only once overall:
-			%otp_utils:start_application( nitrogen ),
-
-			% As suggested by Nitrogen's 'embed' script:
-			%nitrogen_sup:start_link(),
-
-			initialise_nitrogen_for_contents( T , State );
+			code_utils:declare_beam_directory( NitroContentEbin );
 
 		false ->
 			?error_fmt( "Unable to find the ebin directory for the Nitrogen "
 						"content root '~ts'.", [ BinContentRoot ] ),
 			throw( { no_ebin, text_utils:binary_to_string( BinContentRoot ) } )
 
-	end.
+	end,
+
+
+	% Now, general initialisation for Nitrogen:
+
+	% Something akin to MY_SITE/etc/simple_bridge.config should be
+	% probably set, otherwise:
+
+	%[error][erlang_logger]     label: {proc_lib,crash}
+	%    report: [[{initial_call,
+	%                  {cowboy_stream_h,request_process,
+	%                    ['Argument__1','Argument__2','Argument__3']}},
+	%              {pid,<0.218.0>},
+	%              {registered_name,[]},
+	%              {error_info,
+	%                  {error,undef,
+	%                      [{undefined,run,
+	%                           [{sbw,cowboy_simple_bridge,
+	%                               {cowboy_bridge,
+
+	Settings = [ { handler, nitrogen }, { backend, cowboy },
+				 { max_post_size, 10 }, { max_file_size, 10 },
+				 { max_file_in_memory_size, 0 },
+				 { scratch_dir, "./scratch" } ],
+
+	[ ok = application:set_env( _App=simple_bridge, Param, Value,
+								_Opts=[ { persistent, true } ] )
+				|| { Param, Value } <- Settings ],
+
+	%[notice][erlang_logger]     args: [{throw,
+	%               {handler_not_found_in_context,crash_handler,
+	%     {handler_context,config_handler,default_config_handler,
+	%                        undefined,[]},
+	%              {handler_context,log_handler,default_log_handler,
+	%                        undefined,[]},
+	%                    {handler_context,process_registry_handler,
+	%                        nprocreg_registry_handler,undefined,[]}]},
+	%               [{wf_handler,get_handler,1,
+	%                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
+
+	% We take care explicitly of the Nitrogen-related dependencies, as they are
+	% optional (US-Web may not host a Nitrogen-based website) and would be
+	% difficult to integrate on the general scheme implemented by otp_utils
+	% (that for example would have to locate
+	% nitrogen_core/deps/nprocreg/ebin/nprocreg.app).
+	% So:
+
+	%OtherPrereqApps = otp_utils:prepare_for_execution( nitrogen_core,
+	%												   BinContentRoot ),
+
+	%?debug_fmt( "Other prerequisite applications: ~p.",
+	%			[ OtherPrereqApps ] ),
+
+	UsWebBaseDir = ?getAttr(app_base_directory),
+
+	% Order matters, checkouts are prioritary:
+	BaseDepsDirs = [ file_utils:join( UsWebBaseDir, Subdir )
+						|| Subdir <- [ "_checkouts", "_build/default/lib" ] ],
+
+	% Needed early, as its dependencies are located inside its own build tree,
+	% in its 'deps' directory:
+	%
+	NitrogenCoreBaseDir = file_utils:get_first_existing_directory_in(
+		[ file_utils:join( BaseDir, "nitrogen_core" )
+				|| BaseDir <- BaseDepsDirs ] ),
+
+	NitrogenCoreDepsDir = file_utils:join( NitrogenCoreBaseDir, "deps" ),
+
+	AllBaseDepsDirs= [ NitrogenCoreDepsDir | BaseDepsDirs ],
+
+	% So that at least nitro_cache.app can be found:
+	NitroCacheDir = file_utils:get_first_existing_directory_in(
+		[ file_utils:join( BaseDir, "nitro_cache/ebin" )
+				|| BaseDir <- AllBaseDepsDirs ] ),
+
+	code_utils:declare_beam_directory( NitroCacheDir ),
+
+	?debug_fmt( "Starting nitro_cache (whose selected ebin is '~ts').",
+				[ NitroCacheDir ] ),
+
+	otp_utils:start_application( nitro_cache ),
+
+
+	% Same for nprocreg:
+	NprocregDir = file_utils:get_first_existing_directory_in(
+		[ file_utils:join( BaseDir, "nprocreg/ebin" )
+				|| BaseDir <- AllBaseDepsDirs ] ),
+
+	code_utils:declare_beam_directory( NprocregDir ),
+
+	?debug_fmt( "Starting nprocreg (whose selected ebin is '~ts').",
+				[ NprocregDir ] ),
+
+	otp_utils:start_application( nprocreg ),
+
+
+	% Same for nitrogen_core:
+	NitrogenCoreDir = file_utils:join( NitrogenCoreBaseDir, "ebin" ),
+
+	code_utils:declare_beam_directory( NitrogenCoreDir ),
+
+	?debug_fmt( "Starting nitrogen_core (whose selected ebin is '~ts').",
+				[ NitrogenCoreDir ] ),
+
+	otp_utils:start_application( nitrogen_core ),
+
+
+	% Same for Nitrogen itself (which we believe is not needed here):
+	%NitrogenDir = file_utils:get_first_existing_directory_in(
+	%	[ file_utils:join( BaseDir, "nitrogen/ebin" )
+	%			|| BaseDir <- AllBaseDepsDirs ] ),
+
+	%code_utils:declare_beam_directory( NitrogenDir ),
+
+	%?debug_fmt( "Starting nitrogen (whose selected ebin is '~ts').",
+	%			[ NitrogenDir ] ),
+
+	%otp_utils:start_application( nitrogen ),
+
+
+	% As suggested by Nitrogen's 'embed' script:
+	%nitrogen_sup:start_link(),
+
+	ok;
+
+
+initialise_nitrogen_for_contents( ContentRoots, State ) ->
+
+	?error_fmt( "Multiple Nitrogen content roots have been specified (~ts), "
+		"whereas a single one can be supported (otherwise the BEAM of the "
+		"various page modules will clash in the code path).",
+		[ text_utils:strings_to_listed_string( ContentRoots ) ] ),
+
+	throw( { multiple_nitrogen_roots, ContentRoots } ).
+
 
 
 % @doc Applies the meta support.
@@ -3318,10 +3397,10 @@ manage_post_meta( State ) ->
 						E={ copy_tree_failed, _PathPair, _ExitCode=1,
 							ErrorOutput } ->
 							trace_utils:error_fmt(
-							  "Unable to copy Awstats icons: "
-							  "one may try \"chmod -R +r '~ts'\" to fix "
-							  "permissions.~nError message was: ~ts.",
-							  [ IconDir, ErrorOutput ] ),
+								"Unable to copy Awstats icons: "
+								"one may try \"chmod -R +r '~ts'\" to fix "
+								"permissions.~nError message was: ~ts.",
+								[ IconDir, ErrorOutput ] ),
 							throw( E )
 
 					end,
@@ -3443,8 +3522,8 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 	% (lighter diagnose for checks as we are just in a client/test logic, not in
 	% the US-Web main one)
 
-	Res = case
-	  class_USConfigServer:get_us_web_configuration_filename( USCfgTable ) of
+	Res = case class_USConfigServer:get_us_web_configuration_filename(
+					USCfgTable ) of
 
 		{ ok, undefined } ->
 			ErrorMsg = "No US-Web configuration filename (for webservers and "
@@ -3499,22 +3578,29 @@ get_registration_info( ConfigTable ) ->
 			?us_web_config_server_registration_name_key, ConfigTable ) of
 
 		key_not_found ->
+
 			DefCfgRegName = ?default_us_web_config_server_registration_name,
+
 			DefCfgMsg = text_utils:format( "No user-configured registration "
 				"name for the US-Web configuration server, defaulting to '~ts'",
 				[ DefCfgRegName ] ),
+
 			{ ok, DefCfgRegName, DefCfgMsg };
 
 		{ value, UserCfgRegName } when is_atom( UserCfgRegName ) ->
+
 			UserCfgMsg = text_utils:format( "Using user-configured "
 				"registration name for the US-Web configuration server, '~ts'",
 				[ UserCfgRegName ] ),
+
 			{ ok, UserCfgRegName, UserCfgMsg };
 
 		{ value, InvalidCfgRegName } ->
+
 			CfgErrorMsg = text_utils:format( "Invalid user-specified "
 				"registration name for the US-Web configuration server: '~p'.",
 				[ InvalidCfgRegName ] ),
+
 			{ error, _DiagnosedError={ { invalid_web_config_registration_name,
 				InvalidCfgRegName,
 				?us_web_config_server_registration_name_key }, CfgErrorMsg } }
@@ -3634,7 +3720,7 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 
 % @doc Returns a list of all the PIDs of the certificate managers.
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
-		  [ cert_manager_pid() ].
+			[ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->
 	get_all_certificate_manager_pids_from( ?getAttr(domain_config_table) ).
 

@@ -36,17 +36,17 @@ local_us_web_install_root="${this_script_dir}/../.."
 if [ -d "${local_us_web_install_root}/priv" ]; then
 
 	us_web_install_root="$(realpath ${local_us_web_install_root})"
-	echo "Selecting US-Web development native build in '${us_web_install_root}'."
+	echo "Selecting US-Web development native build in clone-local '${us_web_install_root}'."
 
 else
 
 	# The location enforced by deploy-us-web-native-build.sh:
 	us_web_install_root="/opt/universal-server/us_web-native/us_web"
-	echo "Selecting US-Web native build in standard location '${us_web_install_root}'."
+	echo "Selecting US-Web native build in standard server location '${us_web_install_root}'."
 
 	if [ ! -d "${us_web_install_root}/priv" ]; then
 
-		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard location." 1>&2
+		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard server location." 1>&2
 
 		exit 15
 
@@ -119,13 +119,13 @@ cd src || exit
 # EPMD, as we do not launch it with -relaxed_command_check).
 
 echo
-echo " -- Starting US-Web natively-built application as user '${us_web_username}' (EPMD port: ${erl_epmd_port})..."
+echo " -- Starting US-Web natively-built application as user '${us_web_username}' (EPMD port: ${erl_epmd_port}, whereas log directory is '${us_web_vm_log_dir}')..."
 
 
 # Previously the '--deep' authbind option was used; apparently the minimal depth
 # is 6:
 
-#echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make us_web_exec_service
+#echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
 
 /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
 

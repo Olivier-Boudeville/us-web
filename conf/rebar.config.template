@@ -40,7 +40,8 @@
 	%
 	{qdate,         {git, "https://github.com/choptastic/qdate", {tag, "0.5.0"}}},
 
-	{nprocreg,      {git, "https://github.com/Olivier-Boudeville/nprocreg", {tag, "v0.3.0"}}},
+	% Not existing: {nprocreg,      {git, "https://github.com/Olivier-Boudeville/nprocreg", {tag, "v0.3.0"}}},
+	{nprocreg, {git, "https://github.com/nitrogen/nprocreg", {branch, master}}},
 
 	% Never necessary: {sync,          {git, "https://github.com/rustyio/sync", {tag, "v0.2.0"}}},
 

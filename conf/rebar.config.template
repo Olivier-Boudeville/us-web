@@ -41,7 +41,7 @@
 	{qdate,         {git, "git://github.com/choptastic/qdate", {tag, "0.5.0"}}},
 	{nprocreg,      {git, "git://github.com/Olivier-Boudeville/nprocreg", {tag, "v0.3.0"}}},
 	% Never necessary: {sync,          {git, "git://github.com/rustyio/sync", {tag, "v0.2.0"}}},
-	{nitro_cache,   {git, "git://github.com/Olivier-Boudeville/nitro_cache", {tag, "0.4.0"}}}
+	{nitro_cache,   {git, "git://github.com/Olivier-Boudeville/nitro_cache", {tag, "0.4.0"}}},
 	{nitrogen_core, {git, "git://github.com/Olivier-Boudeville/nitrogen_core", {branch, "master"}}},
 	{simple_bridge, {git, "git://github.com/Olivier-Boudeville/simple_bridge", {branch, "master"}}},
 

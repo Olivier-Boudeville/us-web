@@ -2583,8 +2583,8 @@ guess_app_dir( AppRunContext, State ) ->
 			% In [...]/us_web/_build/default/rel/us_web, and we want the first
 			% us_web, so:
 			%
-			OTPPath = file_utils:normalise_path( file_utils:join(
-							[ CurrentDir, "..", "..", "..", ".." ] ) ),
+			OTPPath = file_utils:normalise_path(
+				file_utils:join( [ CurrentDir, "..", "..", "..", ".." ] ) ),
 
 			case file_utils:get_base_path( OTPPath ) of
 
@@ -3302,9 +3302,14 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 
 	UsWebBaseDir = ?getAttr(app_base_directory),
 
-	% Order matters, checkouts are prioritary:
+
+	% Parent directory ("..")of us_web specifically useful for nitrogen_core,
+	% typically deployed as a sibling clone (whereas other Nitrogen-related
+	% dependencies are in nitrogen_core/deps).
+	%
+	% Order matters, checkouts are prioritary; :
 	BaseDepsDirs = [ file_utils:join( UsWebBaseDir, Subdir )
-						|| Subdir <- [ "_checkouts", "_build/default/lib" ] ],
+		|| Subdir <- [ "_checkouts", "_build/default/lib", ".." ] ],
 
 	% Needed early, as its dependencies are located inside its own build tree,
 	% in its 'deps' directory:
@@ -3353,7 +3358,7 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 	otp_utils:start_application( nitrogen_core ),
 
 
-	% Same for simple_bridge (which requires nitrogen.beam found in
+	% Same for simple_bridge (which requires nitrogen.beam, found in
 	% nitrogen_core):
 	%
 	SimpleBridgeDir = file_utils:get_first_existing_directory_in(

@@ -58,7 +58,7 @@ nitrogen_option="--support-nitrogen"
 usage="
 Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
-The '${nitrogen_option}' option will enable the support of a Nitrogen-based website.
+The '${nitrogen_option}' option enables the support of a Nitrogen-based website.
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
@@ -67,7 +67,7 @@ The prerequisites expected to be already installed are:
  - rebar3 (see http://myriad.esperide.org/#getting-rebar3), for dependencies that are not ours
  - [optional] Awstats (see http://www.awstats.org/)"
 
-github_base="https://github.com/Olivier-Boudeville"
+our_github_base="https://github.com/Olivier-Boudeville"
 
 # Will thus install the following US-Web prerequisites:
 # - Myriad, WOOPER and Traces
@@ -141,8 +141,18 @@ ceylan_opts="EXECUTION_TARGET=${execution_target}"
 #echo "ceylan_opts = ${ceylan_opts}"
 
 
+# Typically a release-like '/opt/universal-server/us_web-native' tree,
+# containing all dependencies:
+#
+abs_native_install_dir="${base_us_dir}/${native_install_dir}"
+
+echo "   Installing US-Web in '${abs_native_install_dir}'..."
+echo
+
+
 # Just to avoid error messages if running from a non-existing directory:
 cd /
+
 
 
 # Checking first:
@@ -159,7 +169,7 @@ erlc="$(which erlc 2>/dev/null)"
 # No version checked:
 if [ ! -x "${erlc}" ]; then
 
-	echo "  Error, no Erlang compiler (erlc) found. Consider installing Erlang first, possibly thanks to our dedicated script, ${github_base}/Ceylan-Myriad/blob/master/conf/install-erlang.sh." 1>&2
+	echo "  Error, no Erlang compiler (erlc) found. Consider installing Erlang first, possibly thanks to our dedicated script, ${our_github_base}/Ceylan-Myriad/blob/master/conf/install-erlang.sh." 1>&2
 
 	exit 10
 
@@ -183,12 +193,18 @@ make="$(which make 2>/dev/null)"
 if [ ! -x "${make}" ]; then
 
 	echo "  Error, no 'make' tool found." 1>&2
-	exit 19
+	exit 18
 
 fi
 
 echo "Securing sudoer rights for the upcoming operations that require it."
-sudo echo
+if ! sudo echo; then
+
+	echo "  Error, sudo failed." 1>&2
+	exit 19
+
+fi
+
 
 base_us_dir_created=1
 
@@ -202,17 +218,8 @@ if [ ! -d "${base_us_dir}" ]; then
 fi
 
 
-# Typically a release-like '/opt/universal-server/us_web-native' tree,
-# containing all dependencies:
-#
-abs_native_install_dir="${base_us_dir}/${native_install_dir}"
-
 # The US-Web tree itself:
 us_web_dir="${abs_native_install_dir}/us_web"
-
-
-echo "   Installing US-Web in '${abs_native_install_dir}'..."
-echo
 
 
 # First US-Web itself, so that any _checkouts directory can be created
@@ -252,7 +259,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning US-Web"
 
-	if ! ${git} clone ${clone_opts} ${github_base}/us-web us_web; then
+	if ! ${git} clone ${clone_opts} ${our_github_base}/us-web us_web; then
 
 		echo " Error, unable to obtain US-Web." 1>&2
 		exit 40
@@ -266,7 +273,7 @@ if [ $do_clone -eq 0 ]; then
 	# To avoid "Already on 'master'":
 	if [ "${target_branch}" != "master" ]; then
 
-		cd us_web && ${git} checkout ${target_branch} 1>/dev/null && cd ..
+		cd us_web && ${git} checkout "${target_branch}" 1>/dev/null && cd ..
 		if [ ! $? -eq 0 ]; then
 
 			echo " Error, unable to switch to US-Web branch '${target_branch}'." 1>&2
@@ -325,17 +332,27 @@ if [ $do_clone -eq 0 ]; then
 		# We strongly recommend building all these dependencies through the
 		# build of nitrogen_core, as their build is rather non-standard (older
 		# rebar), fragile, complex (release-based).
+		#
+		# Now we prefer using our forks of the only two dependencies that had to
+		# be modified, nitrogen_core and simple_bridge:
+
+		nitro_fork_branch="master"
+		#nitro_fork_branch="testing"
 
 		echo " - cloning nitrogen_core"
 
-		if ! ${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core; then
+		#nitrogen_core_git_id="https://github.com/nitrogen/nitrogen_core"
+		nitrogen_core_git_id="${our_github_base}/nitrogen_core"
+
+		if ! ${git} clone ${clone_opts} "${nitrogen_core_git_id}"; then
 
 			echo " Error, unable to obtain nitrogen_core." 1>&2
 			exit 80
 
 		fi
 
-		nitrogen_core_tag="v2.4.0"
+		#nitrogen_core_tag="v2.4.0"
+		nitrogen_core_tag=""
 
 		if [ -n "${nitrogen_core_tag}" ]; then
 
@@ -343,7 +360,7 @@ if [ $do_clone -eq 0 ]; then
 
 			cd nitrogen_core
 
-			if ! ${git} checkout tags/${nitrogen_core_tag}; then
+			if ! ${git} checkout "tags/${nitrogen_core_tag}"; then
 
 				echo " Error, unable to set nitrogen_core to tag '${nitrogen_core_tag}'." 1>&2
 				exit 82
@@ -354,39 +371,77 @@ if [ $do_clone -eq 0 ]; then
 
 		fi
 
+		if [ -n "${nitro_fork_branch}" ]; then
 
-		# echo " - cloning simple_bridge"
+			echo " - setting nitrogen_core to branch '${nitro_fork_branch}'"
 
-		# if ! ${git} clone ${clone_opts} git://github.com/nitrogen/simple_bridge; then
+			cd nitrogen_core
 
-		# echo " Error, unable to obtain simple_bridge." 1>&2
-		# exit 60
+			if ! ${git} checkout "${nitro_fork_branch}"; then
 
-		# fi
+				echo " Error, unable to set nitrogen_core to branch '${nitro_fork_branch}'." 1>&2
+				exit 83
 
-		# simple_bridge_tag="v2.1.0"
+			fi
 
-		# if [ -n "${simple_bridge_tag}" ]; then
+			cd ..
 
-		#	echo " - setting simple_bridge to tag '${simple_bridge_tag}'"
+		fi
 
-		#	cd simple_bridge
-		#
-		#	if ! ${git} checkout tags/${simple_bridge_tag}; then
 
-		#		echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
-		#		exit 62
 
-		#	fi
+		 echo " - cloning simple_bridge"
 
-		#	cd ..
+		#simple_bridge_git_id="https://github.com/nitrogen/simple_bridge"
+		simple_bridge_git_id="${our_github_base}/simple_bridge"
 
-		# fi
+		if ! ${git} clone ${clone_opts} "${simple_bridge_git_id}"; then
 
+			echo " Error, unable to obtain simple_bridge." 1>&2
+			exit 60
+
+		fi
+
+		#simple_bridge_tag="v2.1.0"
+		simple_bridge_tag=""
+
+		if [ -n "${simple_bridge_tag}" ]; then
+
+			echo " - setting simple_bridge to tag '${simple_bridge_tag}'"
+
+			cd simple_bridge
+
+			if ! ${git} checkout "tags/${simple_bridge_tag}"; then
+
+				echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
+				exit 62
+
+			fi
+
+			cd ..
+
+		fi
+
+		if [ -n "${nitro_fork_branch}" ]; then
+
+			echo " - setting simple_bridge to branch '${nitro_fork_branch}'"
+
+			cd simple_bridge
+
+			if ! ${git} checkout "${nitro_fork_branch}"; then
+
+				echo " Error, unable to set simple_bridge to branch '${nitro_fork_branch}'." 1>&2
+				exit 63
+
+			fi
+
+			cd ..
+
+		fi
 
 		# echo " - cloning qdate"
 
-		# if ! ${git} clone ${clone_opts} git://github.com/choptastic/qdate; then
+		# if ! ${git} clone ${clone_opts} https://github.com/choptastic/qdate; then
 
 		#	echo " Error, unable to obtain qdate." 1>&2
 		#	exit 70
@@ -414,7 +469,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning nprocreg"
 
-		# if ! ${git} clone ${clone_opts} git://github.com/nitrogen/nitrogen_core; then
+		# if ! ${git} clone ${clone_opts} https://github.com/nitrogen/nprocreg; then
 
 		#	echo " Error, unable to obtain nprocreg." 1>&2
 		#	exit 70
@@ -441,7 +496,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning sync"
 
-		# if ! ${git} clone ${clone_opts} git://github.com/rustyio/sync; then
+		# if ! ${git} clone ${clone_opts} https://github.com/rustyio/sync; then
 
 		#	echo " Error, unable to obtain sync." 1>&2
 		#	exit 90
@@ -470,7 +525,7 @@ if [ $do_clone -eq 0 ]; then
 
 		# echo " - cloning nitro_cache"
 
-		# if ! ${git} clone ${clone_opts} git://github.com/choptastic/nitro_cache; then
+		# if ! ${git} clone ${clone_opts} https://github.com/choptastic/nitro_cache; then
 
 		#	echo " Error, unable to obtain nitro_cache." 1>&2
 		#	exit 100
@@ -500,7 +555,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning US-Common"
 
-	if ! ${git} clone ${clone_opts} ${github_base}/us-common us_common; then
+	if ! ${git} clone ${clone_opts} ${our_github_base}/us-common us_common; then
 
 		echo " Error, unable to obtain US-Common." 1>&2
 		exit 35
@@ -510,7 +565,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-LEEC (Ceylan fork of letsencrypt-erlang)"
 
-	if ! ${git} clone ${clone_opts} ${github_base}/letsencrypt-erlang leec; then
+	if ! ${git} clone ${clone_opts} ${our_github_base}/letsencrypt-erlang leec; then
 
 		echo " Error, unable to obtain Ceylan-LEEC." 1>&2
 		exit 32
@@ -520,7 +575,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-Traces"
 
-	if ! ${git} clone ${clone_opts} ${github_base}/Ceylan-Traces traces; then
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Traces traces; then
 
 		echo " Error, unable to obtain Ceylan-Traces." 1>&2
 		exit 30
@@ -530,7 +585,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-WOOPER"
 
-	if ! ${git} clone ${clone_opts} ${github_base}/Ceylan-WOOPER wooper; then
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-WOOPER wooper; then
 
 		echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
 		exit 25
@@ -540,7 +595,7 @@ if [ $do_clone -eq 0 ]; then
 
 	echo " - cloning Ceylan-Myriad"
 
-	if ! ${git} clone ${clone_opts} ${github_base}/Ceylan-Myriad myriad; then
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Myriad myriad; then
 
 		echo " Error, unable to obtain Ceylan-Myriad." 1>&2
 		exit 20
@@ -622,7 +677,8 @@ if [ ${do_build} -eq 0 ]; then
 
 		cd nitrogen_core
 
-		if ! ${make} all; then
+		# The included rebar is most probably obsolete:
+		if ! ${make} update-rebar all; then
 			echo " Error, the build of nitrogen_core failed." 1>&2
 			exit 70
 		fi
@@ -928,7 +984,7 @@ if [ $do_launch -eq 0 ]; then
 
 	done
 
-	echo "### Launching US-Web native build now"
+	echo "### Launching US-Web native build now, specifying '${us_config_dir}' as US configuration directory"
 
 	cd "${abs_native_install_dir}/us_web" || exit 81
 
@@ -940,7 +996,8 @@ if [ $do_launch -eq 0 ]; then
 	# (typically if the intended one is located in the
 	# ~/.config/universal-server directory of the launching user):
 
-	sudo ${start_script} "${us_config_file}"
+	# Needing to specify the US configuration *directory* (not file):
+	sudo ${start_script} "${us_config_dir}"
 	res=$?
 
 	if [ $res -eq 0 ]; then

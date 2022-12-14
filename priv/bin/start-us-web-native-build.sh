@@ -66,6 +66,20 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 fi
 
+maybe_us_config_dir="$1"
+
+if [ -n "${maybe_us_config_dir}" ]; then
+
+	if [ ! -d "${maybe_us_config_dir}" ]; then
+
+		echo "  Error, the specified US configuration directory, '${{maybe_us_config_dir}', does not exist." 1>&2
+
+		exit 20
+
+	fi
+
+fi
+
 
 #echo "Starting US-Web, to run as a native build with following user: $(id)"
 
@@ -101,9 +115,9 @@ us_launch_type="native"
 . "${us_web_common_script}" #1>/dev/null
 
 # We expect a pre-installed US configuration file to exist:
-read_us_config_file "$1" 1>/dev/null
+read_us_config_file "${maybe_us_config_dir}" #1>/dev/null
 
-read_us_web_config_file 1>/dev/null
+read_us_web_config_file #1>/dev/null
 
 secure_authbind
 
@@ -127,7 +141,9 @@ echo " -- Starting US-Web natively-built application as user '${us_web_username}
 
 #echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
 
-/bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
+# XDG_CONFIG_DIRS defined, so that the US server can find it as well:
+
+/bin/sudo -u ${us_web_username} XDG_CONFIG_DIRS="${maybe_us_config_dir}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
 
 res=$?
 

@@ -2083,6 +2083,14 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 			path => text_utils:format( "site/static/~ts/", [ D ] ) } }
 							|| D <- StaticDirs ],
 
+	% So that templates (e.g. "bare.html" can be found without changing the VM
+	% current directory); yet does not work as it is no a web lookup but one
+	% done by nitro_cache with only relative paths:
+	%
+	%TemplateDirDispatch = { "/templates/[...]",
+	%   StaticHandlerModule, BaseStaticHandlerState#{
+	%       type => directory,
+	%       path => "site/templates/" } },
 
 	StaticFiles = [ "favicon.ico" ],
 
@@ -2092,20 +2100,30 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 			path => text_utils:format( "site/static/~ts", [ F ] ) } }
 							|| F <- StaticFiles ],
 
+	%StaticMatches = [ TemplateDirDispatch | StaticDirDispatches ]
+	%   ++ StaticFileDispatches,
 	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
 
-	% Useful so that the Nitrogen cache can know where to look for elements
-	% (such as templates) that are defined as paths that are relative to the
-	% content root at hand; basic Nitrogen places its current directory at this
-	% content root, whereas the current directory of US-Web VM is necessarily
-	% elsewhere (as in theory multiple Nitrogen-based websites can be served),
-	% so US-Web needs to locate easily where the served contents shall be found.
+	% To be used if needing to transmit information to these handlers.
 	%
-	InitialNitroHandlerState = BinContentRoot,
+	% Could be useful so that the Nitrogen cache can know where to look for
+	% elements (such as templates) that are defined as paths that are relative
+	% to the content root at hand; basic Nitrogen places its current directory
+	% at this content root, but the current directory of US-Web VM might be set
+	% elsewhere (e.g. if multiple Nitrogen-based websites had to be served same
+	% day), so US-Web would need to locate easily where the served contents
+	% shall be found.
+	%
+	%InitialNitroHandlerState= #us_web_nitro_handler_state{
+	%   nitro_doc_root=BinContentRoot },
+
+	InitialNitroHandlerState = undefined,
 
 	AllNitroMatches = StaticMatches
-		++ [ { '_', [], _NitroHandler=us_web_nitrogen_anchor,
+		++ [ { '_', [], _NitroHandler=us_web_nitrogen_handler,
 			   InitialNitroHandlerState } ],
+		%++ [ { '_', [], _NitroHandler=us_web_nitrogen_anchor,
+		%      InitialNitroHandlerState } ],
 
 	PathMatches = case CertSupport =:= renew_certificates
 						andalso MaybeCertManagerPid =/= undefined of
@@ -3224,6 +3242,13 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 
 	end,
 
+	% At its core (logic, cache, through all relative paths), Nitrogen always
+	% considers that the current directory of the VM matches the root directory
+	% of the (single) web application (the one that contains the 'site'
+	% subtree); so we have to change the US-Web current directory accordingly:
+	% (otherwise: template_not_found for <<"./site/templates/bare.html">>, etc.)
+	%
+	file_utils:set_current_directory( BinContentRoot ),
 
 	% Now, general initialisation for Nitrogen:
 
@@ -3270,10 +3295,10 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 	% So:
 
 	%OtherPrereqApps = otp_utils:prepare_for_execution( nitrogen_core,
-	%												   BinContentRoot ),
+	%                                                   BinContentRoot ),
 
 	%?debug_fmt( "Other prerequisite applications: ~p.",
-	%			[ OtherPrereqApps ] ),
+	%            [ OtherPrereqApps ] ),
 
 	UsWebBaseDir = ?getAttr(app_base_directory),
 
@@ -3317,7 +3342,6 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 
 	otp_utils:start_application( nprocreg ),
 
-
 	% Same for nitrogen_core:
 	NitrogenCoreDir = file_utils:join( NitrogenCoreBaseDir, "ebin" ),
 
@@ -3329,15 +3353,30 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 	otp_utils:start_application( nitrogen_core ),
 
 
+	% Same for simple_bridge (which requires nitrogen.beam found in
+	% nitrogen_core):
+	%
+	SimpleBridgeDir = file_utils:get_first_existing_directory_in(
+		[ file_utils:join( BaseDir, "simple_bridge/ebin" )
+				|| BaseDir <- AllBaseDepsDirs ] ),
+
+	code_utils:declare_beam_directory( SimpleBridgeDir ),
+
+	?debug_fmt( "Starting simple_bridge (whose selected ebin is '~ts').",
+				[ SimpleBridgeDir ] ),
+
+	otp_utils:start_application( simple_bridge ),
+
+
 	% Same for Nitrogen itself (which we believe is not needed here):
 	%NitrogenDir = file_utils:get_first_existing_directory_in(
-	%	[ file_utils:join( BaseDir, "nitrogen/ebin" )
-	%			|| BaseDir <- AllBaseDepsDirs ] ),
+	%   [ file_utils:join( BaseDir, "nitrogen/ebin" )
+	%           || BaseDir <- AllBaseDepsDirs ] ),
 
 	%code_utils:declare_beam_directory( NitrogenDir ),
 
 	%?debug_fmt( "Starting nitrogen (whose selected ebin is '~ts').",
-	%			[ NitrogenDir ] ),
+	%            [ NitrogenDir ] ),
 
 	%otp_utils:start_application( nitrogen ),
 
@@ -3351,8 +3390,9 @@ initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 initialise_nitrogen_for_contents( ContentRoots, State ) ->
 
 	?error_fmt( "Multiple Nitrogen content roots have been specified (~ts), "
-		"whereas a single one can be supported (otherwise the BEAM of the "
-		"various page modules will clash in the code path).",
+		"whereas at least currenly only a single one can be supported "
+		"(otherwise the BEAM of the various page modules will clash "
+		"in the code path).",
 		[ text_utils:strings_to_listed_string( ContentRoots ) ] ),
 
 	throw( { multiple_nitrogen_roots, ContentRoots } ).

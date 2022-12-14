@@ -389,55 +389,56 @@ if [ $do_clone -eq 0 ]; then
 		fi
 
 
+		# Deactivated, as nitrogen_core will manage directly its dependencies:
 
-		 echo " - cloning simple_bridge"
+		#echo " - cloning simple_bridge"
 
-		#simple_bridge_git_id="https://github.com/nitrogen/simple_bridge"
-		simple_bridge_git_id="${our_github_base}/simple_bridge"
+		##simple_bridge_git_id="https://github.com/nitrogen/simple_bridge"
+		#simple_bridge_git_id="${our_github_base}/simple_bridge"
 
-		if ! ${git} clone ${clone_opts} "${simple_bridge_git_id}"; then
+		#if ! ${git} clone ${clone_opts} "${simple_bridge_git_id}"; then
 
-			echo " Error, unable to obtain simple_bridge." 1>&2
-			exit 60
+		#	echo " Error, unable to obtain simple_bridge." 1>&2
+		#	exit 60
 
-		fi
+		#fi
 
 		#simple_bridge_tag="v2.1.0"
-		simple_bridge_tag=""
+		#simple_bridge_tag=""
 
-		if [ -n "${simple_bridge_tag}" ]; then
+		#if [ -n "${simple_bridge_tag}" ]; then
 
-			echo " - setting simple_bridge to tag '${simple_bridge_tag}'"
+		#	echo " - setting simple_bridge to tag '${simple_bridge_tag}'"
 
-			cd simple_bridge
+		#	cd simple_bridge
 
-			if ! ${git} checkout "tags/${simple_bridge_tag}"; then
+		#	if ! ${git} checkout "tags/${simple_bridge_tag}"; then
 
-				echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
-				exit 62
+		#		echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
+		#		exit 62
 
-			fi
+		#	fi
 
-			cd ..
+		#	cd ..
 
-		fi
+		#fi
 
-		if [ -n "${nitro_fork_branch}" ]; then
+		#if [ -n "${nitro_fork_branch}" ]; then
 
-			echo " - setting simple_bridge to branch '${nitro_fork_branch}'"
+		#	echo " - setting simple_bridge to branch '${nitro_fork_branch}'"
 
-			cd simple_bridge
+		#	cd simple_bridge
 
-			if ! ${git} checkout "${nitro_fork_branch}"; then
+		#	if ! ${git} checkout "${nitro_fork_branch}"; then
 
-				echo " Error, unable to set simple_bridge to branch '${nitro_fork_branch}'." 1>&2
-				exit 63
+		#		echo " Error, unable to set simple_bridge to branch '${nitro_fork_branch}'." 1>&2
+		#		exit 63
 
-			fi
+		#	fi
 
-			cd ..
+		#	cd ..
 
-		fi
+		#fi
 
 		# echo " - cloning qdate"
 

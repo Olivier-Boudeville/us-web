@@ -377,10 +377,13 @@ Instead the traces may then be supervised and browsed remotely (at any time, and
 For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a ``us-monitor.config`` file that is typically located in the ``~/.config/universal-server`` directory.
 
 
+
+.. _`configuration file`:
+
 Configuration Files
 ===================
 
-A ``us.config`` file referencing a suitable US-Web configuration file will be needed; most of the behaviour of the US-Web server is determined by this last configuration file.
+A ``us.config`` file *referencing* a suitable US-Web configuration file will be needed; most of the behaviour of the US-Web server is determined by this last configuration file.
 
 As the US-related configuration files are heavily commented, proceeding based on examples in the simplest approach [#]_.
 
@@ -720,6 +723,101 @@ It is possible to trigger the generation of web access reports (refer to the `Au
 
 For that one should execute the `generate-us-web-log-report.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/generate-us-web-log-report.sh>`_ script, which relies on the same ``us-web-for-remote-access.config`` configuration file already discussed in the `Remote Monitoring`_ section.
 
+
+
+
+.. _`Nitrogen-based`:
+
+----------------
+Nitrogen Support
+----------------
+
+
+A US-Web instance may host one [#]_ Nitrogen-based website.
+
+.. [#] Only a single instance of Nitrogen is supported per US-Web instance, as otherwise the various pages of the Nitrogen websites would clash through the code path (e.g. there would be multiple ``index.beam`` files there; there would also be problems with the relative paths currently expected by ``nitro_cache``, etc.).
+
+	   So, if wanting to have multiple Nitrogen websites available from a common domain name, one shall rely on a `reverse proxy`_. It is hardly a limitation, as web applications are better managed independently anyway, in order to be able to freely start / stop / update them, to isolate them with different users, to separate their resource uses, etc.
+
+
+
+Deployment
+==========
+
+
+Deployment of a Nitrogen-enabled US-Web
+---------------------------------------
+
+US-Web must be deployed accordingly, typically with the ``--support-nitrogen`` option of the ``deploy-us-web-native-build.sh`` script [#]_.
+
+.. [#] This script relies on a few forks that we made for better control, namely of `nitrogen_core <https://github.com/Olivier-Boudeville/nitrogen_core>`_ and `simple_bridge <https://github.com/Olivier-Boudeville/simple_bridge>`_ (the latter being installed by the former).
+
+
+Deployment of the Nitrogen-based website / application
+------------------------------------------------------
+
+Then of course a Nitrogen-based website must have already been developed, an example of which being, in `US-Main <https://github.com/Olivier-Boudeville/us-main>`_, the ``us_main_nitrogen_app`` web application.
+
+Such a website is typically obtained by cloning the `official Nitrogen repository <https://github.com/nitrogen/nitrogen>`_ (or possibly `our fork thereof <https://github.com/Olivier-Boudeville/nitrogen>`_) and running:
+
+.. code:: bash
+
+ $ make slim_cowboy PREFIX=$MY_NITROGEN_APP_ROOT PROJECT=my_nitrogen_app
+
+
+(we prefer relying on a separate system-wide Erlang installation rather than on an full OTP release)
+
+The root tree of interest then lies in ``$MY_NITROGEN_APP_ROOT/my_nitrogen_app/site``.
+
+The whole of it may be put in `VCS <https://howtos.esperide.org/VCS.html>`_, or at the very least its ``include``, ``src``, ``static/{css,images}``, ``templates`` subtrees.
+
+
+
+Configuration
+=============
+
+Here we must declare to US-Web, through its `configuration file`_ (say, ``my-us-web.config``, as listed under the ``us_web_config_filename`` key of one's ``us.config`` file), that, for a given domain name (say, ``foo.org``), a given virtual host (say, ``bar``, thus designated as ``bar.foo.org``) is to be served by a Nitrogen instance whose content root is, relatively to the US-Web default web root, ``./my-nitrogen-website``.
+
+This is done simply thanks to a user-defined route, like in:
+
+.. code:: erlang
+
+ { routes, [
+
+  % These are implicitly static and relative to default_web_root:
+  { "foo.org", [ { "project-a", "test-static-website-A" },
+				 { "project-b", "test-static-website-B" },
+				 { "project-c", "test-static-website-C" },
+				 { "bar",       "my-nitrogen-website", nitrogen },
+				 { default_vhost_catch_all, "test-static-website-D" } ] },
+
+  [...] ] }
+
+
+.. We finally forked ``nitrogen``, ``nitrogen_core``, ``simple_bridge`` and implemented our own US-Web handler (` <>`_, following `this documentation <https://nitrogenproject.com/doc/handlers.html>`_)
+
+
+
+
+Nitrogen-related Information
+============================
+
+Official Nitrogen sources:
+
+- `website <http://nitrogenproject.com/>`_
+- `insightful tutorial <http://nitrogenproject.com/doc/tutorial.html>`_
+- `wiki <https://github.com/nitrogen/nitrogen/wiki>`_
+- `Git repository <https://github.com/nitrogen/nitrogen>`_
+- the associated `Google group <https://groups.google.com/g/nitrogenweb>`_
+- the `Build It With Nitrogen <https://leanpub.com/builditwithnitrogen>`_ book / ebook
+
+
+Extra information:
+
+- "*It is strongly recommended to catch static files with the static_paths setting. simple_bridge does not serve large static files in an optimal way (it loads the files into memory completely before sending)*"
+- `Zotonic <http://zotonic.com/features>`_ relied on Nitrogen
+- `How Nitrogen processes requests <https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/>`_
+- `How to add Nitrogen and Cowboy as dependency libs to your erlang application <https://rshestakov.wordpress.com/2013/03/03/how-to-add-nitrogen-and-cowboy-as-dependecy-libs-to-your-erlang-application/>`_
 
 
 --------------
@@ -1271,20 +1369,61 @@ Then, when logged on the server, or from any client able to connect to it:
 Planned Enhancements
 --------------------
 
+
+Reverse Proxy
+=============
+
+
+Purpose
+-------
+
+The goal of a `reverse proxy <https://en.wikipedia.org/wiki/Reverse_proxy>`_ is to have a (proxy) server seamlessly (read: without doing a HTTP forward - thus with unchanged URLs from the point of view of the client) redirect incoming traffic to other "proxied" webservers (possibly other US-Web instances) running on other hosts and/or ports.
+
+A typical use case here [#]_ is having an US-Web instance serve a domain name of interest (e.g. ``foo.org``) whereas more than one of its virtual hosts are `Nitrogen-based`_, knowing that no two of such virtual hosts shall be executed by the same (Erlang) VM (as notably their Nitrogen page modules would clash).
+
+.. [#] The main other uses cases happen when wanting to:
+
+	   - run a webserver on a non-privileged port
+	   - balance the load between multiple actual servers
+
+For example a reverse proxy could ensure that connecting to the ``https://my-server.foo.org`` (virtual) host is transparently forwarded to ``http://foo.org:8150`` (a port which could be filtered by the local firewall - thus with no possible direct access from the outside network).
+
+So this latter, autonomous webserver ``my-server`` instance would run thanks to its own VM on TCP port 8150, yet would only by reachable by connecting to the former, centralising webserver, which would act as a reverse proxy. As many other virtual hosts as wanted could be declared (e.g. as ``https://my-other-server.foo.org``) to the reverse proxy, each pointing then to its own actual webserver instance (e.g. ``http://foo.org:8151``).
+
+
+
+Challenges
+----------
+
+The HTTP/HTTPS routing shall be fully transparent, notably not breaking any connectivity (e.g. regarding Comet, AJAX, Websockets) and complying with the proper use of the underlying protocols (e.g. so that browsers do not interpret a proxying as the spoofing of SSL certificates).
+
+
+
+Implementations
+---------------
+
+There are many solutions in order to obtain a reverse proxy; it may be done:
+
+- directly at the firewall level, typically by `configuring iptables accordingly <https://www.jenkins.io/doc/book/system-administration/reverse-proxy-configuration-with-jenkins/reverse-proxy-configuration-iptables/>`_
+- thanks to nginx, as a `NGINX Reverse Proxy <https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/>`_ (probably the most popular option)
+- at the Erlang-level: see for example `cowboy_revproxy <https://github.com/benoitc/cowboy_revproxy>`_, `Surrogate <https://github.com/skruger/Surrogate>`_ or `yaws_revproxy <https://github.com/erlyaws/yaws/blob/master/src/yaws_revproxy.erl>`_
+
+
+
+US-Web Reverse Proxy
+--------------------
+
+For better control US-Web will implement its own reverse proxy.
+
+For that it will automatically modify header fields (e.g. ``Host``, ``Connection``, ``X-Real-IP``; the source IP could also by set) in the proxied requests.
+
+The responses from proxied servers could be buffered until they are fully received - to better manage slower clients - yet, as here the proxied servers may offer rather interactive uses, buffering may not be desirable.
+
+
+.. “Host” and “Connection”, and eliminates the header fields whose values are empty strings. “Host” is set to the $proxy_host variable, and “Connection” is set to close.
 .. comment Done: - bullet-proof **https support**: certificate management (based on LetsEncrypt in Erlang, and regularly renewed thanks to our embedded scheduler)
-- **Nitrogen** and/or **Zotonic** support, in addition to static websites
 
-
-----------------------------------------
-About Nitrogen (possibly future) Support
-----------------------------------------
-
-- "*It is strongly recommended to catch static files with the static_paths setting. simple_bridge does not serve large static files in an optimal way (it loads the files into memory completely before sending)*"
-- `How Nitrogen processes requests <https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/>`_
-- `How to add Nitrogen and Cowboy as dependency libs to your erlang application <https://rshestakov.wordpress.com/2013/03/03/how-to-add-nitrogen-and-cowboy-as-dependecy-libs-to-your-erlang-application/>`_
-
-We finally forked ``nitrogen``, ``nitrogen_core``, ``simple_bridge`` and implemented our own US-Web handler (` <>`_, following `this documentation <https://nitrogenproject.com/doc/handlers.html>`_)
-
+.. - **Zotonic** support
 
 .. comment - a universal server and a universal webserver must be able to run independently (knowing that, at build time, only the US Webserver depends on the US Server); as a consequence, for example the US-Web configuration server should not request its overall US counterpart about the location of the configuration directory, but it should determine it by itself; so the elected design is that both use the same logic (as a static method) to locate the US configuration file; as a result, storing in that file the registration name of the US configuration server is meaningful for both: the US server can register itself accordingly, and the webserver can locate it if it exists; if not, the US web will create an instance thereof and use it afterwards
 

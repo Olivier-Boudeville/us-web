@@ -114,12 +114,11 @@
 
 % All known, licit (top-level) keys for the US-Web configuration file:
 -define( known_config_keys, [ ?us_web_config_server_registration_name_key,
-			?us_web_scheduler_registration_name_key,
-			?us_web_username_key, ?us_web_app_base_dir_key,
-			?us_web_data_dir_key, ?us_web_log_dir_key,
-			?http_tcp_port_key, ?https_tcp_port_key,
-			?default_web_root_key, ?log_analysis_key,
-			?certificate_support_key, ?certificate_mode_key, ?routes_key ] ).
+	?us_web_scheduler_registration_name_key, ?us_web_username_key,
+	?us_web_app_base_dir_key, ?us_web_data_dir_key, ?us_web_log_dir_key,
+	?http_tcp_port_key, ?https_tcp_port_key, ?default_web_root_key,
+	?log_analysis_key, ?certificate_support_key, ?certificate_mode_key,
+	?routes_key ] ).
 
 
 % The last-resort environment variable:

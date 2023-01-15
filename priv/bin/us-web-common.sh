@@ -89,6 +89,12 @@ else
 fi
 
 
+# Must be kept consistent with the default_us_web_epmd_port define in
+# class_USWebConfigServer.erl; to be used by the various sourcing scripts:
+#
+default_us_web_epmd_port=4508
+
+
 # Sets notably: us_web_config_file, us_web_username, us_web_app_base_dir,
 # us_web_log_dir, us_web_rel_dir, us_web_exec.
 #
@@ -132,6 +138,35 @@ read_us_web_config_file()
 	#
 	us_web_base_content=$(/bin/cat "${us_web_config_file}" | sed 's|^[[:space:]]*%.*||1')
 
+
+	# The EPMD port (possibly already set at the overall US-level) may be
+	# overridden here in US-Web, so that it does not clash with the one of any
+	# other US-* application (e.g. US-Main).
+
+	us_web_erl_epmd_port=$(echo "${us_web_base_content}" | grep epmd_port | sed 's|^[[:space:]]*{[[:space:]]*epmd_port,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
+
+	if [ -z "${us_web_erl_epmd_port}" ]; then
+
+		#echo "No US-Web level Erlang EPMD port specified."
+
+		# Leaving the defaults that were possibly set at the US overall level.
+		:
+
+	else
+
+		#echo "Using US-Web specified EPMD port, '${us_web_erl_epmd_port}'."
+
+		# For shell-like uses:
+		epmd_opt="ERL_EPMD_PORT=${us_web_erl_epmd_port}"
+
+		# For make uses:
+		epmd_make_opt="EPMD_PORT=${us_web_erl_epmd_port}"
+
+	fi
+
+	#echo "epmd_opt = ${epmd_opt}"
+
+
 	us_web_username=$(echo "${us_web_base_content}" | grep us_web_username | sed 's|^{[[:space:]]*us_web_username,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')
 
 	if [ -z "${us_web_username}" ]; then
@@ -149,7 +184,7 @@ read_us_web_config_file()
 
 	else
 
-		echo "Using specified web username, '${us_web_username}'."
+		echo "Using specified US-Web username, '${us_web_username}'."
 
 	fi
 
@@ -159,13 +194,14 @@ read_us_web_config_file()
 
 	if [ -z "${us_web_app_base_dir}" ]; then
 
-		echo "(us_web_app_base_dir not set in '${us_web_config_file}')"
+		#echo "(us_web_app_base_dir not set in '${us_web_config_file}')"
 
 		# Environment variable as last-resort:
 		if [ -z "${US_WEB_APP_BASE_DIR}" ]; then
 
 			if [ "${us_launch_type}" = "native" ]; then
 
+				# As sourced from us_web directly:
 				us_web_app_base_dir="${us_web_install_root}"
 
 				echo "No base directory specified for the US-Web application nor US_WEB_APP_BASE_DIR environment variable set, deriving it, in a native context, from the current directory, and trying '${us_web_app_base_dir}'."
@@ -258,6 +294,7 @@ read_us_web_config_file()
 	# native directory)
 	#
 	us_web_vm_log_dir="${us_web_app_base_dir}/log"
+	#echo "Setting us_web_vm_log_dir to ${us_web_vm_log_dir}."
 
 	if [ ! -d "${us_web_vm_log_dir}" ]; then
 
@@ -337,6 +374,7 @@ read_us_web_config_file()
 			else
 
 				echo "Rebar3 build tree detected, US-Web application found as '${us_web_exec}'."
+
 			fi
 
 		else
@@ -537,8 +575,8 @@ prepare_us_web_launch()
 
 	# So that the VM can write its logs despite authbind:
 	#
-	# (note that a user can traverse a directory if and only if he has execute
-	# permission on it)
+	# (note that a user can traverse a directory if and only if they have
+	# execute permission on it)
 	#
 	chown ${us_web_username}:${us_groupname} ${us_web_vm_log_dir}
 
@@ -595,8 +633,16 @@ inspect_us_web_log()
 
 	if [ -f "${us_web_vm_log_file}" ]; then
 
-		echo "EPMD names output:"
-		epmd -port ${erl_epmd_port} -names
+		if [ -n "${erl_epmd_port}" ]; then
+			echo "EPMD names output (on port ${erl_epmd_port}):"
+			epmd_port_opt="-port ${erl_epmd_port}"
+		else
+			echo "EPMD names output (on default US-Web port ${erl_epmd_port}):"
+			epmd_port_opt="-port ${default_us_web_epmd_port}"
+		fi
+
+		${epmd} ${epmd_port_opt} -names
+
 
 		echo
 		echo "Displaying the end of '${us_web_vm_log_file}':"

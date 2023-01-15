@@ -324,15 +324,12 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 	% then onWOOPERExitReceived/3)
 	%
 	TraceState = class_USServer:construct( State,
-						?trace_categorize(ServerName), _TrapExits=true ),
+		?trace_categorize(ServerName), _TrapExits=true ),
 
 	% For example for any stateless helper:
 	class_TraceEmitter:register_bridge( TraceState ),
 
 	%?send_info( TraceState, "Construction started." ),
-
-	% WOOPER crashes without logs?
-	logger:error( "Test from certicate manager ~w.", [ self() ] ),
 
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
@@ -682,7 +679,7 @@ onCertificateRequestOutcome( State,
 
 	%?info_fmt
 	?warning_fmt( "Certificate generation success for '~ts', "
-			   "certificate stored in '~ts'.", [ FQDN, BinCertFilePath ] ),
+		"certificate stored in '~ts'.", [ FQDN, BinCertFilePath ] ),
 
 	SetState = case ?getAttr(renew_listener) of
 
@@ -883,6 +880,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	% No need to overwhelm the ACME server in case of permacrash:
 	%WaitDurationMs = 15000,
+	% 4 hours:
 	WaitDurationMs = 4*3600*1000,
 
 	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~ts'), "
@@ -892,17 +890,18 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	timer:sleep( WaitDurationMs ),
 
-	{ LEECPid, _RenewPeriodSecs } =
+	{ MaybeLEECFsmPid, _RenewPeriodSecs, StartOpts, _BridgeSpec } =
 		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
 				   ?getAttr(private_key_path), State ),
 
-	?warning_fmt( "New LEEC instance started for '~ts': ~w; requesting new "
-				  "certificate.", [ FQDN, LEECPid ] ),
+	?warning_fmt( "New LEEC instance started for '~ts': ~w (start options: ~p);"
+		" requesting a new certificate.",
+		[ FQDN, MaybeLEECFsmPid, StartOpts ] ),
 
 	% Immediately retries:
 	self() ! renewCertificate,
 
-	RestartState = setAttribute( State, leec_pid, LEECPid ),
+	RestartState = setAttribute( State, leec_pid, MaybeLEECFsmPid ),
 
 	wooper:return_state( RestartState ).
 
@@ -949,8 +948,8 @@ get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 	% certificate:
 	%
 	SNIHostInfos = list_utils:flatten_once(
-					[ get_virtual_host_sni_infos( H, VH, BinCertDir )
-						|| { H, VH } <- UserRoutes ] ),
+		[ get_virtual_host_sni_infos( H, VH, BinCertDir )
+			|| { H, VH } <- UserRoutes ] ),
 
 	% Redundant:
 	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(

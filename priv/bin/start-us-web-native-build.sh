@@ -66,17 +66,41 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 fi
 
+
+if [ ! $(id -u) -eq 0 ]; then
+
+	# As operations like chown will have to be performed:
+	echo "  Error, this script must be run as root.
+${usage}" 1>&2
+	exit 5
+
+fi
+
+
+# XDG_CONFIG_DIRS defined, so that the US server as well (not only these
+# scripts) can look it up:
+#
+xdg_cfg_dirs="${XDG_CONFIG_DIRS}:/etc/xdg"
+
+
 maybe_us_config_dir="$1"
 
 if [ -n "${maybe_us_config_dir}" ]; then
 
 	if [ ! -d "${maybe_us_config_dir}" ]; then
 
-		echo "  Error, the specified US configuration directory, '${{maybe_us_config_dir}', does not exist." 1>&2
+		echo "  Error, the specified US configuration directory, '${maybe_us_config_dir}', does not exist." 1>&2
 
 		exit 20
 
 	fi
+
+	# As a 'universal-server/us.config' suffix will be added to each candidate
+	# configuration directory, we remove the last directory:
+
+	candidate_dir="$(dirname $(realpath ${maybe_us_config_dir}))"
+
+	xdg_cfg_dirs="${candidate_dir}:${xdg_cfg_dirs}"
 
 fi
 
@@ -114,6 +138,7 @@ us_launch_type="native"
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
 
+
 # We expect a pre-installed US configuration file to exist:
 read_us_config_file "${maybe_us_config_dir}" #1>/dev/null
 
@@ -126,24 +151,38 @@ prepare_us_web_launch
 cd src || exit
 
 
-# Note that a former instance of EPMD may wrongly report that a node with the
-# target name is still running (whereas no Erlang VM is even running). Apart
-# from killing this EPMD instance (jeopardising any other running Erlang
-# application), no solution exists apparently (names cannot be unregistered from
-# EPMD, as we do not launch it with -relaxed_command_check).
+#echo "epmd_make_opt=${epmd_make_opt}"
+
+# Launching explicitly a properly-condigured EPMD for US-Web (preferably from
+# the current weakly-privileged user):
+#
+# (note that a former instance of EPMD may wrongly report that a node with the
+# target name is still running, whereas no Erlang VM even exists)
+#
+make -s launch-epmd ${epmd_make_opt} || exit
+
+
+if [ -n "${erl_epmd_port}" ]; then
+	epmd_start_msg="configured EPMD port ${erl_epmd_port}"
+else
+	epmd_start_msg="default US-Web port ${default_us_web_epmd_port}"
+fi
+
 
 echo
-echo " -- Starting US-Web natively-built application as user '${us_web_username}' (EPMD port: ${erl_epmd_port}, whereas log directory is '${us_web_vm_log_dir}')..."
+echo " -- Starting US-Web natively-built application as user '${us_web_username}', on ${epmd_start_msg}, whereas VM log directory is '${us_web_vm_log_dir}'..."
 
+# Apparently variables may be indifferently set prior to make, directly in the
+# environment (like 'XDG_CONFIG_DIRS=xxx make TARGET') or as arguments (like
+# 'make TARGET XDG_CONFIG_DIRS=xxx'), even if there are a sudo and an authbind
+# in the equation.
 
-# Previously the '--deep' authbind option was used; apparently the minimal depth
-# is 6:
+# Previously the '--depth' authbind option was used, and apparently a depth of 6
+# was sufficient; but there is little interest in taking such risks.
 
-#echo /bin/sudo -u ${us_web_username} VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
+#echo Starting US-Web: /bin/sudo -u ${us_web_username} ${authbind} --deep make -s us_web_exec_service XDG_CONFIG_DIRS="${xdg_cfg_dirs}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_make_opt}
 
-# XDG_CONFIG_DIRS defined, so that the US server can find it as well:
-
-/bin/sudo -u ${us_web_username} XDG_CONFIG_DIRS="${maybe_us_config_dir}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_opt} ${authbind} --depth 6 make -s us_web_exec_service
+/bin/sudo -u ${us_web_username} ${authbind} --deep make -s us_web_exec_service XDG_CONFIG_DIRS="${xdg_cfg_dirs}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_make_opt}
 
 res=$?
 
@@ -152,7 +191,7 @@ res=$?
 
 if [ ${res} -eq 0 ]; then
 
-	# Unfortunately may still be a failure (ex: if a VM with the same name was
+	# Unfortunately may still be a failure (e.g. if a VM with the same name was
 	# already running, start failed, not to be reported as a success)
 
 	echo "  (authbind success reported)"
@@ -160,15 +199,16 @@ if [ ${res} -eq 0 ]; then
 	# If wanting to check or have more details:
 	inspect_us_web_log
 
-	# Better diagnosis than the previous res code:
-	# (only renamed once construction is mostly finished)
-	#
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:
 	#
 	sleep 4
 
-	# trace_file supposedly inherited from us-web-common.sh:
+	# Better diagnosis than the previous res code:
+	#
+	# (only renamed once construction is mostly finished; trace_file supposedly
+	# inherited from us-web-common.sh)
+	#
 	if [ -f "${trace_file}" ]; then
 
 		echo "  (success assumed, as '${trace_file}' found)"
@@ -176,7 +216,7 @@ if [ ${res} -eq 0 ]; then
 
 	else
 
-		# For some unknown reason, if the start fails (ex: because a web root
+		# For some unknown reason, if the start fails (e.g. because a web root
 		# does not exist), this script will exit quickly, as expected, yet
 		# 'systemctl start' will wait for a long time (most probably because of
 		# a time-out).

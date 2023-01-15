@@ -62,7 +62,7 @@
 
 
 -type log_analysis_tool_name() :: atom().
-% Ex: 'awstats'.
+% For example 'awstats'.
 
 
 % For the vhost_config_entry and web_analysis_info records:
@@ -82,13 +82,19 @@
 			   web_analysis_info/0, log_analysis_tool_name/0 ]).
 
 
+% Must be kept consistent with the default_us_web_epmd_port variable in
+% us-web-common.sh:
+%
+-define( default_us_web_epmd_port, 4508 ).
 
-% The default filename (as a binary string) for the US-Web configuration (ex:
+
+% The default filename (as a binary string) for the US-Web configuration (e.g.
 % virtual hosts and all), to be found from the overall US configuration
 % directory:
 %
 -define( default_us_web_cfg_filename, <<"us-web.config">> ).
 
+-define( us_web_epmd_port_key, epmd_port ).
 
 % The default registration name of the US-Web configuration server:
 -define( us_web_config_server_registration_name_key,
@@ -113,7 +119,8 @@
 
 
 % All known, licit (top-level) keys for the US-Web configuration file:
--define( known_config_keys, [ ?us_web_config_server_registration_name_key,
+-define( known_config_keys, [ ?us_web_epmd_port_key,
+	?us_web_config_server_registration_name_key,
 	?us_web_scheduler_registration_name_key, ?us_web_username_key,
 	?us_web_app_base_dir_key, ?us_web_data_dir_key, ?us_web_log_dir_key,
 	?http_tcp_port_key, ?https_tcp_port_key, ?default_web_root_key,
@@ -125,7 +132,7 @@
 -define( us_web_app_env_variable, "US_WEB_APP_BASE_DIR" ).
 
 
-% Preferring a default local directory to an absolute one requiring priviledges:
+% Preferring a default local directory to an absolute one requiring privileges:
 %-define( default_data_base_dir, "/var/local/us-web/data" ).
 -define( default_data_base_dir, "us-web-data" ).
 
@@ -182,7 +189,7 @@
 % processing). However it may result in too large spikes of resource uses (as by
 % default all web loggers are created roughly at the same time and thus would
 % stay mostly in sync all through their periodical scheduling), and moreover at
-% least some tools (ex: Awstats) may not be "reentrant", i.e. may not support
+% least some tools (e.g. Awstats) may not be "reentrant", i.e. may not support
 % concurrent accesses that could derive from unsynchronised loggers (however the
 % Awstate state files, typically in /var/local/us-web/data, such as
 % awstats052020.baz.foo.bar.org.txt suggest a per-vhost state file, hence
@@ -208,7 +215,7 @@
 % any log analysis tool are finely interleaved, as defining a route requires its
 % logger PID, which requires the corresponding configuration file.
 %
-% The US-Web configuration server creates a scheduler, for its own use (ex: for
+% The US-Web configuration server creates a scheduler, for its own use (e.g. for
 % certificate renewal and the task ring regarding web loggers), and possibly for
 % other related services.
 
@@ -235,8 +242,8 @@
 
 
 -type domain_config_table() :: table( domain_id(), domain_info() ).
-% A table, associating to each domain name (ex: `<<"foo.org">>'), the
-% configuration table regarding its virtual hosts (ex: regarding "bar.foo.org",
+% A table, associating to each domain name (e.g. `<<"foo.org">>'), the
+% configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org",
 % a `<<"bar">>' key would correspond, associated to its vhost_config() value).
 
 
@@ -248,11 +255,11 @@
 
 
 -type meta_web_settings() ::
-		maybe( { domain_id(), vhost_id(), bin_directory_path() } ).
+	maybe( { domain_id(), vhost_id(), bin_directory_path() } ).
 
 
 -type report_generation_outcome() :: 'report_generation_success'
-			| { 'report_generation_failed', error_reason() }.
+	| { 'report_generation_failed', error_reason() }.
 % Tells whether the generation of a log analysis report succeeded.
 
 
@@ -414,9 +421,6 @@
 	{ logger_task_ring, class_USTaskRing:ring_pid(),
 	  "the PID of the task ring in charge of sequencing the webloggers" },
 
-	{ us_web_username, basic_utils:user_name(),
-	  "the user (if any) who shall launch the US-Web application" },
-
 	{ us_web_supervisor_pid, supervisor_pid(),
 	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
 
@@ -438,8 +442,8 @@
 	  "the US-Web internal configuration directory, 'us_web/priv/conf'" },
 
 	{ data_directory, bin_directory_path(),
-	  "the directory where working data (ex: the database state of a log tool, "
-	  "or temporary TLS keys) is to be stored" },
+	  "the directory where working data (e.g. the database state of a log "
+	  "tool, or temporary TLS keys) is to be stored" },
 
 	{ log_directory, bin_directory_path(), "the directory where (non-VM) US-Web
 	  logs shall be written, notably access and error logs for websites (in its
@@ -520,9 +524,10 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	TraceCateg = ?trace_categorize("Configuration Server"),
 
 	% First the direct mother classes, then this class-specific actions:
-	TraceState = class_USServer:construct( State, TraceCateg, _TrapExits=true ),
+	TraceState = class_USServer:construct( State, _ServerName=TraceCateg,
+										   _TrapExits=true ),
 
-	% Allows functions provided by lower-level libraries (ex: LEEC) called
+	% Allows functions provided by lower-level libraries (e.g. LEEC) called
 	% directly from this instance process to plug to the same (trace aggregator)
 	% bridge, with the same settings:
 	%
@@ -683,7 +688,7 @@ renewCertificates( State ) ->
 
 	CertManagerCount = length( CertManagers ),
 
-	% 1  minute and 30 seconds per manager:
+	% 1 minute and 30 seconds per manager:
 	MaxDurationInMs = 90*1000,
 
 	% So that it is visible even in production mode:
@@ -969,7 +974,7 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 % @doc Loads and applies the relevant configuration settings first from the
 % overall US configuration file, then from the more web/vhost specific one.
 %
-% As a result, the US configuration file is not fully checked as such (ex: no
+% As a result, the US configuration file is not fully checked as such (e.g. no
 % extracting and check that no entry remains), we just select the relevant
 % information from it.
 %
@@ -981,7 +986,7 @@ load_and_apply_configuration( State ) ->
 	% base, default one is still in progress:
 	%
 	CfgServerPid = class_USConfigServer:get_us_config_server(
-						_CreateIfNeeded=false, State ),
+		_CreateIfNeeded=false, State ),
 
 	% This web configuration server is not supposed to read more the US
 	% configuration file; it should request it to the overall configuration
@@ -1030,7 +1035,7 @@ load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
 load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	WebCfgFilePath = file_utils:ensure_path_is_absolute( BinWebCfgFilename,
-												_BasePath=BinCfgBaseDir ),
+		_BasePath=BinCfgBaseDir ),
 
 	case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
 
@@ -1041,7 +1046,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 		false ->
 			% Possibly user/group permission issue:
 			?error_fmt( "No US-Web configuration file found or accessible "
-				"(ex: symbolic link to an inaccessible file); tried '~ts'.",
+				"(e.g. symbolic link to an inaccessible file); tried '~ts'.",
 				[ WebCfgFilePath ] ),
 			throw( { us_web_config_file_not_found,
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
@@ -1055,7 +1060,9 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 	?debug_fmt( "Read web configuration ~ts",
 				[ table:to_string( WebCfgTable ) ] ),
 
-	RegState = manage_registrations( WebCfgTable, State ),
+	EpmdState = manage_epmd_port( WebCfgTable, State ),
+
+	RegState = manage_registrations( WebCfgTable, EpmdState ),
 
 	UserState = manage_os_user( WebCfgTable, RegState ),
 
@@ -1097,14 +1104,14 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% @doc Creates a certificate manager for the specified domain (ex: foobar.org),
-% including for all its virtual hosts (ex: baz.foobar.org), as SANs (Subject
+% @doc Creates a certificate manager for the specified domain (e.g. foobar.org),
+% including for all its virtual hosts (e.g. baz.foobar.org), as SANs (Subject
 % Alternative Names).
 %
 % We used to create one single, standalone certificate per virtual host, yet the
 % Let's Encrypt rate limits (see [https://letsencrypt.org/docs/rate-limits/])
-% could quite easily be hit (ex: if having a total of more than 50 virtual hosts
-% and/or domains).
+% could quite easily be hit (e.g. if having a total of more than 50 virtual
+% hosts and/or domains).
 %
 % So now we create only certificates at the domain level - hence a certificate
 % manager per domain, which lists all its corresponding virtual hosts as SANs;
@@ -1489,7 +1496,7 @@ build_vhost_table( _DomainId, _VHostInfos=[], _MaybeCertManagerPid, _BinLogDir,
 		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
 		_CertSupport, State ) ->
 
-	% Restores user-defined order (ex: default route to come last):
+	% Restores user-defined order (e.g. default route to come last):
 	{ AccVTable, lists:reverse( AccRoutes ), State };
 
 
@@ -1773,7 +1780,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 	% As we must create that logger *after* the configuration file it relies on:
 	% (see previous clause about scheduler)
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
-					_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
+		_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
 	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
 									  parent_host=DomainId,
@@ -2008,7 +2015,7 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	NoPagePathMatch = { "/", us_web_static, InitialState#{ type => file,
 														   path => BinIndex } },
 
-	% Allows to serve all files (ex: HTML, images, CSS, etc.) from the
+	% Allows to serve all files (e.g. HTML, images, CSS, etc.) from the
 	% specified tree:
 	%
 	OtherPathsMatch ={ "/[...]", us_web_static,
@@ -2050,7 +2057,7 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	HostMatch = get_host_match_for( DomainId, VHostId ),
 
 	% These static paths were obtained from a live Nitrogen 2.4.1 site example
-	% (ex: the default, base, generated site obtained with 'make rel_cowboy
+	% (e.g. the default, base, generated site obtained with 'make rel_cowboy
 	% PROJECT=my_test').
 	%
 	% To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
@@ -2153,7 +2160,9 @@ get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=default_vhost_catch_all ) ->
 	'_';
 
-% Ex: if BinVHostName="baz", "baz.foobar.org" is matching (i.e. "baz.*.*"):
+% For example if BinVHostName="baz", "baz.foobar.org" is matching
+% (i.e. "baz.*.*"):
+%
 get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=BinVHostName ) when is_binary( BinVHostName )->
 	text_utils:format( "~ts.:_.:_", [ BinVHostName ] );
@@ -2168,7 +2177,7 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
 	%
 	% A little better (more general) than above (which, if
 	% BinDomainName="foobar.org", matches only "*.foobar.org"), as below is
-	% matching any number of subdomains (ex: "*.*.*.foobar.org"):
+	% matching any number of subdomains (e.g. "*.*.*.foobar.org"):
 	%
 	text_utils:format( "[...].~ts", [ BinDomainName ] );
 
@@ -2236,8 +2245,8 @@ set_as_forward_paths( _PathsList=[], _NewHandlerModule, _NewHandlerInitialState,
 
 % Preserving any Let's Encrypt handler:
 set_as_forward_paths( _PathsList=[ LEMatch={ _PathMatch,
-			us_web_leec_handler, _InitialState } | T ], NewHandlerModule,
-			NewHandlerInitialState, Acc ) ->
+		us_web_leec_handler, _InitialState } | T ], NewHandlerModule,
+		NewHandlerInitialState, Acc ) ->
 	% Unchanged, including regarding order:
 	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
 						  [ LEMatch | Acc ] );
@@ -2303,6 +2312,55 @@ check_kind( WebKind, VHost, DomainId, State ) ->
 
 
 
+% @doc Manages any US-Web level user-configured EPMD port.
+%
+% The port may be already set at the US overall level, but it can be overridden
+% on a per-US application basis, as it may be convenient to share one's
+% us.config between multiple applications (e.g. US-Main and US-Web).
+%
+-spec manage_epmd_port( us_web_config_table(), wooper:state() ) ->
+										wooper:state().
+manage_epmd_port( ConfigTable, State ) ->
+
+	% No simple, integrated way of checking the actual port currently in use:
+	{ Port, Origin } = case table:lookup_entry( ?us_web_epmd_port_key,
+												ConfigTable ) of
+
+		key_not_found ->
+			% No US-Web EPMD port defined, so its default will apply unless a
+			% port was explicitly set at the US-level:
+			%
+			DefaultUSWebEpmdPort = ?default_us_web_epmd_port,
+
+			?info_fmt( "No user-configured EPMD TCP port for US-Web, "
+				"proposing its default one, ~B.", [ DefaultUSWebEpmdPort  ] ),
+
+			{ DefaultUSWebEpmdPort, as_default };
+
+
+		{ value, UserEPMDPort } when is_integer( UserEPMDPort ) ->
+			?info_fmt( "Supposing already running using the user-defined "
+					   "US-Web EPMD TCP port #~B.", [ UserEPMDPort ] ),
+
+			{ UserEPMDPort, explicit_set };
+
+
+		{ value, InvalidEPMDPort } ->
+			?error_fmt( "Read invalid user-configured US-Web EPMD port: '~p'.",
+						[ InvalidEPMDPort ] ),
+			throw( { invalid_us_web_epmd_port, InvalidEPMDPort,
+					 ?us_web_epmd_port_key } )
+
+	end,
+
+	% For correct information; available by design:
+	?getAttr(us_config_server_pid) !
+		{ notifyEPMDPort, [ Port, Origin, ?MODULE, self() ] },
+
+	% Const:
+	State.
+
+
 
 % @doc Manages any user-configured registration names for this instance, for the
 % US-Web server and their related services, which may be created here.
@@ -2347,12 +2405,12 @@ manage_registrations( ConfigTable, State ) ->
 
 
 % @doc Manages any user-configured specification regarding the (operating-system
-% level) US user.
+% level) US-Web user.
 %
 -spec manage_os_user( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_os_user( ConfigTable, State ) ->
 
-	% Mostly used by start/stop scripts:
+	% Mostly used by start/stop/kill scripts:
 	WebUsername = case table:lookup_entry( ?us_web_username_key,
 										   ConfigTable ) of
 
@@ -2364,6 +2422,10 @@ manage_os_user( ConfigTable, State ) ->
 			ActualUsername;
 
 		{ value, Username } when is_list( Username ) ->
+
+			% No overriding expected:
+			basic_utils:check_undefined( ?getAttr(username) ),
+
 			case system_utils:get_user_name() of
 
 				Username ->
@@ -2384,7 +2446,7 @@ manage_os_user( ConfigTable, State ) ->
 
 	end,
 
-	setAttribute( State, ?us_web_username_key,
+	setAttribute( State, username,
 				  text_utils:string_to_binary( WebUsername ) ).
 
 
@@ -2475,7 +2537,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 			case AppRunContext of
 
 				as_otp_release ->
-					% As, if run as a release, it may end with a version (ex:
+					% As, if run as a release, it may end with a version (e.g.
 					% "us_web-0.0.1") or as a "us_web-latest" symlink thereof,
 					% or directly as "us-web":
 					%
@@ -2486,7 +2548,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 								"directory set to '~ts'.", [ BaseDir ] ),
 							BinBaseDir;
 
-						% For a clone made to a default directory (ex: by CI):
+						% For a clone made to a default directory (e.g. by CI):
 						"us-web" ++ _ ->
 							?info_fmt( "US-Web (release) application base "
 								"directory set to '~ts'.", [ BaseDir ] ),
@@ -2642,16 +2704,9 @@ manage_data_directory( ConfigTable, State ) ->
 
 	end,
 
-	case file_utils:is_existing_directory( BaseDir ) of
-
-		true ->
-			ok;
-
-		false ->
-			?warning_fmt( "The base data directory '~ts' does not exist, "
-						  "creating it.", [ BaseDir ] )
-
-	end,
+	file_utils:is_existing_directory( BaseDir ) orelse
+		?warning_fmt( "The base data directory '~ts' does not exist, "
+					  "creating it.", [ BaseDir ] ),
 
 	% Would lead to inconvenient paths, at least if defined as relative:
 	%DataDir = file_utils:join( BaseDir, ?app_subdir ),
@@ -2683,23 +2738,16 @@ manage_data_directory( ConfigTable, State ) ->
 
 	% Enforce security in all cases ("chmod 700"); if it fails here, the
 	% combined path/user configuration must be incorrect; however we might not
-	% be the owner of that directory (ex: if the us-web user is different from
+	% be the owner of that directory (e.g. if the us-web user is different from
 	% the us one). So:
 	%
 	CurrentUserId = system_utils:get_user_id(),
 
-	case file_utils:get_owner_of( DataDir ) of
-
-		CurrentUserId ->
-			file_utils:change_permissions( DataDir,
-				[ owner_read, owner_write, owner_execute,
-				  group_read, group_write, group_execute ] );
-
-		% Not owned, do nothing:
-		_OtherId ->
-			ok
-
-	end,
+	% If not owned, do nothing:
+	file_utils:get_owner_of( DataDir ) =:= CurrentUserId andalso
+		file_utils:change_permissions( DataDir,
+			[ owner_read, owner_write, owner_execute,
+			  group_read, group_write, group_execute ] ),
 
 	BinDataDir = text_utils:ensure_binary( DataDir ),
 
@@ -2760,28 +2808,24 @@ manage_log_directory( ConfigTable, State ) ->
 
 	% Enforce security in all cases ("chmod 700"); if it fails here, the
 	% combined path/user configuration must be incorrect; however we might not
-	% be the owner of that directory (ex: if the us-web user is different from
+	% be the owner of that directory (e.g. if the us-web user is different from
 	% the US-Common one).
 	%
 	% So:
 	%
 	CurrentUserId = system_utils:get_user_id(),
 
-	case file_utils:get_owner_of( LogDir ) of
-
-		CurrentUserId ->
+	% If not owned, do nothing:
+	file_utils:get_owner_of( LogDir ) =:= CurrentUserId andalso
+		begin
 
 			Perms = [ owner_read, owner_write, owner_execute,
 					  group_read, group_write, group_execute ],
 
 			[ file_utils:change_permissions( D, Perms )
-				|| D <- [ LogDir, BinWebLogDir ] ];
+				|| D <- [ LogDir, BinWebLogDir ] ]
 
-		% Not owned, do nothing:
-		_OtherId ->
-			ok
-
-	end,
+		end,
 
 	BinLogDir = text_utils:ensure_binary( LogDir ),
 
@@ -3502,9 +3546,9 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 %
 -spec get_san_list( [ vhost_info() ], domain_name() ) -> [ bin_san() ].
 get_san_list( VHostInfos, DomainName ) ->
-	% Now we pre-collect the names of all virtual hosts (ex: the *.foobar.org),
+	% Now we pre-collect the names of all virtual hosts (e.g. the *.foobar.org),
 	% so that the certificate for the corresponding domain (the vhost catch-all,
-	% ex: for foobar.org) can list them as SANs (Subject Alternative Names):
+	% e.g. for foobar.org) can list them as SANs (Subject Alternative Names):
 	%
 	get_san_list( VHostInfos, DomainName, _Acc=[] ).
 
@@ -3755,10 +3799,10 @@ get_all_logger_pids( State ) ->
 % (helper)
 get_all_logger_pids_from( DomainCfgTable ) ->
 	MaybePids = list_utils:flatten_once( [
-			[ VHCfgE#vhost_config_entry.logger_pid
-				|| VHCfgE <- table:values( VHCfgTable ) ]
-						|| { _DomainId, _MaybeCertManagerPid, VHCfgTable }
-								<- table:values( DomainCfgTable ) ] ),
+		[ VHCfgE#vhost_config_entry.logger_pid
+			|| VHCfgE <- table:values( VHCfgTable ) ]
+				|| { _DomainId, _MaybeCertManagerPid, VHCfgTable }
+							<- table:values( DomainCfgTable ) ] ),
 	list_utils:filter_out_undefined( MaybePids ).
 
 

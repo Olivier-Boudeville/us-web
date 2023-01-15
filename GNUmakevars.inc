@@ -217,10 +217,18 @@ NITROGEN_BEHAVIOUR_OPT = -pz $(NITROGEN_CORE_TOP)/ebin
 ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
 
 
+# This is the US-Web specific EPMD port, different from the default Myriad one
+# and from the one of our other applications, so that we can act upon the US-Web
+# EPMD without interfering with others (see also the 'launch-epmd' make target):
+#
+EPMD_PORT := 4508
+
+
 # The default path where a US-Web native build is to be deployed on a server:
 # (useful to synchronise sources)
 #
 US_NATIVE_DEPLOY_ROOT := /opt/universal-server/us_web-native
+
 
 # For later reuse in the next layer of the software stack:
 US_WEB_PLT_FILE := $(US_WEB_TOP)/us_web.plt

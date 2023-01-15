@@ -603,6 +603,21 @@ Local Monitoring
 Here operations will be done directly on the server, and supposing a native build.
 
 
+Checking EPMD
+-------------
+
+If using the default US-Web EPMD port, checking whether an instance is running is as simple as:
+
+.. code:: bash
+
+ $ export ERL_EPMD_PORT=4508; epmd -names
+ epmd: up and running on port 4508 with data:
+ name us_web at port 50002
+
+Then executing ``kill-us-web.sh`` will kill any live US-Web instance and unregister it from its EPMD (without killing any EPMD daemon).
+
+
+
 Overall Local Inquiry
 ---------------------
 

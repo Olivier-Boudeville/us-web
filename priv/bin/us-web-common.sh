@@ -149,22 +149,29 @@ read_us_web_config_file()
 
 		#echo "No US-Web level Erlang EPMD port specified."
 
-		# Leaving the defaults that were possibly set at the US overall level.
-		:
+		# Applying defaults iff US-Common did not already:
+		if [ -n "${erl_epmd_port}" ]; then
 
-	else
+			# Keeping US-Common defaults:
+			us_web_erl_epmd_port="${erl_epmd_port}"
 
-		#echo "Using US-Web specified EPMD port, '${us_web_erl_epmd_port}'."
+		else
 
-		# For shell-like uses:
-		epmd_opt="ERL_EPMD_PORT=${us_web_erl_epmd_port}"
+			echo "No Erlang EPMD port specified at any US level, applying defaults (port ${default_us_web_epmd_port})."
 
-		# For make uses:
-		epmd_make_opt="EPMD_PORT=${us_web_erl_epmd_port}"
+			us_web_erl_epmd_port="${default_us_web_epmd_port}"
+
+		fi
 
 	fi
 
+	# For shell-like uses:
+	epmd_opt="ERL_EPMD_PORT=${us_web_erl_epmd_port}"
 	#echo "epmd_opt = ${epmd_opt}"
+
+	# For make uses:
+	epmd_make_opt="EPMD_PORT=${us_web_erl_epmd_port}"
+
 
 
 	us_web_username=$(echo "${us_web_base_content}" | grep us_web_username | sed 's|^{[[:space:]]*us_web_username,[[:space:]]*"||1' | sed 's|"[[:space:]]*}.$||1')

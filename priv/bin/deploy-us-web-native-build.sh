@@ -1019,6 +1019,8 @@ if [ $do_launch -eq 0 ]; then
 
 else
 
-	echo "(no auto-launch enabled; one may execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)"
+	echo "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)"
 
 fi
+
+echo "Consider running our 'monitor-us-web.sh' script if wanting more detailed information regarding that launched instance."

@@ -411,8 +411,8 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	%
 	% No TCP port to be specified on slave mode.
 
-	% 4 minutes:
-	HttpQueryTimeoutMs = 4 * 60 * 1000,
+	% 8 minutes:
+	HttpQueryTimeoutMs = 8 * 60 * 1000,
 
 	StartBaseOpts = [ { mode, slave },
 					  { agent_key_file_path, BinAgentKeyPath },

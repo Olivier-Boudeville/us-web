@@ -85,7 +85,7 @@ The project repository is located `here <https://github.com/Olivier-Boudeville/u
 Easy Testing of US-Web
 ----------------------
 
-Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter (ex: ``sh get-us-web-from-sources.sh``, as a normal user) should suffice.
+Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter (e.g. ``sh get-us-web-from-sources.sh``, as a normal user) should suffice.
 
 This should result in US-Web being cloned and built, and a test server (if requested, see the ``--help`` script option for usage) should be configured and run. It should be then available at `http://localhost:8080 <http://localhost:8080>`_.
 
@@ -138,7 +138,7 @@ This procedure relies on our *native* build/run system, which is the only one th
 
 **First step** is to:
 
-- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (ex: ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
+- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (e.g. ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
 
 - transfer to the target server our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script (in a US-Web clone, it is located in ``priv/bin``), possibly simply at the root of one's normal user
 
@@ -199,7 +199,7 @@ Checking Launch Outcome
 
 If having requested the renewal of SSL certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully *only* once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
 
-These certificates can be checked (ex: in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically in ``/opt/universal-server/us_web-data/certificates``).
+These certificates can be checked (e.g. in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically in ``/opt/universal-server/us_web-data/certificates``).
 
 Finally, from a client host, one may also check the availability of the target webserver(s); refer to the `Remote Monitoring`_ section for that.
 
@@ -282,11 +282,11 @@ As explained in `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/b
 
 The main, overall US configuration file, ``us.config``, is found based on a series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* (single) US configuration directory.
 
-The other US-related configuration files (ex: any ``us-web.config``) are referenced directly from the main one (``us.config``), designated there through specific keys (ex: ``us_web_config_filename``); they may be either absolutely defined, or relatively to the aforementioned US configuration directory.
+The other US-related configuration files (e.g. any ``us-web.config``) are referenced directly from the main one (``us.config``), designated there through specific keys (e.g. ``us_web_config_filename``); they may be either absolutely defined, or relatively to the aforementioned US configuration directory.
 
 Let's name ``US_CFG_ROOT`` the actual directory in which they all lie; it is typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
 
-Note that, as these files might contain sensitive information (ex: Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have ``640``, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_:
+Note that, as these files might contain sensitive information (e.g. Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have ``640``, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_:
 
 .. code:: bash
 
@@ -315,13 +315,13 @@ In such a development context, in ``us_web/conf/sys.config``, we recommend to le
 In a Production Setting
 =======================
 
-The start/stop management scripts will be run initially as root (possibly through ``systemd``) and must access the ``us.config`` file. Then, once run, ``us_web`` will most probably switch to a dedicated user (see the ``us_web_username`` entry in the US-Web configuration file), who will need in turn to be able to read the ``us.config`` file and any related one (ex: for US-Web, here supposed to be named ``foobar-us-web-for-production.config``).
+The start/stop management scripts will be run initially as root (possibly through ``systemd``) and must access the ``us.config`` file. Then, once run, ``us_web`` will most probably switch to a dedicated user (see the ``us_web_username`` entry in the US-Web configuration file), who will need in turn to be able to read the ``us.config`` file and any related one (e.g. for US-Web, here supposed to be named ``foobar-us-web-for-production.config``).
 
 As a result, a relevant configuration directory (denoted ``US_CFG_ROOT`` in this document), in that shared setting, is the standard ``/etc/xdg`` one, resulting in the ``/etc/xdg/universal-server`` directory to be used.
 
 As mentioned, care must be taken so that ``root`` and also the US and US-Web users can read the content of that directory - at least the US and US-Web configuration files in it - and that the other users cannot.
 
-For that, a dedicated ``us-group`` group can be created, and any web user (ex: ``us-web-user``) shall belong to that group. For example:
+For that, a dedicated ``us-group`` group can be created, and any web user (e.g. ``us-web-user``) shall belong to that group. For example:
 
 .. code:: bash
 
@@ -346,7 +346,7 @@ Then, in ``/etc/xdg/universal-server``, for the US and US-Web configuration file
 
 We recommend directly setting the ``us_web_app_base_dir`` configuration entry to the relevant, absolute path.
 
-Let's name here ``US_WEB_REL_ROOT`` the root of the US-Web release of interest (ex: corresponding to ``${REL_BASE_ROOT}/us_web-latest/``) and ``US_WEB_APP_ROOT`` the root of the corresponding US-Web application (ex: corresponding to ``${US_WEB_REL_ROOT}/lib/us_web-latest/``).
+Let's name here ``US_WEB_REL_ROOT`` the root of the US-Web release of interest (e.g. corresponding to ``${REL_BASE_ROOT}/us_web-latest/``) and ``US_WEB_APP_ROOT`` the root of the corresponding US-Web application (e.g. corresponding to ``${US_WEB_REL_ROOT}/lib/us_web-latest/``).
 
 A ``systemd`` service shall be declared for US-Web, in ``/etc/systemd/system``; creating there, as root, a symbolic link to ``${US_WEB_APP_ROOT}/priv/conf/us-web.service`` will suffice.
 
@@ -398,7 +398,7 @@ Defining routes allows to tell what it the web root directory [#]_ to serve for 
 .. [#] A web root directory is either specified as an absolute path, otherwise it is relative to a ``default_web_root`` entry to be specified in the US-Web configuration file.
 
 
-Such a route definition consists mostly on enumerating each hostname that is to manage (ex: ``"foobar.org"`` - knowing that the ``default_domain_catch_all`` atom designates all hostnames that could not be matched specifically otherwise) and enumerating then all the virtual hosts to manage for this domain (ex: the ``"hurricane"`` host, whose FQDN is thus ``hurricane.foobar.org`` - knowing that the ``default_vhost_catch_all`` atom designates all hostnames that could not be matched specifically otherwise, in the form ``*.foobar.org``, and that the ``without_vhost`` atom designates the hostname itself, i.e. ``foobar.org`` ).
+Such a route definition consists mostly on enumerating each hostname that is to manage (e.g. ``"foobar.org"`` - knowing that the ``default_domain_catch_all`` atom designates all hostnames that could not be matched specifically otherwise) and enumerating then all the virtual hosts to manage for this domain (e.g. the ``"hurricane"`` host, whose FQDN is thus ``hurricane.foobar.org`` - knowing that the ``default_vhost_catch_all`` atom designates all hostnames that could not be matched specifically otherwise, in the form ``*.foobar.org``, and that the ``without_vhost`` atom designates the hostname itself, i.e. ``foobar.org`` ).
 
 For example:
 
@@ -419,7 +419,7 @@ For example:
 	{ "foobar.org", [
 
 		% So any content requested regarding the www.foobar.org
-		% FQDN (ex: http://www.foobar.org/index.html) will be
+		% FQDN (e.g. http://www.foobar.org/index.html) will be
 		% looked-up relatively to the
 		% /var/web-storage/www/Foobar-main directory:
 		%
@@ -591,10 +591,10 @@ In development mode, from the root of US-Web, one may use ``make debug``, while,
 
 
 
+
 ----------------------------
 Monitoring the US-Web Server
 ----------------------------
-
 
 
 Local Monitoring
@@ -626,12 +626,13 @@ The ``get-us-web-native-build-status.sh`` script (still in ``priv/bin``, as all 
 Alternate (yet often less convenient) solutions are to run ``systemctl status us-web-as-native-build.service`` or, often with better results, ``journalctl -xe --unit us-web-as-native-build.service --no-pager`` to get some insights.
 
 
+
 General Logs
 ------------
 
 A deeper level of detail can be obtained by inspecting the *general* logs (as opposed to the *webserver* ones, discussed in next section), which regroup the VM-level, technical ones and/or the applicative ones.
 
-**VM logs** are written in the ``${REL_BASE_ROOT}/log`` directory (ex: ``/opt/universal-server/us_web-latest/us_web/log``), which is created when the release is started first. Generally, ``run_erl.log`` (if launched as a daemon) will not help much, whereas the latest Erlang log file (``ls -lrt erlang.log.*``) is likely to contain relevant information.
+**VM logs** are written in the ``${REL_BASE_ROOT}/log`` directory (e.g. ``/opt/universal-server/us_web-latest/us_web/log``), which is created when the release is started first. Generally, ``run_erl.log`` (if launched as a daemon) will not help much, whereas the latest Erlang log file (``ls -lrt erlang.log.*``) is likely to contain relevant information.
 
 So one may consult them for example with:
 
@@ -647,13 +648,14 @@ In practice, this trace file is generally found:
 - in development mode, if testing, in ``priv/for-testing/log``, relatively to the base directory specified in ``us_app_base_dir``
 - in production mode, generally in ``/var/log/universal-server`` of ``/opt/universal-server``
 
-This path is updated at runtime once the US-Web configuration file is read; so typically it is renamed from ``/opt/universal-server/us_web-x.y.z/traces_via_otp.traces`` to ``/var/log/universal-server/us_web.traces``.
+This path is updated at runtime once the US-Web configuration file is read; so typically it is renamed from ``/opt/universal-server/us_web-x.y.z/traces_via_otp.traces`` to ``/var/log/universal-server/us-web/us_web.traces``. If available, it is surely the most complete source of information.
+
 
 
 Webserver Logs
 --------------
 
-These logs, which are maybe less useful for troubleshooting, designate access and error logs, per virtual host (ex: for a virtual host ``VH``, ``access-for-VH.log`` and ``error-for-VH.log``). Their previous versions are archived in timestamped, compressed files (ex: ``error-for-VH.Y-M-D-at-H-M-S.xz``).
+These logs, which are maybe less useful for troubleshooting, designate access and error logs, per virtual host (e.g. for a virtual host ``VH``, ``access-for-VH.log`` and ``error-for-VH.log``). Their previous versions are archived in timestamped, compressed files (e.g. ``error-for-VH.Y-M-D-at-H-M-S.xz``).
 
 These files will be written in the directory designated by the ``us_web_log_dir`` entry of the US-Web configuration file. Refer to the previous section to locate this directory (for example it may be ``/var/log/universal-server/us-web``).
 
@@ -685,6 +687,52 @@ One may define one's dedicated convenience script for that, like a ``check-baz-w
  wget ${target_url} -O - | head
 
 
+More elaborate scripts may be devised, testing various virtual hosts with various protocols (http/https), looping continously should a failure be detected, like in:
+
+.. code:: bash
+
+ #!/bin/sh
+ test_url()
+ {
+	target_url="$1"
+	#echo "  Checking whether '${target_url}' is available:"
+	if wget -q "${target_url}" -O - 1>/dev/null; then
+		echo " ('${target_url}' is available)"
+		return 0
+	else
+		echo "######### Problem: '${target_url}' is NOT available! #########" 1>&2
+		return 1
+	fi
+ }
+
+ # Testing base domains, some virtual hosts, and HTTP/HTTPS availability as
+ # well:
+ com_test_url="http://foobar.com"
+ # Testing also a virtual host:
+ com_vh_test_url="http://hello.foobar.com"
+ # As HTTPS:
+ com_vh_https_url="https://other.foobar.com"
+ com_urls="${com_test_url} ${com_vh_test_url} ${com_vh_https_url}"
+ # Testing also the other domains:
+ net_test_url=[...]
+ all_urls="${com_urls} ${net_urls} ${org_urls} ${info_urls} ${biz_urls} [...]"
+ all_good=1
+ while [ $all_good -eq 1 ]; do
+	all_good=0
+	for u in ${all_urls}; do
+		if ! test_url $u; then
+			all_good=1
+		fi
+	done
+	echo
+	if [ $all_good -eq 1 ]; then
+		echo "At least an URL could not be reached, testing again..."
+	fi
+	sleep 2
+ done
+ echo "Good news, all tested domains are available from this local host!"
+ echo
+
 
 
 Trace Listener Check
@@ -701,7 +749,7 @@ For example:
  % This file is used by the US-Web framework.
  %
  % This is a configuration file to enable the interaction with a remote US-Web
- % instance (ex: a production server to be reached from a client host), typically
+ % instance (e.g. a production server to be reached from a client host), typically
  % to monitor traces, to trigger the generation of log access reports, etc.
 
  % The hostname where the US-Web instance of interest runs:
@@ -714,7 +762,7 @@ For example:
  {us_web_config_server_registration_name, foobar_prod_us_web_cfg_srv}.
 
  % A range of TCP ports that may be used for out-of-band inter-VM communication
- % (not using the Erlang carrier; ex: for send_file):
+ % (not using the Erlang carrier; e.g. for send_file):
  %
  % (this range must be typically in-line with any one set at the level of
  % firewalls)
@@ -846,7 +894,7 @@ Auto-generated Meta Website
 
 If requested, at server start-up, a "meta" website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
 
-For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (ex: ``foobar.org``):
+For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (e.g. ``foobar.org``):
 
 .. code:: erlang
 
@@ -870,7 +918,7 @@ A default icon file can be defined, it is notably used in order to generate bett
 
 To do so, the ``icon_path`` key in the US-Web handler state shall be set to the path of such file (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
 
-In the context of the (default) US-Web static web handler, if such a ``common/default-icon.png`` exists (ex: obtained thanks to this kind of `generator <https://favicon.io/favicon-generator/>`_), it is automatically registered in ``icon_path``.
+In the context of the (default) US-Web static web handler, if such a ``common/default-icon.png`` exists (e.g. obtained thanks to this kind of `generator <https://favicon.io/favicon-generator/>`_), it is automatically registered in ``icon_path``.
 
 
 
@@ -904,7 +952,7 @@ Site Customisation
 
 As a summary of the sections above, if there is a file (regular or symbolic link), from the content root of a hosted static website, in:
 
--  ``common/default.css``, then this CSS will be used for all generated pages for that website (ex: the one for errors such as 404 ones)
+-  ``common/default.css``, then this CSS will be used for all generated pages for that website (e.g. the one for errors such as 404 ones)
 -  ``images/default-icon.png``, then this image will be used as an icon (the small image put on browser tabs next to their labels) for all generated pages
 -  ``images/404.png``, then this image will be used for the "0" in the main "404" label of the page denoting a content not found
 
@@ -920,7 +968,7 @@ In terms of security, we would advise:
 
 - to stick to the **latest stable version** of all software involved (including US-Web and all its stack including Cowboy and LEEC, Erlang, and the operating system itself)
 
-- depending on the preferred trade-off between accessibility and security, to build US-Web either with the ``us_web_security`` flag set to ``strict`` (more security; the default) or to ``relaxed`` (more compatibility with various clients); typically they aim respectively a grade of A and at least B at the `SSL Labs server test <https://www.ssllabs.com/ssltest/index.html>`_; this build flag determines the versions of TLS supported (ex: only 1.3 and 1.2; or 1.1 and 1.0 as well), the accepted list of ciphers (including or not some that are becoming weak), possibly the RSA key length, Diffie-Hellman parameters, how Forward Secrecy is managed, etc.; as it is a bit fun, the US-Web server tries (yet with no luck) to spoof its server signature in the headers, pretending it is an Apache instance; `DNS CAA <https://letsencrypt.org/docs/caa/>`_ (*Certificate Authority Authorization*) is not specifically supported (as LEEC uses `throwaway accounts <https://leec.esperide.org/#caa>`_)
+- depending on the preferred trade-off between accessibility and security, to build US-Web either with the ``us_web_security`` flag set to ``strict`` (more security; the default) or to ``relaxed`` (more compatibility with various clients); typically they aim respectively a grade of A and at least B at the `SSL Labs server test <https://www.ssllabs.com/ssltest/index.html>`_; this build flag determines the versions of TLS supported (e.g. only 1.3 and 1.2; or 1.1 and 1.0 as well), the accepted list of ciphers (including or not some that are becoming weak), possibly the RSA key length, Diffie-Hellman parameters, how Forward Secrecy is managed, etc.; as it is a bit fun, the US-Web server tries (yet with no luck) to spoof its server signature in the headers, pretending it is an Apache instance; `DNS CAA <https://letsencrypt.org/docs/caa/>`_ (*Certificate Authority Authorization*) is not specifically supported (as LEEC uses `throwaway accounts <https://leec.esperide.org/#caa>`_)
 
 - to apply a streamlined, reproducible **deployment process**, preferably based on our `deploy-us-web-release.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-release.sh>`_ script
 
@@ -932,7 +980,7 @@ In terms of security, we would advise:
   - possibly a **limited TCP port range** (see the ``tcp_port_range`` key)
   - the **execution context** to ``production`` (see the ``execution_context`` key)
 
-- to use also the `stop-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web.sh>`_ counterpart script, and to have them triggered through ``systemd``; we provide a corresponding `us-web.service <https://github.com/Olivier-Boudeville/us-web/blob/master/conf/us-web.service>`_ **unit file** for that, typically to be placed in ``/etc/systemd/system`` and whose ``ExecStart/ExecStop`` paths shall preferably be symlinks pointing to the latest deployed US-Web release (ex: ``/opt/universal-server/us_web-latest``)
+- to use also the `stop-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web.sh>`_ counterpart script, and to have them triggered through ``systemd``; we provide a corresponding `us-web.service <https://github.com/Olivier-Boudeville/us-web/blob/master/conf/us-web.service>`_ **unit file** for that, typically to be placed in ``/etc/systemd/system`` and whose ``ExecStart/ExecStop`` paths shall preferably be symlinks pointing to the latest deployed US-Web release (e.g. ``/opt/universal-server/us_web-latest``)
 
 - to ensure that a **firewall** blocks everything from the Internet by default, including the EPMD port(s) (i.e. both the default Erlang one and any non-standard one specified through the ``epmd_port`` key defined in ``us.config``); one may get inspiration from our `iptables.rules-Gateway.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh>`_ script for that
 
@@ -941,7 +989,7 @@ In terms of security, we would advise:
 - to **monitor regularly** both:
 
   - the US-Web server itself (see our `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script for that, relying on the trace supervisor provided by the `Ceylan-Traces <http://traces.esperide.org>`_ layer)
-  - the remote, browser-based, accesses made to the hosted websites, typically by enabling the US-Web "meta" feature, generating and updating automatically a dedicated website displaying in one page all hosted websites and linking to their web analysis report; refer to the ``log_analysis`` key of the US-Web configuration file (ex: see `us-web-for-tests.config <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_ as an example thereof)
+  - the remote, browser-based, accesses made to the hosted websites, typically by enabling the US-Web "meta" feature, generating and updating automatically a dedicated website displaying in one page all hosted websites and linking to their web analysis report; refer to the ``log_analysis`` key of the US-Web configuration file (e.g. see `us-web-for-tests.config <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_ as an example thereof)
 
 
 .. _`free software`:
@@ -955,7 +1003,7 @@ The ``Universal Webserver`` is licensed by its author (Olivier Boudeville) under
 
 This allows the use of the Universal Webserver code in a wide a variety of software projects, while still maintaining copyleft on this code, ensuring improvements are shared.
 
-We hope indeed that enhancements will be back-contributed (ex: thanks to merge requests), so that everyone will be able to benefit from them.
+We hope indeed that enhancements will be back-contributed (e.g. thanks to merge requests), so that everyone will be able to benefit from them.
 
 
 
@@ -1054,7 +1102,13 @@ For more details, one may have a look at `rebar.config.template <https://github.
 Troubleshooting
 ---------------
 
-If having deployed a (here, native) release (typically by running `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_) and ``systemctl restart us-web-as-native-build.service`` failed, start by executing::
+
+Start-up Failure
+================
+
+Many operations take place when launching a US-Web instance - especially when requesting the generation of certificates; so most of the issues are expected to happen then.
+
+If having deployed a (here, native) release (typically by running `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_) and if ``systemctl restart us-web-as-native-build.service`` failed, start by executing::
 
  $ systemctl status us-web-as-native-build.service
 
@@ -1063,25 +1117,34 @@ It should return some appropriate information.
 Most common sources of failures are:
 
 - there is **already a program listening at the target TCP port** (typically port 80) designated for US-Web; one may check for example with ``lsof -i:80``, otherwise with ``netstat -ltpn | grep ':80'``; of course use the same procedures for TCP port ``443`` if having enabled ``https`` on its standard port
-- check that no firewall is in the way (ex: thanks to ``iptables -nL | gr ':80'``)
+- check that no firewall is in the way (e.g. thanks to ``iptables -nL | grep ':80'``)
 - there may be a **prior, lingering US-Web** installation that is still running in the background; one may check for example with ``ps -edf | grep us_web``; in incrementally brutal ways, one may rely on:
 
-  - ``systemctl stop us-web-as-native-build.service``; note that if any prior US-Web instance will be shutdown indeed, at least one some cases EPMD will still believe it is running and will thus block any next launch; then the only solution is to kill EPMD as well, even if unfortunately it may impact other running Erlang applications
-  - or on `stop-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web-native-build.sh>`_ (the EPMD gotcha of the previous point still applies)
-  - or even on `kill-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/kill-us-web.sh>`_; note that, as discussed in the next point, EPMD will then be slaughtered as well
+  - ``systemctl stop us-web-as-native-build.service``; note that, if any prior US-Web instance will be shutdown indeed, at least one some cases EPMD will still believe it is running and will thus block any next launch; so EPMD should be taken care of as well (at least by forcibly unregistering a vanished US-Web node), which is done automatically by the our stop/kill scripts discussed just next
+  - or on `stop-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/stop-us-web-native-build.sh>`_
+  - or even on `kill-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/kill-us-web.sh>`_
 
-- the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; simple solution: ``killall epmd`` (unfortunately no more selective solution is known in such a case that may easily happen; the risk is that any other Erlang application running might be impacted as well)
+- as mentioned above, the **EPMD daemon** of interest (possibly running on a non-standard TCP port) may wrongly believe that a prior US-Web is running, and thus prevent a new one to be launched; a simple solution could be to run ``killall epmd``, yet unfortunately this solution is absolutely not selective enough: any other running Erlang application could be impacted as well; so now our EPMD daemons are *explicitly* launched, on different ports (default one for US-Web being 4508), with appropriate settings (``-relaxed_command_check``) that allow acting on these daemons independently
+
 - check your ``authbind`` local configuration (refer to `this section <#authbind>`_)
 
-If the problem remains, time to perform some investigation, refer to the `Local Monitoring`_ section.
+If the problem remains, time to perform some investigation, refer to our `Local Monitoring`_ section.
 
+
+
+Certification Generation Issues
+===============================
+
+One may check first that a webserver can indeed be reached for the target domain or subdomain (e.g. do not forget to define a wildcard CNAME like ``*.foobar.org`` to point on ``foobar.org``, so that virtual hosts can be reached by the ACME servers).
+
+Beware also not to trigger too many / too frequent certificate requests, as this could lead to reaching the rate limits implemented by the ACME servers: then even perfectly legit, correct operations would fail.
 
 
 -----
 Hints
 -----
 
-Various keys (ex: ``us_app_base_dir``) may be defined in the US configuration files (ex: in a ``{us_app_base_dir, "/opt/some_dir"}`` entry), from which other elements may derive (ex: paths). To denote the value associated to a key, we surround in this documentation the key with ``@`` characters (this is just a reading convention).
+Various keys (e.g. ``us_app_base_dir``) may be defined in the US configuration files (e.g. in a ``{us_app_base_dir, "/opt/some_dir"}`` entry), from which other elements may derive (e.g. paths). To denote the value associated to a key, we surround in this documentation the key with ``@`` characters (this is just a reading convention).
 
 For example ``@us_app_base_dir@/hello.txt`` would correspond here to ``/opt/some_dir/hello.txt``.
 
@@ -1108,7 +1171,7 @@ Operating directly from within the rebar build tree
 
 (not recommended in a development phase)
 
-If having modified and recompiled a Ceylan prerequisite (ex: WOOPER), then, before generating the release, run from its root (ex: ``us_web/_build/default/lib/wooper``):
+If having modified and recompiled a Ceylan prerequisite (e.g. WOOPER), then, before generating the release, run from its root (e.g. ``us_web/_build/default/lib/wooper``):
 
 .. code:: bash
 
@@ -1123,7 +1186,7 @@ Operating from ``_checkouts`` build trees
 
 (recommended in a development phase, as a lot more flexible/unified than the previous method)
 
-Create a ``us_web/_ckeckouts`` directory containing symbolic links to repositories of dependencies (ex: ``myriad``) that may be updated locally; or, preferably, execute the ``create-us-web-checkout`` make target to automate and streamline this step.
+Create a ``us_web/_ckeckouts`` directory containing symbolic links to repositories of dependencies (e.g. ``myriad``) that may be updated locally; or, preferably, execute the ``create-us-web-checkout`` make target to automate and streamline this step.
 
 .. Then, when needing to repopulate the suitable ``ebin`` directory:
 
@@ -1136,7 +1199,7 @@ Configuration Hints
 Batch Mode
 ----------
 
-One can update ``us_web/conf/sys.config`` in order to toggle batch mode (ex: to enable/disable a graphical trace supervision) after build time.
+One can update ``us_web/conf/sys.config`` in order to toggle batch mode (e.g. to enable/disable a graphical trace supervision) after build time.
 
 It deals with the configuration of the ``Traces`` application, so it comes very early at start-up (at application boot, hence before US-Web specific settings can be read, so this option would be difficult to put in the US configuration files).
 
@@ -1149,7 +1212,7 @@ The location of the US-Web application is bound to differ depending on the conte
 
 So its path must be specified (most preferably as an absolute directory) in the US-Web configuration file. However, at least for test configuration files, relying on an absolute directory would not be satisfactory, as the user may install the US-Web framework at any place and testing should not require a manual configuration update.
 
-As a result, should an application location (ex: US-Web) not be specified in the configuration, it will be looked-up in the shell environment (using the ``US_WEB_APP_BASE_DIR`` variable) for that and, should this variable not be set, as a last-resort an attempt to guess that location will be done.
+As a result, should an application location (e.g. US-Web) not be specified in the configuration, it will be looked-up in the shell environment (using the ``US_WEB_APP_BASE_DIR`` variable) for that and, should this variable not be set, as a last-resort an attempt to guess that location will be done.
 
 
 
@@ -1169,20 +1232,20 @@ Finally, any webserver shall rely preferably on:
 Web-related hints
 -----------------
 
-- most paths (ex: ``default_web_root``, in the US-Web configuration) can be defined as **relative** ones (mostly useful for embedded tests; otherwise absolute paths shall be preferred); in this case they will be relative to the runtime current directory, typically ``[...]/us_web/_build/default/rel/us_web/`` in development mode
-- the ``default_domain_catch_all`` atom allows to designate any **domain-level host** (ex: ``foobar.org``) that did not match previous host rules
-- in the context of a given host (ex: ``foobar.org``), the ``default_vhost_catch_all`` atom allows to designate any of its **virtual hosts** (ex: ``bar``, to be understood as ``bar.foobar.org``) that did not match previous path rules [#]_
+- most paths (e.g. ``default_web_root``, in the US-Web configuration) can be defined as **relative** ones (mostly useful for embedded tests; otherwise absolute paths shall be preferred); in this case they will be relative to the runtime current directory, typically ``[...]/us_web/_build/default/rel/us_web/`` in development mode
+- the ``default_domain_catch_all`` atom allows to designate any **domain-level host** (e.g. ``foobar.org``) that did not match previous host rules
+- in the context of a given host (e.g. ``foobar.org``), the ``default_vhost_catch_all`` atom allows to designate any of its **virtual hosts** (e.g. ``bar``, to be understood as ``bar.foobar.org``) that did not match previous path rules [#]_
 - refer to ``us_web/priv/for-testing`` for an example setup and configuration files
-- the web roots shall be owned by the user running US-Web (ex: ``chown -R us-web-user:us-group /opt/www``)
+- the web roots shall be owned by the user running US-Web (e.g. ``chown -R us-web-user:us-group /opt/www``)
 
 
-.. [#] When using https, configuring a catch-all might be ill-advised, as whenever an unanticipated virtual host is requested, a certificate warning (ex: ``SSL_ERROR_BAD_CERT_DOMAIN``) is triggered - as by design no certificate (direct or through SANs) will exist for this host (a "connection failed" error is then more desirable).
+.. [#] When using https, configuring a catch-all might be ill-advised, as whenever an unanticipated virtual host is requested, a certificate warning (e.g. ``SSL_ERROR_BAD_CERT_DOMAIN``) is triggered - as by design no certificate (direct or through SANs) will exist for this host (a "connection failed" error is then more desirable).
 
 
 .. comment Deprecated now that these settings are enforced through the US configuration files:
 
 .. comment - update ``build/default/rel/us_web/releasesx.y.z/vm.args`` for example to change  the node name to avoid clashes
-.. comment - set a different EPMD port if a prior EPMD daemon is running with a different user (ex: ``us-web-user``), possibly on a default port (Erlang: ``4369``, redefined by Myriad and above to: ``4526``); to do so, use for example ``export ERL_EPMD_PORT=4469 ; make start`` or, preferable, define or change in ``GNUmakevars.inc``, ``EPMD_PORT``
+.. comment - set a different EPMD port if a prior EPMD daemon is running with a different user (e.g. ``us-web-user``), possibly on a default port (Erlang: ``4369``, redefined by Myriad and above to: ``4526``); to do so, use for example ``export ERL_EPMD_PORT=4469 ; make start`` or, preferable, define or change in ``GNUmakevars.inc``, ``EPMD_PORT``
 
 
 
@@ -1193,13 +1256,13 @@ Execution Hints
 
 - the current working directory of a US-Web instance deployed thanks to ``deploy-us-web-release.sh`` is ``/opt/universal-server/us_web-x.y.z``
 
-- if unable to connect, the firewall (ex: ``iptables -L``) might be the culprit! Note that the whole US framework tends to rely on a specific TCP range (ex: ``50000-55000``) for inter-VM communications; for HTTP, TCP port 80 is expected to be opened, and this is TCP port 443 for HTTPS (see also our `iptables.rules-Gateway.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh>`_ script)
+- if unable to connect, the firewall (e.g. ``iptables -L``) might be the culprit! Note that the whole US framework tends to rely on a specific TCP range (e.g. ``50000-55000``) for inter-VM communications; for HTTP, TCP port 80 is expected to be opened, and this is TCP port 443 for HTTPS (see also our `iptables.rules-Gateway.sh <https://github.com/Olivier-Boudeville/Ceylan-Hull/blob/master/iptables.rules-Gateway.sh>`_ script)
 
 - to debug (once batch mode has been enabled/disabled), one may use the ``debug`` make target, from the tree root
 
-- to test server-side errors, one may create, in a web root, a directory that cannot be traversed (ex: ``chmod 000 my-dir``) and direct one's browser to a content supposedly located in this directory [#]_; note that, if requesting instead that faulty directory itself (not an element within), then (whether or not a trailing ``/`` is specified), an error 403 (``ERROR 403: Forbidden``) is returned instead (corresponds to the ``case A`` in the corresponding sources)
+- to test server-side errors, one may create, in a web root, a directory that cannot be traversed (e.g. ``chmod 000 my-dir``) and direct one's browser to a content supposedly located in this directory [#]_; note that, if requesting instead that faulty directory itself (not an element within), then (whether or not a trailing ``/`` is specified), an error 403 (``ERROR 403: Forbidden``) is returned instead (corresponds to the ``case A`` in the corresponding sources)
 
-- to test host matching (ex: for a ``baz`` virtual host), including the default catch-all even on a computer having no specific public DNS entries, one may simply add in ``/etc/hosts`` entries like::
+- to test host matching (e.g. for a ``baz`` virtual host), including the default catch-all even on a computer having no specific public DNS entries, one may simply add in ``/etc/hosts`` entries like::
 
 	127.0.0.1 foobar-test.net baz.foobar-test.net other.foobar-test.net
 
@@ -1267,7 +1330,7 @@ The 158 threads must correspond to:
 - 128 async ones (``-A 128``)
 - 30 "normal" threads (on a computer having a single CPU with 8 cores with Hyperthreading, hence 16 logical cores)
 
-Using ``htop``, one can see that the ``run_erl`` process spawned a ``us_web`` one (namely ``/opt/universal-server/us_web-US_WEB_VERSION/bin/us_web``) that is far larger in (VIRT) memory (ex: 5214MB, instead of 5832KB for the former).
+Using ``htop``, one can see that the ``run_erl`` process spawned a ``us_web`` one (namely ``/opt/universal-server/us_web-US_WEB_VERSION/bin/us_web``) that is far larger in (VIRT) memory (e.g. 5214MB, instead of 5832KB for the former).
 
 ``us_web`` in turn created the numerous threads.
 
@@ -1298,7 +1361,7 @@ See also our `list-processes-by-size.sh <https://github.com/Olivier-Boudeville/C
  67776 1695243 /opt/universal-server/us_web-x.y.z/bin/us_web -A 128 -- -root /opt/universal-server/us_web-x.y.z -progname opt/universal-server/us_web-x.y.z/bin/us_web -- -home /home/us-web-user -epmd_port 4526 -- -boot /opt/universal-server/us_web-x.y.z/releases/x.y.z/start -mode embedded -boot_var ERTS_LIB_DIR /usr/local/lib/erlang/lib -config /opt/universal-server/us_web-x.y.z/releases/x.y.z/sys.config -name us_web -setcookie us_web_initial_cookie -- -- console --relx-disable-hooks --
  [...]
 
-This confirms that, even if higher VIRT sizes can be reported (ex: 5214M, hence roughly 5GB), the RSS size may be 67776 (KB, hence 66 MB), i.e. very little, and does not vary much.
+This confirms that, even if higher VIRT sizes can be reported (e.g. 5214M, hence roughly 5GB), the RSS size may be 67776 (KB, hence 66 MB), i.e. very little, and does not vary much.
 
 Indeed, in terms of RSS use (for a few domains, each with a few low-traffic websites, if that matters), we found:
 

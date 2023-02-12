@@ -238,7 +238,7 @@ US_WEB_PLT_FILE := $(US_WEB_TOP)/US-Web.plt
 # For us-web, it is the PLT of 'us-common':
 #
 ifndef PREDECESSOR_PLT_FILE
-   PREDECESSOR_PLT_FILE = $(US_COMMON_PLT_FILE)
+	PREDECESSOR_PLT_FILE = $(US_COMMON_PLT_FILE)
 endif
 
 
@@ -275,6 +275,12 @@ else
 	endif
 endif
 
+
+# We intentionally set here JSX_TOP (albeit to an empty value), to avoid that it
+# is autodetected by the make system, knowing that jsx will be automatically
+# found at runtime as an OTP application dependency of LEEC (see otp_utils).
+#
+JSX_TOP = $(space)
 
 # We do the same for LEEC:
 ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec/.),)

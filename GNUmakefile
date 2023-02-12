@@ -13,7 +13,7 @@ US_WEB_TOP = .
 		stop stop-as-release                                                   \
 		log cat-log tail-log check-web-availability check-nitrogen-testing     \
 		inspect monitor-development monitor-production                         \
-		kill shell test test-interactive-local test-ci                         \
+		kill rebar-shell test test-interactive-local test-ci                   \
 		clean clean-logs real-clean clean-otp-build-tree clean-rebar-cache     \
 		info info-local info-context info-versions info-deps info-conditionals
 
@@ -388,7 +388,7 @@ kill:
 
 
 # Shorthand:
-shell: test-interactive-local
+rebar-shell: test-interactive-local
 
 
 # us_web auto-booted:

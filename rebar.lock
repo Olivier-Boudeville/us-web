@@ -16,7 +16,7 @@
   0},
  {<<"myriad">>,
   {git,"https://github.com/Olivier-Boudeville/Ceylan-Myriad.git",
-       {ref,"4613304a29cb9bcb9e403e0155cb6cf62f7c20ee"}},
+       {ref,"68cdfd63399328554ed6493067d5ac86c7b81182"}},
   0},
  {<<"nitro_cache">>,
   {git,"https://github.com/nitrogen/nitro_cache",

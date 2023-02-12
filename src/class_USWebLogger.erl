@@ -77,22 +77,22 @@
 % start-up log files already exist, they will be immediately rotated (hence even
 % after a stop/crash of the server, no written log should be lost)
 %
-% - generating reports: either done statically/periodically (ex: if inserted in
+% - generating reports: either done statically/periodically (e.g. if inserted in
 % the task ring among access rotations, to avoid possible read/write concurrent
-% accesses) or when explicitly requested by the user (ex: through a dedicated
+% accesses) or when explicitly requested by the user (e.g. through a dedicated
 % user console command (see generate-us-web-log-report.sh /
 % us_web_generate_report_app.erl) or through an interactive, control page,
 % possibly Nitrogen-based)
 
 
 
--type server_pid() :: class_UniversalServer:server_pid().
+-type logger_pid() :: class_USServer:server_pid().
 
 -type log_line() :: text_utils:bin_string().
 % A log line entry.
 
 
--export_type([ server_pid/0, log_line/0 ]).
+-export_type([ logger_pid/0, log_line/0 ]).
 
 
 % To silence unused warnings:
@@ -118,9 +118,10 @@
 -type vhost_id() :: class_USWebConfigServer:vhost_id().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
--type user_period() :: class_USScheduler:user_period().
+-type user_periodicity() :: class_USScheduler:user_periodicity().
 
--type log_analysis_tool() :: class_USWebConfigServer:log_analysis_tool().
+-type log_analysis_tool_name() ::
+		class_USWebConfigServer:log_analysis_tool_name().
 
 -include("class_USWebConfigServer.hrl").
 
@@ -239,7 +240,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 % (i.e. not set to 'undefined').
 %
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
-				 maybe( scheduler_pid() ), user_period(),
+				 maybe( scheduler_pid() ), user_periodicity(),
 				 maybe( web_analysis_info() ), boolean() ) -> wooper:state().
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   UserPeriod, MaybeWebAnalysisInfo, _IsSingleton=true ) ->
@@ -277,11 +278,11 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 	end,
 
 	ServerName = text_utils:format( "Logger for ~ts",
-					[ get_host_description( BinHostId, DomainId ) ] ),
+		[ get_host_description( BinHostId, DomainId ) ] ),
 
 	% First the direct mother classes, then this class-specific actions:
 	TraceState = class_USServer:construct( State,
-							?trace_categorize(ServerName), _TrapExits=true ),
+		?trace_categorize(ServerName), _TrapExits=true ),
 
 	{ BinAccessLogFilename, BinErrorLogFilename } =
 		get_log_paths( BinHostId, DomainId ),
@@ -313,7 +314,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 			% Checks that the targeted configuration file already exists:
 			ConfPath = file_utils:join( BinConfDir,
-					get_conf_filename_for( DomainId, BinHostId, ToolName ) ),
+				get_conf_filename_for( DomainId, BinHostId, ToolName ) ),
 
 			file_utils:is_existing_file_or_link( ConfPath ) orelse
 				% Expected to have been generated beforehand (typically by the
@@ -342,7 +343,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 			% Unsilence if debugging:
 			RedirectCmd = cond_utils:if_defined( us_web_debug_log_analysis,
-								"", " 1>/dev/null" ),
+												 "", " 1>/dev/null" ),
 
 			UpdateCmd = text_utils:format( "nice -n ~B ~ts " ++ ExtraOpts
 				++ "-config=~ts" ++ RedirectCmd,
@@ -387,7 +388,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 	% synchronously would result in too long start-up delays).
 	%
 	FirstRotCount = case file_utils:is_existing_file_or_link(
-							BinAccessLogFilePath ) of
+			BinAccessLogFilePath ) of
 
 		true ->
 			% Processes it and then removes it:
@@ -401,9 +402,8 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 	AccessFile = create_log_file( BinAccessLogFilePath, ToolState ),
 
-
 	SecondRotCount = case file_utils:is_existing_file_or_link(
-							BinErrorLogFilePath ) of
+			BinErrorLogFilePath ) of
 
 		true ->
 			% Processes it and then removes it:
@@ -640,7 +640,7 @@ generate_report( State ) ->
 						"command '~ts'.", [ LogReportGenCmd ] ),
 
 			%?debug_fmt( "Generating HTML access report in '~ts' with Awstats.",
-			%			[ HTMLReportPath ] ),
+			%            [ HTMLReportPath ] ),
 
 			%file_utils:remove_file_if_existing( HTMLReportPath ),
 
@@ -661,20 +661,20 @@ generate_report( State ) ->
 			%
 			%case system_utils:run_command( Cmd ) of
 			%
-			%	{ _ReturnCode=0, _CmdOutput="" } ->
-			%		ok;
+			%   { _ReturnCode=0, _CmdOutput="" } ->
+			%       ok;
 			%
-			%	{ _ReturnCode=0, CmdOutput } ->
-			%		?warning_fmt( "Awstats main report generation succeeded, "
+			%   { _ReturnCode=0, CmdOutput } ->
+			%       ?warning_fmt( "Awstats main report generation succeeded, "
 			%           "yet returned following message: '~ts'.",
 			%           [ CmdOutput ] );
 			%
-			%	% An error here shall not kill this logger as a whole:
-			%	{ ReturnCode, CmdOutput } ->
-			%		?error_fmt( "Awstats main report generation failed "
+			%   % An error here shall not kill this logger as a whole:
+			%   { ReturnCode, CmdOutput } ->
+			%       ?error_fmt( "Awstats main report generation failed "
 			%           "(return code: ~w), and returned following message: "
 			%           "'~ts' (command was: '~ts').",
-			%			[ ReturnCode, CmdOutput, Cmd ] )
+			%           [ ReturnCode, CmdOutput, Cmd ] )
 			%
 			%end,
 
@@ -913,7 +913,7 @@ get_host_description( BinHostname, DomainId ) ->
 
 % @doc Returns a description of designated host for specified tool.
 -spec get_host_description_for( vhost_id(), domain_id(),
-								log_analysis_tool() ) -> ustring().
+								log_analysis_tool_name() ) -> ustring().
 get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
 	% Includes default_vhost_catch_all and/or default_domain_catch_all:
 	text_utils:format( "~ts.~ts", [ BinHostId, DomainId ] ).
@@ -1075,7 +1075,7 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 % @doc Rotates any basic log file (typically the access or error one), with no
 % specific post-processing.
 %
-% Returns the path of the resulting archive (ex:
+% Returns the path of the resulting archive (e.g.
 % "/tmp/access-for-baz.foobar.org.log.41.2021-1-20-at-19h-53m-18s.xz").
 %
 % This file should not be currently open (it should have been closed and its
@@ -1107,13 +1107,13 @@ rotate_basic_log_file( FilePath, RotCount, _State ) ->
 % @doc Returns the conventional base filename for specified virtual host, in the
 % context of specified tool.
 %
-% Useful both for input files (ex: configuration ones) and (possibly) output
-% ones (ex: HTML generated ones).
+% Useful both for input files (e.g. configuration ones) and (possibly) output
+% ones (e.g. HTML generated ones).
 %
 % Much like get_log_paths/2.
 %
--spec get_file_prefix_for( domain_id(), vhost_id(), log_analysis_tool() ) ->
-								static_return( file_name() ).
+-spec get_file_prefix_for( domain_id(), vhost_id(),
+		log_analysis_tool_name() ) -> static_return( file_name() ).
 get_file_prefix_for( DomainId, VHostId, _Tool=awstats ) ->
 
 	% Works in all cases, including default_vhost_catch_all and/or
@@ -1140,8 +1140,8 @@ get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
 % awstats.foobar.org.conf, yet we prefer '*' not to result inunclear, ambiguous
 % awstats.conf .
 %
--spec get_conf_filename_for( domain_id(), vhost_id(), log_analysis_tool() ) ->
-								static_return( file_name() ).
+-spec get_conf_filename_for( domain_id(), vhost_id(),
+		log_analysis_tool_name() ) -> static_return( file_name() ).
 get_conf_filename_for( DomainId, VHostId, _Tool=awstats ) ->
 
 	Filename = text_utils:format( "awstats.~ts.conf",

@@ -96,7 +96,8 @@ init( _Args=[ AppRunContext ] ) ->
 	AggregatorPid =
 		class_TraceAggregator:get_aggregator( _LaunchAggregator=false ),
 
-	BridgeSpec = { BinTraceEmitterName, BinTraceCategory, AggregatorPid },
+	BridgeSpec = trace_bridge:get_bridge_spec( BinTraceEmitterName,
+		BinTraceCategory, AggregatorPid ),
 
 	trace_bridge:register( BridgeSpec ),
 
@@ -242,7 +243,7 @@ init( _Args=[ AppRunContext ] ) ->
 				max_connections => infinity,
 				env => #{ dispatch => MaybeHttpsDispatchRules } },
 
-			% Transport options for the main, default host (ex: "foobar.org"),
+			% Transport options for the main, default host (e.g. "foobar.org"),
 			% containing notably the path to its PEM certificate and to its
 			% private key, and related SNI information.
 			%

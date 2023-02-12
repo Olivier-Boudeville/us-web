@@ -38,6 +38,7 @@
 
 
 % Shorthands:
+
 -type application_name() :: otp_utils:application_name().
 
 
@@ -60,7 +61,7 @@
 
 
 
-% @doc Runs US-Web, directly (ex: as 'make us_web_exec') rather than as an OTP
+% @doc Runs US-Web, directly (e.g. as 'make us_web_exec') rather than as an OTP
 % release.
 %
 -spec exec() -> void().
@@ -75,7 +76,7 @@ exec() ->
 								[ code_utils:get_code_path_as_string() ] ) ),
 
 	% Not in an OTP context here, yet we need OTP applications (Cowboy, LEEC,
-	% etc.) to be available (ex: w.r.t. their .app and BEAMs being found, their
+	% etc.) to be available (e.g. w.r.t. their .app and BEAMs being found, their
 	% starting to be done, etc.); we just not want US-Web to be launched the
 	% same way:
 
@@ -100,7 +101,7 @@ exec() ->
 	BlacklistedApps = [],
 
 	OrderedAppNames = otp_utils:prepare_for_execution( _ThisApp=us_web,
-											BuildRootDir, BlacklistedApps ),
+		BuildRootDir, BlacklistedApps ),
 
 	% Retain all applications but US-Web itself, so that we can run US-Web as we
 	% want:
@@ -186,12 +187,12 @@ stop( _State ) ->
 -spec start_application( application_name() ) -> void().
 start_application( simple_bridge ) ->
 
-	trace_bridge:info_fmt( "Starting 'simple_bridge'..." ),
+	trace_bridge:info( "Starting 'simple_bridge'..." ),
 
 	case simple_bridge:start( _Backend=cowboy, _Handler=us_web ) of
 
 		ok ->
-			trace_bridge:debug_fmt( "(simple_bridge started)" );
+			trace_bridge:debug( "(simple_bridge started)" );
 
 		Other ->
 			trace_bridge:error_fmt( "simple_bridge failed to start:~n~p",

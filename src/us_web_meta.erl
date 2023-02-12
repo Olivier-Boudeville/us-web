@@ -167,7 +167,7 @@ get_page_body( Scheme, Port, DomainCfgTable, StartTimestamp, MetaWebSettings,
 		"<div class=\"banner\"><p><em>Domain selection</em>"
 		"<a href=\"#meta_top\">[go to top]</a> "
 		++ [ text_utils:format( "- ~ts~n", [ get_domain_link( D ) ] )
-			 || { D, _MaybeCertManagerPid, _VHostCfgTable }
+				 || { D, _MaybeCertManagerPid, _VHostCfgTable }
 					<- table:values( DomainCfgTable ) ] ++
 		"<a href=\"#meta_bottom\">[go to bottom]</a>"
 		"</p></div>~n~n"
@@ -200,7 +200,8 @@ create_toc( DomainCfgTable ) ->
 		DomInfos ->
 			text_utils:format( "~B domains:~n~ts", [ length( DomInfos ),
 				web_utils:get_unordered_list( [ get_domain_link( DomId )
-		|| { DomId, _MaybeCertManagerPid, _VHostCfgTable } <- DomInfos ] ) ] )
+					|| { DomId, _MaybeCertManagerPid,
+						 _VHostCfgTable } <- DomInfos ] ) ] )
 
 	end.
 
@@ -212,7 +213,7 @@ describe_hosting( Scheme, Port, DomainCfgTable,
 	  _MetaWebSettings={ MetaDomainId, MetaVhostId, _BinMetaContentRoot },
 	  LogAnalysisEnabled ) ->
 
-	% Ex: MaybeBinMetaURL="http://meta.foobar.org:8080".
+	% For example MaybeBinMetaURL="http://meta.foobar.org:8080".
 	MaybeMetaBaseURL = case LogAnalysisEnabled of
 
 		true ->
@@ -252,7 +253,7 @@ get_domain_descriptions( Scheme, Port, DomainInfos, MaybeMetaBaseURL ) ->
 
 	DomStrings = lists:sort( [
 	 get_domain_description( Scheme, Port, DomId,  VCfgTable, MaybeMetaBaseURL )
-		  || { DomId, _MaybeCertManagerPid, VCfgTable } <- DomainInfos ] ),
+			|| { DomId, _MaybeCertManagerPid, VCfgTable } <- DomainInfos ] ),
 
 	% Just for the newline:
 	[ text_utils:format( "<p>~ts</p>~n", [ DomStr ] ) || DomStr <- DomStrings ].
@@ -266,15 +267,16 @@ get_domain_description( Scheme, Port, _DomainId=default_domain_catch_all,
 						VCfgTable, MaybeMetaBaseURL ) ->
 
 	text_utils:format(
-	  "<a name=\"" ++ ?domain_catch_all_target ++ "\"></a>~n"
-	  "<h2>For the domain catch-all</h2>~n"
-	  "<p>Note that the corresponding URLs are likely not resolvable</p>~ts"
-	  ++ go_to_top(),
-	  [ get_vhost_descriptions( Scheme, Port, VCfgTable, MaybeMetaBaseURL ) ] );
+		"<a name=\"" ++ ?domain_catch_all_target ++ "\"></a>~n"
+		"<h2>For the domain catch-all</h2>~n"
+		"<p>Note that the corresponding URLs are likely not resolvable</p>~ts"
+		++ go_to_top(),
+		[ get_vhost_descriptions( Scheme, Port, VCfgTable,
+								  MaybeMetaBaseURL ) ] );
 
 get_domain_description( Scheme, Port, DomainId, VCfgTable, MaybeMetaBaseURL ) ->
-	 text_utils:format( "<a name=\"~ts\"></a>~n"
-			"<h2>Hosting for domain <code>~ts</code></h2>~n<p>~ts</p>~n",
+	text_utils:format( "<a name=\"~ts\"></a>~n"
+		"<h2>Hosting for domain <code>~ts</code></h2>~n<p>~ts</p>~n",
 		[ DomainId, DomainId, get_vhost_descriptions( Scheme, Port, VCfgTable,
 													  MaybeMetaBaseURL ) ] )
 		++ go_to_top().
@@ -303,11 +305,11 @@ get_vhost_descriptions( Scheme, Port, VHostCfgTable, MaybeMetaBaseURL ) ->
 
 		VHostCfgEntries ->
 			%VStrings = lists:sort( [ get_vhost_description( Port, VE )
-			%			 || VE <- VHostCfgEntries ] ),
+			%           || VE <- VHostCfgEntries ] ),
 			text_utils:format( "~B virtuals hosts:~n~ts~n~ts",
 				[ length( VHostCfgEntries ), web_utils:get_unordered_list(
 					[ get_vhost_link( VHostId, ParentHost )
-					  || #vhost_config_entry{ virtual_host=VHostId,
+						|| #vhost_config_entry{ virtual_host=VHostId,
 								parent_host=ParentHost } <- VHostCfgEntries ] ),
 				  get_table_for( VHostCfgEntries, Scheme, Port,
 								 MaybeMetaBaseURL ) ] )
@@ -392,7 +394,7 @@ get_table_for( VHostCfgEntries, Scheme, Port, MaybeMetaBaseURL ) ->
 ",
 
 	Cells = [ get_cell_for( VHEnt, Scheme, Port, MaybeMetaBaseURL )
-			  || VHEnt <- VHostCfgEntries ],
+				|| VHEnt <- VHostCfgEntries ],
 
 	End = "
 	</table>
@@ -417,7 +419,7 @@ get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 			{ "*.", "ANY_VIRTUAL_HOST." };
 
 		_ ->
-		   VHostDot = text_utils:binary_to_string( VHost ) ++ ".",
+			VHostDot = text_utils:binary_to_string( VHost ) ++ ".",
 			{ VHostDot, VHostDot }
 
 	end,
@@ -449,7 +451,8 @@ get_cell_for( #vhost_config_entry{ virtual_host=VHost,
 			% heavy (as including many full websites):
 			%
 			PageFilename = class_USWebLogger:get_file_prefix_for( ParentHost,
-									VHost, _Tool=awstats ) ++ ".html",
+				VHost, _Tool=awstats ) ++ ".html",
+
 			text_utils:format(
 			  "<a href=\"~ts/~ts\" target=\"_blank\">[log analysis]</a>",
 			  [ MaybeMetaBaseURL, PageFilename ] )
@@ -593,4 +596,5 @@ get_page_footer() ->
 go_to_top() ->
 	% Just for the newline:
 	text_utils:format(
-	  "<p><center><a href=\"#meta_top\">[Go to top]</a></center></p>~n~n", [] ).
+		"<p><center><a href=\"#meta_top\">[Go to top]</a></center></p>~n~n",
+		[] ).

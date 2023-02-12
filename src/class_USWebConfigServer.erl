@@ -78,8 +78,8 @@
 -type web_analysis_info() :: #web_analysis_info{}.
 
 
--export_type([ web_kind/0, vhost_id/0, general_web_settings/0,
-			   web_analysis_info/0, log_analysis_tool_name/0 ]).
+-export_type([ web_kind/0, vhost_id/0, log_analysis_tool_name/0,
+			   general_web_settings/0, web_analysis_info/0 ]).
 
 
 % Must be kept consistent with the default_us_web_epmd_port variable in
@@ -264,17 +264,23 @@
 
 
 % Notably for us_web_meta:
--export_type([ domain_id/0, domain_config_table/0, vhost_config_table/0,
-			   vhost_config_entry/0, meta_web_settings/0,
+-export_type([ domain_id/0, domain_info/0, domain_config_table/0,
+			   vhost_config_table/0, vhost_config_entry/0, meta_web_settings/0,
 			   report_generation_outcome/0 ]).
 
 
--type host_match() :: any_string().
--type path_match() :: any_string().
+% Is '_' | iodata() (hence includes binary()):
+-type route_match() :: cowboy:route_match().
 
-% Not exported:
+-type host_match() :: route_match().
+
+% See cowboy:route_match():
+-type path_match() :: { Path :: route_match(), HandlerMod :: module_name(),
+						HandlerOpts :: term() }.
+
+% As not exported:
 %-type route_rule() :: cowboy_router:route_rule().
--type route_rule() :: { HostMatch :: term(), PathMatches :: list() }.
+-type route_rule() :: { host_match(), [ path_match() ] }.
 
 -type dispatch_routes() :: cowboy_router:dispatch_routes().
 
@@ -288,7 +294,7 @@
 
 
 -type log_analysis_settings() :: { log_analysis_tool_name(),
-			maybe( bin_directory_path() ), maybe( bin_directory_path() ) }.
+	maybe( bin_directory_path() ), maybe( bin_directory_path() ) }.
 % Settings about any web access log analysis, i.e. our canonical name for the
 % analysis tool, its (main) root directory and the directory of this helper (if
 % any were specified): {ToolName, MaybeAnalysisToolRoot,
@@ -319,7 +325,8 @@
 
 
 % To silence attribute-only types:
--export_type([ dispatch_rules/0, log_analysis_settings/0,
+-export_type([ host_match/0, path_match/0, route_rule/0, dispatch_routes/0,
+			   dispatch_rules/0, log_analysis_settings/0,
 			   cert_support/0, cert_mode/0,
 			   https_transport_options/0, https_transport_info/0 ]).
 
@@ -331,10 +338,10 @@
 
 % Shorthands:
 
+-type module_name() :: basic_utils:module_name().
 -type error_reason() :: basic_utils:error_reason().
 
 -type ustring() :: text_utils:ustring().
--type any_string() :: text_utils:any_string().
 
 -type file_path() :: file_utils:file_path().
 -type bin_file_path() :: file_utils:bin_file_path().
@@ -2154,10 +2161,11 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 -spec get_host_match_for( domain_id(), vhost_id() ) -> host_match().
 get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=without_vhost ) ->
-	":_.:_";
+	<<":_.:_">>;
 
 get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=default_vhost_catch_all ) ->
+	% Yes, an atom:
 	'_';
 
 % For example if BinVHostName="baz", "baz.foobar.org" is matching
@@ -2168,11 +2176,11 @@ get_host_match_for( _DomainId=default_domain_catch_all,
 	text_utils:format( "~ts.:_.:_", [ BinVHostName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=without_vhost )
-							when is_binary( BinDomainName ) ->
-	text_utils:binary_to_string( BinDomainName );
+			when is_binary( BinDomainName ) ->
+	BinDomainName;
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
-							when is_binary( BinDomainName ) ->
+			when is_binary( BinDomainName ) ->
 	% text_utils:format( ":_.~ts", [ BinDomainName ] );
 	%
 	% A little better (more general) than above (which, if
@@ -2280,9 +2288,8 @@ set_as_forward_paths(
 %
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
-	%{ <<"/.well-known/acme-challenge/:token">>, us_web_leec_handler,
-	{ "/.well-known/acme-challenge/:token", us_web_leec_handler,
-	  _InitialState=CertManagerPid };
+	{ _BinPath= <<"/.well-known/acme-challenge/:token">>,
+	  _Mod=us_web_leec_handler, _HandlerOpts=CertManagerPid };
 
 get_challenge_path_match( Unexpected ) ->
 	throw( { invalid_certificate_manager, Unexpected } ).

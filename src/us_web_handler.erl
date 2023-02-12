@@ -26,7 +26,7 @@
 %
 % - provides static dispatches so that the (static) websites corresponding to
 % the virtual hosts can be appropriately served; see the US-Web configuration
-% file (ex: priv/for-testing/us-web-for-tests.config), which holds the data
+% file (e.g. priv/for-testing/us-web-for-tests.config), which holds the data
 % relative to virtual hosts
 %
 % - handles HTTP errors (notably 404 ones, thanks to a specifically-generated
@@ -45,10 +45,10 @@
 
 
 -type handler_module() :: basic_utils:module_name().
-% Module to handle web content through dispatch rules (ex: 'cowboy_rest').
+% Module to handle web content through dispatch rules (e.g. 'cowboy_rest').
 
 
--type handler_state() :: maybe( maps:map() ).
+-type handler_state() :: maybe( map() ).
 % State carried by the process in charge of a request, for most handlers.
 
 
@@ -58,10 +58,10 @@
 %
 % - css_path: file_utils:bin_file_path(), a path relative to the content root of
 % the corresponding virtual host pointing to the default CSS file to be used
-% (ex: for the 404 page)
+% (e.g. for the 404 page)
 %
 % - image_404 :: file_utils:bin_file_path(), a path relative to the content root
-% of the corresponding virtual host pointing to an image (ex: PNG) to be used
+% of the corresponding virtual host pointing to an image (e.g. PNG) to be used
 % when generating a 404 error page
 
 
@@ -312,8 +312,8 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 		undefined ->
 			cond_utils:if_defined( us_web_debug_log_analysis,
 				trace_bridge:debug_fmt( "[~w] Request served (code: ~B), "
-					"no logger.", [ self(), HttpStatusCode ] ) ),
-			ok;
+					"no logger.", [ self(), HttpStatusCode ] ),
+				ok );
 
 		LoggerPid ->
 
@@ -340,7 +340,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
 	% We target here the "NCSA combined with several virtualhostname sharing
 	% same log file" log format, except that we replaced the clumsy '%time1'
-	% (ex: including the 3 first letters of the month, possibly with a capital,
+	% (e.g. including the 3 first letters of the month, possibly with a capital,
 	% and a UTC offset difficult to sort out) with more straightforward, less
 	% demanding '%time2': "[dd/mmm/yyyy:hh:mm:ss +0x00]" becomes for the better
 	% "yyyy-mm-dd hh:mm:ss".

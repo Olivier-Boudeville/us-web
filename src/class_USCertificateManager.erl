@@ -102,8 +102,10 @@
 
 
 
--type manager_pid() :: class_UniversalServer:server_pid().
+-type manager_pid() :: class_USServer:server_pid().
 
+
+% One day ssl will export these types:
 
 -type ssl_option() :: ssl:server_option() | ssl:common_option().
 % Per-virtual-host SNI (SSL-related) option (ranch_ssl:opts()).
@@ -119,7 +121,8 @@
 
 
 -type cipher_name() :: atom().
-% Identifier of a cipher (ex: 'AES128-SHA').
+% Identifier of a cipher (e.g. 'AES128-SHA').
+
 
 -export_type([ manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
 			   cipher_name/0 ]).
@@ -233,7 +236,7 @@
 %
 % A sufficiently large jitter is all the more welcome than for (post-creation)
 % renewals, the LEEC agents for the various domains of interest are not
-% specifically synchronised (ex: no task ring for them), and we do not want too
+% specifically synchronised (e.g. no task ring for them), and we do not want too
 % many of these renewals to possibly happen at the same time, lest we hit the
 % numerous rate limits enforced by the ACME letsencrypt servers.
 
@@ -447,21 +450,21 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	%MaybeLEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
 	%
-	%	{ ok, FsmPid } ->
-	%		?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
-	%			"following start options:~n  ~p", [ FsmPid, StartOpts ] ),
-	%		FsmPid;
+	%   { ok, FsmPid } ->
+	%       ?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
+	%           "following start options:~n  ~p", [ FsmPid, StartOpts ] ),
+	%       FsmPid;
 	%
-	%	{ error, Reason } ->
-	%		?error_fmt( "Initialization of LEEC failed: ~p.~n"
-	%			"Start options were:~n  ~p", [ Reason, StartOpts ] ),
-	%		throw( { leec_initialization_failed, Reason } )
+	%   { error, Reason } ->
+	%       ?error_fmt( "Initialization of LEEC failed: ~p.~n"
+	%           "Start options were:~n  ~p", [ Reason, StartOpts ] ),
+	%       throw( { leec_initialization_failed, Reason } )
 	%
 	%
-	%		catch AnyClass:Exception ->
-	%			?error_fmt( "Starting failed, with a thrown exception ~p "
-	%						"(of class: ~p).", [ Exception, AnyClass ] ),
-	%			throw( { leec_initialization_failed, Exception, AnyClass } )
+	%       catch AnyClass:Exception ->
+	%           ?error_fmt( "Starting failed, with a thrown exception ~p "
+	%                       "(of class: ~p).", [ Exception, AnyClass ] ),
+	%           throw( { leec_initialization_failed, Exception, AnyClass } )
 	%
 	%end,
 
@@ -490,7 +493,6 @@ destruct( State ) ->
 			% is a oneway:
 			%
 			MaybeSchedPid ! { unregisterTask, [ CertTaskId ], self() }
-
 		end,
 
 	case ?getAttr(leec_pid) of
@@ -645,9 +647,9 @@ request_certificate( State ) ->
 
 			try
 				async = leec:obtain_certificate_for( FQDN, LEECPid,
-							_CertReqOptionMap=#{ async => true,
-												 callback => Callback,
-												 sans => ActualSans } ),
+					_CertReqOptionMap=#{ async => true,
+										 callback => Callback,
+										 sans => ActualSans } ),
 				%?debug
 				?warning( "Certificate creation request initiated." ),
 				setAttribute( State, leec_pid, LEECPid )
@@ -790,7 +792,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 				undefined ->
 					%?info
 					?warning( "No certificate renewal will be attempted "
-						   "(no periodicity defined)." ),
+							  "(no periodicity defined)." ),
 					ShutState;
 
 				RenewDelay ->
@@ -914,10 +916,10 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % @doc Returns the https transport options and the SNI information suitable for
 % https-enabled virtual hosts, that is the transport options for the domain of
 % interest - meaning the path to the PEM certificate for the main, default host
-% (ex: foobar.org) and to its private key, together with SNI (Server Name
+% (e.g. foobar.org) and to its private key, together with SNI (Server Name
 % Indication, see [https://erlang.org/doc/man/ssl.html#type-sni_hosts]) host
-% information for all virtual host of all hosts (ex: baz.foobar.org, aa.buz.net,
-% etc.).
+% information for all virtual host of all hosts (e.g. baz.foobar.org,
+% aa.buz.net, etc.).
 %
 % See also [https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/].
 %
@@ -925,7 +927,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 % determine the first hots listed as the main one.
 %
 -spec get_https_transport_info( dispatch_routes(), bin_directory_path() ) ->
-							static_return( https_transport_info() ).
+		static_return( https_transport_info() ).
 get_https_transport_info( _, _BinCertDir=undefined ) ->
 	throw( no_certificate_directory_for_sni );
 
@@ -933,7 +935,7 @@ get_https_transport_info( _UserRoutes=[], _BinCertDir ) ->
 	throw( no_hostname_for_sni );
 
 get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
-			  BinCertDir ) ->
+						  BinCertDir ) ->
 
 	% For https with SNI, a default host must be defined, distinct from the SNI
 	% ones; by convention it is the first one found in the user-defined dispatch
@@ -1030,7 +1032,20 @@ get_recommended_ciphers() ->
 						BaseV1dot3Ciphers ++ BaseOtherCiphers
 					end } ] ),
 
-	ErlCiphers = [ ssl:str_to_suite( C ) || C <- AllCiphers ],
+	ErlCiphers = lists:foldl( fun( C, Acc ) ->
+								case ssl:str_to_suite( C ) of
+
+									{ error, { not_recognized, _C } } ->
+										Acc;
+
+									CSuite ->
+										[ CSuite | Acc ]
+
+								end
+
+							  end,
+							  _Acc0=[],
+							  AllCiphers ),
 
 	wooper:return_static( ErlCiphers ).
 

@@ -26,14 +26,14 @@
 	% Rules so that http accesses are managed by the right handlers:
 	http_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
 
-	% TCP port (ex: 80) to serve any http content:
+	% TCP port (e.g. 80) to serve any http content:
 	http_tcp_port :: maybe( net_utils:tcp_port() ),
 
 
 	% Rules so that https accesses are managed by the right handlers:
 	https_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
 
-	% TCP port (ex: 443) to serve any https content:
+	% TCP port (e.g. 443) to serve any https content:
 	https_tcp_port :: maybe( net_utils:tcp_port() ),
 
 
@@ -56,18 +56,18 @@
 
 
 
-% The full configuration information regarding a virtual host (ex:
+% The full configuration information regarding a virtual host (e.g.
 % "bar.foo.org"):
 %
 -record( vhost_config_entry, {
 
-	% The subdomain (ex: <<"bar">>) corresponding to this virtual host:
-	virtual_host :: net_utils:bin_host_name(),
+	% The subdomain (e.g. <<"bar">>) corresponding to this virtual host:
+	virtual_host :: class_USWebConfigServer:vhost_id(),
 
-	% The parent host (ex: <<"foo.org">>) of this virtual one:
+	% The parent host (e.g. <<"foo.org">>) of this virtual one:
 	parent_host :: class_USWebConfigServer:domain_id(),
 
-	% The kind of virtual host (ex: 'static'):
+	% The kind of virtual host (e.g. 'static'):
 	kind :: class_USWebConfigServer:web_kind(),
 
 	% The content (absolute) directory (as a binary) associated to this virtual
@@ -76,7 +76,7 @@
 	content_root :: file_utils:bin_directory_path(),
 
 	% The PID of the web logger in charge of this virtual host:
-	logger_pid :: class_USWebLogger:server_pid(),
+	logger_pid :: class_USWebLogger:logger_pid(),
 
 	% The PID of the certificate manager (if any) for this virtual
 	% host, in charge of certificate generation and renewal:
@@ -88,7 +88,7 @@
 % Information about the analysis of web access logs:
 -record( web_analysis_info, {
 
-	% Ex: 'awstats'.
+	% For example 'awstats':
 	tool :: class_USWebConfigServer:log_analysis_tool_name(),
 
 

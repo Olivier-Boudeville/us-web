@@ -77,11 +77,11 @@ our_github_base="https://github.com/Olivier-Boudeville"
 
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
-# itself, even if it used at least for some dependencies (ex: LEEC, so that its
+# itself, even if it used at least for some dependencies (e.g. LEEC, so that its
 # own dependencies - mostly a JSON parser - are automatically managed).
 #
-# This does not lead to duplications (ex: Myriad being built once in the context
-# of LEEC and also once for the other packages), thanks to _checkouts
+# This does not lead to duplications (e.g. Myriad being built once in the
+# context of LEEC and also once for the other packages), thanks to _checkouts
 # directories containing symlinks whenever appropriate.
 
 token_eaten=0
@@ -730,9 +730,9 @@ if [ ${do_build} -eq 0 ]; then
 	# Apart from Myriad (used as a checkout to point to the same, unique install
 	# thereof here), LEEC has dependencies of its own (shotgun, jsx otherwise
 	# jiffy, elli, getopt, yamerl, erlang_color), so, even if not all of them
-	# are actually needed by our use case (elli, getopt, yamerl, erlang_color of
-	# no use here), we prefer relying on rebar3 (as indirect dependencies, such
-	# as cowlib or gun, are also induced):
+	# are actually needed by our use case (elli, getopt, yamerl, erlang_color
+	# are of no use here), we prefer relying on rebar3 (as indirect
+	# dependencies, such as cowlib or gun, are also induced):
 	#
 	echo " - building LEEC"
 
@@ -760,11 +760,23 @@ if [ ${do_build} -eq 0 ]; then
 	# Relying on Erlang-native httpc instead (through Myriad's web_utils):
 	#${make} all USE_SHOTGUN=false 1>/dev/null
 
-	if ! ${make} all-rebar3 ${ceylan_opts} USE_SHOTGUN=false 1>/dev/null; then
+	# We do not declare the need for JSON support at this point, as this would
+	# lead to the Myriad-based lookup of a proper jsx install - whereas it is
+	# not available yet (it will actually be triggered by this make target):
+	#
+	if ! ${make} all-rebar3 ${ceylan_opts} USE_JSON=false USE_SHOTGUN=false 1>/dev/null; then
 		echo " Error, the build of LEEC failed." 1>&2
 		exit 66
 	fi
 	cd ..
+
+	# We used to create a symlink to this jsx, so that US-Web later can find it
+	# during its own build, yet it is useless (LEEC here finds its jsx as an OTP
+	# application, see otp_utils) and this is bound to lead to clashes between
+	# jsx installs in the code path):
+	#
+	#ln -s leec/_build/default/lib/jsx/
+
 
 	# US-Common does not introduce third-party dependencies, so going again for
 	# our native build, which thus uses Myriad's, WOOPER's and Traces' sibling
@@ -1019,8 +1031,11 @@ if [ $do_launch -eq 0 ]; then
 
 else
 
-	echo "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)"
+	echo "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)."
+
+	echo "Any prior US-Web instance that would still linger could be removed that to our 'kill-us-web.sh' script. Use 'journalctl -u us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 
 fi
 
-echo "Consider running our 'monitor-us-web.sh' script if wanting more detailed information regarding that launched instance."
+
+echo "Consider running our 'us_web/priv/bin/monitor-us-web.sh' script if wanting more detailed information regarding that launched instance."

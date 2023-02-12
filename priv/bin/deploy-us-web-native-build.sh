@@ -1033,7 +1033,7 @@ else
 
 	echo "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)."
 
-	echo "Any prior US-Web instance that would still linger could be removed that to our 'kill-us-web.sh' script. Use 'journalctl -u us-web-as-native-build.service' to consult the corresponding systemd-level logs."
+	echo "Any prior US-Web instance that would still linger could be removed thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 
 fi
 

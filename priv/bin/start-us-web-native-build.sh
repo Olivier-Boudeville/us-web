@@ -87,6 +87,19 @@ maybe_us_config_dir="$1"
 
 if [ -n "${maybe_us_config_dir}" ]; then
 
+	case "${maybe_us_config_dir}" in
+
+		/*)
+			# Already absolute, OK:
+			echo "Using specified absolute directory '${maybe_us_config_dir}'."
+			;;
+		*)
+			# Relative, to be made absolute:
+			maybe_us_config_dir="$(pwd)/${maybe_us_config_dir}"
+			echo "Transformed specified relative directory in '${maybe_us_config_dir}' absolute one."
+			;;
+	esac
+
 	if [ ! -d "${maybe_us_config_dir}" ]; then
 
 		echo "  Error, the specified US configuration directory, '${maybe_us_config_dir}', does not exist." 1>&2
@@ -94,6 +107,9 @@ if [ -n "${maybe_us_config_dir}" ]; then
 		exit 20
 
 	fi
+
+	# Better for messages output:
+	maybe_us_config_dir="$(realpath ${maybe_us_config_dir})"
 
 	# As a 'universal-server/us.config' suffix will be added to each candidate
 	# configuration directory, we remove the last directory:
@@ -170,7 +186,7 @@ fi
 
 
 echo
-echo " -- Starting US-Web natively-built application as user '${us_web_username}', on ${epmd_start_msg}, whereas VM log directory is '${us_web_vm_log_dir}'..."
+echo " -- Starting US-Web natively-built application as user '${us_web_username}', on ${epmd_start_msg}, VM log expected in '${us_web_vm_log_dir}/erlang.log.1'..."
 
 # Apparently variables may be indifferently set prior to make, directly in the
 # environment (like 'XDG_CONFIG_DIRS=xxx make TARGET') or as arguments (like

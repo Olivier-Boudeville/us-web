@@ -81,7 +81,7 @@ ERLANG_COMPILER_OPT_BASE += $(US_WEB_DEBUG_FLAGS)    \
 
 
 
-# Useful to target for example the root of the current layer (ex: to locate the
+# Useful to target for example the root of the current layer (e.g. to locate the
 # relevant, layer-local '_build' directory):
 #
 ifndef LAYER_TOP
@@ -231,14 +231,14 @@ US_NATIVE_DEPLOY_ROOT := /opt/universal-server/us_web-native
 
 
 # For later reuse in the next layer of the software stack:
-US_WEB_PLT_FILE := $(US_WEB_TOP)/us_web.plt
+US_WEB_PLT_FILE := $(US_WEB_TOP)/US-Web.plt
 
 
 # This is the merged PLT of the level just below in the software stack.
 # For us-web, it is the PLT of 'us-common':
 #
-ifndef PREDECESSOR_PLT
-   PREDECESSOR_PLT = $(US_COMMON_PLT_FILE)
+ifndef PREDECESSOR_PLT_FILE
+   PREDECESSOR_PLT_FILE = $(US_COMMON_PLT_FILE)
 endif
 
 
@@ -255,8 +255,8 @@ endif
 # them and if all the packages mentioned here are themselves dependencies (in
 # which case they are all sitting together in the _checkouts child directory).
 #
-# Note also we rely on the names of build roots (ex: myriad) as opposed to
-# project/repository names (ex: Ceylan-Myriad):
+# Note also we rely on the names of build roots (e.g. myriad) as opposed to
+# project/repository names (e.g. Ceylan-Myriad):
 #
 # First priority is an existing checkout directory:
 ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/us_common/.),)
@@ -319,4 +319,9 @@ endif
 
 ifndef PREDECESSOR_LAYER_TOPS
 	PREDECESSOR_LAYER_TOPS := $(US_COMMON_TOP) $(LEEC_TOP)
+endif
+
+ifndef BASE_PLT_FILES
+	# Extra PLTs commented-out until the --plts Dialyzer option is fixed:
+	BASE_PLT_FILES = $(PREDECESSOR_PLT_FILE) #$(LEEC_PLT_FILE)
 endif

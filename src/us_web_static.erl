@@ -39,8 +39,10 @@
 
 -type extra_etag() :: { etag, module(), function() } | { etag, false }.
 
--type extra_mimetypes() :: { mimetypes, module(), function() }
- | { mimetypes, binary() | { binary(), binary(), [ { binary(), binary() } ] } }.
+-type extra_mimetypes() ::
+	{ mimetypes, module(), function() }
+  | { mimetypes, binary()
+		| { binary(), binary(), [ { binary(), binary() } ] } }.
 
 -type extra() :: [ extra_charset() | extra_etag() | extra_mimetypes() ].
 
@@ -189,6 +191,9 @@ handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
 % @doc Handles the request for a directory.
 %
+% The meaning of requesting a directory is unclear; possibly we should just
+% translate it to attempting to fetch any "index.html" in that directory.
+%
 % RelContentRoot is the path of the target directory relatively to the absolute
 % website root.
 %
@@ -219,7 +224,6 @@ handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 			case validate_reserved( PathInfo ) of
 
 				ok ->
-
 					% The absolute root of the website of interest:
 					BinAbsWebsiteRoot = maps:get( content_root, HState ),
 
@@ -375,7 +379,7 @@ forbidden( Req, State ) ->
 % @doc Detects the mimetype of the file.
 -spec content_types_provided( Req, State ) ->
 							{ [ { binary(), get_file } ], Req, State }
-	when State::rest_handler_state().
+								when State::rest_handler_state().
 content_types_provided( Req, State={ Path, _, Extra } ) when is_list( Extra ) ->
 
 	case lists:keyfind( mimetypes, 1, Extra ) of
@@ -422,7 +426,7 @@ ranges_provided( Req, State ) ->
 
 % @doc Assumes the resource does not exist if it is not a regular file.
 -spec resource_exists( Req, State ) -> { boolean(), Req, State }
-											when State::rest_handler_state().
+								when State::rest_handler_state().
 resource_exists( Req, State={ _, { _, #file_info{ type=regular } }, _ } ) ->
 	{ true, Req, State };
 
@@ -433,7 +437,7 @@ resource_exists( Req, State ) ->
 
 % @doc Generates an etag for the handler-referenced file.
 -spec generate_etag( Req, State ) -> { { strong | weak, binary() }, Req, State }
-										when State::rest_handler_state().
+								when State::rest_handler_state().
 generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
 							Extra } ) ->
 

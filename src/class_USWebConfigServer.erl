@@ -2019,6 +2019,11 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 	% Allows to expand a requested 'http://foobar.org' into
 	% 'http://foobar.org/index.html':
 	%
+	% (a more general rule could be applied, based on a path match of "PATH/"
+	% being rewritten into "PATH/index.html" for any PATH - not only PATH="", so
+	% that http://foobar.org/some-dir results in
+	% http://foobar.org/some-dir/index.html being fetched)
+	%
 	NoPagePathMatch = { "/", us_web_static, InitialState#{ type => file,
 														   path => BinIndex } },
 
@@ -2031,7 +2036,7 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 	% MaybeCertManagerPid is undefined in the case of a catch-all:
 	PathMatches = case CertSupport =:= renew_certificates
-						andalso MaybeCertManagerPid =/= undefined of
+			andalso MaybeCertManagerPid =/= undefined of
 
 		true ->
 			% Be able to answer Let's Encrypt ACME challenges:

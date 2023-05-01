@@ -55,7 +55,7 @@ else
 fi
 
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line, otherwise found through the default US search paths. The US-Web installation itself will be looked up in '${us_web_install_root}'."
+usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (note that the final directory of this path must be 'universal-server'), otherwise found through the default US search paths. The US-Web installation itself will be looked up in '${us_web_install_root}'."
 
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -77,10 +77,20 @@ ${usage}" 1>&2
 fi
 
 
-# XDG_CONFIG_DIRS defined, so that the US server as well (not only these
-# scripts) can look it up:
+# XDG_CONFIG_DIRS defined, so that the US server as well can look it up (not
+# only these scripts):
 #
-xdg_cfg_dirs="${XDG_CONFIG_DIRS}:/etc/xdg"
+# (avoiding empty path in list)
+#
+if [ -n "${XDG_CONFIG_DIRS}" ]; then
+
+	xdg_cfg_dirs="${XDG_CONFIG_DIRS}:/etc/xdg"
+
+else
+
+	xdg_cfg_dirs="/etc/xdg"
+
+fi
 
 
 maybe_us_config_dir="$1"
@@ -113,12 +123,14 @@ if [ -n "${maybe_us_config_dir}" ]; then
 
 	# As a 'universal-server/us.config' suffix will be added to each candidate
 	# configuration directory, we remove the last directory:
-
-	candidate_dir="$(dirname $(realpath ${maybe_us_config_dir}))"
+	#
+	candidate_dir="$(dirname ${maybe_us_config_dir})"
 
 	xdg_cfg_dirs="${candidate_dir}:${xdg_cfg_dirs}"
 
 fi
+
+#echo "xdg_cfg_dirs = ${xdg_cfg_dirs}"
 
 
 #echo "Starting US-Web, to run as a native build with following user: $(id)"
@@ -126,7 +138,7 @@ fi
 # We need first to locate the us-web-common.sh script:
 
 # Location expected also by us-common.sh afterwards:
-cd "${us_web_install_root}" || exit
+cd "${us_web_install_root}" || exit 1
 
 # As expected by us-web-common.sh for the VM logs:
 log_dir="${us_web_install_root}/log"
@@ -151,7 +163,7 @@ fi
 # Hint for the helper scripts:
 us_launch_type="native"
 
-#echo "Sourcing '${us_web_common_script}'."
+echo "Sourcing '${us_web_common_script}' from $(pwd)."
 . "${us_web_common_script}" #1>/dev/null
 
 
@@ -164,7 +176,8 @@ secure_authbind
 
 prepare_us_web_launch
 
-cd src || exit
+# From us_web:
+cd src || exit 2
 
 
 #echo "epmd_make_opt=${epmd_make_opt}"
@@ -188,17 +201,29 @@ fi
 echo
 echo " -- Starting US-Web natively-built application as user '${us_web_username}', on ${epmd_start_msg}, VM log expected in '${us_web_vm_log_dir}/erlang.log.1'..."
 
-# Apparently variables may be indifferently set prior to make, directly in the
-# environment (like 'XDG_CONFIG_DIRS=xxx make TARGET') or as arguments (like
-# 'make TARGET XDG_CONFIG_DIRS=xxx'), even if there are a sudo and an authbind
-# in the equation.
+
+# A correct way of passing environment variables (despite a sudo and an
+# authbind) proved finally to specify them prior to authbind, like in:
+#
+# '[...] XDG_CONFIG_DIRS="${xdg_cfg_dirs}" ${authbind} --deep make -s
+# us_web_exec_service [...]'
+#
+# Indeed, with:
+#
+#  - '[...] ${authbind} --deep make -s us_web_exec_service
+#    XDG_CONFIG_DIRS="${xdg_cfg_dirs}" [...]', XDG_CONFIG_DIRS was not set
+#
+#  - '[...] ${authbind} --deep XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s
+#  us_web_exec_service [...]', XDG_CONFIG_DIRS was interpreted as a
+#  (non-existing) file
+
 
 # Previously the '--depth' authbind option was used, and apparently a depth of 6
 # was sufficient; but there is little interest in taking such risks.
 
-#echo Starting US-Web: /bin/sudo -u ${us_web_username} ${authbind} --deep make -s us_web_exec_service XDG_CONFIG_DIRS="${xdg_cfg_dirs}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_make_opt}
+#echo Starting US-Web with: /bin/sudo -u ${us_web_username} XDG_CONFIG_DIRS="${xdg_cfg_dirs}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${authbind} --deep make -s us_web_exec_service ${cookie_env} ${epmd_make_opt}
 
-/bin/sudo -u ${us_web_username} ${authbind} --deep make -s us_web_exec_service XDG_CONFIG_DIRS="${xdg_cfg_dirs}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${cookie_env} ${epmd_make_opt}
+/bin/sudo -u ${us_web_username} XDG_CONFIG_DIRS="${xdg_cfg_dirs}" VM_LOG_DIR="${us_web_vm_log_dir}" US_APP_BASE_DIR="${US_APP_BASE_DIR}" US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}" ${authbind} --deep make -s us_web_exec_service ${cookie_env} ${epmd_make_opt}
 
 res=$?
 

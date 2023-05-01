@@ -68,37 +68,29 @@ exec() ->
 	app_facilities:display( "Trying to connect to US-Web node '~ts'.",
 							[ MainTargetNodeName ] ),
 
-	case net_adm:ping( MainTargetNodeName ) of
-
-		pong ->
-			ok;
-
-		pang ->
+	net_adm:ping( MainTargetNodeName ) =:= pong orelse
+		begin
 			trace_utils:warning_fmt( "Unable to connect to a target main "
 				"node '~ts'; trying an alternate one, based on "
 				"user name: '~ts'.",
 				[ MainTargetNodeName, UserTargetNodeName ] ),
 
-			case net_adm:ping( UserTargetNodeName ) of
-
-				pong ->
-					ok;
-
-				pang ->
+			net_adm:ping( UserTargetNodeName ) =:= pong orelse
+				begin
 					trace_utils:error_fmt( "Unable to connect to either node "
 						"names, the main one ('~ts') or the user one ('~ts')."
 						"~nIf the target node is really running and is named "
 						"like either of the two, check that the cookies match "
 						"and, finally, that no firewall is in the way "
-						"(ex: a server may filter the EPMD port of interest).",
+						"(e.g. a server may filter the EPMD port of interest).",
 						[ MainTargetNodeName, UserTargetNodeName ] ),
 
 					throw( { unable_to_connect_to,
-								{ MainTargetNodeName, UserTargetNodeName } } )
+							 { MainTargetNodeName, UserTargetNodeName } } )
 
 			end
 
-	end,
+		end,
 
 	% Otherwise the remote node could not be known before use:
 	global:sync(),
@@ -116,7 +108,7 @@ exec() ->
 	% aggregator:
 	%
 	AggregatorPid = naming_utils:get_locally_registered_pid_for(
-									AggregatorName, MainTargetNodeName ),
+		AggregatorName, MainTargetNodeName ),
 
 	app_facilities:display( "Creating now a local trace listener." ),
 
@@ -209,9 +201,12 @@ init_from_command_line() ->
 
 	net_utils:set_cookie( RemoteCookie ),
 
+	%trace_utils:debug_fmt( "Remaining arguments: ~ts",
+	%   [ shell_utils:argument_table_to_string( CookieShrunkTable ) ] ),
+
 	list_table:is_empty( CookieShrunkTable ) orelse
-			throw( { unexpected_arguments,
-					 list_table:enumerate( CookieShrunkTable ) } ),
+		throw( { unexpected_arguments,
+				 list_table:enumerate( CookieShrunkTable ) } ),
 
 	CfgFilePath.
 

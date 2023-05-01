@@ -945,9 +945,8 @@ get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 	MainTranspOpts = get_transport_opts_for( FirstHostname, BinCertDir ),
 
 	% Options to apply for the host that matches what the client requested with
-	% Server Name Indication (going through *all* the hosts listed by the user):
-	%
-	% Now that virtual hosts are listed as SANs in a single host-level
+	% Server Name Indication (going through *all* the hosts listed by the user),
+	% now that virtual hosts are listed as SANs in a single host-level
 	% certificate:
 	%
 	SNIHostInfos = list_utils:flatten_once(
@@ -1032,20 +1031,21 @@ get_recommended_ciphers() ->
 						BaseV1dot3Ciphers ++ BaseOtherCiphers
 					end } ] ),
 
-	ErlCiphers = lists:foldl( fun( C, Acc ) ->
-								case ssl:str_to_suite( C ) of
+	ErlCiphers = lists:foldl(
+		fun( C, Acc ) ->
+			case ssl:str_to_suite( C ) of
 
-									{ error, { not_recognized, _C } } ->
-										Acc;
+				{ error, { not_recognized, _C } } ->
+					Acc;
 
-									CSuite ->
-										[ CSuite | Acc ]
+				CSuite ->
+					[ CSuite | Acc ]
 
-								end
+			end
 
-							  end,
-							  _Acc0=[],
-							  AllCiphers ),
+		end,
+		_Acc0=[],
+		AllCiphers ),
 
 	wooper:return_static( ErlCiphers ).
 
@@ -1122,6 +1122,9 @@ get_vh_pair( Hostname, VHostname, BinCertDir ) ->
 
 
 % @doc Returns transport options suitable for specified FQDN.
+%
+% Their existing is not tested, as they may be expected to be generated later.
+%
 -spec get_transport_opts_for( net_utils:string_fqdn(), bin_directory_path() ) ->
 								static_return( [ ssl_option() ] ).
 get_transport_opts_for( FQDN, BinCertDir ) ->
@@ -1134,6 +1137,53 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 
 	wooper:return_static(
 		[ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
+
+
+
+% @doc Checks the specified HTTPS transport options regarding the 'certfile' and
+% 'keyfile' entries; throws an exception if they are not found or not currently
+% applicable (no associated file found).
+%
+% SNI information not checked, as usually deriving from HTTPS transport options.
+%
+-spec check_https_transport_options( https_transport_info() ) ->
+												static_void_return().
+check_https_transport_options( _MaybeHttpsTranspInfo=undefined ) ->
+	wooper:return_static_void();
+
+check_https_transport_options(
+		_HttpsTranspInfo={ HttpTranspOpts, _SniInfo } ) ->
+
+	ReqKeysWithDefs = [ { certfile, undefined }, { keyfile, undefined } ],
+
+	{ [ MaybeCertFile, MaybeKeyFile ], OtherOpts } =
+		list_table:extract_entries_with_defaults( ReqKeysWithDefs,
+												  HttpTranspOpts ),
+
+	case MaybeCertFile of
+
+		undefined ->
+			throw( { no_certfile, HttpTranspOpts } );
+
+		CertFile ->
+			file_utils:is_existing_file_or_link( CertFile ) orelse
+				throw( { non_existing_certfile, CertFile } )
+
+	end,
+
+	case MaybeKeyFile of
+
+		undefined ->
+			throw( { no_keyfile, HttpTranspOpts } );
+
+		KeyFile ->
+			file_utils:is_existing_file_or_link( KeyFile ) orelse
+				throw( { non_existing_keyfile, KeyFile } )
+
+	end,
+
+	OtherOpts =:= [] orelse
+		throw( { unexpected_extra_https_transport_options, OtherOpts } ).
 
 
 

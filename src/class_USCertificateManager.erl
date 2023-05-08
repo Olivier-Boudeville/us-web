@@ -146,7 +146,7 @@
 -type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
 -type cert_mode() :: class_USWebConfigServer:cert_mode().
 
--type leec_pid() :: leec:fsm_pid().
+-type leec_caller_state() :: leec:leec_caller_state().
 
 -type bin_san() :: leec:bin_san().
 
@@ -187,8 +187,8 @@
 	  "obtained" },
 
 
-	{ leec_pid, maybe( leec_pid() ),
-	  "the PID of our private LEEC FSM (if any currently exists)" },
+	{ leec_caller_state, maybe( leec_caller_state() ),
+	  "the caller state for our private LEEC FSM (if any currently exists)" },
 
 	{ leec_start_opts, leec_start_options(),
 	  "the start options to be re-used for the next created LEEC instance" },
@@ -337,7 +337,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
 	%
-	{ LEECFsmPid, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
+	{ MaybeLEECCallerState, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
 		init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, TraceState ),
 
 	% Registration to scheduler to happen in next (first) renewCertificate/1
@@ -352,7 +352,7 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 		{ private_key_path, BinAgentKeyPath },
 		{ cert_renewal_period, RenewPeriodSecs },
 		{ renew_listener, undefined },
-		{ leec_pid, LEECFsmPid },
+		{ leec_caller_state, MaybeLEECCallerState },
 		{ leec_start_opts, LEECStartOpts },
 		{ bridge_spec, BridgeSpec },
 		{ scheduler_pid, MaybeSchedulerPid },
@@ -373,7 +373,8 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 % @doc Initializes our LEEC private instance.
 -spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(), bin_file_path(),
 				 wooper:state() ) ->
-			{ leec_pid(), seconds(), leec_start_options(), bridge_spec() }.
+	{ maybe( leec_caller_state() ), seconds(), leec_start_options(),
+	  bridge_spec() }.
 init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	file_utils:is_existing_directory( BinCertDir ) orelse
@@ -417,22 +418,23 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	% 8 minutes:
 	HttpQueryTimeoutMs = 8 * 60 * 1000,
 
-	StartBaseOpts = [ { mode, slave },
+	StartBaseOpts = [ { interfacing_mode, slave },
 					  { agent_key_file_path, BinAgentKeyPath },
 					  { cert_dir_path, BinCertDir },
 					  { http_timeout, HttpQueryTimeoutMs } ],
 
-	StartOpts = case CertMode of
+	ACMEEnv = case CertMode of
 
 		development ->
 			% For testing only, then based on fake certificates:
-			[ staging | StartBaseOpts ];
+			staging;
 
 		production ->
-			% No 'prod' option supported by LEEC:
-			StartBaseOpts
+			production
 
 	end,
+
+	StartOpts = [ { environment, ACMEEnv } | StartBaseOpts ],
 
 	% Enabling the integration of its traces:
 
@@ -468,9 +470,9 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	%
 	%end,
 
-	MaybeLEECFsmPid = undefined,
+	MaybeLEECCallerState = undefined,
 
-	{ MaybeLEECFsmPid, RenewPeriodSecs, StartOpts, BridgeSpec }.
+	{ MaybeLEECCallerState, RenewPeriodSecs, StartOpts, BridgeSpec }.
 
 
 
@@ -495,17 +497,18 @@ destruct( State ) ->
 			MaybeSchedPid ! { unregisterTask, [ CertTaskId ], self() }
 		end,
 
-	case ?getAttr(leec_pid) of
+	case ?getAttr(leec_caller_state) of
 
 		undefined ->
 			ok;
 
-		LeecPid ->
+		LEECCallerState ->
 			%?debug
-			?warning_fmt( "Shutting down LEEC (~w).", [ LeecPid ] ),
+			?warning_fmt( "Shutting down LEEC (~ts).",
+						  [ leec:caller_state_to_string( LEECCallerState ) ] ),
 			try
 
-				leec:terminate( LeecPid )
+				leec:terminate( LEECCallerState )
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Final termination failed, with a thrown "
@@ -513,7 +516,7 @@ destruct( State ) ->
 
 			end,
 
-			?warning_fmt( "LEEC (~w) shut down.", [ LeecPid ] )
+			?warning_fmt( "LEEC (~w) shut down.", [ LEECCallerState ] )
 
 	end,
 
@@ -617,8 +620,9 @@ request_certificate( State ) ->
 	end,
 
 	% So that it is visible even in production mode:
-	?warning_fmt( "Requesting certificate for '~ts', with following SAN "
-				  "information:~n  ~p.", [ FQDN, ActualSans ] ),
+	%?warning_fmt
+	?debug_fmt( "Requesting certificate for '~ts', with following SAN "
+			"information:~n  ~p.", [ FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
 	% yet this is not a proper solution, as months are likely elapse between
@@ -628,31 +632,33 @@ request_certificate( State ) ->
 	% renewal.
 
 	% Check:
-	case ?getAttr(leec_pid) of
+	case ?getAttr(leec_caller_state) of
 
 		undefined ->
 			ok;
 
-		LPid ->
-			?error_fmt( "Ignoring unexpected former LEEC PID ~w.", [ LPid ] )
+		CallerState ->
+			?error_fmt( "Ignoring unexpected former LEEC caller state ~w.",
+						[ CallerState ] )
 
 	end,
 
-	case leec:start( ?getAttr(leec_start_opts), ?getAttr(bridge_spec) ) of
+	case leec:start( _ChallengeType='http-01', ?getAttr(leec_start_opts),
+					 ?getAttr(bridge_spec) ) of
 
-		{ ok, LEECPid } ->
+		{ ok, LEECCallerState } ->
 			%?debug_fmt
-			?warning_fmt( "New LEEC FSM ~w created for '~ts'.",
-						[ LEECPid, FQDN ] ),
+			?warning_fmt( "New LEEC caller state ~w created for '~ts'.",
+						[ LEECCallerState, FQDN ] ),
 
 			try
-				async = leec:obtain_certificate_for( FQDN, LEECPid,
+				async = leec:obtain_certificate_for( FQDN, LEECCallerState,
 					_CertReqOptionMap=#{ async => true,
 										 callback => Callback,
 										 sans => ActualSans } ),
 				%?debug
 				?warning( "Certificate creation request initiated." ),
-				setAttribute( State, leec_pid, LEECPid )
+				setAttribute( State, leec_caller_state, LEECCallerState )
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Certificate request failed, with a thrown "
@@ -676,13 +682,15 @@ request_certificate( State ) ->
 -spec onCertificateRequestOutcome( wooper:state(),
 			leec:cert_creation_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
-		_CertCreationOutcome={ certificate_ready, BinCertFilePath } ) ->
+		_CertCreationOutcome={ certificate_ready, BinCertFilePath,
+							   BinPrivKeyFilePath } ) ->
 
 	FQDN = ?getAttr(fqdn),
 
 	%?info_fmt
 	?warning_fmt( "Certificate generation success for '~ts', "
-		"certificate stored in '~ts'.", [ FQDN, BinCertFilePath ] ),
+		"certificate stored in '~ts' (private key in '~ts').",
+		[ FQDN, BinCertFilePath, BinPrivKeyFilePath ] ),
 
 	SetState = case ?getAttr(renew_listener) of
 
@@ -750,7 +758,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 	% In all cases we shut down our LEEC instance, as it cannot linger between
 	% longer renewals:
 	%
-	ShutState = case ?getAttr(leec_pid) of
+	ShutState = case ?getAttr(leec_caller_state) of
 
 		undefined ->
 			% Surprising:
@@ -758,11 +766,11 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 					"renewal." ),
 			State;
 
-		LEECFsmPid ->
+		LEECCallerState ->
 			% Not just stopping it:
 			try
 
-				leec:terminate( LEECFsmPid )
+				leec:terminate( LEECCallerState )
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Termination after renewal failed, "
@@ -772,7 +780,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 			end,
 
 			% No more reuse between renewals:
-			setAttribute( State, leec_pid, undefined )
+			setAttribute( State, leec_caller_state, undefined )
 
 	end,
 
@@ -840,15 +848,16 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 -spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
 getChallenge( State, TargetPid ) ->
 
-	FSMPid = ?getAttr(leec_pid),
+	{ _ChallengeType, LeecFsmPid } = ?getAttr(leec_caller_state),
 
 	%?debug_fmt
 	?warning_fmt( "Requested to return the current thumbprint challenges "
-		"from LEEC FSM ~w, on behalf of (and to) ~w.", [ FSMPid, TargetPid ] ),
+		"from LEEC FSM ~w, on behalf of (and to) ~w.",
+		[ LeecFsmPid, TargetPid ] ),
 
 	try
 
-		leec:send_ongoing_challenges( FSMPid, TargetPid )
+		leec:send_ongoing_challenges( LeecFsmPid, TargetPid )
 
 	catch AnyClass:Exception ->
 		?error_fmt( "Sending of challenges failed, with a thrown "
@@ -904,7 +913,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 	% Immediately retries:
 	self() ! renewCertificate,
 
-	RestartState = setAttribute( State, leec_pid, MaybeLEECFsmPid ),
+	RestartState = setAttribute( State, leec_caller_state, MaybeLEECFsmPid ),
 
 	wooper:return_state( RestartState ).
 
@@ -1152,7 +1161,7 @@ to_string( State ) ->
 
 	end,
 
-	FSMStr = case ?getAttr(leec_pid) of
+	FSMStr = case ?getAttr(leec_caller_state) of
 
 		undefined ->
 			"no LEEC FSM";

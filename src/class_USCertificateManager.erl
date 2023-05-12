@@ -188,7 +188,8 @@
 
 
 	{ leec_caller_state, maybe( leec_caller_state() ),
-	  "the caller state for our private LEEC FSM (if any currently exists)" },
+	  "the (opaque) caller state for our private LEEC FSM "
+	  "(if any currently exists)" },
 
 	{ leec_start_opts, leec_start_options(),
 	  "the start options to be re-used for the next created LEEC instance" },
@@ -450,6 +451,7 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 	% connection cache has no interest; so now we spawn such an instance for
 	% each need (see request_certificate/1):
 
+	% Would be a LCS now:
 	%MaybeLEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
 	%
 	%   { ok, FsmPid } ->
@@ -848,16 +850,17 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 -spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
 getChallenge( State, TargetPid ) ->
 
-	{ _ChallengeType, LeecFsmPid } = ?getAttr(leec_caller_state),
+	% Opaque:
+	LCS = ?getAttr(leec_caller_state),
 
 	%?debug_fmt
 	?warning_fmt( "Requested to return the current thumbprint challenges "
-		"from LEEC FSM ~w, on behalf of (and to) ~w.",
-		[ LeecFsmPid, TargetPid ] ),
+		"from LEEC caller state ~w, on behalf of (and to) ~w.",
+		[ LCS, TargetPid ] ),
 
 	try
 
-		leec:send_ongoing_challenges( LeecFsmPid, TargetPid )
+		leec:send_ongoing_challenges( LCS, TargetPid )
 
 	catch AnyClass:Exception ->
 		?error_fmt( "Sending of challenges failed, with a thrown "

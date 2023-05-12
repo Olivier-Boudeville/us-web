@@ -432,7 +432,7 @@
 	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
 
 	{ dispatch_routes, dispatch_routes(), "the dispatch routes to decide "
-	  "by which handler URLs shall be processed" },
+	  "by which handler the requested URLs shall be processed" },
 
 	{ dispatch_rules, dispatch_rules(), "the Cowboy dispatch rules (compiled "
 	  "from dispatch routes) corresponding to the configuration" },
@@ -639,21 +639,20 @@ getWebConfigSettings( State ) ->
 
 	CertSupport = ?getAttr(cert_support),
 
-	BasicDispatchRules = ?getAttr(dispatch_rules),
+	BaseDispatchRules = ?getAttr(dispatch_rules),
 
 	% HTTPS port only returned if https enabled; if only in HTTP mode (no
 	% HTTPS), then we use the obtained dispatch rules as they are; if using
-	% HTTPS, then these dispatch rules will use for it, whereas HTTP rules will
-	% consist only on forwarding the requests from HTTP to said HTTPS:
+	% HTTPS, then these dispatch rules will be used for it, whereas HTTP rules
+	% will consist only on forwarding the requests from HTTP to said HTTPS:
 	%
 	{ HttpDispatchRules, MaybeHttpsDispatchRules, MaybeHttpsTCPPort } =
 			case CertSupport of
 
 		no_certificates ->
-			{ BasicDispatchRules, undefined, undefined };
+			{ BaseDispatchRules, undefined, undefined };
 
 		_ ->
-
 			HttpsPort = ?getAttr(https_tcp_port),
 
 			ForwardingDispatchRules = transform_handler_in_routes(
@@ -662,7 +661,7 @@ getWebConfigSettings( State ) ->
 				_NewHandlerInitialState=HttpsPort ),
 
 			% Port maybe still undefined:
-			{ ForwardingDispatchRules, BasicDispatchRules, HttpsPort }
+			{ ForwardingDispatchRules, BaseDispatchRules, HttpsPort }
 
 	end,
 
@@ -1773,7 +1772,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 	%                                   LogAnalysisTool ) ++ ".conf",
 
 	LogConfFilename = class_USWebLogger:get_conf_filename_for( DomainId,
-							VHostId, LogAnalysisTool ),
+		VHostId, LogAnalysisTool ),
 
 	TargetConfFilePath = file_utils:join( BinConfDir, LogConfFilename ),
 
@@ -1786,6 +1785,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 	% As we must create that logger *after* the configuration file it relies on:
 	% (see previous clause about scheduler)
+	%
 	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
 		_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
@@ -3100,14 +3100,14 @@ manage_certificates( ConfigTable, State ) ->
 						[ CertDir ] ),
 
 			% A LEEC instance will be started by each (independent) certificate
-			% manager, yet to avoid hitting the Let's Encrypt they will all rely
-			% on a single ACME account, whose TLS private key is created once
-			% for all - unless it already exists:
+			% manager, yet to avoid hitting the Let's Encrypt rate limits, they
+			% will all rely on a single ACME account, whose TLS private key is
+			% created once for all - unless it already exists:
 
 			TargetKeyPath = file_utils:join( CertDir, ?leec_key_filename ),
 
-			BinKeyPath = case file_utils:is_existing_file_or_link(
-									TargetKeyPath ) of
+			BinKeyPath =
+					case file_utils:is_existing_file_or_link( TargetKeyPath ) of
 
 				true ->
 					?debug_fmt( "A pre-existing TLS private key for the US-Web "
@@ -3142,12 +3142,18 @@ manage_certificates( ConfigTable, State ) ->
 
 		use_existing_certificates ->
 
-			% A DH file is still needed, for key exchanges:
-			BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
+			% A DH file would be still needed, for key exchanges if wanting
+			% later to have these updated:
+			%
+			%BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
+			BinDHKeyPath = undefined,
 
-			% Not sure relevant here:
-			BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
-														 get_http_options() ),
+			% Not sure relevant here (probably depending on certificate being
+			% full-chain ones):
+			%
+			%BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
+			%                                             get_http_options() ),
+			BinCAKeyPath = undefined,
 
 			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
 				"CA (Certificate Authority) key path is '~ts'.",
@@ -3232,7 +3238,7 @@ manage_routes( ConfigTable, State ) ->
 
 		_ ->
 			TranspInfos = class_USCertificateManager:get_https_transport_info(
-									UserRoutes, CertDir ),
+				UserRoutes, CertDir ),
 
 			?debug_fmt( "HTTPS transport information are:~n  ~p.",
 						[ TranspInfos ] ),

@@ -1433,6 +1433,72 @@ Then, when logged on the server, or from any client able to connect to it:
 
 
 
+Safer US-Web Updates: Testing a New Instance First Out of the Loop
+==================================================================
+
+When running a reference server for a set of given domains, one should avoid stopping US-Web, updating its code and attempting to relaunch it: not only because this may imply a non-negligible downtime, but also, more importantly, because, should a failure happen, it would have to be fixed live, in the hurry, whereas no one can access anymore any of the hosted sites. Not a convenient situation.
+
+A better, safer (but not simpler) approach is instead to install one's newer server instance as a test one on the target host, build it and test it on a temporary setting (on an auxiliary TCP port) and, if and only if the operation is fully satisfactory, to switch the same setting on the actual port (once the prior reference instance has been shut down); if on the contrary something goes wrong with the test, it can be safely fixed out of the critical path, not implying a specific downtime.
+
+For such a test bed to exist, the usual `installation step <#server-deployment>`_ shall be followed by a specific, separate configuration step; it is merely a matter of transferring the ``deploy-us-web-native-build.sh`` script to one's server and to run it as: ``deploy-us-web-native-build.sh --no-launch`` so that it cannot interfere with any reference version running. A ``check-foobar-website-availability.sh`` script may be useful to efficiently check the state of that reference version.
+
+
+A first action is to devise a corresponding configuration file and to launch a corresponding instance on dedicated TCP ports.
+
+It will require a dedicated US-Web configuration file, let's name it ``foobar-us-web-for-testing.config``. It will have to be referenced by a corresponding US configuration file (namely ``us-config``), both of them expected to be in a ``universal-server`` directory in a test-specific root directory, e.g. in ``TEST_DIR=/opt/universal-server/us_web-data/universal-server`` - thus as ``/opt/universal-server/us_web-data/universal-server/{foobar-us-web-for-testing,us}.config`` - rather than in a standard root directory such as ``/etc/xdg``.
+
+The most direct/reliable approach is to copy the reference versions of these two files and modify them as little as possible.
+
+The test ``us-config`` file should specify:
+
+- a cookie of its own (e.g. ``foobar-testing-be3be613-96d8-4203-a502-73cc42a5e5e2``)
+- (the EPMD port may be set only in its US-Web counterpart configuration file)
+- possibly different users (preferably not, as wanting to stick as close as possible to the target settings)
+- updated directories (possibly all - like ``us_log_dir`` - pointing to ``TEST_DIR``)
+- the updated ``us_web_config_filename``, like ``foobar-us-web-for-testing.config``
+
+This ``foobar-us-web-for-testing.config`` associated file could then specify:
+
+- an EPMD port of its own (e.g. 4515); if using our ``iptables.rules-Gateway.sh`` script (refer to `this section <https://howtos.esperide.org/Networking.html#firewall-management>`_ for more details), one may check in ``/etc/iptables.settings-Gateway.sh`` the ``us_{low,high}est_epmd_port`` variables in order to pick an EPMD port in the LAN-allowed input range, so that hosts from the LAN may connect to the test US-Web instance on the gateway if needed
+- ``us_web_data_dir`` and ``us_web_log_dir`` entries pointing to the aforementioned TEST_DIR
+- updated, non-clashing TCP ports, for example ``http_tcp_port`` being 8000 and ``https_tcp_port`` being 8443
+- for extra caution, ``certificate_mode`` may be set to ``development`` (rather than ``production``)
+- for routes, for the sake of testing, a single domain may be kept
+
+A second step is, firewall-wise, to enable (temporarily) the test instance.
+
+The target EPMD port must already fall in a LAN-supported range, yet we also want to be able to properly test as if we were a random Internet user, thus connecting from the WAN.
+
+So:
+
+.. code:: bash
+
+  $ iptables -A INPUT -p tcp --dport 8000 -m state --state NEW,ESTABLISHED -j ACCEPT
+  $ iptables -A INPUT -p tcp --dport 8443 -m state --state NEW,ESTABLISHED -j ACCEPT
+
+
+Tests may show that some modules have to be fixed, and thus that the server installation has to be updated accordingly (rather than be deployed again from scratch). The ``sync-all-to-server`` make target is useful to synchronise the code base of a given layer on the server from a development computer; for that the ``CEYLAN_SYNC_TARGET_ROOT`` must be set to the root path on the server; for example:
+
+.. code:: bash
+
+ $ make sync-all-to-server CEYLAN_SYNC_TARGET_ROOT=/opt/universal-server/us_web-native
+
+
+
+
+Finally, now that the test is over, we can close up the mountain with:
+
+.. code:: bash
+
+ $ iptables -L --line-numbers
+
+ $ iptables -D INPUT X
+
+ # Again, as the previous deletion decremented the number of the last line:
+ $ iptables -D INPUT X
+
+
+
 .. include:: us-web-access-logging.rst
 
 .. include:: us-certificates.rst

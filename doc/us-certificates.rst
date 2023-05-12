@@ -3,10 +3,10 @@
 Managing Public-Key Certificates
 --------------------------------
 
-The goal here is to benefit from suitable certificates, notably for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. `Server Name Indication <Server Name Indication>`_ [#]_), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.
+The goal here is to benefit from suitable certificates, notably (but not only) for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. `Server Name Indication <Server Name Indication>`_ [#]_), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.
 
 
-.. [#] As a consequence, the specific visited virtual hostname (ex: ``baz``, in  ``baz.foobar.org``) is *not* encrypted, and thus might be known of an eavesdropper.
+.. [#] As a consequence, the specific visited virtual hostname (e.g. ``baz``, in  ``baz.foobar.org``) is *not* encrypted, and thus might be known of an eavesdropper.
 
 
 
@@ -24,23 +24,28 @@ Such certificates can be used for any protocol or standard, and `many <https://e
 Let's Encrypt
 =============
 
-US-Web relies on `Let's Encrypt <https://letsencrypt.org>`_, a non-profit certificate authority from which one can obtain mono-domain X.509 certificates [#]_ for free, valid for 90 days and that can be renewed as long as needed.
+US-Web relies on `Let's Encrypt <https://letsencrypt.org>`_, a non-profit certificate authority from which one can obtain mono-domain (possibly with SANs - *Subject Alternative Names*; and now wildcard domains) X.509 certificates [#]_ for free, valid for 90 days and that can be renewed as long as needed.
 
 .. [#] ``Let's Encrypt`` provides *Domain Validation* (DV) certificates, but neither more general *Organization Validation* (OV) nor *Extended Validation* (EV).
 
-Let's Encrypt follows the ACME (*Automatic Certificate Management Environment*) protocol. It relies on an agent running on the server bound to the domain for which a certificate is requested.
+Let's Encrypt follows the ACME (*Automatic Certificate Management Environment*) protocol. For mono-domain validation, it relies on an ``http-01`` challenge, with an agent running on the server bound to the domain for which a certificate is requested.
 
-This agent generates first a RSA key pair in order to interact with the Let’s Encrypt certificate authority, so that it can prove through received challenge(s) that it is bound to the claimed domain / virtual host (ex: ``baz.foobar.org``) and has the control to the private key corresponding to the public one that it transmitted to the CA.
+This agent generates first a RSA key pair in order to interact with the Let’s Encrypt certificate authority, so that it can prove through received challenge(s) that it is bound to the claimed domain / virtual host (e.g. ``baz.foobar.org``) and has the control to the private key corresponding to the public one that it transmitted to the CA.
 
-Generally this involves for that agent to receive a "random" piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting answer to the challenges available (as tokens) through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (ex: ``http://baz.foobar.org/.well-known/acme-challenge/xxx``).
+Generally this involves for that agent to receive a "random" piece of data from the CA (the nonce), to sign it with said private key, and to make the resulting answer to the challenges available (as tokens) through the webserver at a relevant URL that corresponds to the target virtual host and to a well-known path (e.g. ``http://baz.foobar.org/.well-known/acme-challenge/xxx``).
 
 Refer to `this page <https://letsencrypt.org/how-it-works/>`_ for more information; the overall process is `explained here <https://ietf-wg-acme.github.io/acme/draft-ietf-acme-acme.html#rfc.section.4>`_ and in `this RFC <https://www.rfc-editor.org/rfc/rfc8555.html>`_.
 
+As for wildcard certificates, the ACME protocol relies on ``dns-01`` challenges, which require the certificate requester to prove that it controls the DNS of the target domain, by updating its zone entries according to information chosen by the ACME server of the certificate issuer.
 
 
 
 US-Web Mode of Operation
 ========================
+
+
+For mono-domain certificates
+----------------------------
 
 Rather than using a standalone ACME agent such as the standard one, ``certbot``, we prefer driving everything from Erlang, for a better control and periodical renewal (see the scheduler provided by `US-Common <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USScheduler.erl>`_).
 
@@ -48,9 +53,15 @@ Various libraries exist for that in Erlang, the most popular one being probably 
 
 Three `action modes <https://github.com/Olivier-Boudeville/letsencrypt-erlang#action-modes>`_ can be considered to interact with the Let's Encrypt infrastructure and to solve its challenges. As the US-Web server is itself a webserver, the ``slave`` mode is the most relevant here.
 
-For that, the `us_web_letsencrypt_handler <https://github.com/Olivier-Boudeville/us-web/blob/master/src/us_web_letsencrypt_handler.erl>`_ has been introduced.
+For that, the `us_web_letsencrypt_handler <https://github.com/Olivier-Boudeville/us-web/blob/master/src/us_web_letsencrypt_handler.erl>`_ has been introduced by US-Web.
 
-By default, thanks to the US-Web scheduler, certificates (which last for up to 90 days and cannot be renewed before 60 days are elapsed) will be renewed every 75 days, with some random jitter added to avoid synchronising too many certificate requests when having multiple virtual hosts - as they are done concurrently.
+By default, thanks to the US-Web scheduler, certificates (which last for up to 90 days and cannot be renewed before 60 days are elapsed) will be renewed every 75 days, with some random jitter added to avoid synchronising too many certificate requests when having multiple virtual hosts - as they are done concurrently, if not SANs are used.
+
+
+For wildcard certificates
+-------------------------
+
+US-Web relies here also as much as possible on LEEC (see `this section <https://leec.esperide.org/#wildcard-domain-certificates-with-the-dns-01-challenge>`_), even if, at least currently, the standard ``certbot`` is used internally; here US-Web, thanks to its US-Common Scheduler, acts mostly like an integrated crontab on steroids.
 
 
 
@@ -61,8 +72,8 @@ Various `types of files <https://crypto.stackexchange.com/questions/43697/what-i
 
 - a ``.key`` file contains any type of key, here this is a RSA private key; typically ``letsencrypt-agent.key-I``, where ``I`` is an increasing integer, will contain the PEM RSA private key generated by the certificate agent ``I`` on behalf of the US-Webserver (so that it can sign the nonces provided by Let's Encrypt, and thus prove that it controls the corresponding key pair); for a ``baz.foobar.org`` virtual host, the ``baz.foobar.org.key`` file will be generated and used (another PEM RSA private key)
 - a ``.pem`` (*Privacy-enhanced Electronic Mail*) file just designates a Base64-encoded content with header and footer lines; here it stores an ASN.1 (precisely a Base64-encoded DER) certificate
-- ``.csr`` corresponds to a PKCS#10 *Certificate Signing Request*; it contains information (encoded as PEM or DER) such as the public key and common name required by a Certificate Authority to create and sign a certificate for the requester (ex: ``baz.foobar.org.csr`` will be a PEM certificate request)
-- ``.crt`` is the actual certificate (encoded as PEM or DER as well), usually a X509v3 one (ex: ``baz.foobar.org.crt``); it contains the public key and also much more information (most importantly the signature by the Certificate Authority over the data and public key, of course)
+- ``.csr`` corresponds to a PKCS#10 *Certificate Signing Request*; it contains information (encoded as PEM or DER) such as the public key and common name required by a Certificate Authority to create and sign a certificate for the requester (e.g. ``baz.foobar.org.csr`` will be a PEM certificate request)
+- ``.crt`` is the actual certificate (encoded as PEM or DER as well), usually a X509v3 one (e.g. ``baz.foobar.org.crt``); it contains the public key and also much more information (most importantly the signature by the Certificate Authority over the data and public key, of course)
 
 
 We must determine:

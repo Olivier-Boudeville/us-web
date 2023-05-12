@@ -282,7 +282,7 @@ endif
 #
 JSX_TOP = $(space)
 
-# We do the same for LEEC:
+# We do the same as US-Web for LEEC:
 ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec/.),)
 	# By default, expect a checkout directory:
 	LEEC_TOP = $(US_WEB_TOP)/_checkouts/leec

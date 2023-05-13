@@ -1436,16 +1436,31 @@ Then, when logged on the server, or from any client able to connect to it:
 Safer US-Web Updates: Testing a New Instance First Out of the Loop
 ==================================================================
 
+
+Objective
+---------
+
 When running a reference server for a set of given domains, one should avoid stopping US-Web, updating its code and attempting to relaunch it: not only because this may imply a non-negligible downtime, but also, more importantly, because, should a failure happen, it would have to be fixed live, in the hurry, whereas no one can access anymore any of the hosted sites. Not a convenient situation.
 
 A better, safer (but not simpler) approach is instead to install one's newer server instance as a test one on the target host, build it and test it on a temporary setting (on an auxiliary TCP port) and, if and only if the operation is fully satisfactory, to switch the same setting on the actual port (once the prior reference instance has been shut down); if on the contrary something goes wrong with the test, it can be safely fixed out of the critical path, not implying a specific downtime.
 
-For such a test bed to exist, the usual `installation step <#server-deployment>`_ shall be followed by a specific, separate configuration step; it is merely a matter of transferring the ``deploy-us-web-native-build.sh`` script to one's server and to run it as: ``deploy-us-web-native-build.sh --no-launch`` so that it cannot interfere with any reference version running. A ``check-foobar-website-availability.sh`` script may be useful to efficiently check the state of that reference version.
 
+Test Installation
+-----------------
+
+For such a test bed to exist, the usual `installation step <#server-deployment>`_ shall be followed by a specific, separate configuration step.
+
+Installing is merely a matter of transferring the ``deploy-us-web-native-build.sh`` script to one's server and to run it (as a normal user), as ``deploy-us-web-native-build.sh --no-launch`` so that it cannot interfere with any reference version running.
+
+A ``check-foobar-website-availability.sh`` script may be useful to efficiently check the state of that reference version.
+
+
+Test Configuration
+------------------
 
 A first action is to devise a corresponding configuration file and to launch a corresponding instance on dedicated TCP ports.
 
-It will require a dedicated US-Web configuration file, let's name it ``foobar-us-web-for-testing.config``. It will have to be referenced by a corresponding US configuration file (namely ``us-config``), both of them expected to be in a ``universal-server`` directory in a test-specific root directory, e.g. in ``TEST_DIR=/opt/universal-server/us_web-data/universal-server`` - thus as ``/opt/universal-server/us_web-data/universal-server/{foobar-us-web-for-testing,us}.config`` - rather than in a standard root directory such as ``/etc/xdg``.
+It will require a dedicated US-Web configuration file, let's name it ``foobar-us-web-for-testing.config``. It will have to be referenced by a corresponding US configuration file (namely ``us-config``), both of them expected to be in a ``universal-server`` directory in a test-specific root directory, e.g. in ``TEST_DIR=/opt/universal-server/us_web-data/configuration-for-testing/universal-server`` - thus as ``/opt/universal-server/us_web-data/configuration-for-testing/universal-server/{foobar-us-web-for-testing,us}.config`` - rather than in a standard root directory such as ``/etc/xdg``.
 
 The most direct/reliable approach is to copy the reference versions of these two files and modify them as little as possible.
 
@@ -1465,6 +1480,10 @@ This ``foobar-us-web-for-testing.config`` associated file could then specify:
 - for extra caution, ``certificate_mode`` may be set to ``development`` (rather than ``production``)
 - for routes, for the sake of testing, a single domain may be kept
 
+
+Firewall Configuration
+----------------------
+
 A second step is, firewall-wise, to enable (temporarily) the test instance.
 
 The target EPMD port must already fall in a LAN-supported range, yet we also want to be able to properly test as if we were a random Internet user, thus connecting from the WAN.
@@ -1477,6 +1496,10 @@ So:
   $ iptables -A INPUT -p tcp --dport 8443 -m state --state NEW,ESTABLISHED -j ACCEPT
 
 
+
+Test Code Updates
+-----------------
+
 Tests may show that some modules have to be fixed, and thus that the server installation has to be updated accordingly (rather than be deployed again from scratch). The ``sync-all-to-server`` make target is useful to synchronise the code base of a given layer on the server from a development computer; for that the ``CEYLAN_SYNC_TARGET_ROOT`` must be set to the root path on the server; for example:
 
 .. code:: bash
@@ -1485,6 +1508,39 @@ Tests may show that some modules have to be fixed, and thus that the server inst
 
 
 
+Launching the Test Server
+-------------------------
+
+For this use, ``systemctl`` would not be convenient. A better approach is to start one's test server explicitly, based on the configuration files that were just devised.
+
+First of all, no prior test instance should exist, otherwise they would clash EPMD-wise. ``ps -edf|grep -i epmd`` may help.
+
+Then the target test instance can be launched, as root:
+
+.. code:: bash
+
+ $ cd /opt/universal-server/us_web-latest/us_web/priv/bin
+ $ ./start-us-web-native-build.sh /opt/universal-server/us_web-data/configuration-for-testing/universal-server
+
+
+
+Testing it
+----------
+
+Either the launch was reported as succeeded or not.
+
+In the latter case, a launch time-out was reported. The log of the Erlang VM (typically ``/opt/universal-server/us_web-native/us_web/log/erlang.log.1``) will probably give relevant information. May a prior test instance is on the way, clashing in the same EPMD instance, or regarding the target TCP ports?
+
+.. Note that the test may involve only a specific test domain, like foobar.biz:
+
+In the former case, a success is assumed. The best way to confirm this is to check the overall result by ourself, with ``wget http://foobar.org:8000 -O -``.
+
+Further insight to be obtained based on ``/opt/universal-server/us_web-data/configuration-for-testing/us_web.traces``.
+
+
+
+Test Teardown
+-------------
 
 Finally, now that the test is over, we can close up the mountain with:
 

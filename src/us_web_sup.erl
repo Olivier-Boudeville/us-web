@@ -51,13 +51,13 @@
 % HTTP webserver must be up and running.
 %
 % So the order of operations is:
-% 1. read the configuration settings
-% 2. start a corresponding HTTP server, and LEEC itself
-% 3. when webserver is running, initiate (if appropriate) the certificate
-% generation
-% 4. be notified (through the US-Web Let's Encrypt handler) that certificates
-% are ready
-% 5. starts the corresponding HTTPS server
+%  1. read the configuration settings
+%  2. start a corresponding HTTP server, and LEEC itself
+%  3. when webserver is running, initiate (if appropriate) the certificate
+%  generation
+%  4. be notified (through the US-Web Let's Encrypt handler) that certificates
+%  are ready
+%  5. starts the corresponding HTTPS server
 
 
 
@@ -141,6 +141,25 @@ init( _Args=[ AppRunContext ] ) ->
 
 	end,
 
+	CertSupport =:= use_existing_certificates andalso
+		begin
+
+			case MaybeHttpsTranspOpts of
+
+				undefined ->
+					throw( no_https_transport_options );
+
+				TranspOpts ->
+					% At least currently, checking only the two top-level file
+					% entries, not the ones in each entry of the sni_hosts list:
+					%
+					class_USCertificateManager:check_https_transport_options(
+						TranspOpts )
+
+			end
+
+		end,
+
 	trace_bridge:debug( "Starting Cowboy webserver..." ),
 
 	HttpProtoOptMap = #{ max_keepalive => 1024,
@@ -201,10 +220,8 @@ init( _Args=[ AppRunContext ] ) ->
 	% validate challenges sent by the ACME server); the main objective here is
 	% proper synchronisation:
 	%
-	case CertSupport of
-
-		renew_certificates ->
-
+	CertSupport =:= renew_certificates andalso
+		begin
 			trace_bridge:debug(
 				"Requesting the renewal of the X.509 certificates." ),
 
@@ -218,12 +235,9 @@ init( _Args=[ AppRunContext ] ) ->
 				{ wooper_result, certificate_renewals_over } ->
 					trace_bridge:debug( "Certificates renewed." )
 
-			end;
+			end
 
-		_ ->
-			ok
-
-	end,
+		end,
 
 	HttpsMsg = case MaybeHttpsTCPPort of
 

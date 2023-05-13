@@ -2,7 +2,7 @@
 
 # Starts a US-Web instance, to be run as a native build (on the current host).
 
-# Script typically meant to be:
+# Script possibly:
 # - placed in /usr/local/bin of a gateway
 # - run from systemctl, as root, as:
 # 'systemctl start us-web-as-native-build.service'
@@ -21,6 +21,33 @@
 #  - start-universal-server.sh
 #  - kill-us-web.sh: to ensure, for a proper testing, that no previous instance
 #    lingers
+
+
+
+usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (which must end by a 'universal-server' directory), otherwise found through the default US search paths.
+
+The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
+
+Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config."
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+
+	echo "${usage}"
+
+	exit 0
+
+fi
+
+
+if [ ! $(id -u) -eq 0 ]; then
+
+	# As operations like chown will have to be performed:
+	echo "  Error, this script must be run as root.
+${usage}" 1>&2
+	exit 5
+
+fi
 
 
 # Either this script is called during development, directly from within a US-Web
@@ -54,27 +81,6 @@ else
 
 fi
 
-
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line, otherwise found through the default US search paths. The US-Web installation itself will be looked up in '${us_web_install_root}'."
-
-
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-
-	echo "${usage}"
-
-	exit 0
-
-fi
-
-
-if [ ! $(id -u) -eq 0 ]; then
-
-	# As operations like chown will have to be performed:
-	echo "  Error, this script must be run as root.
-${usage}" 1>&2
-	exit 5
-
-fi
 
 
 # XDG_CONFIG_DIRS defined, so that the US server as well (not only these
@@ -148,14 +154,15 @@ if [ ! -f "${us_web_common_script}" ]; then
 fi
 
 
-# Hint for the helper scripts:
-us_launch_type="native"
+# Hints for the helper scripts:
+export us_launch_type="native"
 
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
 
 
 # We expect a pre-installed US configuration file to exist:
+#echo "Reading US configuration file:"
 read_us_config_file "${maybe_us_config_dir}" #1>/dev/null
 
 read_us_web_config_file #1>/dev/null
@@ -164,7 +171,7 @@ secure_authbind
 
 prepare_us_web_launch
 
-cd src || exit
+cd src || exit 17
 
 
 #echo "epmd_make_opt=${epmd_make_opt}"
@@ -175,7 +182,7 @@ cd src || exit
 # (note that a former instance of EPMD may wrongly report that a node with the
 # target name is still running, whereas no Erlang VM even exists)
 #
-make -s launch-epmd ${epmd_make_opt} || exit
+make -s launch-epmd ${epmd_make_opt} || exit 18
 
 
 if [ -n "${erl_epmd_port}" ]; then

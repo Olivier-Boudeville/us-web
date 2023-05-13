@@ -3000,7 +3000,7 @@ set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
 
 	BinUpdateToolRoot =
 			case file_utils:is_existing_directory_or_link(
-					AnalysisUpdateToolRoot ) of
+				AnalysisUpdateToolRoot ) of
 
 		true ->
 			text_utils:string_to_binary( AnalysisUpdateToolRoot );
@@ -3015,7 +3015,7 @@ set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
 	end,
 
 	BinReportToolRoot = case file_utils:is_existing_directory_or_link(
-								AnalysisReportToolRoot ) of
+			AnalysisReportToolRoot ) of
 
 		true ->
 			text_utils:string_to_binary( AnalysisReportToolRoot );
@@ -3091,9 +3091,11 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
+	ChallengeType = class_USCertificateManager:get_challenge_type(),
+
 	{ MaybeBinKeyPath, MaybeDHKeyPath, MaybeBinCaKeyPath } = case CertSupport of
 
-		renew_certificates ->
+		renew_certificates when ChallengeType =:= 'http-01' ->
 
 			file_utils:create_directory_if_not_existing( CertDir,
 				_ParentCreation=create_parents ),
@@ -3140,6 +3142,11 @@ manage_certificates( ConfigTable, State ) ->
 				[ BinDHKeyPath, BinCAKeyPath ] ),
 
 			{ BinKeyPath, BinDHKeyPath, BinCAKeyPath };
+
+
+		% Typically ChallengeType is 'dns-01' (hence certbot):
+		renew_certificates when ChallengeType =:= 'http-01' ->
+			{ undefined, undefined, undefined };
 
 
 		use_existing_certificates ->

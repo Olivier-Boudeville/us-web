@@ -132,7 +132,7 @@ fi
 # We need first to locate the us-web-common.sh script:
 
 # Location expected also by us-common.sh afterwards:
-cd "${us_web_install_root}" || exit
+cd "${us_web_install_root}" || exit 16
 
 # As expected by us-web-common.sh for the VM logs:
 log_dir="${us_web_install_root}/log"

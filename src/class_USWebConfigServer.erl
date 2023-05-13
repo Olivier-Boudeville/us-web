@@ -2345,7 +2345,9 @@ manage_epmd_port( ConfigTable, State ) ->
 			DefaultUSWebEpmdPort = ?default_us_web_epmd_port,
 
 			?info_fmt( "No user-configured EPMD TCP port for US-Web, "
-				"proposing its default one, ~B.", [ DefaultUSWebEpmdPort  ] ),
+				"proposing its default one, ~B (any port explicitly set "
+				"at the US-level will thus prevail).",
+				[ DefaultUSWebEpmdPort  ] ),
 
 			{ DefaultUSWebEpmdPort, as_default };
 

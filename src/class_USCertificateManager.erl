@@ -611,20 +611,39 @@ request_certificate( State ) ->
 				Self ! { onCertificateRequestOutcome, [ CertCreationOutcome ] }
 			   end,
 
+	% As of mid-May 2023, regarding the US-Web use of LEEC, we chose to switch
+	% from the (perfectly working) http-01 challenge to the dns-01 one (stronger
+	% elliptic-curve certificates, smaller and, more importantly, wildcard
+	% certificates) in all cases:
+	%
+	% FIXME: last test:
+	ChallengeType='http-01',
+	%ChallengeType='dns-01',
+
 	ActualSans = case ?getAttr(sans) of
 
 		undefined ->
 			[];
 
 		S ->
-			S
+			% Only wanting to disclose SANs when necessary:
+			case ChallengeType of
+
+				'http-01' ->
+					S;
+
+				_ ->
+					[]
+
+			end
 
 	end,
 
 	% So that it is visible even in production mode:
-	%?warning_fmt
-	?debug_fmt( "Requesting certificate for '~ts', with following SAN "
-			"information:~n  ~p.", [ FQDN, ActualSans ] ),
+	?warning_fmt
+	%?debug_fmt
+	   ( "Requesting ~ts certificate for '~ts', with following SAN "
+			"information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
 	% yet this is not a proper solution, as months are likely elapse between
@@ -645,7 +664,8 @@ request_certificate( State ) ->
 
 	end,
 
-	case leec:start( _ChallengeType='http-01', ?getAttr(leec_start_opts),
+
+	case leec:start( ChallengeType, ?getAttr(leec_start_opts),
 					 ?getAttr(bridge_spec) ) of
 
 		{ ok, LEECCallerState } ->

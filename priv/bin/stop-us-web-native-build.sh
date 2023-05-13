@@ -3,7 +3,7 @@
 # Stops a US-Web instance, supposedly already running as a native build on the
 # current host.
 
-# Script typically meant to be:
+# Script possibly:
 # - placed in /usr/local/bin of a gateway
 # - run from systemctl, as root, as:
 # 'systemctl stop us-web-as-native-build.service'
@@ -45,6 +45,25 @@
 
 
 
+usage="Usage: $(basename $0) [US_CONF_DIR]: stops a US-Web server, running as a native build, based on a US configuration directory specified on the command-line (which must end by a 'universal-server' directory), otherwise found through the default US search paths.
+
+The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
+
+Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config."
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+
+	echo "${usage}"
+
+	exit 0
+
+fi
+
+
+# Not necessarily run as root.
+
+
 # Either this script is called during development, directly from within a US-Web
 # installation, in which case this installation shall be used, or (typically if
 # called through systemd) the standard US-Web base directory shall be targeted:
@@ -54,21 +73,21 @@ this_script_dir="$(dirname $0)"
 # Possibly:
 local_us_web_install_root="${this_script_dir}/../.."
 
-# Check:
+# Checks based on the 'priv' subdirectory for an increased reliability:
 if [ -d "${local_us_web_install_root}/priv" ]; then
 
 	us_web_install_root="$(realpath ${local_us_web_install_root})"
-	echo "Selecting US-Web development native build in '${us_web_install_root}'."
+	echo "Selecting US-Web development native build in clone-local '${us_web_install_root}'."
 
 else
 
 	# The location enforced by deploy-us-web-native-build.sh:
 	us_web_install_root="/opt/universal-server/us_web-native/us_web"
-	echo "Selecting US-Web native build in standard location '${us_web_install_root}'."
+	echo "Selecting US-Web native build in standard server location '${us_web_install_root}'."
 
-	if [ ! -d "${us_web_install_root}" ]; then
+	if [ ! -d "${us_web_install_root}/priv" ]; then
 
-		echo "  Error, no US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard location." 1>&2
+		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard server location." 1>&2
 
 		exit 15
 
@@ -76,14 +95,57 @@ else
 
 fi
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: stops a US-Web server, running as a native build, based on a US configuration directory specified on the command-line, otherwise found through the default US search paths. The US-Web installation itself will be looked up in '$(realpath ${us_web_install_root})'."
+
+if [ $# -gt 1 ]; then
+
+	echo "  Error, extra argument expected.
+${usage}" 1>&2
+
+	exit 10
+
+fi
 
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+# XDG_CONFIG_DIRS defined, so that the US server as well (not only these
+# scripts) can look it up:
+#
+xdg_cfg_dirs="${XDG_CONFIG_DIRS}:/etc/xdg"
 
-	echo "${usage}"
 
-	exit 0
+maybe_us_config_dir="$1"
+
+if [ -n "${maybe_us_config_dir}" ]; then
+
+	case "${maybe_us_config_dir}" in
+
+		/*)
+			# Already absolute, OK:
+			echo "Using specified absolute directory '${maybe_us_config_dir}'."
+			;;
+		*)
+			# Relative, to be made absolute:
+			maybe_us_config_dir="$(pwd)/${maybe_us_config_dir}"
+			echo "Transformed specified relative directory in '${maybe_us_config_dir}' absolute one."
+			;;
+	esac
+
+	if [ ! -d "${maybe_us_config_dir}" ]; then
+
+		echo "  Error, the specified US configuration directory, '${maybe_us_config_dir}', does not exist." 1>&2
+
+		exit 20
+
+	fi
+
+	# Better for messages output:
+	maybe_us_config_dir="$(realpath ${maybe_us_config_dir})"
+
+	# As a 'universal-server/us.config' suffix will be added to each candidate
+	# configuration directory, we remove the last directory:
+
+	candidate_dir="$(dirname $(realpath ${maybe_us_config_dir}))"
+
+	xdg_cfg_dirs="${candidate_dir}:${xdg_cfg_dirs}"
 
 fi
 
@@ -98,15 +160,6 @@ if [ ! -x "${epmd}" ]; then
 
 fi
 
-
-if [ $# -gt 1 ]; then
-
-	echo "  Error, extra argument expected.
-${usage}" 1>&2
-
-	exit 10
-
-fi
 
 
 #echo "Stopping US-Web native build, as following user: $(id)"
@@ -146,8 +199,9 @@ export us_launch_type="native"
 #echo "Sourcing '${us_web_common_script}'."
 . "${us_web_common_script}" #1>/dev/null
 
+# We expect a pre-installed US configuration file to exist:
 #echo "Reading US configuration file:"
-read_us_config_file "$1" #1>/dev/null
+read_us_config_file "${maybe_us_config_dir}" #1>/dev/null
 
 # Now we also need to read the US-Web configuration file here, to fetch any EPMD
 # port there:
@@ -176,7 +230,7 @@ else
 	cookie_env=""
 fi
 
-cd src/apps
+cd src/apps || exit 17
 
 # No sudo or authbind necessary here, no US_* environment variables either:
 echo make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"

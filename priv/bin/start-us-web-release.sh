@@ -86,7 +86,7 @@ echo " -- Starting us_web application as user '${us_web_username}' (EPMD port: $
 
 
 # We specify here the actual cookie to the release script, so that the rpc
-# operations it performs (ex: in link with the relx hooks) can succeed;
+# operations it performs (e.g. in link with the relx hooks) can succeed;
 # otherwise it might be stuck performing one-per-second failed connection
 # attempts, and the script seems to be blocking (the release operates, yet the
 # script does not return, whereas it should).
@@ -114,7 +114,7 @@ res=$?
 
 if [ $res -eq 0 ]; then
 
-	# Unfortunately may still be a failure (ex: if a VM with the same name was
+	# Unfortunately may still be a failure (e.g. if a VM with the same name was
 	# already running, start failed, not to be reported as a success)
 
 	echo "  (authbind success reported)"
@@ -138,7 +138,7 @@ if [ $res -eq 0 ]; then
 
 	else
 
-		# For some unknown reason, if the start fails (ex: because a web root
+		# For some unknown reason, if the start fails (e.g. because a web root
 		# does not exist), this script will exit quickly, as expected, yet
 		# 'systemctl start' will wait for a long time (most probably because of
 		# a time-out).

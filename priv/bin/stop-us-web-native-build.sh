@@ -106,15 +106,28 @@ ${usage}" 1>&2
 fi
 
 
-# XDG_CONFIG_DIRS defined, so that the US server as well (not only these
-# scripts) can look it up:
+# XDG_CONFIG_DIRS defined, so that the US server as well can look it up (not
+# only these scripts):
 #
-xdg_cfg_dirs="${XDG_CONFIG_DIRS}:/etc/xdg"
+# (avoiding empty path in list)
+#
+if [ -n "${XDG_CONFIG_DIRS}" ]; then
+
+	xdg_cfg_dirs="${XDG_CONFIG_DIRS}:/etc/xdg"
+
+else
+
+	xdg_cfg_dirs="/etc/xdg"
+
+fi
 
 
 maybe_us_config_dir="$1"
 
 if [ -n "${maybe_us_config_dir}" ]; then
+
+	# Otherwise would remain in the extra arguments transmitted in CMD_LINE_OPT:
+	shift
 
 	case "${maybe_us_config_dir}" in
 
@@ -142,8 +155,8 @@ if [ -n "${maybe_us_config_dir}" ]; then
 
 	# As a 'universal-server/us.config' suffix will be added to each candidate
 	# configuration directory, we remove the last directory:
-
-	candidate_dir="$(dirname $(realpath ${maybe_us_config_dir}))"
+	#
+	candidate_dir="$(dirname ${maybe_us_config_dir})"
 
 	xdg_cfg_dirs="${candidate_dir}:${xdg_cfg_dirs}"
 
@@ -233,9 +246,11 @@ fi
 cd src/apps || exit 17
 
 # No sudo or authbind necessary here, no US_* environment variables either:
-echo make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
+echo XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
 
-make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
+
+# A correct way of passing environment variables:
+XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
 
 res=$?
 

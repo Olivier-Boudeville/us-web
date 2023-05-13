@@ -94,11 +94,11 @@ github_base="https://github.com/Olivier-Boudeville"
 
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
-# itself, even if it used at least for some dependencies (ex: LEEC).
+# itself, even if it used at least for some dependencies (e.g. LEEC).
 #
-# This does not lead to duplications (ex: Myriad being built once in the context
-# of LEEC and also once for the other packages), thanks to _checkouts containing
-# symlinks.
+# This does not lead to duplications (e.g. Myriad being built once in the
+# context of LEEC and also once for the other packages), thanks to _checkouts
+# containing symlinks.
 
 
 

@@ -59,7 +59,7 @@ Technical Manual of the ``Universal Webserver``
 .. _`table of contents`:
 
 .. contents:: **Table of Contents**
-  :depth: 2
+  :depth: 3
 
 
 :raw-latex:`\pagebreak`
@@ -295,7 +295,9 @@ Note that, as these files might contain sensitive information (e.g. Erlang cooki
 
 .. [#] They shall be in the same ``US_CFG_ROOT`` directory (discussed below), and may be symbolic links.
 
-Finally, if being able to rely on multiple, different US configuration directories is necessary in order to be able to launch multiple US-Web instances (these configurations can then register the managers involved - typically the US-Web Configuration server - under different names), currently a single node can be used as, by default, such a node is named ``us_web`` (two instances would then clash at this level).
+Finally, if being able to rely on multiple, different US configuration directories is necessary in order to be able to launch multiple US-Web instances (these configurations can then register the managers involved - typically the US-Web Configuration server - under different names), only a single node can be used per EPMD instance as, by default, such a node is named ``us_web`` (two US-Web instances would then clash at this level).
+
+So, in order to run multiple US-Web instances (e.g. one in production, one for testing) on a given host, they shall be multiplexed on different EPMD ports (see the ``epmd_port`` key of the US and US-Web configuration files; as a result, different ``universal-server`` configuration directories shall then be defined and used).
 
 
 
@@ -411,6 +413,12 @@ For example:
   { certificate_support, use_existing_certificates }.
   { certificate_mode, production }.
 
+  % Use 'dns-01' if wanting wildcard certificates:
+  { challenge_type, 'http-01' }.
+
+  % With 'dns-01', the DNS provider must be specified:
+  { dns_provider, ovh }.
+
   { routes, [
 
 	% Note that the first hostname listed will be, regarding
@@ -507,12 +515,28 @@ One may create from this ``certificates`` subdirectory a ``GNUmakefile`` symlink
 
 
 
-Catch-alls, HTTPS and Wildcard Certificates
--------------------------------------------
+Catch-alls, HTTPS, Challenge Types and Wildcard Certificates
+------------------------------------------------------------
 
-Unless having wildcard certificates, defining catch-alls (host-level and/or domain-level) is not recommended if using https, as these unanticipated hostnames are by design absent from the corresponding certificates, and thus any user requesting them (possibly due to a typo) will have their browser report a security risk (such as ``SSL_ERROR_BAD_CERT_DOMAIN``).
+Having wildcard certificates (which is the default now) - thus relying on the ``dns-01`` challenge - allows in turn to define catch-alls (host-level and/or domain-level) routes and wildcard DNS entries (such as ``* IN CNAME foobar.org.``).
 
-Similarly, wildcard DNS entries (such as ``* IN CNAME foobar.org.``) should be avoided as well (on the other hand, they allow not to advertise what are the precise virtual hostnames supported; note though that with https, unless again having wildcard certificates, these virtual hostnames will be visible in the SANs).
+Conversely, if setting another challenge type (refer to the ``challenge_type`` configuration entry, typically then set to the ``http-01`` challenge), defining catch-all routes is not recommended if using https, as these unanticipated hostnames are by design absent from the corresponding certificates, and thus any user requesting them (possibly due to a typo) will have their browser report a security risk (such as ``SSL_ERROR_BAD_CERT_DOMAIN``).
+
+Similarly, wildcard DNS entries should be then avoided (on the other hand, they allow not to advertise what are the precise virtual hostnames supported; note though that with https, these virtual hostnames will be visible in the SANs).
+
+
+
+Other Configuration Files
+-------------------------
+
+Credentials for One's DNS Provider
+__________________________________
+
+If wanting wildcard certificates, the ``dns-01`` challenge will be used, and this will require credentials to be specified in order to update DNS entries from one's DNS provider.
+
+US-Web expect credential files to be available in the base directory where all US configuration is to be found (typically ``/etc/xdg/universal-server``). Note that such credentials files (e.g. ``leec-ovh-credentials-for-foobar.org.txt``) must be well-protected; refer to `this LEEC section <https://leec.esperide.org/#credentials-file>`_ for more information.
+
+
 
 
 Operating System Settings
@@ -1445,6 +1469,10 @@ When running a reference server for a set of given domains, one should avoid sto
 A better, safer (but not simpler) approach is instead to install one's newer server instance as a test one on the target host, build it and test it on a temporary setting (on an auxiliary TCP port) and, if and only if the operation is fully satisfactory, to switch the same setting on the actual port (once the prior reference instance has been shut down); if on the contrary something goes wrong with the test, it can be safely fixed out of the critical path, not implying a specific downtime.
 
 
+.. Note:: Note though that running US-Web on non-standard ports will not permit the http-01 challenges to succeed (as the ACME servers will expect to find the answers to their challenges by accessing standard ports).
+
+
+
 Test Installation
 -----------------
 
@@ -1478,13 +1506,17 @@ This ``foobar-us-web-for-testing.config`` associated file could then specify:
 - ``us_web_data_dir`` and ``us_web_log_dir`` entries pointing to the aforementioned TEST_DIR
 - updated, non-clashing TCP ports, for example ``http_tcp_port`` being 8000 and ``https_tcp_port`` being 8443
 - for extra caution, ``certificate_mode`` may be set to ``development`` (rather than ``production``)
+- ``challenge_type`` can be set, knowing its default is ``dns-01``
 - for routes, for the sake of testing, a single domain may be kept
+
+Finally, if relying on a ``dns-01`` challenge, the credentials for the DNS provider will have to be available. Creating a symlink in the test-specific root directory to, say, ``/etc/xdg/universal-server/leec-ovh-credentials-for-foobar.org.txt`` should be sufficient for that.
+
 
 
 Firewall Configuration
 ----------------------
 
-A second step is, firewall-wise, to enable (temporarily) the test instance.
+A second step is, firewall-wise, to enable (temporarily) the access to the test instance.
 
 The target EPMD port must already fall in a LAN-supported range, yet we also want to be able to properly test as if we were a random Internet user, thus connecting from the WAN.
 
@@ -1546,7 +1578,8 @@ Finally, now that the test is over, we can close up the mountain with:
 
 .. code:: bash
 
- $ iptables -L --line-numbers
+ # The -n option is used to have port numbers rather than aliases:
+ $ iptables -L --line-numbers -n
 
  $ iptables -D INPUT X
 

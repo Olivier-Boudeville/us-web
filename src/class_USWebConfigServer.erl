@@ -114,6 +114,8 @@
 -define( log_analysis_key, log_analysis ).
 -define( certificate_support_key, certificate_support ).
 -define( certificate_mode_key, certificate_mode ).
+-define( challenge_type_key, challenge_type ).
+-define( dns_provider_key, dns_provider ).
 -define( routes_key, routes ).
 
 
@@ -125,7 +127,7 @@
 	?us_web_app_base_dir_key, ?us_web_data_dir_key, ?us_web_log_dir_key,
 	?http_tcp_port_key, ?https_tcp_port_key, ?default_web_root_key,
 	?log_analysis_key, ?certificate_support_key, ?certificate_mode_key,
-	?routes_key ] ).
+	?challenge_type_key, ?dns_provider_key, ?routes_key ] ).
 
 
 % The last-resort environment variable:
@@ -376,6 +378,8 @@
 -type handler_state() :: us_web_handler:handler_state().
 
 
+-type dns_provider() :: leec:dns_provider().
+-type challenge_type() :: leec:challenge_type().
 -type bin_san() :: leec:bin_san().
 
 
@@ -463,8 +467,20 @@
 	{ cert_mode, maybe( cert_mode() ),
 	  "tells whether certificates (if any) are in staging or production mode" },
 
+	{ credentials_directory, maybe( bin_directory_path() ),
+	  "the directory where the credentials information will be looked-up, "
+	  "typically to authenticate to one's DNS provider for dns-01 challenges" },
+
 	{ cert_directory, maybe( bin_directory_path() ),
 	  "the directory where the certificate information will be written" },
+
+	{ challenge_type, maybe( challenge_type() ),
+	  "the type of ACME challenge to be used in order to generate "
+	  "certificates" },
+
+	{ dns_provider, maybe( dns_provider() ),
+	  "the DNS provider with which DNS updates for the dns-01 challenge "
+	  "are to be made" },
 
 	{ leec_agents_key_path, maybe( bin_file_path() ),
 	  "the absolute path to the common TLS private key file (if any) bound to "
@@ -571,7 +587,10 @@ construct( State, SupervisorPid, AppRunContext ) ->
 		{ us_web_supervisor_pid, SupervisorPid },
 		{ dispatch_routes, undefined },
 		{ dispatch_rules, undefined },
+		{ credentials_directory, undefined },
 		{ cert_directory, undefined },
+		{ challenge_type, undefined },
+		{ dns_provider, undefined },
 		{ leec_agents_key_path, undefined },
 		{ dh_key_path, undefined },
 		{ ca_cert_key_path, undefined } ] ),
@@ -695,7 +714,17 @@ renewCertificates( State ) ->
 	CertManagerCount = length( CertManagers ),
 
 	% 1 minute and 30 seconds per manager:
-	MaxDurationInMs = 90*1000,
+	MaxDurationInMs = case ?getAttr(challenge_type) of
+
+		'dns-01' ->
+			% Extended for DNS propagation:
+			240*1000;
+
+		_ ->
+			% 1 minute and 30 seconds per certificate manager:
+			90*1000
+
+	end,
 
 	% So that it is visible even in production mode:
 	?warning_fmt( "Renewing all certificates, through their ~B managers (~w); "
@@ -721,10 +750,13 @@ renewCertificates( State ) ->
 
 		FailedCertPids ->
 			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
-				"obtained by their respective managers: ~w.",
+				"obtained (at least on time) by their respective managers: ~w.",
 				[ length( FailedCertPids ), CertManagerCount, FailedCertPids ] )
 
 	end,
+
+	% Next improvement is to record the expected certificates and private keys,
+	% and to ensure all of them are indeed available afterwards.
 
 	% Note the plural in atom:
 	wooper:const_return_result( certificate_renewals_over ).
@@ -1007,7 +1039,6 @@ load_and_apply_configuration( State ) ->
 
 		{ wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename } } ->
 
-
 			StoreState = setAttributes( State, [
 				{ execution_context, ExecContext },
 				{ nitrogen_roots, [] },
@@ -1061,7 +1092,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	% Checks that only pairs are found:
 	WebCfgTable = table:new_from_unique_entries(
-					file_utils:read_terms( WebCfgFilePath ) ),
+		file_utils:read_terms( WebCfgFilePath ) ),
 
 	?debug_fmt( "Read web configuration ~ts",
 				[ table:to_string( WebCfgTable ) ] ),
@@ -1084,7 +1115,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	PreMetaState = manage_pre_meta( WebCfgTable, RootState ),
 
-	CertState = manage_certificates( WebCfgTable, PreMetaState ),
+	CertState = manage_certificates( BinCfgBaseDir, WebCfgTable, PreMetaState ),
 
 	RouteState = manage_routes( WebCfgTable, CertState ),
 
@@ -1112,12 +1143,13 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 % @doc Creates a certificate manager for the specified domain (e.g. foobar.org),
 % including for all its virtual hosts (e.g. baz.foobar.org), as SANs (Subject
-% Alternative Names).
+% Alternative Names), for the specified type of challenge and, if needed (dns-01
+% one), DNS provider.
 %
-% We used to create one single, standalone certificate per virtual host, yet the
-% Let's Encrypt rate limits (see [https://letsencrypt.org/docs/rate-limits/])
-% could quite easily be hit (e.g. if having a total of more than 50 virtual
-% hosts and/or domains).
+% With the http-01 challenge, we used to create one single, standalone
+% certificate per virtual host, yet the Let's Encrypt rate limits (see
+% [https://letsencrypt.org/docs/rate-limits/]) could quite easily be hit
+% (e.g. if having a total of more than 50 virtual hosts and/or domains).
 %
 % So now we create only certificates at the domain level - hence a certificate
 % manager per domain, which lists all its corresponding virtual hosts as SANs;
@@ -1127,27 +1159,47 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 % http access must be intercepted and the corresponding token will have then to
 % be returned.
 %
+% With the dns-01 challenge, a directory containing the credentials to update
+% one's DNS entries and a corresponding DNS provider must be specified.
+%
 -spec handle_certificate_manager_for( bin_domain_name(), [ bin_san() ],
-		cert_support(), cert_mode(), bin_directory_path(),
+		cert_support(), cert_mode(), challenge_type(), maybe( dns_provider() ),
+		maybe( bin_directory_path() ), bin_directory_path(),
 		maybe( bin_file_path() ), scheduler_pid() ) ->
 											maybe( cert_manager_pid() ).
 % localhost of course invisible from outside the LAN:
 handle_certificate_manager_for( _BinDomainName= <<"localhost">>, _BinSans,
-		_CertSupport, _CertMode, _BinCertDir, _MaybeBinAgentKeyPath,
-		_SchedulerPid ) ->
+		_CertSupport, _CertMode, _ChalType, _MaybeDNSProvider,
+		_MaybeBinCredDir, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid ) ->
 	undefined;
 
+
 handle_certificate_manager_for( BinDomainName, BinSans,
-		_CertSupport=renew_certificates, CertMode, BinCertDir,
-		MaybeBinAgentKeyPath, SchedulerPid ) ->
+		_CertSupport=renew_certificates, CertMode, ChalType, MaybeDNSProvider,
+		MaybeBinCredDir, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ) ->
 
-	BinAgentKeyPath = case MaybeBinAgentKeyPath of
+	{ MaybeBinAgentKPath, MaybeDNSProv, MaybeBinCredentialsDir } =
+			case ChalType of
 
-		undefined ->
-			throw( no_leec_agents_key_file );
+		'http-01' ->
+			case MaybeBinAgentKeyPath of
 
-		KP ->
-			KP
+				undefined ->
+					throw( no_leec_agents_key_file );
+
+				KP ->
+					% No credentials needed:
+					{ KP, undefined, undefined }
+
+			end;
+
+		% At least currently, for 'dns-01', LEEC uses certbot and thus does not
+		% require its own key; of course credentials regarding the DNS provider
+		% will be needed:
+		%
+		%'dns-01' ->
+		_ ->
+			{ MaybeBinAgentKeyPath, MaybeDNSProvider, MaybeBinCredDir }
 
 	end,
 
@@ -1162,15 +1214,16 @@ handle_certificate_manager_for( BinDomainName, BinSans,
 	% interacting with the ACME server) in hitting rate limits:
 	%
 	class_USCertificateManager:synchronous_new_link( BinDomainName, BinSans,
-		CertMode, BinCertDir, BinAgentKeyPath, SchedulerPid,
-		_IsSingleton=false );
+		CertMode, ChalType, MaybeDNSProv, MaybeBinCredentialsDir, BinCertDir,
+		MaybeBinAgentKPath, SchedulerPid, _IsSingleton=false );
 
 
 % For CertSupport, either no_certificates or use_existing_certificates here, so
 % no certificate manager to create:
 %
 handle_certificate_manager_for( _BinDomainName, _BinSans, _OtherCertSupport,
-		_CertMode, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid ) ->
+		_CertMode, _ChalType, _MaybeDNSProvider, _MaybeBinCredDir, _BinCertDir,
+		_MaybeBinAgentKeyPath, _SchedulerPid ) ->
 	undefined.
 
 
@@ -1423,8 +1476,9 @@ process_domain_routes( _UserRoutes=[ { DomainName, VHostInfos } | T ],
 	BinSans = get_san_list( VHostInfos, DomainName ),
 
 	MaybeCertManagerPid = handle_certificate_manager_for( BinDomainName,
-		BinSans, CertSupport, CertMode, BinCertDir, MaybeBinAgentKeyPath,
-		SchedulerPid ),
+		BinSans, CertSupport, CertMode, ?getAttr(challenge_type),
+		?getAttr(dns_provider),	?getAttr(credentials_directory),
+		BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ),
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
 		VHostInfos, MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
@@ -3041,9 +3095,9 @@ set_log_tool_settings( Unexpected, State ) ->
 
 
 % @doc Manages how X.509 certificates shall be handled.
--spec manage_certificates( us_web_config_table(), wooper:state() ) ->
-									wooper:state().
-manage_certificates( ConfigTable, State ) ->
+-spec manage_certificates( bin_directory_path(), us_web_config_table(),
+						   wooper:state() ) -> wooper:state().
+manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
 
 	CertSupport = case table:lookup_entry( ?certificate_support_key,
 										   ConfigTable ) of
@@ -3072,7 +3126,8 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
-	CertDir = file_utils:join( ?getAttr(data_directory), "certificates" ),
+	BinCertDir =
+		file_utils:bin_join( ?getAttr(data_directory), "certificates" ),
 
 	CertMode = case table:lookup_entry( ?certificate_mode_key, ConfigTable ) of
 
@@ -3091,50 +3146,114 @@ manage_certificates( ConfigTable, State ) ->
 
 	end,
 
-	ChallengeType = class_USCertificateManager:get_challenge_type(),
+	% As of mid-May 2023, regarding the US-Web use of LEEC, we chose to switch
+	% the default from the (perfectly working) http-01 challenge to the dns-01
+	% one (stronger elliptic-curve certificates, smaller and, more importantly,
+	% wildcard certificates):
+	%
+	ChallengeType = case table:lookup_entry( ?challenge_type_key,
+											 ConfigTable ) of
+
+		key_not_found ->
+			?info( "Challenge type set by default to dns-01." ),
+			'dns-01';
+
+		{ value, 'dns-01' } ->
+			?info( "Challenge type set to dns-01 "
+				   "(hence wildcard certificates will be available)." ),
+			'dns-01';
+
+		{ value, 'http-01' } ->
+			?info( "Challenge type set to http-01 "
+				   "(hence no wildcard certificate will be available)." ),
+			'http-01';
+
+		% Includes at least 'dns-01':
+		{ value, OtherChalType } ->
+			case leec:is_known_challenge_type( OtherChalType ) of
+
+				true ->
+					?info_fmt( "Challenge type set to '~ts'.",
+							   [ OtherChalType ] ),
+					OtherChalType;
+
+				false ->
+					throw( { unknown_challenge_type, OtherChalType } )
+
+			end
+
+	end,
+
+	MaybeDNSProvider = case ChallengeType of
+
+		'dns-01' ->
+			case table:lookup_entry( ?dns_provider_key,
+									 ConfigTable ) of
+
+				{ value, AtomProv } ->
+					case leec:is_supported_dns_provider( AtomProv ) of
+
+						true ->
+							AtomProv;
+
+						false ->
+							throw( { unsupported_dns_provider, AtomProv } )
+
+					end;
+
+				key_not_found ->
+					undefined
+
+			end;
+
+		_ ->
+			undefined
+
+	end,
 
 	{ MaybeBinKeyPath, MaybeDHKeyPath, MaybeBinCaKeyPath } = case CertSupport of
 
 		renew_certificates when ChallengeType =:= 'http-01' ->
 
-			file_utils:create_directory_if_not_existing( CertDir,
+			file_utils:create_directory_if_not_existing( BinCertDir,
 				_ParentCreation=create_parents ),
 
 			?debug_fmt( "Certificates are to be generated in '~ts'.",
-						[ CertDir ] ),
+						[ BinCertDir ] ),
 
 			% A LEEC instance will be started by each (independent) certificate
 			% manager, yet to avoid hitting the Let's Encrypt rate limits, they
 			% will all rely on a single ACME account, whose TLS private key is
 			% created once for all - unless it already exists:
 
-			TargetKeyPath = file_utils:join( CertDir, ?leec_key_filename ),
+			BinTargetKeyPath =
+				file_utils:bin_join( BinCertDir, ?leec_key_filename ),
 
-			BinKeyPath =
-					case file_utils:is_existing_file_or_link( TargetKeyPath ) of
+			BinKeyPath = case file_utils:is_existing_file_or_link(
+					BinTargetKeyPath ) of
 
 				true ->
 					?debug_fmt( "A pre-existing TLS private key for the US-Web "
 						"LEEC agent has been found (as '~ts'), it will be "
-						"re-used.", [ TargetKeyPath ] ),
-					text_utils:string_to_binary( TargetKeyPath );
+						"re-used.", [ BinTargetKeyPath ] ),
+					BinTargetKeyPath;
 
 				false ->
 
 					?debug_fmt( "No pre-existing TLS private key for the US-Web"
 						" LEEC agent has been found (searched for '~ts'), "
-						"generating it now.", [ TargetKeyPath ] ),
+						"generating it now.", [ BinTargetKeyPath ] ),
 
 					PrivKey = leec_tls:obtain_private_key(
-						{ new, ?leec_key_filename }, CertDir ),
+						{ new, ?leec_key_filename }, BinCertDir ),
 
 					PrivKey#tls_private_key.file_path
 
 			end,
 
-			BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
+			BinDHKeyPath = leec_tls:obtain_dh_key( BinCertDir ),
 
-			BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
+			BinCAKeyPath = leec_tls:obtain_ca_cert_file( BinCertDir,
 														 get_http_options() ),
 
 			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
@@ -3145,7 +3264,7 @@ manage_certificates( ConfigTable, State ) ->
 
 
 		% Typically ChallengeType is 'dns-01' (hence certbot):
-		renew_certificates when ChallengeType =:= 'http-01' ->
+		renew_certificates -> % when ChallengeType =:= 'http-01' ->
 			{ undefined, undefined, undefined };
 
 
@@ -3178,7 +3297,10 @@ manage_certificates( ConfigTable, State ) ->
 
 	setAttributes( State, [ { cert_support, CertSupport },
 							{ cert_mode, CertMode },
-							{ cert_directory, CertDir },
+							{ challenge_type, ChallengeType },
+							{ dns_provider, MaybeDNSProvider },
+							{ credentials_directory, BinCfgBaseDir },
+							{ cert_directory, BinCertDir },
 							{ leec_agents_key_path, MaybeBinKeyPath },
 							{ dh_key_path, MaybeDHKeyPath },
 							{ ca_cert_key_path, MaybeBinCaKeyPath } ] ).
@@ -3898,7 +4020,15 @@ to_string( State ) ->
 			text_utils:format( "relying on auto-renewed certificates "
 				"(mode: ~ts)", [ ?getAttr(cert_mode) ] )
 
-	end,
+	end ++ ", with " ++ case ?getAttr(challenge_type) of
+
+		undefined ->
+			"no challenge type set";
+
+		ChalType ->
+			text_utils:format( "challenge type '~ts'", [ ChalType ] )
+
+						end,
 
 	NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_roots) of
 

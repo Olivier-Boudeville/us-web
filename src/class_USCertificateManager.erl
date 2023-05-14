@@ -140,21 +140,21 @@
 -type bin_directory_path() :: file_utils:bin_directory_path().
 -type bin_file_path() :: file_utils:bin_file_path().
 
+-type bridge_spec() :: trace_bridge:bridge_spec().
+
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 %-type task_id() :: class_USScheduler:task_id().
 
 -type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
 -type cert_mode() :: class_USWebConfigServer:cert_mode().
-
--type leec_caller_state() :: leec:leec_caller_state().
-
--type bin_san() :: leec:bin_san().
-
 -type https_transport_info() :: class_USWebConfigServer:https_transport_info().
 
+-type leec_caller_state() :: leec:leec_caller_state().
+-type challenge_type() :: leec:challenge_type().
+-type dns_provider() :: leec:dns_provider().
+-type bin_san() :: leec:bin_san().
 -type leec_start_options() :: [ leec:start_option() ].
 
--type bridge_spec() :: trace_bridge:bridge_spec().
 
 
 
@@ -166,6 +166,17 @@
 	{ cert_mode, cert_mode(), "tells whether certificate generation is in "
 	  "staging or production mode" },
 
+	{ challenge_type, challenge_type(),
+	  "the type of ACME challenge to be used in order to generate "
+	  "these certificates" },
+
+	{ dns_provider, maybe( dns_provider() ),
+	  "the target DNS provider, to succeed any dns-01 challenge" },
+
+	{ credentials_dir, maybe( bin_directory_path() ),
+	  "the directory where the credentials information will be looked-up, "
+	  "typically to authenticate to one's DNS provider for dns-01 challenges" },
+
 	{ cert_dir, bin_directory_path(),
 	  "the directory where certificates shall be written" },
 
@@ -175,9 +186,9 @@
 	{ sans, [ bin_san() ], "the Subject Alternative Names to be included "
 	  "in the generated certificates" },
 
-	{ private_key_path, bin_file_path(), "the (absolute) path to the TLS "
-	  "private key to be used by the LEEC agent driven by this certificate "
-	  "manager" },
+	{ private_key_path, maybe( bin_file_path() ),
+	  "the (absolute) path to the TLS private key to be used by the LEEC "
+	  "agent driven by this certificate manager (if not using certbot)" },
 
 	{ cert_renewal_period, maybe( seconds() ),
 	  "the base delay between two successful certificate renewals" },
@@ -274,35 +285,44 @@
 
 
 % @doc Constructs a US certificate manager for the specified FQDN (host in
-% specified domain), in production mode, using the specified directory to write
+% specified domain), relying on the specified challenge type and possibly DNS
+% provider, in production mode, using the specified directory to write
 % certificate information, and the specified scheduler for automatic certificate
 % renewal.
 %
--spec construct( wooper:state(), bin_fqdn(), [ bin_san() ],
-		bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ) ) ->
-						wooper:state().
-construct( State, BinFQDN, BinSans, BinCertDir, BinAgentKeyPath,
-		   MaybeSchedulerPid ) ->
-	construct( State, BinFQDN, BinSans, _CertMode=production, BinCertDir,
-			   BinAgentKeyPath, MaybeSchedulerPid, _IsSingleton=false ).
+% No directory for credentials specified.
+%
+-spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], challenge_type(),
+		maybe( dns_provider() ), bin_directory_path(), maybe( bin_file_path() ),
+		maybe( scheduler_pid() ) ) -> wooper:state().
+construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider, BinCertDir,
+		   MaybeBinAgentKeyPath, MaybeSchedulerPid ) ->
+	construct( State, BinFQDN, BinSans, ChalType,
+		MaybeDNSProvider, _MaybeBinCredentialsDir=undefined,
+		_CertMode=production, BinCertDir, MaybeBinAgentKeyPath,
+		MaybeSchedulerPid, _IsSingleton=false ).
 
 
 
 % @doc Constructs a US certificate manager for the specified FQDN (host in
-% specified domain), in specified certificate management mode, using specified
+% specified domain), in the specified certificate management mode, relying on
+% the specified challenge type and possibly DNS provider, using specified
 % directory to write certificate information, and the specified scheduler.
 %
 % (most complete constructor)
 %
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], cert_mode(),
-	bin_directory_path(), bin_file_path(), maybe( scheduler_pid() ),
+	challenge_type(), maybe( dns_provider() ), maybe( bin_directory_path() ),
+	bin_directory_path(), maybe( bin_file_path() ), maybe( scheduler_pid() ),
 	boolean() ) -> wooper:state().
-construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
-		   MaybeSchedulerPid, _IsSingleton=true ) ->
+construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
+		MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
+		MaybeSchedulerPid, _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
-	InitState = construct( State, BinFQDN, BinSans, CertMode, BinCertDir,
-						   BinAgentKeyPath, MaybeSchedulerPid, _Sing=false ),
+	InitState = construct( State, BinFQDN, BinSans, CertMode, ChalType,
+		MaybeDNSProvider, MaybeBinCredentialsDir, BinCertDir,
+		MaybeBinAgentKeyPath, MaybeSchedulerPid, _Sing=false ),
 
 	% Then self-registering:
 	RegName = ?registration_name,
@@ -316,7 +336,8 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 
 
 % Main constructor; no self-registering here:
-construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
+construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
+		   MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
 		   MaybeSchedulerPid, _IsSingleton=false ) ->
 
 	ServerName =
@@ -339,7 +360,9 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 	% certificate request issued yet):
 	%
 	{ MaybeLEECCallerState, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
-		init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, TraceState ),
+		init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
+			MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
+			TraceState ),
 
 	% Registration to scheduler to happen in next (first) renewCertificate/1
 	% call.
@@ -347,10 +370,15 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 	ReadyState = setAttributes( TraceState, [
 		{ fqdn, BinFQDN },
 		{ cert_mode, CertMode },
+
+		% Will be better checked by LEEC:
+		{ challenge_type, type_utils:check_atom( ChalType ) },
+		{ dns_provider, type_utils:check_atom( MaybeDNSProvider ) },
+		{ credentials_dir, MaybeBinCredentialsDir },
 		{ cert_dir, BinCertDir },
 		{ cert_path, undefined },
 		{ sans, BinSans },
-		{ private_key_path, BinAgentKeyPath },
+		{ private_key_path, MaybeBinAgentKeyPath },
 		{ cert_renewal_period, RenewPeriodSecs },
 		{ renew_listener, undefined },
 		{ leec_caller_state, MaybeLEECCallerState },
@@ -372,11 +400,13 @@ construct( State, BinFQDN, BinSans, CertMode, BinCertDir, BinAgentKeyPath,
 
 
 % @doc Initializes our LEEC private instance.
--spec init_leec( bin_fqdn(), cert_mode(), bin_directory_path(), bin_file_path(),
-				 wooper:state() ) ->
+-spec init_leec( bin_fqdn(), cert_mode(), challenge_type(),
+		maybe( dns_provider() ), maybe( bin_directory_path() ),
+		bin_directory_path(), maybe( bin_file_path() ), wooper:state() ) ->
 	{ maybe( leec_caller_state() ), seconds(), leec_start_options(),
 	  bridge_spec() }.
-init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
+init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
+		   MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath, State ) ->
 
 	file_utils:is_existing_directory( BinCertDir ) orelse
 		throw( { non_existing_certificate_directory,
@@ -408,19 +438,16 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	% Refer to [https://leec.esperide.org/#usage-example].
 
-	% Slave mode, as we control the webserver for the challenge:
 	% (BinCertDir must be writable by this process)
 
-	% No agent_key_file_path specified, a suitable agent key will be
-	% auto-generated.
+	% If no agent_key_file_path is specified, a suitable agent key will be
+	% generated.
 	%
-	% No TCP port to be specified on slave mode.
 
 	% 8 minutes:
 	HttpQueryTimeoutMs = 8 * 60 * 1000,
 
-	StartBaseOpts = [ { interfacing_mode, slave },
-					  { agent_key_file_path, BinAgentKeyPath },
+	StartBaseOpts = [ { agent_key_file_path, MaybeBinAgentKeyPath },
 					  { cert_dir_path, BinCertDir },
 					  { http_timeout, HttpQueryTimeoutMs } ],
 
@@ -435,7 +462,27 @@ init_leec( BinFQDN, CertMode, BinCertDir, BinAgentKeyPath, State ) ->
 
 	end,
 
-	StartOpts = [ { environment, ACMEEnv } | StartBaseOpts ],
+	ChalOpts = case ChalType of
+
+		'http-01' ->
+			% Slave mode, as we control the webserver for the challenge:
+			% (no TCP port to be specified on slave mode)
+			%
+			[ { interfacing_mode, slave } ];
+
+		'dns-01' ->
+			MaybeDNSProvider =/= undefined orelse
+				throw( { dns_provider_not_set, ChalType } ),
+
+			MaybeBinCredentialsDir =/= undefined orelse
+				throw( { credentials_directory_not_set, ChalType } ),
+
+			[ { dns_provider, MaybeDNSProvider },
+			  { cred_dir_path, MaybeBinCredentialsDir } ]
+
+	end,
+
+	StartOpts = [ { environment, ACMEEnv } | ChalOpts ] ++ StartBaseOpts,
 
 	% Enabling the integration of its traces:
 
@@ -607,18 +654,13 @@ request_certificate( State ) ->
 	% Closure:
 	Self = self(),
 
-	Callback = fun( CertCreationOutcome ) ->
-				Self ! { onCertificateRequestOutcome, [ CertCreationOutcome ] }
+	Callback = fun( CertObtainedOutcome ) ->
+				Self ! { onCertificateRequestOutcome, [ CertObtainedOutcome ] }
 			   end,
 
-	% As of mid-May 2023, regarding the US-Web use of LEEC, we chose to switch
-	% from the (perfectly working) http-01 challenge to the dns-01 one (stronger
-	% elliptic-curve certificates, smaller and, more importantly, wildcard
-	% certificates) in all cases:
-	%
-	% FIXME: last test:
-	ChallengeType='http-01',
-	%ChallengeType='dns-01',
+	ChallengeType = ?getAttr(challenge_type),
+
+	MaybeDNSProvider = ?getAttr(dns_provider),
 
 	ActualSans = case ?getAttr(sans) of
 
@@ -642,7 +684,7 @@ request_certificate( State ) ->
 	% So that it is visible even in production mode:
 	?warning_fmt
 	%?debug_fmt
-	   ( "Requesting ~ts certificate for '~ts', with following SAN "
+	   ( "Requesting a ~ts certificate for '~ts', with following SAN "
 			"information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
@@ -675,9 +717,11 @@ request_certificate( State ) ->
 
 			try
 				async = leec:obtain_certificate_for( FQDN, LEECCallerState,
+					% An 'email' entry could be added:
 					_CertReqOptionMap=#{ async => true,
 										 callback => Callback,
-										 sans => ActualSans } ),
+										 sans => ActualSans,
+										 dns_provider => MaybeDNSProvider } ),
 				%?debug
 				?warning( "Certificate creation request initiated." ),
 				setAttribute( State, leec_caller_state, LEECCallerState )
@@ -702,9 +746,9 @@ request_certificate( State ) ->
 % known.
 %
 -spec onCertificateRequestOutcome( wooper:state(),
-			leec:cert_creation_outcome() ) -> oneway_return().
+			leec:obtained_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
-		_CertCreationOutcome={ certificate_ready, BinCertFilePath,
+		_CertObtainedOutcome={ certificate_generation_success, BinCertFilePath,
 							   BinPrivKeyFilePath } ) ->
 
 	FQDN = ?getAttr(fqdn),
@@ -713,6 +757,29 @@ onCertificateRequestOutcome( State,
 	?warning_fmt( "Certificate generation success for '~ts', "
 		"certificate stored in '~ts' (private key in '~ts').",
 		[ FQDN, BinCertFilePath, BinPrivKeyFilePath ] ),
+
+	% The US-Web server expects the certificate and its private key directly in
+	% cert_dir and as foobar.org.{crt,key}, whereas certbot put them in
+	% live/foobar.org/{fullchain,privkey}.pem, so we symlink them:
+
+	BinCertDir = ?getAttr(cert_dir),
+	FQDN = ?getAttr(fqdn),
+
+	% First the certificate:
+	ExpectedCertLinkName = text_utils:format( "~ts.crt", [ FQDN ] ),
+	NewCertLinkPath = file_utils:bin_join( BinCertDir, ExpectedCertLinkName ),
+
+	file_utils:remove_file_or_link_if_existing( NewCertLinkPath ),
+	file_utils:create_link( _TargetPath=BinCertFilePath, NewCertLinkPath ),
+
+
+	% Then its associated private key:
+	ExpectedPrivKeyLinkName = text_utils:format( "~ts.key", [ FQDN ] ),
+	NewPrivKeyLinkPath =
+		file_utils:bin_join( BinCertDir, ExpectedPrivKeyLinkName ),
+
+	file_utils:remove_file_or_link_if_existing( NewPrivKeyLinkPath ),
+	file_utils:create_link( BinPrivKeyFilePath, NewPrivKeyLinkPath ),
 
 	SetState = case ?getAttr(renew_listener) of
 
@@ -733,7 +800,7 @@ onCertificateRequestOutcome( State,
 
 
 onCertificateRequestOutcome( State,
-							 _CertCreationOutcome={ error, ErrorTerm } ) ->
+		_CertObtainedOutcome={ certificate_generation_failure, ErrorTerm } ) ->
 
 	FQDN = ?getAttr(fqdn),
 
@@ -758,7 +825,6 @@ onCertificateRequestOutcome( State,
 	NewState = manage_renewal( RenewDelay, MaybeBinCertFilePath, State ),
 
 	wooper:return_state( NewState );
-
 
 onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 
@@ -926,8 +992,9 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 	timer:sleep( WaitDurationMs ),
 
 	{ MaybeLEECFsmPid, _RenewPeriodSecs, StartOpts, _BridgeSpec } =
-		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(cert_dir),
-				   ?getAttr(private_key_path), State ),
+		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(challenge_type),
+			?getAttr(dns_provider), ?getAttr(credentials_dir),
+			?getAttr(cert_dir), ?getAttr(private_key_path), State ),
 
 	?warning_fmt( "New LEEC instance started for '~ts': ~w (start options: ~p);"
 		" requesting a new certificate.",
@@ -943,6 +1010,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 
 % Static section.
+
 
 
 % @doc Returns the https transport options and the SNI information suitable for

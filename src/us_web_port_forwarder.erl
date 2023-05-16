@@ -21,8 +21,8 @@
 
 
 % @doc <b>Cowboy-compliant port forwarder</b> for US-Web: automatically forwards
-% a request aimed at a given TCP port (ex: 80) to another port (ex: 443, for an
-% automatic promotion of http into https).
+% a request aimed at a given TCP port (e.g. 80) to another port (e.g. 443, for
+% an automatic promotion of http into https).
 %
 -module(us_web_port_forwarder).
 

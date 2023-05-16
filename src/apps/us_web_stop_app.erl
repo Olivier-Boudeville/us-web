@@ -64,21 +64,17 @@ exec() ->
 
 	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
 
-	case net_adm:ping( TargetNodeName ) of
-
-		pong ->
-			ok;
-
-		pang ->
+	net_adm:ping( TargetNodeName ) =:= pong orelse
+		begin
 			trace_utils:error_fmt( "Unable to connect to '~ts'.~nIf the target "
 				"node is really running and is named exactly like that, check "
 				"that the cookies and EPMD ports match and, finally, that "
-				"no firewall is in the way (ex: a server may filter the EPMD "
+				"no firewall is in the way (e.g. a server may filter the EPMD "
 				"port of interest).", [ TargetNodeName ] ),
 
 			throw( { unable_to_connect_to, TargetNodeName } )
 
-	end,
+		end,
 
 	% Otherwise the remote node could not be known before use:
 	global:sync(),
@@ -143,13 +139,6 @@ init_from_command_line() ->
 
 	net_utils:set_cookie( RemoteCookie ),
 
-	case list_table:is_empty( CookieShrunkTable ) of
-
-		true ->
-			ok;
-
-		false ->
-			throw( { unexpected_arguments,
-					 list_table:enumerate( CookieShrunkTable ) } )
-
-	end.
+	list_table:is_empty( CookieShrunkTable ) orelse
+		throw( { unexpected_arguments,
+				 list_table:enumerate( CookieShrunkTable ) } ).

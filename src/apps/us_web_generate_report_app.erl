@@ -68,21 +68,18 @@ exec() ->
 
 	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
 
-	case net_adm:ping( TargetNodeName ) of
+	net_adm:ping( TargetNodeName ) =:= pong	orelse
+		begin
 
-		pong ->
-			ok;
-
-		pang ->
 			trace_utils:error_fmt( "Unable to connect to '~ts'.~nIf the target "
 				"node is really running and is named exactly like that, check "
 				"that the cookies match and, finally, that no firewall is in "
-				"the way (ex: a server may filter the EPMD port of interest).",
+				"the way (e.g. a server may filter the EPMD port of interest).",
 				[ TargetNodeName ] ),
 
 			throw( { unable_to_connect_to, TargetNodeName } )
 
-	end,
+		end,
 
 	% Otherwise the remote node could not be known before use:
 	global:sync(),
@@ -224,17 +221,9 @@ init_from_command_line() ->
 	%trace_utils:debug_fmt( "Selected target host: '~ts'.",
 	%                       [ MaybeHostBinStr ] ),
 
-
-	case list_table:is_empty( HostShrunkTable ) of
-
-		true ->
-			ok;
-
-		false ->
-			throw( { unexpected_arguments,
-					 list_table:enumerate( HostShrunkTable ) } )
-
-	end,
+	list_table:is_empty( HostShrunkTable ) orelse
+		throw( { unexpected_arguments,
+				 list_table:enumerate( HostShrunkTable ) } ),
 
 	{ CfgFilePath, MaybeDomainBinStr, MaybeHostBinStr }.
 

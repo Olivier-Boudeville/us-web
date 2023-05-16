@@ -163,8 +163,8 @@ handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
 			us_web_handler:return_404( Req, BinFullFilePath, HState );
 
 		% Happens whenever a request to an existing page yet designated as a
-		% directory (ex: "foobar.org/index.html/") is done; without this clause,
-		% the root index.html was returned, as if read from this
+		% directory (e.g. "foobar.org/index.html/") is done; without this
+		% clause, the root index.html was returned, as if read from this
 		% pseudo-directory.
 		%
 		{ error, enotdir } ->

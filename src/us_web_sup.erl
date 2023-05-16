@@ -253,7 +253,8 @@ init( _Args=[ AppRunContext ] ) ->
 				"Listening for the HTTPS scheme at port #~B.",
 				[ HttpsTCPPort ] ),
 
-			HttpsProtoOptMap = #{ max_keepalive => 1024,
+			HttpsProtoOptMap = #{
+				max_keepalive => 1024,
 				max_connections => infinity,
 				env => #{ dispatch => MaybeHttpsDispatchRules } },
 

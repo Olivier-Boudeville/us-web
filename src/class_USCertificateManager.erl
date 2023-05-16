@@ -552,9 +552,8 @@ destruct( State ) ->
 			ok;
 
 		LEECCallerState ->
-			%?debug
-			?warning_fmt( "Shutting down LEEC (~ts).",
-						  [ leec:caller_state_to_string( LEECCallerState ) ] ),
+			?notice_fmt( "Shutting down LEEC (~ts).",
+						 [ leec:caller_state_to_string( LEECCallerState ) ] ),
 			try
 
 				leec:terminate( LEECCallerState )
@@ -565,7 +564,7 @@ destruct( State ) ->
 
 			end,
 
-			?warning_fmt( "LEEC (~w) shut down.", [ LEECCallerState ] )
+			?notice_fmt( "LEEC (~w) shut down.", [ LEECCallerState ] )
 
 	end,
 
@@ -612,7 +611,7 @@ renewCertificate( State ) ->
 % The specified listener is typically the US-Web configuration server, so that
 % HTTPS support can be triggered only when certificates are ready and/or to
 % ensure no two certificate requests overlap (to avoid hitting a rate limit
-% regarding ACME servers).
+% regarding ACME servers or having concurrent certbot instances).
 %
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
 												oneway_return().
@@ -625,7 +624,7 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 	% complete.
 
 	% So that it is visible even in production mode:
-	?warning( "Requested to renew certificate in a synchronisable manner." ),
+	?notice( "Requested to renew certificate in a synchronisable manner." ),
 
 	% Also a check:
 	{ ListenState, undefined } =
@@ -682,9 +681,7 @@ request_certificate( State ) ->
 	end,
 
 	% So that it is visible even in production mode:
-	?warning_fmt
-	%?debug_fmt
-	   ( "Requesting a ~ts certificate for '~ts', with following SAN "
+	?notice_fmt( "Requesting a ~ts certificate for '~ts', with following SAN "
 			"information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
@@ -711,9 +708,8 @@ request_certificate( State ) ->
 					 ?getAttr(bridge_spec) ) of
 
 		{ ok, LEECCallerState } ->
-			%?debug_fmt
-			?warning_fmt( "New LEEC caller state ~w created for '~ts'.",
-						[ LEECCallerState, FQDN ] ),
+			?notice_fmt( "New LEEC caller state ~w created for '~ts'.",
+						 [ LEECCallerState, FQDN ] ),
 
 			try
 				async = leec:obtain_certificate_for( FQDN, LEECCallerState,
@@ -722,8 +718,7 @@ request_certificate( State ) ->
 										 callback => Callback,
 										 sans => ActualSans,
 										 dns_provider => MaybeDNSProvider } ),
-				%?debug
-				?warning( "Certificate creation request initiated." ),
+				?notice( "Certificate creation request initiated." ),
 				setAttribute( State, leec_caller_state, LEECCallerState )
 
 			catch AnyClass:Exception ->
@@ -753,8 +748,7 @@ onCertificateRequestOutcome( State,
 
 	FQDN = ?getAttr(fqdn),
 
-	%?info_fmt
-	?warning_fmt( "Certificate generation success for '~ts', "
+	?notice_fmt( "Certificate generation success for '~ts', "
 		"certificate stored in '~ts' (private key in '~ts').",
 		[ FQDN, BinCertFilePath, BinPrivKeyFilePath ] ),
 
@@ -840,8 +834,8 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 					  wooper:state() ) -> wooper:state().
 manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
-	?warning_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
-				  [ MaybeRenewDelay ] ),
+	?notice_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
+				 [ MaybeRenewDelay ] ),
 
 	% In all cases we shut down our LEEC instance, as it cannot linger between
 	% longer renewals:
@@ -872,27 +866,25 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 	end,
 
-	% Switching to warning to remain available in production mode:
-	?warning( "Continuing in manage_renewal/1" ),
+	% Switching to notice to remain available in production mode:
+	?notice( "Continuing in manage_renewal/1" ),
 	SchedState = case ?getAttr(scheduler_pid) of
 
 		undefined ->
-			%?info
-			?warning( "No certificate renewal will be attempted "
-				   "(no scheduler registered)." ),
+			?notice( "No certificate renewal will be attempted "
+					 "(no scheduler registered)." ),
 			ShutState;
 
 		SchedPid ->
 			case MaybeRenewDelay of
 
 				undefined ->
-					%?info
-					?warning( "No certificate renewal will be attempted "
-							  "(no periodicity defined)." ),
+					?notice( "No certificate renewal will be attempted "
+							 "(no periodicity defined)." ),
 					ShutState;
 
 				RenewDelay ->
-					?warning( "Preparing task"),
+					?notice( "Preparing task"),
 
 					% A bit of interleaving:
 					SchedPid ! { registerOneshotTask, [ _Cmd=renewCertificate,
@@ -900,8 +892,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 					NextTimestamp = time_utils:offset_timestamp(
 						time_utils:get_timestamp(), RenewDelay ),
 
-					%?debug_fmt
-					?warning_fmt( "Next attempt of certificate renewal to "
+					?notice_fmt( "Next attempt of certificate renewal to "
 						"take place in ~ts, i.e. at ~ts.",
 						[ time_utils:duration_to_string( 1000 * RenewDelay ),
 						  time_utils:timestamp_to_string( NextTimestamp ) ] ),
@@ -939,8 +930,7 @@ getChallenge( State, TargetPid ) ->
 	% Opaque:
 	LCS = ?getAttr(leec_caller_state),
 
-	%?debug_fmt
-	?warning_fmt( "Requested to return the current thumbprint challenges "
+	?notice_fmt( "Requested to return the current thumbprint challenges "
 		"from LEEC caller state ~w, on behalf of (and to) ~w.",
 		[ LCS, TargetPid ] ),
 
@@ -996,7 +986,7 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 			?getAttr(dns_provider), ?getAttr(credentials_dir),
 			?getAttr(cert_dir), ?getAttr(private_key_path), State ),
 
-	?warning_fmt( "New LEEC instance started for '~ts': ~w (start options: ~p);"
+	?notice_fmt( "New LEEC instance started for '~ts': ~w (start options: ~p);"
 		" requesting a new certificate.",
 		[ FQDN, MaybeLEECFsmPid, StartOpts ] ),
 

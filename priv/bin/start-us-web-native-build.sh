@@ -248,7 +248,7 @@ if [ ${res} -eq 0 ]; then
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:
 	#
-	sleep 4
+	sleep 5
 
 	# Better diagnosis than the previous res code:
 	#
@@ -267,7 +267,7 @@ if [ ${res} -eq 0 ]; then
 		# 'systemctl start' will wait for a long time (most probably because of
 		# a time-out).
 		#
-		echo "  (failure assumed, as '${trace_file}' not found)"
+		echo "  (failure assumed - or slow start, as '${trace_file}' not found)"
 		exit 100
 
 	fi

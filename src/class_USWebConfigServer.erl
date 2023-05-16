@@ -713,11 +713,10 @@ renewCertificates( State ) ->
 
 	CertManagerCount = length( CertManagers ),
 
-	% 1 minute and 30 seconds per manager:
 	MaxDurationInMs = case ?getAttr(challenge_type) of
 
 		'dns-01' ->
-			% Extended for DNS propagation:
+			% 4 minutes (extended for DNS propagation):
 			240*1000;
 
 		_ ->
@@ -727,15 +726,16 @@ renewCertificates( State ) ->
 	end,
 
 	% So that it is visible even in production mode:
-	?warning_fmt( "Renewing all certificates, through their ~B managers (~w); "
+	?notice_fmt( "Renewing all certificates, through their ~B managers (~w); "
 		"setting a (large) ~ts for each of them.", [ CertManagerCount,
 		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
 
 	% We should not trigger all managers in parallel for a certificate renewal,
 	% lest we hit another Letsencrypt rate limit (see in
-	% https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit').
+	% https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit') or
+	% have more than one certbot instance at a time (as it does not support it).
 	%
-	% So we iterate on certificate managers and for each of them in turn we send
+	% So we iterate on certificate managers and to each of them in turn we send
 	% the following oneway and wait for its synchronisation ack before
 	% proceeding to the next one:
 	%
@@ -745,8 +745,7 @@ renewCertificates( State ) ->
 			_AckAtom=certificate_renewal_over ) of
 
 		[] ->
-			%?debug_fmt
-			?warning_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
+			?notice_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
 
 		FailedCertPids ->
 			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
@@ -756,14 +755,14 @@ renewCertificates( State ) ->
 	end,
 
 	% Next improvement is to record the expected certificates and private keys,
-	% and to ensure all of them are indeed available afterwards.
+	% and to ensure that all of them are indeed available afterwards.
 
 	% Note the plural in atom:
 	wooper:const_return_result( certificate_renewals_over ).
 
 
 
-% @doc Requests the TLS certificate of specified virtual host to be renewed.
+% @doc Requests the TLS certificate of the specified virtual host to be renewed.
 -spec renewCertificate( wooper:state(), domain_id(), vhost_id() ) ->
 							const_oneway_return().
 renewCertificate( State, DomainId, VHostId ) ->
@@ -1477,7 +1476,7 @@ process_domain_routes( _UserRoutes=[ { DomainName, VHostInfos } | T ],
 
 	MaybeCertManagerPid = handle_certificate_manager_for( BinDomainName,
 		BinSans, CertSupport, CertMode, ?getAttr(challenge_type),
-		?getAttr(dns_provider),	?getAttr(credentials_directory),
+		?getAttr(dns_provider), ?getAttr(credentials_directory),
 		BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ),
 
 	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
@@ -3955,7 +3954,7 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 	list_utils:filter_out_undefined( MaybePids ).
 
 
-% @doc Returns a list of all the PIDs of the certificate managers.
+% @doc Returns an (unordered) list of all the PIDs of the certificate managers.
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
 			[ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->

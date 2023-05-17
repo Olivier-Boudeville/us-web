@@ -1516,8 +1516,8 @@ process_domain_routes(
 
 	DomainInfo = { CatchAllDomainId, MaybeCertManagerPid, VHostTable },
 
-	NewAccVTable = table:add_new_entry( _K=CatchAllDomainId, _V=DomainInfo,
-										AccVTable ),
+	NewAccVTable =
+		table:add_new_entry( _K=CatchAllDomainId, _V=DomainInfo, AccVTable ),
 
 	% Order matters:
 	NewAccRoutes = VHostRoutes ++ AccRoutes,
@@ -3093,6 +3093,7 @@ set_log_tool_settings( Unexpected, State ) ->
 
 
 
+
 % @doc Manages how X.509 certificates shall be handled.
 -spec manage_certificates( bin_directory_path(), us_web_config_table(),
 						   wooper:state() ) -> wooper:state().
@@ -3293,6 +3294,12 @@ manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
 			{ undefined, undefined, undefined }
 
 	end,
+
+	% Especially useful with a certbot-based dns-01 challenge to correctly
+	% manage expiration times and schedule renewals:
+	%
+	CertSupport =:= renew_certificates andalso
+		leec:reset_state( ChallengeType, BinCertDir ),
 
 	setAttributes( State, [ { cert_support, CertSupport },
 							{ cert_mode, CertMode },

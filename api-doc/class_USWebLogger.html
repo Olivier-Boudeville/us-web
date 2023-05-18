@@ -43,6 +43,10 @@
 <p><tt>log_line() = <a href="text_utils.html#type-bin_string">text_utils:bin_string()</a></tt></p>
 <p> A log line entry.</p>
 
+<h3 class="typedecl"><a name="type-logger_pid">logger_pid()</a></h3>
+<p><tt>logger_pid() = <a href="class_USServer.html#type-server_pid">class_USServer:server_pid()</a></tt></p>
+
+
 <h3 class="typedecl"><a name="type-method_argument">method_argument()</a></h3>
 <p><tt>method_argument() = <a href="wooper.html#type-method_argument">wooper:method_argument()</a></tt></p>
 
@@ -80,15 +84,11 @@
 
 
 <h3 class="typedecl"><a name="type-request_return">request_return()</a></h3>
-<p><tt>request_return(T) = <a href="wooper.html#type-request_result">wooper:request_result</a>(T)</tt></p>
+<p><tt>request_return(T) = <a href="wooper.html#type-request_return">wooper:request_return</a>(T)</tt></p>
 
 
 <h3 class="typedecl"><a name="type-requests_outcome">requests_outcome()</a></h3>
 <p><tt>requests_outcome() = <a href="wooper.html#type-requests_outcome">wooper:requests_outcome()</a></tt></p>
-
-
-<h3 class="typedecl"><a name="type-server_pid">server_pid()</a></h3>
-<p><tt>server_pid() = <a href="class_UniversalServer.html#type-server_pid">class_UniversalServer:server_pid()</a></tt></p>
 
 
 <h3 class="typedecl"><a name="type-ustring">ustring()</a></h3>
@@ -385,7 +385,7 @@
 
 <h3 class="function"><a name="wooper_execute_method_as-4">wooper_execute_method_as/4</a></h3>
 <div class="spec">
-<p><tt>wooper_execute_method_as(Classname::<a href="#type-classname">classname()</a>, MethodAtom::<a href="#type-method_name">method_name()</a>, Parameters::<a href="#type-method_arguments">method_arguments()</a>, State::<a href="wooper.html#type-state">wooper:state()</a>) -&gt; {<a href="wooper.html#type-state">wooper:state()</a>, <a href="#type-method_internal_result">method_internal_result()</a>}</tt><br></p>
+<p><tt>wooper_execute_method_as(ParentClassname::<a href="#type-classname">classname()</a>, MethodAtom::<a href="#type-method_name">method_name()</a>, Parameters::<a href="#type-method_arguments">method_arguments()</a>, State::<a href="wooper.html#type-state">wooper:state()</a>) -&gt; {<a href="wooper.html#type-state">wooper:state()</a>, <a href="#type-method_internal_result">method_internal_result()</a>}</tt><br></p>
 <p> </p>
 </div>
 

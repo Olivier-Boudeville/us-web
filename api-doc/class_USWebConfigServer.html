@@ -59,6 +59,10 @@
 <p><tt>classname() = <a href="wooper.html#type-classname">wooper:classname()</a></tt></p>
 
 
+<h3 class="typedecl"><a name="type-dispatch_routes">dispatch_routes()</a></h3>
+<p><tt>dispatch_routes() = <a href="cowboy_router.html#type-dispatch_routes">cowboy_router:dispatch_routes()</a></tt></p>
+
+
 <h3 class="typedecl"><a name="type-dispatch_rules">dispatch_rules()</a></h3>
 <p><tt>dispatch_rules() = <a href="cowboy_router.html#type-dispatch_rules">cowboy_router:dispatch_rules()</a></tt></p>
 <p> See <a href="https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/" target="_top"><tt>https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/</tt></a>.</p>
@@ -83,6 +87,10 @@
 
 <h3 class="typedecl"><a name="type-general_web_settings">general_web_settings()</a></h3>
 <p><tt>general_web_settings() = #general_web_settings{http_dispatch_rules = <a href="class_USWebConfigServer.html#type-dispatch_rules">class_USWebConfigServer:dispatch_rules()</a>, http_tcp_port = <a href="#type-maybe">maybe</a>(<a href="net_utils.html#type-tcp_port">net_utils:tcp_port()</a>), https_dispatch_rules = <a href="class_USWebConfigServer.html#type-dispatch_rules">class_USWebConfigServer:dispatch_rules()</a>, https_tcp_port = <a href="#type-maybe">maybe</a>(<a href="net_utils.html#type-tcp_port">net_utils:tcp_port()</a>), certificate_support = <a href="class_USWebConfigServer.html#type-cert_support">class_USWebConfigServer:cert_support()</a>, https_transport_info = <a href="#type-maybe">maybe</a>(<a href="class_USWebConfigServer.html#type-https_transport_info">class_USWebConfigServer:https_transport_info()</a>), dh_key_path = <a href="#type-maybe">maybe</a>(<a href="file_utils.html#type-bin_file_path">file_utils:bin_file_path()</a>), ca_cert_key_path = <a href="#type-maybe">maybe</a>(<a href="file_utils.html#type-bin_file_path">file_utils:bin_file_path()</a>)}</tt></p>
+
+
+<h3 class="typedecl"><a name="type-host_match">host_match()</a></h3>
+<p><tt>host_match() = <a href="#type-route_match">route_match()</a></tt></p>
 
 
 <h3 class="typedecl"><a name="type-https_transport_info">https_transport_info()</a></h3>
@@ -132,12 +140,20 @@
 <p><tt>method_name() = <a href="wooper.html#type-method_name">wooper:method_name()</a></tt></p>
 
 
+<h3 class="typedecl"><a name="type-module_name">module_name()</a></h3>
+<p><tt>module_name() = <a href="basic_utils.html#type-module_name">basic_utils:module_name()</a></tt></p>
+
+
 <h3 class="typedecl"><a name="type-oneway_name">oneway_name()</a></h3>
 <p><tt>oneway_name() = <a href="wooper.html#type-oneway_name">wooper:oneway_name()</a></tt></p>
 
 
 <h3 class="typedecl"><a name="type-oneway_return">oneway_return()</a></h3>
 <p><tt>oneway_return() = <a href="wooper.html#type-oneway_return">wooper:oneway_return()</a></tt></p>
+
+
+<h3 class="typedecl"><a name="type-path_match">path_match()</a></h3>
+<p><tt>path_match() = {Path::<a href="#type-route_match">route_match()</a>, HandlerMod::<a href="#type-module_name">module_name()</a>, HandlerOpts::term()}</tt></p>
 
 
 <h3 class="typedecl"><a name="type-report_generation_outcome">report_generation_outcome()</a></h3>
@@ -157,11 +173,19 @@
 
 
 <h3 class="typedecl"><a name="type-request_return">request_return()</a></h3>
-<p><tt>request_return(T) = <a href="wooper.html#type-request_result">wooper:request_result</a>(T)</tt></p>
+<p><tt>request_return(T) = <a href="wooper.html#type-request_return">wooper:request_return</a>(T)</tt></p>
 
 
 <h3 class="typedecl"><a name="type-requests_outcome">requests_outcome()</a></h3>
 <p><tt>requests_outcome() = <a href="wooper.html#type-requests_outcome">wooper:requests_outcome()</a></tt></p>
+
+
+<h3 class="typedecl"><a name="type-route_match">route_match()</a></h3>
+<p><tt>route_match() = <a href="cowboy.html#type-route_match">cowboy:route_match()</a></tt></p>
+
+
+<h3 class="typedecl"><a name="type-route_rule">route_rule()</a></h3>
+<p><tt>route_rule() = {<a href="#type-host_match">host_match()</a>, [<a href="#type-path_match">path_match()</a>]}</tt></p>
 
 
 <h3 class="typedecl"><a name="type-sni_info">sni_info()</a></h3>
@@ -173,7 +197,7 @@
 
 
 <h3 class="typedecl"><a name="type-vhost_config_entry">vhost_config_entry()</a></h3>
-<p><tt>vhost_config_entry() = #vhost_config_entry{virtual_host = <a href="net_utils.html#type-bin_host_name">net_utils:bin_host_name()</a>, parent_host = <a href="class_USWebConfigServer.html#type-domain_id">class_USWebConfigServer:domain_id()</a>, kind = <a href="class_USWebConfigServer.html#type-web_kind">class_USWebConfigServer:web_kind()</a>, content_root = <a href="file_utils.html#type-bin_directory_path">file_utils:bin_directory_path()</a>, logger_pid = <a href="class_USWebLogger.html#type-server_pid">class_USWebLogger:server_pid()</a>, cert_manager_pid = <a href="#type-maybe">maybe</a>(<a href="class_USCertificateManager.html#type-manager_pid">class_USCertificateManager:manager_pid()</a>)}</tt></p>
+<p><tt>vhost_config_entry() = #vhost_config_entry{virtual_host = <a href="class_USWebConfigServer.html#type-vhost_id">class_USWebConfigServer:vhost_id()</a>, parent_host = <a href="class_USWebConfigServer.html#type-domain_id">class_USWebConfigServer:domain_id()</a>, kind = <a href="class_USWebConfigServer.html#type-web_kind">class_USWebConfigServer:web_kind()</a>, content_root = <a href="file_utils.html#type-bin_directory_path">file_utils:bin_directory_path()</a>, logger_pid = <a href="class_USWebLogger.html#type-logger_pid">class_USWebLogger:logger_pid()</a>, cert_manager_pid = <a href="#type-maybe">maybe</a>(<a href="class_USCertificateManager.html#type-manager_pid">class_USCertificateManager:manager_pid()</a>)}</tt></p>
 
 
 <h3 class="typedecl"><a name="type-vhost_config_table">vhost_config_table()</a></h3>
@@ -491,7 +515,7 @@ all the other hosted websites</p>
 
 <h3 class="function"><a name="wooper_execute_method_as-4">wooper_execute_method_as/4</a></h3>
 <div class="spec">
-<p><tt>wooper_execute_method_as(Classname::<a href="#type-classname">classname()</a>, MethodAtom::<a href="#type-method_name">method_name()</a>, Parameters::<a href="#type-method_arguments">method_arguments()</a>, State::<a href="wooper.html#type-state">wooper:state()</a>) -&gt; {<a href="wooper.html#type-state">wooper:state()</a>, <a href="#type-method_internal_result">method_internal_result()</a>}</tt><br></p>
+<p><tt>wooper_execute_method_as(ParentClassname::<a href="#type-classname">classname()</a>, MethodAtom::<a href="#type-method_name">method_name()</a>, Parameters::<a href="#type-method_arguments">method_arguments()</a>, State::<a href="wooper.html#type-state">wooper:state()</a>) -&gt; {<a href="wooper.html#type-state">wooper:state()</a>, <a href="#type-method_internal_result">method_internal_result()</a>}</tt><br></p>
 <p> </p>
 </div>
 

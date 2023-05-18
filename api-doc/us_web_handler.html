@@ -19,7 +19,7 @@
 
  <p>- provides static dispatches so that the (static) websites corresponding to 
 the virtual hosts can be appropriately served; see the US-Web configuration 
-file (ex: priv/for-testing/us-web-for-tests.config), which holds the data 
+file (e.g. priv/for-testing/us-web-for-tests.config), which holds the data 
 relative to virtual hosts</p>
 
  <p>- handles HTTP errors (notably 404 ones, thanks to a specifically-generated 
@@ -37,14 +37,14 @@ web page)</p>
 
 <h3 class="typedecl"><a name="type-handler_module">handler_module()</a></h3>
 <p><tt>handler_module() = <a href="basic_utils.html#type-module_name">basic_utils:module_name()</a></tt></p>
-<p> Module to handle web content through dispatch rules (ex: 'cowboy_rest').</p>
+<p> Module to handle web content through dispatch rules (e.g. 'cowboy_rest').</p>
 
 <h3 class="typedecl"><a name="type-handler_return">handler_return()</a></h3>
 <p><tt>handler_return() = {ok | <a href="#type-handler_module">handler_module()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-handler_state">handler_state()</a> | error}</tt></p>
 <p> See <a href="https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/" target="_top"><tt>https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/</tt></a>.</p>
 
 <h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
-<p><tt>handler_state() = <a href="#type-maybe">maybe</a>(<a href="http://www.erlang.org/edoc/doc/stdlib/doc/maps.html#type-map">maps:map()</a>)</tt></p>
+<p><tt>handler_state() = <a href="#type-maybe">maybe</a>(map())</tt></p>
 <p> State carried by the process in charge of a request, for most handlers.</p>
 
 <h3 class="typedecl"><a name="type-http_status_code">http_status_code()</a></h3>
@@ -58,10 +58,10 @@ following keys:</p>
 
  <p>- css_path: file_utils:bin_file_path(), a path relative to the content root of 
 the corresponding virtual host pointing to the default CSS file to be used 
-(ex: for the 404 page)</p>
+(e.g. for the 404 page)</p>
 
  - image_404 :: file_utils:bin_file_path(), a path relative to the content root
- of the corresponding virtual host pointing to an image (ex: PNG) to be used
+ of the corresponding virtual host pointing to an image (e.g. PNG) to be used
  when generating a 404 error page</p>
 
 <h2><a name="index">Function Index</a></h2>

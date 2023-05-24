@@ -1,7 +1,7 @@
 US_WEB_TOP = .
 
 
-.PHONY: help help-intro help-us-web register-version-in-header register-us-web \
+.PHONY: help help-us-web register-version-in-header register-us-web            \
 		list-beam-dirs add-prerequisite-plts link-plt stats                    \
 		all all-rebar3 compile                                                 \
 		ensure-dev-release ensure-prod-release                                 \
@@ -95,11 +95,6 @@ all-rebar3:
 
 # Default target:
 help: help-intro help-us-web
-
-
-help-intro:
-	@echo " Following main make targets are available for package $(PACKAGE_NAME):"
-
 
 help-us-web:
 	@cd $(US_COMMON_TOP) && $(MAKE) -s help-us-common

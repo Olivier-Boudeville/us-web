@@ -284,8 +284,8 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A specific branch might be selected:
-	#us_web_branch="master"
-	us_web_branch="wildcard-certificate-support"
+	us_web_branch="master"
+	#us_web_branch="wildcard-certificate-support"
 
 	# To avoid "Already on 'master'":
 	if [ "${us_web_branch}" != "master" ]; then
@@ -591,8 +591,8 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A specific branch might be selected:
-	#leec_branch="master"
-	leec_branch="wildcard-certificate-support"
+	leec_branch="master"
+	#leec_branch="wildcard-certificate-support"
 
 	# To avoid "Already on 'master'":
 	if [ "${leec_branch}" != "master" ]; then
@@ -643,8 +643,8 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A specific branch might be selected:
-	#myriad_branch="master"
-	myriad_branch="gui-bijective-improvements"
+	myriad_branch="master"
+	#myriad_branch="opengl-augmentation"
 
 	# To avoid "Already on 'master'":
 	if [ "${myriad_branch}" != "master" ]; then
@@ -1093,7 +1093,7 @@ if [ $do_launch -eq 0 ]; then
 
 else
 
-	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 30; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure - and check possibly with wget that the expected virtual hosts are available indeed)."
+	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 150; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure (count at least 2 minutes per domain if relying on the dns-01 challenge) - and check possibly with wget that the expected virtual hosts are available indeed)."
 
 	display_and_log "Any prior US-Web instance that would still linger could be removed thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 

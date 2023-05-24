@@ -752,6 +752,12 @@ onCertificateRequestOutcome( State,
 		"certificate stored in '~ts' (private key in '~ts').",
 		[ FQDN, BinCertFilePath, BinPrivKeyFilePath ] ),
 
+	% Useful, as otherwise startup is so long that the user may believe it is
+	% failing:
+	%
+	trace_utils:notice_fmt( "Certificate generation success for domain '~ts'.",
+							[ FQDN ] ),
+
 	% The US-Web server expects the certificate and its private key directly in
 	% cert_dir and as foobar.org.{crt,key}, whereas certbot put them in
 	% leec-certbot-internal-state/live/foobar.org/{fullchain,privkey}.pem, so we

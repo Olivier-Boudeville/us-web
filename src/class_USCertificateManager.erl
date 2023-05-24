@@ -754,7 +754,8 @@ onCertificateRequestOutcome( State,
 
 	% The US-Web server expects the certificate and its private key directly in
 	% cert_dir and as foobar.org.{crt,key}, whereas certbot put them in
-	% live/foobar.org/{fullchain,privkey}.pem, so we symlink them:
+	% leec-certbot-internal-state/live/foobar.org/{fullchain,privkey}.pem, so we
+	% symlink them:
 
 	BinCertDir = ?getAttr(cert_dir),
 	FQDN = ?getAttr(fqdn),

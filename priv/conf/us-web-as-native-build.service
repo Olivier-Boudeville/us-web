@@ -1,6 +1,11 @@
 [Unit]
 Description=Universal Webserver service (US-Web), as a native build
-Requires=network.target
+
+# Otherwise startup at boot may fail because of the encrypted filesystem of a
+# webroot not being already up:
+#
+Requires=network.target local-fs.target
+
 After=network.target
 
 

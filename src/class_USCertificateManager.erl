@@ -552,19 +552,21 @@ destruct( State ) ->
 			ok;
 
 		LEECCallerState ->
-			?notice_fmt( "Shutting down LEEC (~ts).",
-						 [ leec:caller_state_to_string( LEECCallerState ) ] ),
+			LCSStr = leec:caller_state_to_string( LEECCallerState ),
+
+			?notice_fmt( "Shutting down LEEC (~ts).", [ LCSStr ] ),
 			try
 
 				leec:terminate( LEECCallerState )
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Final termination failed, with a thrown "
-					"exception ~p (of class: ~p).", [ Exception, AnyClass ] )
+					"exception ~p (of class: ~p); ~ts.",
+					[ Exception, AnyClass, LCSStr ] )
 
 			end,
 
-			?notice_fmt( "LEEC (~w) shut down.", [ LEECCallerState ] )
+			?notice_fmt( "~ts shut down.", [ LCSStr ] )
 
 	end,
 
@@ -698,8 +700,8 @@ request_certificate( State ) ->
 			ok;
 
 		CallerState ->
-			?error_fmt( "Ignoring unexpected former LEEC caller state ~w.",
-						[ CallerState ] )
+			?error_fmt( "Ignoring unexpected former ~ts.",
+						[ leec:caller_state_to_string( CallerState ) ] )
 
 	end,
 
@@ -708,8 +710,9 @@ request_certificate( State ) ->
 					 ?getAttr(bridge_spec) ) of
 
 		{ ok, LEECCallerState } ->
-			?notice_fmt( "New LEEC caller state ~w created for '~ts'.",
-						 [ LEECCallerState, FQDN ] ),
+
+			LCSStr = leec:caller_state_to_string( LEECCallerState ),
+			?notice_fmt( "New ~ts created for '~ts'.", [ LCSStr, FQDN ] ),
 
 			try
 				async = leec:obtain_certificate_for( FQDN, LEECCallerState,
@@ -723,7 +726,8 @@ request_certificate( State ) ->
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Certificate request failed, with a thrown "
-					"exception ~p (of class: ~p).", [ Exception, AnyClass ] ),
+					"exception ~p (of class: ~p); ~ts.",
+					[ Exception, AnyClass, LCSStr ] ),
 				State
 
 			end;
@@ -863,8 +867,9 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 			catch AnyClass:Exception ->
 				?error_fmt( "Termination after renewal failed, "
-					"with a thrown exception ~p (of class: ~p).",
-					[ Exception, AnyClass ] )
+					"with a thrown exception ~p (of class: ~p); ~ts",
+					[ Exception, AnyClass,
+					  leec:caller_state_to_string( LEECCallerState ) ] )
 
 			end,
 
@@ -937,17 +942,20 @@ getChallenge( State, TargetPid ) ->
 	% Opaque:
 	LCS = ?getAttr(leec_caller_state),
 
+	LCSStr = leec:maybe_caller_state_to_string( LCS ),
+
 	?notice_fmt( "Requested to return the current thumbprint challenges "
-		"from LEEC caller state ~w, on behalf of (and to) ~w.",
-		[ LCS, TargetPid ] ),
+		"with ~ts, on behalf of (and to) ~w.", [ LCSStr, TargetPid ] ),
 
 	try
 
 		leec:send_ongoing_challenges( LCS, TargetPid )
 
-	catch AnyClass:Exception ->
+	catch AnyClass:Exception:StackTrace ->
 		?error_fmt( "Sending of challenges failed, with a thrown "
-					"exception ~p (of class: ~p).", [ Exception, AnyClass ] )
+			"exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
+			[ Exception, AnyClass,
+			  code_utils:interpret_stacktrace( StackTrace ), LCSStr ] )
 
 	end,
 
@@ -988,19 +996,22 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 	timer:sleep( WaitDurationMs ),
 
-	{ MaybeLEECFsmPid, _RenewPeriodSecs, StartOpts, _BridgeSpec } =
+	{ MaybeLEECCallerState, _RenewPeriodSecs, StartOpts, _BridgeSpec } =
 		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(challenge_type),
 			?getAttr(dns_provider), ?getAttr(credentials_dir),
 			?getAttr(cert_dir), ?getAttr(private_key_path), State ),
 
-	?notice_fmt( "New LEEC instance started for '~ts': ~w (start options: ~p);"
-		" requesting a new certificate.",
-		[ FQDN, MaybeLEECFsmPid, StartOpts ] ),
+	?notice_fmt( "New LEEC instance started for '~ts', "
+		"with ~ts (start options: ~p); "
+		"requesting a new certificate.",
+		[ FQDN, leec:maybe_caller_state_to_string( MaybeLEECCallerState ),
+		  StartOpts ] ),
 
 	% Immediately retries:
 	self() ! renewCertificate,
 
-	RestartState = setAttribute( State, leec_caller_state, MaybeLEECFsmPid ),
+	RestartState =
+		setAttribute( State, leec_caller_state, MaybeLEECCallerState ),
 
 	wooper:return_state( RestartState ).
 
@@ -1299,15 +1310,7 @@ to_string( State ) ->
 
 	end,
 
-	FSMStr = case ?getAttr(leec_caller_state) of
-
-		undefined ->
-			"no LEEC FSM";
-
-		LeecPid ->
-			text_utils:format( "LEEC FSM of PID ~w", [ LeecPid ] )
-
-	end,
+	FSMStr = leec:maybe_caller_state_to_string( ?getAttr(leec_caller_state) ),
 
 	CertStr = case ?getAttr(cert_path) of
 

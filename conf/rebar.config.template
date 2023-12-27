@@ -111,8 +111,8 @@
 
 	% Listing an application here seems necessary (otherwise its .app file will
 	% not be found), however it will also result in its automatic starting with
-	% no specified arguments, whereas at least for some (ex: simple_bridge) we
-	% need to specify them (ex: which backend to be used).
+	% no specified arguments, whereas at least for some (e.g. simple_bridge) we
+	% need to specify them (e.g. which backend to be used).
 	%
 	% Listing 'us_common' here implies its prerequisites (namely Myriad, WOOPER
 	% and Traces) and is needed, otherwise their respective modules will not be

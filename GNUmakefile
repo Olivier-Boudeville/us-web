@@ -152,7 +152,7 @@ ensure-prod-release:
 
 
 # The 'clean-otp-build-tree' target is run before generating a release, as
-# otherwise past elements (ex: in link with .app files) will be re-used.
+# otherwise past elements (e.g. in link with .app files) will be re-used.
 
 release: release-prod
 

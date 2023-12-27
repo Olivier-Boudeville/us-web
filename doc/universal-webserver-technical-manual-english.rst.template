@@ -308,7 +308,7 @@ The US main configuration file, ``us.config``, is in a directory (``US_CFG_ROOT`
 
 The US-Web configuration file may define a ``us_web_app_base_dir`` entry. If not, this application directory will then be found thanks to the ``US_WEB_APP_BASE_DIR`` environment variable (if defined, typically through one's ``~/.bashrc``); otherwise, as a last resort, an attempt to guess it will be done.
 
-The US webserver may be then run thanks to ``make debug``, from the relevant ``us_web`` directory (typically the root of a GIT clone located in the user's directory).
+The US webserver may be then run thanks to ``make debug``, from the relevant ``us_web`` directory (typically the root of a Git clone located in the user's directory).
 
 In such a development context, in ``us_web/conf/sys.config``, we recommend to leave the batch mode disabled (just let the default ``{is_batch,false}``), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that).
 
@@ -1055,12 +1055,12 @@ If a tool for web analysis is needed (typically if enabling a meta website), thi
 .. [#] To avoid a future reading access error, execute after installation: ``chmod -R +r /usr/share/webapps/awstats/icon``.
 
 
-If wanting to be able to operate on the source code of the `Ceylan <https://github.com/Olivier-Boudeville/Ceylan>`_ and/or `US <https://github.com/Olivier-Boudeville/Universal-Server>`_ dependencies, you may define appropriate symbolic links in a ``_checkouts`` directory created at the root one's ``US-Web`` clone, these links pointing to relevant GIT repositories (see the ``create-us-web-checkout`` make target for that).
+If wanting to be able to operate on the source code of the `Ceylan <https://github.com/Olivier-Boudeville/Ceylan>`_ and/or `US <https://github.com/Olivier-Boudeville/Universal-Server>`_ dependencies, you may define appropriate symbolic links in a ``_checkouts`` directory created at the root one's ``US-Web`` clone, these links pointing to relevant Git repositories (see the ``create-us-web-checkout`` make target for that).
 
 
 
 
-Using Cutting-Edge GIT
+Using Cutting-Edge Git
 ======================
 
 This is the installation method that we use and recommend; the Universal Webserver ``master`` branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.

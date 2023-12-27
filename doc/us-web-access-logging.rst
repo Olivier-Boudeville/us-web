@@ -10,7 +10,7 @@ US-Web (rather than a ``crontab``) takes control of log writing, for full contro
 For write efficiency, It is done by an (Erlang) process specific to a given virtual host (see ``class_USWebLogger``), and a task ring is used for synchronicity and load balancing with regard to log report generation.
 
 
-For each virtual host (ex: ``baz.foobar.org``), following log files shall be generated:
+For each virtual host (e.g. ``baz.foobar.org``), following log files shall be generated:
 
 - ``access-for-baz.foobar.org.log``
 - ``error-for-baz.foobar.org.log``
@@ -105,7 +105,7 @@ Some permission fixes (to be done as root) might be needed first:
 Awstats Configuration
 ---------------------
 
-Log analysis will be triggered periodically by the US-Web server rather than on-demand via CGI Perl scripts, and its result, i.e. the web pages generated from the access logs, will be available in the meta website (ex: ``mymeta.foobar.org``; refer to `Auto-generated Meta Website`_ for more information).
+Log analysis will be triggered periodically by the US-Web server rather than on-demand via CGI Perl scripts, and its result, i.e. the web pages generated from the access logs, will be available in the meta website (e.g. ``mymeta.foobar.org``; refer to `Auto-generated Meta Website`_ for more information).
 
 More precisely, and as already mentioned, in the US-Web log directory (see ``us_web_log_dir``), dedicated access and error log files will be generated for each known virtual host. For example the accesses to a ``baz.foobar.org`` virtual host will be written by the US-Web server in a corresponding ``access-for-baz.foobar.org.log`` file.
 
@@ -129,9 +129,9 @@ Such a target directory shall thus be created beforehand, and made writable by t
 
 Each virtual host (say: ``baz.foobar.org``) will have its configuration file deriving from ``priv/conf/awstats.template.conf``, where the following patterns will be replaced by relevant ones (through keyword-based replacements):
 
-- ``US_WEB_VHOST_LOG_FILE`` to become the full path to the corresponding access log (ex: ``access-for-baz.foobar.org.log``, in ``us_web_log_dir``)
-- ``US_WEB_VHOST_DOMAIN`` to become the virtual host domain (ex: ``baz.foobar.org``)
-- ``US_WEB_LOG_ANALYSIS_DATA_DIR`` to become the directory in which the working data (ex: state files) of the web analyzer (here Awstats) shall be written
+- ``US_WEB_VHOST_LOG_FILE`` to become the full path to the corresponding access log (e.g. ``access-for-baz.foobar.org.log``, in ``us_web_log_dir``)
+- ``US_WEB_VHOST_DOMAIN`` to become the virtual host domain (e.g. ``baz.foobar.org``)
+- ``US_WEB_LOG_ANALYSIS_DATA_DIR`` to become the directory in which the working data (e.g. state files) of the web analyzer (here Awstats) shall be written
 
 Awstats icons are copied to the ``icon`` directory at the root of the meta website.
 
@@ -145,9 +145,9 @@ Awstats Troubleshooting
 
 Various issues may prevent log reports to be available.
 
-Let's try with a real US-Web uncompressed log file first (ex: ``xz -d access-vhost-catchall.log.test.xz``), supposing that it corresponds to a ``my-test`` virtual host).
+Let's try with a real US-Web uncompressed log file first (e.g. ``xz -d access-vhost-catchall.log.test.xz``), supposing that it corresponds to a ``my-test`` virtual host).
 
-Then configure Awstats (ex: through a ``/usr/local/etc/awstats/awstats.my-test.conf`` file) to process that log file; for that, run on that host:
+Then configure Awstats (e.g. through a ``/usr/local/etc/awstats/awstats.my-test.conf`` file) to process that log file; for that, run on that host:
 
 .. code:: bash
 
@@ -184,12 +184,12 @@ Then all web reports can be generated manually with:
 ..
   Note:: Currently we do not perform log analysis anymore, due to bugs in Awstats (at least 7.7.1, build 20180105):
 
-  - only the main page for a given site (ex: ``awstats-for-foo.bar.org.html``) is generated: the configuration file (ex: ``awstats-for-foo.bar.org.conf``) does not specify a target generation location, and the main page is just output on standard output and redirected by US-Web to the right main file
-  - moreover, even if these other files were generated (and in the correct place), the link to them from the main page would be invalid, as it includes their full path (ex: pointing to ``awstats./var/local/us-web/data/awstats-vhost-configs/awstats-for-foo.bar.org.conf.osdetail.html``)
+  - only the main page for a given site (e.g. ``awstats-for-foo.bar.org.html``) is generated: the configuration file (e.g. ``awstats-for-foo.bar.org.conf``) does not specify a target generation location, and the main page is just output on standard output and redirected by US-Web to the right main file
+  - moreover, even if these other files were generated (and in the correct place), the link to them from the main page would be invalid, as it includes their full path (e.g. pointing to ``awstats./var/local/us-web/data/awstats-vhost-configs/awstats-for-foo.bar.org.conf.osdetail.html``)
 
    A solution would be to have Awstats fixed (unlikely?) or to allow the US-Web server to write to one of the only awstats-enabled system directories, such as ``/usr/local/etc/awstats``.
 
- .. ex:
+ .. e.g.
 	- /var/XXX/www/Meta-XXX/awstats-for-XXX.org.html
 	- /var/local/us-web/data/awstats-vhost-configs/awstats-for-XXX.org.conf
 	- <a href="awstats./var/local/us-web/data/awstats-vhost-configs/awstats-for-XXX.conf.osdetail.html"

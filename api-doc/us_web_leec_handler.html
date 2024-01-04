@@ -17,16 +17,16 @@ challenges thanks to LEEC, in order to complete the verification procedure.
 <h2><a name="description">Description</a></h2><p><b>LEEC-compliant handler</b> for US-Web, whose role is to answer ACME 
 challenges thanks to LEEC, in order to complete the verification procedure.</p>
 
- See <a href="https://leec.esperide.org/#usage-example" target="_top"><tt>https://leec.esperide.org/#usage-example</tt></a> for more details.
+ See <a href="https://leec.esperide.org/#usage-example" target="_top"><code>https://leec.esperide.org/#usage-example</code></a> for more details.
 
 <h2><a name="types">Data Types</a></h2>
 
 <h3 class="typedecl"><a name="type-cert_manager_pid">cert_manager_pid()</a></h3>
-<p><tt>cert_manager_pid() = <a href="class_USCertificateManager.html#type-manager_pid">class_USCertificateManager:manager_pid()</a></tt></p>
+<p><code>cert_manager_pid() = <a href="class_USCertificateManager.html#type-manager_pid">class_USCertificateManager:manager_pid()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
-<p><tt>handler_state() = <a href="#type-cert_manager_pid">cert_manager_pid()</a></tt></p>
+<p><code>handler_state() = <a href="#type-cert_manager_pid">cert_manager_pid()</a></code></p>
 
 
 <h2><a name="index">Function Index</a></h2>
@@ -39,13 +39,13 @@ challenges thanks to LEEC, in order to complete the verification procedure.</p>
 
 <h3 class="function"><a name="handle-2">handle/2</a></h3>
 <div class="spec">
-<p><tt>handle(Req, HandlerState) -&gt; any()</tt></p>
+<p><code>handle(Req, HandlerState) -&gt; any()</code></p>
 <p> </p>
 </div><p>Handles specified request (not expected to be used).</p>
 
 <h3 class="function"><a name="init-2">init/2</a></h3>
 <div class="spec">
-<p><tt>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="us_web_handler.html#type-handler_return">us_web_handler:handler_return()</a></tt><br></p>
+<p><code>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="us_web_handler.html#type-handler_return">us_web_handler:handler_return()</a></code><br></p>
 <p> </p>
 </div><p><p>Initialises this LEEC handler.</p>
 
@@ -56,7 +56,7 @@ challenges thanks to LEEC, in order to complete the verification procedure.</p>
 
 <h3 class="function"><a name="terminate-3">terminate/3</a></h3>
 <div class="spec">
-<p><tt>terminate(Reason, Req, HandlerState) -&gt; any()</tt></p>
+<p><code>terminate(Reason, Req, HandlerState) -&gt; any()</code></p>
 <p> </p>
 </div><p>Terminates this handler.</p>
 <hr>

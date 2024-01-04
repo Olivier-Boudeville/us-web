@@ -23,7 +23,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2023 Olivier Boudeville</p>
+<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2024 Olivier Boudeville</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Contact:</th><td class="field-body"><p class="first">about (dash) universal-webserver (at) esperide (dot) com</p>
@@ -32,10 +32,10 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Thursday, May 18, 2023</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Thursday, January 4, 2024</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.1.0</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.1.2</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Stable</p>
@@ -128,7 +128,7 @@
 <li><a class="reference internal" href="#usage-recommendations" id="toc-entry-45">Usage Recommendations</a></li>
 <li><a class="reference internal" href="#licence" id="toc-entry-46">Licence</a></li>
 <li><a class="reference internal" href="#current-stable-version-download" id="toc-entry-47">Current Stable Version &amp; Download</a><ul>
-<li><a class="reference internal" href="#using-cutting-edge-git" id="toc-entry-48">Using Cutting-Edge GIT</a></li>
+<li><a class="reference internal" href="#using-cutting-edge-git" id="toc-entry-48">Using Cutting-Edge Git</a></li>
 <li><a class="reference internal" href="#otp-considerations" id="toc-entry-49">OTP Considerations</a></li>
 </ul>
 </li>
@@ -382,7 +382,7 @@ $<span class="w"> </span>/tmp/deploy-us-web-release.sh<span class="w">
 <h2><a class="toc-backref" href="#toc-entry-11">In a Development Setting</a></h2>
 <p>The US main configuration file, <tt class="docutils literal">us.config</tt>, is in a directory (<tt class="docutils literal">US_CFG_ROOT</tt>) that is <tt class="docutils literal"><span class="pre">~/.config/universal-server/</span></tt> here. This US-level configuration file will reference (through its <tt class="docutils literal">us_web_config_filename</tt> entry) a US-Web counterpart configuration file, probably in the same directory.</p>
 <p>The US-Web configuration file may define a <tt class="docutils literal">us_web_app_base_dir</tt> entry. If not, this application directory will then be found thanks to the <tt class="docutils literal">US_WEB_APP_BASE_DIR</tt> environment variable (if defined, typically through one's <tt class="docutils literal"><span class="pre">~/.bashrc</span></tt>); otherwise, as a last resort, an attempt to guess it will be done.</p>
-<p>The US webserver may be then run thanks to <tt class="docutils literal">make debug</tt>, from the relevant <tt class="docutils literal">us_web</tt> directory (typically the root of a GIT clone located in the user's directory).</p>
+<p>The US webserver may be then run thanks to <tt class="docutils literal">make debug</tt>, from the relevant <tt class="docutils literal">us_web</tt> directory (typically the root of a Git clone located in the user's directory).</p>
 <p>In such a development context, in <tt class="docutils literal">us_web/conf/sys.config</tt>, we recommend to leave the batch mode disabled (just let the default <tt class="docutils literal">{is_batch,false}</tt>), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see <a class="reference external" href="http://traces.esperide.org/#trace-supervision-browsing">Ceylan-Traces</a> for that).</p>
 </div>
 <div class="section" id="in-a-production-setting">
@@ -919,9 +919,9 @@ $<span class="w"> </span>make<span class="w"> </span>slim_cowboy<span class="w">
 <tr><td class="label"><a class="fn-backref" href="#footnote-reference-7">[7]</a></td><td>To avoid a future reading access error, execute after installation: <tt class="docutils literal">chmod <span class="pre">-R</span> +r /usr/share/webapps/awstats/icon</tt>.</td></tr>
 </tbody>
 </table>
-<p>If wanting to be able to operate on the source code of the <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan">Ceylan</a> and/or <a class="reference external" href="https://github.com/Olivier-Boudeville/Universal-Server">US</a> dependencies, you may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root one's <tt class="docutils literal"><span class="pre">US-Web</span></tt> clone, these links pointing to relevant GIT repositories (see the <tt class="docutils literal"><span class="pre">create-us-web-checkout</span></tt> make target for that).</p>
+<p>If wanting to be able to operate on the source code of the <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan">Ceylan</a> and/or <a class="reference external" href="https://github.com/Olivier-Boudeville/Universal-Server">US</a> dependencies, you may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root one's <tt class="docutils literal"><span class="pre">US-Web</span></tt> clone, these links pointing to relevant Git repositories (see the <tt class="docutils literal"><span class="pre">create-us-web-checkout</span></tt> make target for that).</p>
 <div class="section" id="using-cutting-edge-git">
-<h2><a class="toc-backref" href="#toc-entry-48">Using Cutting-Edge GIT</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-48">Using Cutting-Edge Git</a></h2>
 <p>This is the installation method that we use and recommend; the Universal Webserver <tt class="docutils literal">master</tt> branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.</p>
 <p>Once Erlang (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-erlang">here</a>), rebar3 (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-rebar3">here</a>) and possibly LEEC (see <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-LEEC#building">here</a>) or Awstats (see <a class="reference external" href="#getting-awstats">here</a>) are available, it should be just a matter of executing our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh">get-us-web-from-sources.sh</a> script for downloading and building all dependencies at once, and run a test server (use its <tt class="docutils literal"><span class="pre">--help</span></tt> option for more information).</p>
 <p>For example:</p>
@@ -1301,7 +1301,7 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/opt/
 <p>The objective in this section is to have US-Web generate access logs like the standard webservers do, so that standard tools able to produce log analyses can be used afterwards. They may generate HTML pages, which can in turn be appropriately hosted directly by the US-Web framework itself.</p>
 <p>US-Web (rather than a <tt class="docutils literal">crontab</tt>) takes control of log writing, for full control onto the start, stop and rotation behaviours.</p>
 <p>For write efficiency, It is done by an (Erlang) process specific to a given virtual host (see <tt class="docutils literal">class_USWebLogger</tt>), and a task ring is used for synchronicity and load balancing with regard to log report generation.</p>
-<p>For each virtual host (ex: <tt class="docutils literal">baz.foobar.org</tt>), following log files shall be generated:</p>
+<p>For each virtual host (e.g. <tt class="docutils literal">baz.foobar.org</tt>), following log files shall be generated:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">error-for-baz.foobar.org.log</span></tt></li>
@@ -1363,7 +1363,7 @@ $<span class="w"> </span>chmod<span class="w"> </span>+r<span class="w"> </span>
 </div>
 <div class="section" id="awstats-configuration">
 <h3><a class="toc-backref" href="#toc-entry-83">Awstats Configuration</a></h3>
-<p>Log analysis will be triggered periodically by the US-Web server rather than on-demand via CGI Perl scripts, and its result, i.e. the web pages generated from the access logs, will be available in the meta website (ex: <tt class="docutils literal">mymeta.foobar.org</tt>; refer to <a class="reference internal" href="#auto-generated-meta-website">Auto-generated Meta Website</a> for more information).</p>
+<p>Log analysis will be triggered periodically by the US-Web server rather than on-demand via CGI Perl scripts, and its result, i.e. the web pages generated from the access logs, will be available in the meta website (e.g. <tt class="docutils literal">mymeta.foobar.org</tt>; refer to <a class="reference internal" href="#auto-generated-meta-website">Auto-generated Meta Website</a> for more information).</p>
 <p>More precisely, and as already mentioned, in the US-Web log directory (see <tt class="docutils literal">us_web_log_dir</tt>), dedicated access and error log files will be generated for each known virtual host. For example the accesses to a <tt class="docutils literal">baz.foobar.org</tt> virtual host will be written by the US-Web server in a corresponding <tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log</span></tt> file.</p>
 <p>At server start-up, the US-Web meta module (<tt class="docutils literal">us_web_meta</tt>) will have generated a suitable Awstats configuration file (namely <tt class="docutils literal">awstats.baz.foobar.org.conf</tt>) that will trigger the generation of the corresponding static web pages (<tt class="docutils literal">awstats.baz.foobar.org.*</tt>, notably <tt class="docutils literal">awstats.baz.foobar.org.html</tt>) in the web root of the meta website.</p>
 <p>These configuration files are now placed in <tt class="docutils literal">/usr/local/etc/awstats</tt> (they were previously in the <tt class="docutils literal">conf</tt> subdirectory of the root specified in <tt class="docutils literal">us_web_app_base_dir</tt>).</p>
@@ -1376,9 +1376,9 @@ $<span class="w"> </span>chmod<span class="w"> </span>+r<span class="w"> </span>
 <p>Such a target directory shall thus be created beforehand, and made writable by the user specified in <tt class="docutils literal">us_web_username</tt>.</p>
 <p>Each virtual host (say: <tt class="docutils literal">baz.foobar.org</tt>) will have its configuration file deriving from <tt class="docutils literal">priv/conf/awstats.template.conf</tt>, where the following patterns will be replaced by relevant ones (through keyword-based replacements):</p>
 <ul class="simple">
-<li><tt class="docutils literal">US_WEB_VHOST_LOG_FILE</tt> to become the full path to the corresponding access log (ex: <tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log</span></tt>, in <tt class="docutils literal">us_web_log_dir</tt>)</li>
-<li><tt class="docutils literal">US_WEB_VHOST_DOMAIN</tt> to become the virtual host domain (ex: <tt class="docutils literal">baz.foobar.org</tt>)</li>
-<li><tt class="docutils literal">US_WEB_LOG_ANALYSIS_DATA_DIR</tt> to become the directory in which the working data (ex: state files) of the web analyzer (here Awstats) shall be written</li>
+<li><tt class="docutils literal">US_WEB_VHOST_LOG_FILE</tt> to become the full path to the corresponding access log (e.g. <tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log</span></tt>, in <tt class="docutils literal">us_web_log_dir</tt>)</li>
+<li><tt class="docutils literal">US_WEB_VHOST_DOMAIN</tt> to become the virtual host domain (e.g. <tt class="docutils literal">baz.foobar.org</tt>)</li>
+<li><tt class="docutils literal">US_WEB_LOG_ANALYSIS_DATA_DIR</tt> to become the directory in which the working data (e.g. state files) of the web analyzer (here Awstats) shall be written</li>
 </ul>
 <p>Awstats icons are copied to the <tt class="docutils literal">icon</tt> directory at the root of the meta website.</p>
 <p>The Awstats database, typically located in <tt class="docutils literal"><span class="pre">/var/local/us-web/data</span></tt>, will be updated once an access log file will be rotated; just after, this log file will be compressed and archived under a relevant filename, such as <tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log.2020-2-1-at-19h-48m-12s.xz</span></tt>.</p>
@@ -1386,8 +1386,8 @@ $<span class="w"> </span>chmod<span class="w"> </span>+r<span class="w"> </span>
 <div class="section" id="awstats-troubleshooting">
 <h3><a class="toc-backref" href="#toc-entry-84">Awstats Troubleshooting</a></h3>
 <p>Various issues may prevent log reports to be available.</p>
-<p>Let's try with a real US-Web uncompressed log file first (ex: <tt class="docutils literal">xz <span class="pre">-d</span> <span class="pre">access-vhost-catchall.log.test.xz</span></tt>), supposing that it corresponds to a <tt class="docutils literal"><span class="pre">my-test</span></tt> virtual host).</p>
-<p>Then configure Awstats (ex: through a <tt class="docutils literal"><span class="pre">/usr/local/etc/awstats/awstats.my-test.conf</span></tt> file) to process that log file; for that, run on that host:</p>
+<p>Let's try with a real US-Web uncompressed log file first (e.g. <tt class="docutils literal">xz <span class="pre">-d</span> <span class="pre">access-vhost-catchall.log.test.xz</span></tt>), supposing that it corresponds to a <tt class="docutils literal"><span class="pre">my-test</span></tt> virtual host).</p>
+<p>Then configure Awstats (e.g. through a <tt class="docutils literal"><span class="pre">/usr/local/etc/awstats/awstats.my-test.conf</span></tt> file) to process that log file; for that, run on that host:</p>
 <pre class="code bash literal-block">
 $<span class="w"> </span>perl<span class="w"> </span>/usr/share/awstats/tools/awstats_configure.pl
 </pre>

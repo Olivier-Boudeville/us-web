@@ -20,27 +20,27 @@
 <h2><a name="types">Data Types</a></h2>
 
 <h3 class="typedecl"><a name="type-domain_config_table">domain_config_table()</a></h3>
-<p><tt>domain_config_table() = <a href="class_USWebConfigServer.html#type-domain_config_table">class_USWebConfigServer:domain_config_table()</a></tt></p>
+<p><code>domain_config_table() = <a href="class_USWebConfigServer.html#type-domain_config_table">class_USWebConfigServer:domain_config_table()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-html_element">html_element()</a></h3>
-<p><tt>html_element() = <a href="web_utils.html#type-html_element">web_utils:html_element()</a></tt></p>
+<p><code>html_element() = <a href="web_utils.html#type-html_element">web_utils:html_element()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-meta_web_settings">meta_web_settings()</a></h3>
-<p><tt>meta_web_settings() = <a href="class_USWebConfigServer.html#type-meta_web_settings">class_USWebConfigServer:meta_web_settings()</a></tt></p>
+<p><code>meta_web_settings() = <a href="class_USWebConfigServer.html#type-meta_web_settings">class_USWebConfigServer:meta_web_settings()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-protocol_type">protocol_type()</a></h3>
-<p><tt>protocol_type() = <a href="web_utils.html#type-protocol_type">web_utils:protocol_type()</a></tt></p>
+<p><code>protocol_type() = <a href="web_utils.html#type-protocol_type">web_utils:protocol_type()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-tcp_port">tcp_port()</a></h3>
-<p><tt>tcp_port() = <a href="net_utils.html#type-tcp_port">net_utils:tcp_port()</a></tt></p>
+<p><code>tcp_port() = <a href="net_utils.html#type-tcp_port">net_utils:tcp_port()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-vhost_config_entry">vhost_config_entry()</a></h3>
-<p><tt>vhost_config_entry() = <a href="class_USWebConfigServer.html#type-vhost_config_entry">class_USWebConfigServer:vhost_config_entry()</a></tt></p>
+<p><code>vhost_config_entry() = <a href="class_USWebConfigServer.html#type-vhost_config_entry">class_USWebConfigServer:vhost_config_entry()</a></code></p>
 
 
 <h2><a name="index">Function Index</a></h2>
@@ -55,31 +55,31 @@
 
 <h3 class="function"><a name="get_page_body-6">get_page_body/6</a></h3>
 <div class="spec">
-<p><tt>get_page_body(Scheme::<a href="#type-protocol_type">protocol_type()</a>, Port::<a href="#type-tcp_port">tcp_port()</a>, DomainCfgTable::<a href="#type-domain_config_table">domain_config_table()</a>, StartTimestamp::<a href="time_utils.html#type-timestamp">time_utils:timestamp()</a>, MetaWebSettings::<a href="#type-meta_web_settings">meta_web_settings()</a>, LogAnalysisEnabled::boolean()) -&gt; <a href="#type-html_element">html_element()</a></tt><br></p>
+<p><code>get_page_body(Scheme::<a href="#type-protocol_type">protocol_type()</a>, Port::<a href="#type-tcp_port">tcp_port()</a>, DomainCfgTable::<a href="#type-domain_config_table">domain_config_table()</a>, StartTimestamp::<a href="time_utils.html#type-timestamp">time_utils:timestamp()</a>, MetaWebSettings::<a href="#type-meta_web_settings">meta_web_settings()</a>, LogAnalysisEnabled::boolean()) -&gt; <a href="#type-html_element">html_element()</a></code><br></p>
 <p> </p>
 </div><p>Returns the HTML body for a meta page.</p>
 
 <h3 class="function"><a name="get_page_footer-0">get_page_footer/0</a></h3>
 <div class="spec">
-<p><tt>get_page_footer() -&gt; <a href="#type-html_element">html_element()</a></tt><br></p>
+<p><code>get_page_footer() -&gt; <a href="#type-html_element">html_element()</a></code><br></p>
 <p> </p>
 </div><p>Returns the HTML footer for a meta page.</p>
 
 <h3 class="function"><a name="get_page_header-0">get_page_header/0</a></h3>
 <div class="spec">
-<p><tt>get_page_header() -&gt; <a href="#type-html_element">html_element()</a></tt><br></p>
+<p><code>get_page_header() -&gt; <a href="#type-html_element">html_element()</a></code><br></p>
 <p> </p>
 </div><p>Returns the HTML header for a meta page.</p>
 
 <h3 class="function"><a name="get_vhost_description-3">get_vhost_description/3</a></h3>
 <div class="spec">
-<p><tt>get_vhost_description(Scheme::<a href="#type-protocol_type">protocol_type()</a>, Port::<a href="#type-tcp_port">tcp_port()</a>, Vhost_config_entry::<a href="#type-vhost_config_entry">vhost_config_entry()</a>) -&gt; <a href="#type-html_element">html_element()</a></tt><br></p>
+<p><code>get_vhost_description(Scheme::<a href="#type-protocol_type">protocol_type()</a>, Port::<a href="#type-tcp_port">tcp_port()</a>, Vhost_config_entry::<a href="#type-vhost_config_entry">vhost_config_entry()</a>) -&gt; <a href="#type-html_element">html_element()</a></code><br></p>
 <p> </p>
 </div><p>Returns the HTML description for the specified virtual host.</p>
 
 <h3 class="function"><a name="get_vhost_display_name-2">get_vhost_display_name/2</a></h3>
 <div class="spec">
-<p><tt>get_vhost_display_name(VHostId, ParentHost) -&gt; any()</tt></p>
+<p><code>get_vhost_display_name(VHostId, ParentHost) -&gt; any()</code></p>
 <p> </p>
 </div><p>Returns the display name for the specified vhost.</p>
 <hr>

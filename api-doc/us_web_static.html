@@ -28,51 +28,51 @@ map management.</p>
 <h2><a name="types">Data Types</a></h2>
 
 <h3 class="typedecl"><a name="type-access_type">access_type()</a></h3>
-<p><tt>access_type() = direct | archive</tt></p>
+<p><code>access_type() = direct | archive</code></p>
 
 
 <h3 class="typedecl"><a name="type-bin_content_path">bin_content_path()</a></h3>
-<p><tt>bin_content_path() = <a href="us_web_handler.html#type-bin_content_path">us_web_handler:bin_content_path()</a></tt></p>
+<p><code>bin_content_path() = <a href="us_web_handler.html#type-bin_content_path">us_web_handler:bin_content_path()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-extra">extra()</a></h3>
-<p><tt>extra() = [<a href="#type-extra_charset">extra_charset()</a> | <a href="#type-extra_etag">extra_etag()</a> | <a href="#type-extra_mimetypes">extra_mimetypes()</a>]</tt></p>
+<p><code>extra() = [<a href="#type-extra_charset">extra_charset()</a> | <a href="#type-extra_etag">extra_etag()</a> | <a href="#type-extra_mimetypes">extra_mimetypes()</a>]</code></p>
 
 
 <h3 class="typedecl"><a name="type-extra_charset">extra_charset()</a></h3>
-<p><tt>extra_charset() = {charset, module(), function()} | {charset, binary()}</tt></p>
+<p><code>extra_charset() = {charset, module(), function()} | {charset, binary()}</code></p>
 
 
 <h3 class="typedecl"><a name="type-extra_etag">extra_etag()</a></h3>
-<p><tt>extra_etag() = {etag, module(), function()} | {etag, false}</tt></p>
+<p><code>extra_etag() = {etag, module(), function()} | {etag, false}</code></p>
 
 
 <h3 class="typedecl"><a name="type-extra_mimetypes">extra_mimetypes()</a></h3>
-<p><tt>extra_mimetypes() = {mimetypes, module(), function()} | {mimetypes, binary() | {binary(), binary(), [{binary(), binary()}]}}</tt></p>
+<p><code>extra_mimetypes() = {mimetypes, module(), function()} | {mimetypes, binary() | {binary(), binary(), [{binary(), binary()}]}}</code></p>
 
 
 <h3 class="typedecl"><a name="type-file_info">file_info()</a></h3>
-<p><tt>file_info() = <a href="file_utils.html#type-file_info">file_utils:file_info()</a></tt></p>
+<p><code>file_info() = <a href="file_utils.html#type-file_info">file_utils:file_info()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-handler_return">handler_return()</a></h3>
-<p><tt>handler_return() = <a href="us_web_handler.html#type-handler_return">us_web_handler:handler_return()</a></tt></p>
+<p><code>handler_return() = <a href="us_web_handler.html#type-handler_return">us_web_handler:handler_return()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
-<p><tt>handler_state() = <a href="us_web_handler.html#type-handler_state">us_web_handler:handler_state()</a></tt></p>
+<p><code>handler_state() = <a href="us_web_handler.html#type-handler_state">us_web_handler:handler_state()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-opts">opts()</a></h3>
-<p><tt>opts() = {file | dir, <a href="#type-ustring">ustring()</a> | binary()} | {file | dir, <a href="#type-ustring">ustring()</a> | binary(), <a href="#type-extra">extra()</a>} | {priv_file | priv_dir, atom(), <a href="#type-ustring">ustring()</a> | binary()} | {priv_file | priv_dir, atom(), <a href="#type-ustring">ustring()</a> | binary(), <a href="#type-extra">extra()</a>}</tt></p>
+<p><code>opts() = {file | dir, <a href="#type-ustring">ustring()</a> | binary()} | {file | dir, <a href="#type-ustring">ustring()</a> | binary(), <a href="#type-extra">extra()</a>} | {priv_file | priv_dir, atom(), <a href="#type-ustring">ustring()</a> | binary()} | {priv_file | priv_dir, atom(), <a href="#type-ustring">ustring()</a> | binary(), <a href="#type-extra">extra()</a>}</code></p>
 
 
 <h3 class="typedecl"><a name="type-rest_handler_state">rest_handler_state()</a></h3>
-<p><tt>rest_handler_state() = {<a href="#type-bin_content_path">bin_content_path()</a>, {<a href="#type-access_type">access_type()</a>, <a href="#type-file_info">file_info()</a>} | <a href="basic_utils.html#type-error_term">basic_utils:error_term()</a>, <a href="#type-extra">extra()</a>}</tt></p>
+<p><code>rest_handler_state() = {<a href="#type-bin_content_path">bin_content_path()</a>, {<a href="#type-access_type">access_type()</a>, <a href="#type-file_info">file_info()</a>} | <a href="basic_utils.html#type-error_term">basic_utils:error_term()</a>, <a href="#type-extra">extra()</a>}</code></p>
 <p> State for the cowboy_rest handler.</p>
 
 <h3 class="typedecl"><a name="type-ustring">ustring()</a></h3>
-<p><tt>ustring() = <a href="text_utils.html#type-ustring">text_utils:ustring()</a></tt></p>
+<p><code>ustring() = <a href="text_utils.html#type-ustring">text_utils:ustring()</a></code></p>
 
 
 <h2><a name="index">Function Index</a></h2>
@@ -93,22 +93,22 @@ map management.</p>
 
 <h3 class="function"><a name="charsets_provided-2">charsets_provided/2</a></h3>
 <div class="spec">
-<p><tt>charsets_provided(Req, State) -&gt; {[binary()], Req, State}</tt>
-<ul class="definitions"><li><tt>State = <a href="#type-rest_handler_state">rest_handler_state()</a></tt></li></ul></p>
+<p><code>charsets_provided(Req, State) -&gt; {[binary()], Req, State}</code>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
 </div><p>Detects the charset of the file.</p>
 
 <h3 class="function"><a name="content_types_provided-2">content_types_provided/2</a></h3>
 <div class="spec">
-<p><tt>content_types_provided(Req, State) -&gt; {[{binary(), get_file}], Req, State}</tt>
-<ul class="definitions"><li><tt>State = <a href="#type-rest_handler_state">rest_handler_state()</a></tt></li></ul></p>
+<p><code>content_types_provided(Req, State) -&gt; {[{binary(), get_file}], Req, State}</code>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
 </div><p>Detects the mimetype of the file.</p>
 
 <h3 class="function"><a name="forbidden-2">forbidden/2</a></h3>
 <div class="spec">
-<p><tt>forbidden(Req, State) -&gt; {boolean(), Req, State}</tt>
-<ul class="definitions"><li><tt>State = <a href="#type-rest_handler_state">rest_handler_state()</a></tt></li></ul></p>
+<p><code>forbidden(Req, State) -&gt; {boolean(), Req, State}</code>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
 </div><p><p>Forbids relevant content.</p>
 
@@ -118,20 +118,20 @@ map management.</p>
 
 <h3 class="function"><a name="generate_etag-2">generate_etag/2</a></h3>
 <div class="spec">
-<p><tt>generate_etag(Req, State) -&gt; {{strong | weak, binary()}, Req, State}</tt>
-<ul class="definitions"><li><tt>State = <a href="#type-rest_handler_state">rest_handler_state()</a></tt></li></ul></p>
+<p><code>generate_etag(Req, State) -&gt; {{strong | weak, binary()}, Req, State}</code>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
 </div><p>Generates an etag for the handler-referenced file.</p>
 
 <h3 class="function"><a name="get_file-2">get_file/2</a></h3>
 <div class="spec">
-<p><tt>get_file(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state">rest_handler_state()</a>) -&gt; {{sendfile, 0, non_neg_integer(), binary()}, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-rest_handler_state">rest_handler_state()</a>}</tt><br></p>
+<p><code>get_file(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state">rest_handler_state()</a>) -&gt; {{sendfile, 0, non_neg_integer(), binary()}, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-rest_handler_state">rest_handler_state()</a>}</code><br></p>
 <p> </p>
 </div><p>Streams the handler-referenced file.</p>
 
 <h3 class="function"><a name="init-2">init/2</a></h3>
 <div class="spec">
-<p><tt>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></tt><br></p>
+<p><code>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></code><br></p>
 <p> </p>
 </div><p><p>Resolves the file that will be sent, and gets its file information.</p>
 
@@ -141,13 +141,13 @@ map management.</p>
 
 <h3 class="function"><a name="last_modified-2">last_modified/2</a></h3>
 <div class="spec">
-<p><tt>last_modified(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state">rest_handler_state()</a>) -&gt; {<a href="http://www.erlang.org/edoc/doc/stdlib/doc/calendar.html#type-datetime">calendar:datetime()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-rest_handler_state">rest_handler_state()</a>}</tt><br></p>
+<p><code>last_modified(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state">rest_handler_state()</a>) -&gt; {<a href="http://www.erlang.org/edoc/doc/stdlib/doc/calendar.html#type-datetime">calendar:datetime()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-rest_handler_state">rest_handler_state()</a>}</code><br></p>
 <p> </p>
 </div><p>Returns the time of last modification of the handler-referenced file.</p>
 
 <h3 class="function"><a name="malformed_request-2">malformed_request/2</a></h3>
 <div class="spec">
-<p><tt>malformed_request(Req, State) -&gt; {boolean(), Req, State}</tt><br></p>
+<p><code>malformed_request(Req, State) -&gt; {boolean(), Req, State}</code><br></p>
 <p> </p>
 </div><p>Rejects requests that tried to access a file outside the target
  directory, or used reserved characters.
@@ -155,15 +155,15 @@ map management.</p>
 
 <h3 class="function"><a name="ranges_provided-2">ranges_provided/2</a></h3>
 <div class="spec">
-<p><tt>ranges_provided(Req, State) -&gt; {[{binary(), auto}], Req, State}</tt>
-<ul class="definitions"><li><tt>State = <a href="#type-rest_handler_state">rest_handler_state()</a></tt></li></ul></p>
+<p><code>ranges_provided(Req, State) -&gt; {[{binary(), auto}], Req, State}</code>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
 </div><p>Enables support for range requests.</p>
 
 <h3 class="function"><a name="resource_exists-2">resource_exists/2</a></h3>
 <div class="spec">
-<p><tt>resource_exists(Req, State) -&gt; {boolean(), Req, State}</tt>
-<ul class="definitions"><li><tt>State = <a href="#type-rest_handler_state">rest_handler_state()</a></tt></li></ul></p>
+<p><code>resource_exists(Req, State) -&gt; {boolean(), Req, State}</code>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
 </div><p>Assumes the resource does not exist if it is not a regular file.</p>
 <hr>

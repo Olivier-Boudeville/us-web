@@ -32,27 +32,27 @@ web page)</p>
 <h2><a name="types">Data Types</a></h2>
 
 <h3 class="typedecl"><a name="type-bin_content_path">bin_content_path()</a></h3>
-<p><tt>bin_content_path() = <a href="file_utils.html#type-bin_file_path">file_utils:bin_file_path()</a></tt></p>
+<p><code>bin_content_path() = <a href="file_utils.html#type-bin_file_path">file_utils:bin_file_path()</a></code></p>
 <p> The (binary) path for a web content.</p>
 
 <h3 class="typedecl"><a name="type-handler_module">handler_module()</a></h3>
-<p><tt>handler_module() = <a href="basic_utils.html#type-module_name">basic_utils:module_name()</a></tt></p>
+<p><code>handler_module() = <a href="basic_utils.html#type-module_name">basic_utils:module_name()</a></code></p>
 <p> Module to handle web content through dispatch rules (e.g. 'cowboy_rest').</p>
 
 <h3 class="typedecl"><a name="type-handler_return">handler_return()</a></h3>
-<p><tt>handler_return() = {ok | <a href="#type-handler_module">handler_module()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-handler_state">handler_state()</a> | error}</tt></p>
-<p> See <a href="https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/" target="_top"><tt>https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/</tt></a>.</p>
+<p><code>handler_return() = {ok | <a href="#type-handler_module">handler_module()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-handler_state">handler_state()</a> | error}</code></p>
+<p> See <a href="https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/" target="_top"><code>https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/</code></a>.</p>
 
 <h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
-<p><tt>handler_state() = <a href="#type-maybe">maybe</a>(map())</tt></p>
+<p><code>handler_state() = <a href="#type-maybe">maybe</a>(map())</code></p>
 <p> State carried by the process in charge of a request, for most handlers.</p>
 
 <h3 class="typedecl"><a name="type-http_status_code">http_status_code()</a></h3>
-<p><tt>http_status_code() = <a href="web_utils.html#type-http_status_code">web_utils:http_status_code()</a></tt></p>
+<p><code>http_status_code() = <a href="web_utils.html#type-http_status_code">web_utils:http_status_code()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-us_handler_state">us_handler_state()</a></h3>
-<p><tt>us_handler_state() = <a href="#type-handler_state">handler_state()</a></tt></p>
+<p><code>us_handler_state() = <a href="#type-handler_state">handler_state()</a></code></p>
 <p><p> A US-Web specialised handler, a map which may notably contain entries with 
 following keys:</p>
 
@@ -78,19 +78,19 @@ was triggered (meaning that the requested content could not be found).</td></tr>
 
 <h3 class="function"><a name="get_base_footer-0">get_base_footer/0</a></h3>
 <div class="spec">
-<p><tt>get_base_footer() -&gt; any()</tt></p>
+<p><code>get_base_footer() -&gt; any()</code></p>
 <p> </p>
 </div><p>Returns a base HTML footer.</p>
 
 <h3 class="function"><a name="get_header-3">get_header/3</a></h3>
 <div class="spec">
-<p><tt>get_header(Title, MaybeBinCssFile, MaybeBinIconFile) -&gt; any()</tt></p>
+<p><code>get_header(Title, MaybeBinCssFile, MaybeBinIconFile) -&gt; any()</code></p>
 <p> </p>
 </div><p>Returns a suitable document header.</p>
 
 <h3 class="function"><a name="init-2">init/2</a></h3>
 <div class="spec">
-<p><tt>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></tt><br></p>
+<p><code>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></code><br></p>
 <p> </p>
 </div><p><p>Inits specified handler.</p>
 
@@ -100,7 +100,7 @@ was triggered (meaning that the requested content could not be found).</td></tr>
 
 <h3 class="function"><a name="manage_access_log-3">manage_access_log/3</a></h3>
 <div class="spec">
-<p><tt>manage_access_log(HandlerReturn::<a href="#type-handler_return">handler_return()</a>, HttpStatusCode::<a href="#type-http_status_code">http_status_code()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-void">void()</a></tt><br></p>
+<p><code>manage_access_log(HandlerReturn::<a href="#type-handler_return">handler_return()</a>, HttpStatusCode::<a href="#type-http_status_code">http_status_code()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-void">void()</a></code><br></p>
 <p> </p>
 </div><p><p>Manages specified handler access log.</p>
 
@@ -110,7 +110,7 @@ was triggered (meaning that the requested content could not be found).</td></tr>
 
 <h3 class="function"><a name="manage_error_log-4">manage_error_log/4</a></h3>
 <div class="spec">
-<p><tt>manage_error_log(Error::<a href="basic_utils.html#type-error_reason">basic_utils:error_reason()</a>, Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, BinFullFilePath::<a href="#type-bin_content_path">bin_content_path()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-void">void()</a></tt><br></p>
+<p><code>manage_error_log(Error::<a href="basic_utils.html#type-error_reason">basic_utils:error_reason()</a>, Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, BinFullFilePath::<a href="#type-bin_content_path">bin_content_path()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-void">void()</a></code><br></p>
 <p> </p>
 </div><p><p>Manages specified handler error log.</p>
 
@@ -120,7 +120,7 @@ was triggered (meaning that the requested content could not be found).</td></tr>
 
 <h3 class="function"><a name="return_404-3">return_404/3</a></h3>
 <div class="spec">
-<p><tt>return_404(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, BinFullFilepath::<a href="#type-bin_content_path">bin_content_path()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></tt><br></p>
+<p><code>return_404(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, BinFullFilepath::<a href="#type-bin_content_path">bin_content_path()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></code><br></p>
 <p> </p>
 </div><p><p>Returns a suitable term to notify the request initiator that a 404 error 
 was triggered (meaning that the requested content could not be found).</p>

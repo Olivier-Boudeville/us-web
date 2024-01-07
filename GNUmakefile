@@ -133,7 +133,7 @@ stats:
 #all: compile
 
 
-compile: rebar3-create-app-file
+compile: create-app-file
 	@echo "  Compiling us_web from $$(pwd)"
 	@$(MYRIAD_REBAR_EXEC) compile
 
@@ -161,7 +161,7 @@ release: release-prod
 #
 # ('compile' is not needed either: same happens because of 'release')
 #
-release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #update-release
+release-dev: clean-otp-build-tree create-app-file rebar.config #compile #update-release
 	@echo "  Generating OTP us_web release in development mode, using $(shell rebar3 -v)"
 	@$(MYRIAD_REBAR_EXEC) release
 	@cd $(US_WEB_DEFAULT_REL_DIR)/releases && /bin/ln -sf $(US_WEB_VERSION) latest-release
@@ -170,7 +170,7 @@ release-dev: clean-otp-build-tree rebar3-create-app-file rebar.config #compile #
 # Rebuilding all dependencies ('compile' implied):
 # (yes, 'tar', not 'release')
 #
-release-prod: real-clean rebar3-create-app-file set-rebar-conf
+release-prod: real-clean create-app-file set-rebar-conf
 	@echo "  Generating OTP us_web release $(US_WEB_VERSION) from scratch in production mode, using $(shell rebar3 -v)"
 	@$(MYRIAD_REBAR_EXEC) as prod tar
 
@@ -185,7 +185,8 @@ rebar.config: conf/rebar.config.template
 # (not updating rebar config for example to take into account changes in release
 # version, as the new release archive contains paths with the former version...)
 #
-# Note: 'rebar3 compile' / 'compile' dependency target not needed here (as implied).
+# Note: 'rebar3 compile' / 'compile' dependency target not needed here (as
+# implied).
 #
 release-prod-light:
 	@echo "  Generating OTP us_web release $(US_WEB_VERSION) in production mode"

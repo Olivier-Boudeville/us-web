@@ -10,8 +10,8 @@
 % ./ebin/us_web.app
 % ./src/us_web.app.src -> ../ebin/us_web.app
 %
-% For more information see the Ceylan-Myriad 'rebar3-create-app-file' make
-% target and its associated comments.
+% For more information see the Ceylan-Myriad 'create-app-file' make target and
+% its associated comments.
 
 % See also:
 % - http://erlang.org/doc/man/app.html
@@ -20,7 +20,7 @@
 
 {application, us_web,
  [{description, "US-Web, the OTP active application offering web services in the context of the Universal Server framework (see http://us-web.esperide.org)"},
-  {vsn, "1.1.2"},
+  {vsn, "1.1.3"},
   {registered, [us_web]},
 
  % Active application:

@@ -107,7 +107,7 @@
 {relx, [
 
   % Not 'us_web_release', otherwise plenty of paths will be cluttered:
-  {release, {us_web, "VERSION_FOR_REBAR"},
+  {release, {us_web, "VERSION_FOR_OTP"},
 
 	% Listing an application here seems necessary (otherwise its .app file will
 	% not be found), however it will also result in its automatic starting with

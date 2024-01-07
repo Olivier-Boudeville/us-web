@@ -27,7 +27,7 @@
 %
 {deps, [
 
-	{cowboy, {git, "https://github.com/ninenines/cowboy.git", {tag, "2.9.0"}}},
+	{cowboy, {git, "https://github.com/ninenines/cowboy.git", {tag, "2.10.0"}}},
 
 	% To support the generation of X.509 certificates thanks to LetsEncrypt:
 	{leec, {git, "https://github.com/Olivier-Boudeville/Ceylan-LEEC.git",

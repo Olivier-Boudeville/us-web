@@ -74,10 +74,10 @@ endif
 US_WEB_SECURITY_FLAGS += -Dus_web_security=strict
 
 
-ERLANG_COMPILER_OPT_BASE += $(US_WEB_DEBUG_FLAGS)    \
-							$(US_WEB_CHECK_FLAGS)    \
+ERLANG_COMPILER_OPT_BASE += -Dus_web_version=\"$(US_WEB_VERSION)\" \
+							$(US_WEB_DEBUG_FLAGS)                  \
+							$(US_WEB_CHECK_FLAGS)                  \
 							$(US_WEB_SECURITY_FLAGS)
-
 
 
 
@@ -110,8 +110,11 @@ ifndef PROJECT_NAME_FOR_OTP
 endif
 
 
-# The uniquely-defined version of this layer, for all uses, including rebar:
-US_WEB_VERSION := 1.1.3
+# The uniquely-defined version of this layer, for all uses (including rebar, hex
+# and the code itself, see
+# class_USWebConfigServer:get_us_web_version{_string,}/0):
+#
+US_WEB_VERSION := 1.1.4
 
 
 # PROJECT_VERSION should be defined on a per-project basis:

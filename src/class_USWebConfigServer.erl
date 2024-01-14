@@ -342,6 +342,7 @@
 
 -type module_name() :: basic_utils:module_name().
 -type error_reason() :: basic_utils:error_reason().
+-type three_digit_version() :: basic_utils:three_digit_version().
 
 -type ustring() :: text_utils:ustring().
 
@@ -3747,6 +3748,23 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 
 
 % Static section.
+
+
+% Version-related static methods.
+
+% @doc Returns the version of the US-Web library being used.
+-spec get_us_web_version() -> static_return( three_digit_version() ).
+get_us_web_version() ->
+	wooper:return_static(
+		basic_utils:parse_version( get_us_web_version_string() ) ).
+
+
+% @doc Returns the version of the US-Web library being used, as a string.
+-spec get_us_web_version_string() -> static_return( ustring() ).
+get_us_web_version_string() ->
+	% As defined (uniquely) in GNUmakevars.inc:
+	wooper:return_static( ?us_web_version ).
+
 
 
 % @doc Returns, based on the US main configuration table and the US

@@ -208,7 +208,10 @@ Finally, from a client host, one may also check the availability of the target w
 Deployment based on rebar3
 ==========================
 
-.. Note:: We currently do *not* recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.
+.. We currently do *not* recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.
+
+.. Note:: With rebar3 we encountered *a lot* of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused instead on our native build/run system, which is perfectly suitable and fully sufficient. We do not plan to restore the rebar3 build anymore (contributions are welcome though - but be aware that the dependency management is bound to be tricky).
+
 
 If wanting nevertheless to rely on rebar3, the ``prod`` profile defined in the context of ``rebar3`` shall be used.
 

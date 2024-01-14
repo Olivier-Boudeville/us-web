@@ -12,7 +12,7 @@
  {<<"jsx">>,{pkg,<<"jsx">>,<<"3.0.0">>},1},
  {<<"leec">>,
   {git,"https://github.com/Olivier-Boudeville/Ceylan-LEEC.git",
-       {ref,"5c4e08abeb19a20d9ea1acb5768621b5a67a6660"}},
+       {ref,"be364d1b7780a1b3753d4926e8253d7391e021f8"}},
   0},
  {<<"mutagen">>,{pkg,<<"mutagen">>,<<"0.1.0">>},1},
  {<<"myriad">>,

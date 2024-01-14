@@ -72,6 +72,7 @@
 % Include directories found in INC:
 {erl_opts, [ {us_web_version,"VERSION_FOR_OTP"}, {d,myriad_debug_mode}, {d,wooper_debug_mode}, {d,traces_debug_mode}, {d,us_common_debug_mode}, {d,us_web_debug_mode}, {d,us_web_security,relaxed}, {d,tracing_activated}, debug_info, {debug_info_key,"DEBUG_KEY_FOR_REBAR"}, report_warnings, warn_export_all, warn_export_vars, warn_shadow_vars, warn_obsolete_guards, warn_unused_import, warnings_as_errors, {parse_transform,wooper_parse_transform}, INCS_FOR_REBAR ]}.
 
+{erlc_compiler, [{recursive,false}]}.
 
 % Otherwise spurious, ill-configured compilations will be wrongly attempted by
 % rebar3:
@@ -82,7 +83,8 @@
 %{post_hooks, [ {compile, "make -s rebar3-compile-post-hook"} ]}.
 
 
-% Used now for homogeneity:
+% Not even sufficient just by itself (the rebar build of LEEC tries to recompile
+% again basic_utils...):
 
 %{pre_hooks,  [ {compile, "make -s rebar3-bulletproof-compile-pre-hook REBAR_HOOK_EXTRA_OPTS='--hiding-for-rebar --verbose'"} ]}.
 

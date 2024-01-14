@@ -227,6 +227,12 @@ ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
 EPMD_PORT := 4508
 
 
+
+ifndef EDOC_OPTS
+	EDOC_OPTS = '[{dir,"$(API_DOC_ROOT)"}, {def,{vsn,"$(PROJECT_VERSION)"}}, {preprocess,true}, {macros,[{$(PROJECT_EDOC_VERSION_KEY),"$(PROJECT_VERSION)"}]}, {includes,["$(LAYER_TOP)/include", "$(US_COMMON_TOP)/.."]}, {overview, "$(LAYER_TOP)/overview.edoc"}]'
+endif
+
+
 # The default path where a US-Web native build is to be deployed on a server:
 # (useful to synchronise sources)
 #

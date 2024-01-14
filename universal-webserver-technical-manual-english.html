@@ -32,10 +32,10 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Thursday, January 4, 2024</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Sunday, January 14, 2024</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.1.2</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.1.4</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Stable</p>
@@ -312,7 +312,7 @@ $ sudo systemctl status us-web-as-native-build.service
 <h2><a class="toc-backref" href="#toc-entry-9">Deployment based on rebar3</a></h2>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
-<p class="last">We currently do <em>not</em> recommend using rebar3 for US-Web, as we encountered a lot of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused only on our native build/run system.</p>
+<p class="last">With rebar3 we encountered <em>a lot</em> of difficulties regarding build and release. So, at least for the moment, we dropped the use of rebar3 and focused instead on our native build/run system, which is perfectly suitable and fully sufficient. We do not plan to restore the rebar3 build anymore (contributions are welcome though - but be aware that the dependency management is bound to be tricky).</p>
 </div>
 <p>If wanting nevertheless to rely on rebar3, the <tt class="docutils literal">prod</tt> profile defined in the context of <tt class="docutils literal">rebar3</tt> shall be used.</p>
 <p>Currently we prefer re-using the (supposedly already installed) local Erlang environment on the server (to be shared across multiple services), so by default ERTS is <em>not</em> included in a US-Web release.</p>

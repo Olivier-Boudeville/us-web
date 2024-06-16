@@ -114,7 +114,7 @@ endif
 # and the code itself, see
 # class_USWebConfigServer:get_us_web_version{_string,}/0):
 #
-US_WEB_VERSION := 1.1.4
+US_WEB_VERSION := 1.1.5
 
 
 # PROJECT_VERSION should be defined on a per-project basis:

@@ -19,20 +19,20 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Sunday, January 19, 2020.
 
-
-% @doc Actual US-Web trigger logic for the <b>generation of reports about access
-% logs</b>, as a (Myriad) application.
-%
-% Typically called through the us_web/priv/bin/generate-us-web-log-report.sh
-% script.
-%
-% Designed to request a US-Web instance to generate log reports, typically from
-% any remote host able to connect to the VM hosting that instance.
-%
-% Currently this generation is better driven automatically, thanks to a
-% scheduler.
-%
 -module(us_web_generate_report_app).
+
+-moduledoc """
+Actual US-Web trigger logic for the **generation of reports about access logs**,
+as a (Myriad) application.
+
+Typically called through the us_web/priv/bin/generate-us-web-log-report.sh
+script.
+
+Designed to request a US-Web instance to generate log reports, typically from
+any remote host able to connect to the VM hosting that instance.
+
+Currently this generation is better driven automatically, thanks to a scheduler.
+""".
 
 
 -export([ exec/0 ]).
@@ -46,7 +46,7 @@
 
 
 
-% @doc Runs the report generation app.
+-doc "Runs the report generation app.".
 -spec exec() -> no_return().
 exec() ->
 
@@ -123,7 +123,8 @@ exec() ->
 	end.
 
 
-% @doc Initialises this application from the command line.
+
+-doc "Initialises this application from the command line.".
 init_from_command_line() ->
 
 	% To force options for testing:
@@ -229,7 +230,7 @@ init_from_command_line() ->
 
 
 
-% @doc Returns the target node name.
+-doc "Returns the target node name.".
 get_target_node_name( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
@@ -253,7 +254,7 @@ get_target_node_name( Cfg ) ->
 
 
 
-% @doc Returns the registration name of the target US-Web configuration server.
+-doc "Returns the registration name of the target US-Web configuration server.".
 get_us_web_cfg_server_name( Cfg ) ->
 
 	% Maybe a specific name is defined in the US-Web configuration file?

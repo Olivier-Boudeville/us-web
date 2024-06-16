@@ -19,11 +19,11 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Tuesday, December 31, 2019.
 
-
-% @doc Class providing <b>web logging</b> (accesses and errors) for the US-Web
-% framework.
-%
 -module(class_USWebLogger).
+
+-moduledoc """
+Class providing **web logging** (accesses and errors) for the US-Web framework.
+""".
 
 
 -define( class_description, "Server in charge of the web logging "
@@ -85,11 +85,11 @@
 % possibly Nitrogen-based)
 
 
-
 -type logger_pid() :: class_USServer:server_pid().
 
+
+-doc "A log line entry.".
 -type log_line() :: text_utils:bin_string().
-% A log line entry.
 
 
 -export_type([ logger_pid/0, log_line/0 ]).
@@ -99,7 +99,7 @@
 -export([ generate_other_report_pages/3 ]).
 
 
-% Shorthands:
+% Type shorthands:
 
 -type count() :: basic_utils:count().
 
@@ -165,25 +165,25 @@
 	  "the handle of the actual error file being written" },
 
 
-	{ scheduler_pid, maybe( scheduler_pid() ),
+	{ scheduler_pid, option( scheduler_pid() ),
 	  "the PID of any scheduler used by this logger; otherwise that logger is "
 	  "expected to be driven by a task ring" },
 
 
-	{ log_task_id, maybe( task_id() ),
+	{ log_task_id, option( task_id() ),
 	  "the identifier of this task for log rotation, as assigned by the "
 	  "scheduler (if any)" },
 
 	{ rotation_count, count(), "the number of the upcoming rotation to "
 	  "take place (useful to keep track of a series of rotated files)" },
 
-	{ web_analysis_info, maybe( web_analysis_info() ),
+	{ web_analysis_info, option( web_analysis_info() ),
 	  "settings about web analysis (if any)" },
 
-	{ log_analysis_update_cmd, maybe( ustring() ), "the prebuilt command to "
+	{ log_analysis_update_cmd, option( ustring() ), "the prebuilt command to "
 	  "run in order to update the log analysis database" },
 
-	{ log_analysis_report_gen_cmd, maybe( ustring() ),
+	{ log_analysis_report_gen_cmd, option( ustring() ),
 	  "the prebuilt command to run in order to generate the log analysis "
 	  "reports" } ] ).
 
@@ -217,13 +217,15 @@
 
 
 
-% @doc Constructs the US-Web logger for the specified host.
-%
-% A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
-% (i.e. not set to 'undefined').
-%
+-doc """
+Constructs the US-Web logger for the specified host.
+
+A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
+(i.e. not set to 'undefined').
+""".
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
-	maybe( scheduler_pid() ), maybe( web_analysis_info() ) ) -> wooper:state().
+				 option( scheduler_pid() ), option( web_analysis_info() ) ) ->
+											wooper:state().
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   MaybeWebAnalysisInfo ) ->
 	construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
@@ -232,16 +234,17 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 
 
-% @doc Constructs the US-Web logger (possibly a singleton) for the specified
-% host in the specified domain, using specified directory to write access and
-% error log, and any specified scheduler and period for log rotation.
-%
-% A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
-% (i.e. not set to 'undefined').
-%
+-doc """
+Constructs the US-Web logger (possibly a singleton) for the specified host in
+the specified domain, using specified directory to write access and error log,
+and any specified scheduler and period for log rotation.
+
+A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
+(i.e. not set to 'undefined').
+""".
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
-				 maybe( scheduler_pid() ), user_periodicity(),
-				 maybe( web_analysis_info() ), boolean() ) -> wooper:state().
+				 option( scheduler_pid() ), user_periodicity(),
+				 option( web_analysis_info() ), boolean() ) -> wooper:state().
 construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 		   UserPeriod, MaybeWebAnalysisInfo, _IsSingleton=true ) ->
 
@@ -447,7 +450,7 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
 
 
-% @doc Overridden destructor.
+-doc "Overridden destructor.".
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
@@ -508,9 +511,10 @@ destruct( State ) ->
 % Method section.
 
 
-% @doc Reports an access to a web content; typically sent by a web handler when
-% sending content back to a browser having emitted a request.
-%
+-doc """
+Reports an access to a web content; typically sent by a web handler when sending
+content back to a browser having emitted a request.
+""".
 -spec reportAccess( wooper:state(), log_line() ) -> const_oneway_return().
 reportAccess( State, BinLogLine ) ->
 
@@ -523,10 +527,10 @@ reportAccess( State, BinLogLine ) ->
 
 
 
-% @doc Reports a web error while accessing to a web content; typically sent by a
-% web handler dealing with an issue related to a browser having emitted a
-% request.
-%
+-doc """
+Reports a web error while accessing to a web content; typically sent by a web
+handler dealing with an issue related to a browser having emitted a request.
+""".
 -spec reportError( wooper:state(), log_line() ) -> const_oneway_return().
 reportError( State, BinLogLine ) ->
 
@@ -538,9 +542,11 @@ reportError( State, BinLogLine ) ->
 
 
 
-% @doc Rotates asynchronously the managed web logs.
-%
-% Defined to be triggered as an asynchronous task, typically by a scheduler.
+-doc """
+Rotates asynchronously the managed web logs.
+
+Defined to be triggered as an asynchronous task, typically by a scheduler.
+""".
 -spec rotateLogs( wooper:state() ) -> oneway_return().
 rotateLogs( State ) ->
 
@@ -549,9 +555,11 @@ rotateLogs( State ) ->
 	wooper:return_state( RotateState ).
 
 
-% @doc Rotates synchronously the managed web logs, as a request.
-%
-% Defined to be triggered synchronously.
+-doc """
+Rotates synchronously the managed web logs, as a request.
+
+Defined to be triggered synchronously.
+""".
 -spec rotateLogsSync( wooper:state() ) ->
 						request_return( fallible( 'log_rotated' ) ).
 rotateLogsSync( State ) ->
@@ -561,13 +569,14 @@ rotateLogsSync( State ) ->
 	wooper:return_state_result( RotateState, log_rotated ).
 
 
-% @doc Rotates synchronously the managed web logs, as a oneway call.
-%
-% Defined to be triggered as a synchronous task, typically by a task ring.
-%
-% Not synchronised as a request, but alternatively by sending back a oneway
-% call.
-%
+
+-doc """
+Rotates synchronously the managed web logs, as a oneway call.
+
+Defined to be triggered as a synchronous task, typically by a task ring.
+
+Not synchronised as a request, but alternatively by sending back a oneway call.
+""".
 -spec rotateLogsAltSync( wooper:state(), pid() ) -> oneway_return().
 rotateLogsAltSync( State, CalledPid ) ->
 
@@ -580,9 +589,10 @@ rotateLogsAltSync( State, CalledPid ) ->
 
 
 
-% @doc enerates the report for the managed host, based on the current database
-% state (asynchronous version).
-%
+-doc """
+Generates the report for the managed host, based on the current database state
+(asynchronous version).
+""".
 -spec generateReport( wooper:state() ) -> const_oneway_return().
 generateReport( State ) ->
 
@@ -592,9 +602,10 @@ generateReport( State ) ->
 
 
 
-% @doc Generates the report for the managed host, based on the current database
-% state (synchronous version).
-%
+-doc """
+Generates the report for the managed host, based on the current database state
+(synchronous version).
+""".
 -spec generateReportSync( wooper:state() ) ->
 					const_request_return( fallible( 'report_generated' ) ).
 generateReportSync( State ) ->
@@ -605,11 +616,11 @@ generateReportSync( State ) ->
 
 
 
-% @doc Rotates the logs then generates the corresponding report.
-%
-% Both intentionally serialised to ensure that no concurrent access can
-% interfere.
-%
+-doc """
+Rotates the logs then generates the corresponding report.
+
+Both intentionally serialised to ensure that no concurrent access can interfere.
+""".
 -spec rotateThenGenerateReportSync( wooper:state() ) ->
 					const_request_return( fallible( 'report_generated' ) ).
 rotateThenGenerateReportSync( State ) ->
@@ -622,7 +633,7 @@ rotateThenGenerateReportSync( State ) ->
 
 
 
-% (helper, for re-use)
+-doc "(helper, for re-use)".
 -spec generate_report( wooper:state() ) -> fallible( 'report_generated' ).
 generate_report( State ) ->
 
@@ -730,8 +741,7 @@ generate_report( State ) ->
 
 
 
-
-% @doc Callback triggered whenever a linked process stops.
+-doc "Callback triggered whenever a linked process stops.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 						basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
@@ -762,9 +772,9 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 % Helper section.
 
 
-% @doc Creates the relevant log files, supposed not already opened nor even
-% existing.
-%
+-doc """
+Creates the relevant log files, supposed not already opened nor even existing.
+""".
 -spec create_log_files( wooper:state() ) -> wooper:state().
 create_log_files( State ) ->
 
@@ -801,11 +811,12 @@ create_log_file( BinLogFilePath, State ) ->
 
 
 
-% @doc Performs the log rotation.
-%
-% Overall helper introduced for code sharing between synchronous and
-% asynchronous ones.
-%
+-doc """
+Performs the log rotation.
+
+Overall helper introduced for code sharing between synchronous and asynchronous
+ones.
+""".
 -spec rotate_logs( wooper:state() ) -> wooper:state().
 rotate_logs( State ) ->
 
@@ -843,11 +854,12 @@ rotate_logs( State ) ->
 
 
 
-% @doc Rotates the relevant log files, supposed already closed (and does not
-% reopen them, as this is not wanted in all cases).
-%
+-doc """
+Rotates the relevant log files, supposed already closed (and does not reopen
+them, as this is not wanted in all cases).
+""".
 -spec rotate_log_files( wooper:state() ) ->
-			{ maybe( file_path() ), maybe( file_path() ), wooper:state() }.
+			{ option( file_path() ), option( file_path() ), wooper:state() }.
 rotate_log_files( State ) ->
 
 	[ basic_utils:check_undefined( ?getAttr(FAttr) )
@@ -879,7 +891,7 @@ rotate_log_files( State ) ->
 
 
 
-% @doc Closes the relevant log files, supposed already opened.
+-doc "Closes the relevant log files, supposed already opened.".
 -spec close_log_files( wooper:state() ) -> wooper:state().
 close_log_files( State ) ->
 
@@ -894,7 +906,7 @@ close_log_files( State ) ->
 
 
 
-% @doc Returns a human-readable description of designated host.
+-doc "Returns a human-readable description of designated host.".
 -spec get_host_description( vhost_id(), domain_id() ) -> ustring().
 get_host_description( _BinHostId=default_vhost_catch_all,
 					  _DomainId=default_domain_catch_all ) ->
@@ -911,7 +923,7 @@ get_host_description( BinHostname, DomainId ) ->
 
 
 
-% @doc Returns a description of designated host for specified tool.
+-doc "Returns a description of designated host for specified tool.".
 -spec get_host_description_for( vhost_id(), domain_id(),
 								log_analysis_tool_name() ) -> ustring().
 get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
@@ -923,7 +935,7 @@ get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
 % Static section.
 
 
-% @doc Returns the default period of log rotation.
+-doc "Returns the default period of log rotation.".
 -spec get_default_log_rotation_period() ->
 							static_return( time_utils:dhms_duration() ).
 get_default_log_rotation_period() ->
@@ -931,9 +943,10 @@ get_default_log_rotation_period() ->
 
 
 
-% @doc Returns the actual access and error filenames corresponding to the
-% specified host.
-%
+-doc """
+Returns the actual access and error filenames corresponding to the specified
+host.
+""".
 -spec get_log_paths( vhost_id(), domain_id() ) ->
 					static_return( { bin_file_name(), bin_file_name() } ).
 get_log_paths( _BinHostId=default_vhost_catch_all, DomainId ) ->
@@ -947,7 +960,6 @@ get_log_paths( _BinHostId=default_vhost_catch_all, DomainId ) ->
 									  [ DomainString ] ),
 
 	wooper:return_static( { BinAccess, BinError } );
-
 
 get_log_paths( BinHostId, DomainId ) ->
 
@@ -963,7 +975,7 @@ get_log_paths( BinHostId, DomainId ) ->
 
 
 
-% @doc Returns a description about specified domain.
+-doc "Returns a description about specified domain.".
 -spec get_domain_description( domain_id() ) -> ustring().
 get_domain_description( _DomainId=default_domain_catch_all ) ->
 	"domain-catchall";
@@ -973,14 +985,16 @@ get_domain_description( DomainName ) ->
 
 
 
-% @doc Rotates the access file, which should exist in all cases yet not be
-% currently open (it should have been closed and its handle forgotten beforehand
-% if necessary); it will not be reopened here.
-%
-% Notes: operates only on access logs, not error ones, as web analyzers do not
-% care about the latters, whose processing is thus more direct.
-%
--spec rotate_access_log_file( count(), wooper:state() ) -> maybe( file_path() ).
+-doc """
+Rotates the access file, which should exist in all cases yet not be currently
+open (it should have been closed and its handle forgotten beforehand if
+necessary); it will not be reopened here.
+
+Notes: operates only on access logs, not error ones, as web analyzers do not
+care about the latters, whose processing is thus more direct.
+""".
+-spec rotate_access_log_file( count(), wooper:state() ) ->
+											option( file_path() ).
 rotate_access_log_file( RotCount, State ) ->
 
 	BinFilePath = ?getAttr(access_log_file_path),
@@ -1034,9 +1048,10 @@ rotate_access_log_file( RotCount, State ) ->
 
 
 
-% @doc Generates the Awstats auxiliary (non-main, yet referenced by it) HTML
-% report pages.
-%
+-doc """
+Generates the Awstats auxiliary (non-main, yet referenced by it) HTML report
+pages.
+""".
 -spec generate_other_report_pages( [ ustring() ], ustring(),
 								   wooper:state() ) -> void().
 generate_other_report_pages( _ReportTypes=[], _CmdFormatString, _State ) ->
@@ -1072,15 +1087,16 @@ generate_other_report_pages( _ReportTypes=[ ReportType | T ], CmdFormatString,
 
 
 
-% @doc Rotates any basic log file (typically the access or error one), with no
-% specific post-processing.
-%
-% Returns the path of the resulting archive (e.g.
-% "/tmp/access-for-baz.foobar.org.log.41.2021-1-20-at-19h-53m-18s.xz").
-%
-% This file should not be currently open (it should have been closed and its
-% handle forgotten beforehand if necessary); and it will not be reopened here.
-%
+-doc """
+Rotates any basic log file (typically the access or error one), with no specific
+post-processing.
+
+Returns the path of the resulting archive (e.g.
+"/tmp/access-for-baz.foobar.org.log.41.2021-1-20-at-19h-53m-18s.xz").
+
+This file should not be currently open (it should have been closed and its
+handle forgotten beforehand if necessary); and it will not be reopened here.
+""".
 -spec rotate_basic_log_file( file_utils:any_file_path(), count(),
 							 wooper:state() ) -> file_path().
 rotate_basic_log_file( FilePath, RotCount, _State ) ->
@@ -1104,14 +1120,15 @@ rotate_basic_log_file( FilePath, RotCount, _State ) ->
 
 
 
-% @doc Returns the conventional base filename for specified virtual host, in the
-% context of specified tool.
-%
-% Useful both for input files (e.g. configuration ones) and (possibly) output
-% ones (e.g. HTML generated ones).
-%
-% Much like get_log_paths/2.
-%
+-doc """
+Returns the conventional base filename for specified virtual host, in the
+context of specified tool.
+
+Useful both for input files (e.g. configuration ones) and (possibly) output ones
+(e.g. HTML generated ones).
+
+Much like get_log_paths/2.
+""".
 -spec get_file_prefix_for( domain_id(), vhost_id(),
 		log_analysis_tool_name() ) -> static_return( file_name() ).
 get_file_prefix_for( DomainId, VHostId, _Tool=awstats ) ->
@@ -1127,25 +1144,26 @@ get_file_prefix_for( _DomainId, _VHostId, Tool ) ->
 
 
 
-% @doc Returns the name for the configuration file for specified web analysis
-% tool, regarding specified virtual host.
-%
-% Had to be finally special-case for Awstats since version 7.8: no more
-% arbitrary absolute paths for Awstats configuration files can be used, relying
-% now on a fixed name in a fixed directory.
-%
-% We follow our conventions, resulting in having potentially
-% default_domain_catch_all and/or default_vhost_catch_all in returned filename,
-% as we need anyway a marker to denote wildcards ('*.foobar.org' could result in
-% awstats.foobar.org.conf, yet we prefer '*' not to result inunclear, ambiguous
-% awstats.conf .
-%
+-doc """
+Returns the name for the configuration file for specified web analysis tool,
+regarding specified virtual host.
+
+Had to be finally special-case for Awstats since version 7.8: no more arbitrary
+absolute paths for Awstats configuration files can be used, relying now on a
+fixed name in a fixed directory.
+
+We follow our conventions, resulting in having potentially
+default_domain_catch_all and/or default_vhost_catch_all in returned filename, as
+we need anyway a marker to denote wildcards ('*.foobar.org' could result in
+awstats.foobar.org.conf, yet we prefer '*' not to result in unclear, ambiguous
+awstats.conf).
+""".
 -spec get_conf_filename_for( domain_id(), vhost_id(),
 		log_analysis_tool_name() ) -> static_return( file_name() ).
 get_conf_filename_for( DomainId, VHostId, _Tool=awstats ) ->
 
 	Filename = text_utils:format( "awstats.~ts.conf",
-				[ get_host_description_for( VHostId, DomainId, awstats ) ] ),
+		[ get_host_description_for( VHostId, DomainId, awstats ) ] ),
 
 	wooper:return_static( Filename );
 
@@ -1154,7 +1172,7 @@ get_conf_filename_for( _DomainId, _VHostId, Tool ) ->
 
 
 
-% @doc Returns a textual description of this server.
+-doc "Returns a textual description of this server.".
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 

@@ -19,11 +19,12 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Wednesday, December 25, 2019.
 
-
-% @doc Singleton server holding the <b>configuration information</b> of the
-% US-Web framework.
-%
 -module(class_USWebConfigServer).
+
+-moduledoc """
+Singleton server holding the **configuration information** of the US-Web
+framework.
+""".
 
 
 -define( class_description,
@@ -35,19 +36,21 @@
 -define( superclasses, [ class_USServer ] ).
 
 
+-doc """
+The various kinds of supported websites:
+
+- static: a basic, static website to be served (the default)
+
+- meta: a website generated, if requested, by US-Web, to browse conveniently all
+the other hosted websites
+
+- nitrogen: a Nitrogen-based, dynamic website (see <http://nitrogenproject.com>)
+""".
 -type web_kind() :: 'static' | 'meta' | 'nitrogen'.
-% The various kinds of websites:
-%
-% - static: a basic, static website to be served (the default)
-%
-% - meta: a website generated, if requested, by US-Web, to browse conveniently
-% all the other hosted websites
-%
-% - nitrogen: a Nitrogen-based, dynamic website (see
-% [http://nitrogenproject.com])
 
 
 
+-doc "Identifier of a virtual host.".
 -type vhost_id() ::
 
 	% For example <<"bar">>:
@@ -58,16 +61,19 @@
 
 	% To match any non-explicitly matched "XXX.foobar.org":
 	|'default_vhost_catch_all'.
-% Identifier of a virtual host.
 
 
+
+-doc "For example 'awstats'.".
 -type log_analysis_tool_name() :: atom().
-% For example 'awstats'.
 
 
 % For the vhost_config_entry and web_analysis_info records:
 -include("class_USWebConfigServer.hrl").
 
+
+
+-doc "General US-Web settings.".
 -type general_web_settings() :: #general_web_settings{}.
 
 
@@ -75,7 +81,10 @@
 -include("us_web_defines.hrl").
 
 
+
+-doc "Information regarding web analysis.".
 -type web_analysis_info() :: #web_analysis_info{}.
+
 
 
 -export_type([ web_kind/0, vhost_id/0, log_analysis_tool_name/0,
@@ -222,10 +231,12 @@
 % other related services.
 
 
+-doc "To identify a domain name (or a catch-all for them).".
 -type domain_id() :: bin_domain_name() | 'default_domain_catch_all'.
-% To identify a domain name (or a catch-all for them).
 
 
+
+-doc "The domain-specific information kept by this server.".
 -type domain_info() :: {
 
 	% The identifier of this domain (intentional duplicate):
@@ -234,35 +245,44 @@
 	% The certificate manager (if any) corresponding to this
 	% domain:
 	%
-	maybe( cert_manager_pid() ),
+	option( cert_manager_pid() ),
 
 	% The table storing the configuration of the virtual hosts
 	% within this domain:
 	%
 	vhost_config_table() }.
-% The domain-specific information kept by this server.
 
 
+
+-doc """
+A table, associating to each domain name (e.g. `<<"foo.org">>`), the
+configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
+`<<"bar">>` key would correspond, associated to its vhost_config() value).
+""".
 -type domain_config_table() :: table( domain_id(), domain_info() ).
-% A table, associating to each domain name (e.g. `<<"foo.org">>'), the
-% configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org",
-% a `<<"bar">>' key would correspond, associated to its vhost_config() value).
 
 
+
+-doc "A table, associating, to each virtual host identifier, its settings.".
 -type vhost_config_table() :: table( vhost_id(), vhost_config_entry() ).
-% A table, associating, to each virtual host identifier, its settings.
 
 
+
+-doc "A vhost configuration entry.".
 -type vhost_config_entry() :: #vhost_config_entry{}.
 
 
+
+-doc "Settings about the meta website.".
 -type meta_web_settings() ::
-	maybe( { domain_id(), vhost_id(), bin_directory_path() } ).
+	option( { domain_id(), vhost_id(), bin_directory_path() } ).
 
 
+
+-doc "Tells whether the generation of a log analysis report succeeded.".
 -type report_generation_outcome() :: 'report_generation_success'
 	| { 'report_generation_failed', error_reason() }.
-% Tells whether the generation of a log analysis report succeeded.
+
 
 
 % Notably for us_web_meta:
@@ -274,35 +294,41 @@
 % Is '_' | iodata() (hence includes binary()):
 -type route_match() :: cowboy:route_match().
 
+
 -type host_match() :: route_match().
 
-% See cowboy:route_match():
+
+-doc "See cowboy:route_match().".
 -type path_match() :: { Path :: route_match(), HandlerMod :: module_name(),
 						HandlerOpts :: term() }.
+
 
 % As not exported:
 %-type route_rule() :: cowboy_router:route_rule().
 -type route_rule() :: { host_match(), [ path_match() ] }.
 
+
 -type dispatch_routes() :: cowboy_router:dispatch_routes().
 
 
+-doc "See <https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/>.".
 -type dispatch_rules() :: cowboy_router:dispatch_rules().
-% See [https://ninenines.eu/docs/en/cowboy/2.8/guide/routing/].
 
 
+-doc "A table holding US-Web configuration information.".
 -type us_web_config_table() :: table( atom(), term() ).
-% A table holding US-Web configuration information.
 
 
+-doc """
+Settings about any web access log analysis, i.e. our canonical name for the
+analysis tool, its (main) root directory and the directory of this helper (if
+any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
+""".
 -type log_analysis_settings() :: { log_analysis_tool_name(),
-	maybe( bin_directory_path() ), maybe( bin_directory_path() ) }.
-% Settings about any web access log analysis, i.e. our canonical name for the
-% analysis tool, its (main) root directory and the directory of this helper (if
-% any were specified): {ToolName, MaybeAnalysisToolRoot,
-% MaybeAnalysisHelperRoot}.
+	option( bin_directory_path() ), option( bin_directory_path() ) }.
 
 
+-doc "Tells whether certificates shall be used, and how.".
 -type cert_support() ::
 
 	% Hence no https:
@@ -313,17 +339,18 @@
 
 	% Hence use, generate and renew:
   | 'renew_certificates'.
-% Tells whether certificates shall be used, and how.
 
 
+
+-doc "Tells whether certificate generation is in testing/staging mode".
 -type cert_mode() :: 'development' | 'production'.
-% Tells whether certificate generation is in testing/staging mode or not.
 
 
 -type https_transport_options() :: ranch_ssl:opts().
 
+
 -type https_transport_info() ::
-			maybe( { https_transport_options(), sni_info() } ).
+			option( { https_transport_options(), sni_info() } ).
 
 
 % To silence attribute-only types:
@@ -333,12 +360,13 @@
 			   https_transport_options/0, https_transport_info/0 ]).
 
 
+
+-doc "User-specified tuple for a virtual host in the context of a domain.".
 -type vhost_info() :: { vhost_id(), directory_path() }
 					| { vhost_id(), directory_path(), web_kind() }.
-% User-specified tuple for a virtual host in the context of a domain.
 
 
-% Shorthands:
+% Type shorthands:
 
 -type module_name() :: basic_utils:module_name().
 -type error_reason() :: basic_utils:error_reason().
@@ -400,7 +428,7 @@
 	  "a table containing all configuration information related to all "
 	  "domains, and their virtual hosts in turn" },
 
-	{ default_web_root, maybe( bin_directory_path() ),
+	{ default_web_root, option( bin_directory_path() ),
 	  "the default root (if any) for the website trees" },
 
 	% Note that it is strongly recommended to have only up to one Nitrogen
@@ -411,15 +439,15 @@
 	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, i.e. if
 	  at least one virtual host is of this type" },
 
-	{ meta_web_settings, maybe( meta_web_settings() ),
+	{ meta_web_settings, option( meta_web_settings() ),
 	  "the domain, virtual host identifiers and web root of the auto-generated "
 	  "meta website (if any)" },
 
-	{ http_tcp_port, maybe( tcp_port() ),
+	{ http_tcp_port, option( tcp_port() ),
 	  "the TCP port (if any) at which the webserver is to listen for the http "
 	  "scheme" },
 
-	{ https_tcp_port, maybe( tcp_port() ),
+	{ https_tcp_port, option( tcp_port() ),
 	  "the TCP port (if any) at which the webserver is to listen for the https "
 	  "scheme" },
 
@@ -465,38 +493,38 @@
 	  "tells whether the use and possibly generation/renewal of X.509 "
 	  "certificates is requested" },
 
-	{ cert_mode, maybe( cert_mode() ),
+	{ cert_mode, option( cert_mode() ),
 	  "tells whether certificates (if any) are in staging or production mode" },
 
-	{ credentials_directory, maybe( bin_directory_path() ),
+	{ credentials_directory, option( bin_directory_path() ),
 	  "the directory where the credentials information will be looked-up, "
 	  "typically to authenticate to one's DNS provider for dns-01 challenges" },
 
-	{ cert_directory, maybe( bin_directory_path() ),
+	{ cert_directory, option( bin_directory_path() ),
 	  "the directory where the certificate information will be written" },
 
-	{ challenge_type, maybe( challenge_type() ),
+	{ challenge_type, option( challenge_type() ),
 	  "the type of ACME challenge to be used in order to generate "
 	  "certificates" },
 
-	{ dns_provider, maybe( dns_provider() ),
+	{ dns_provider, option( dns_provider() ),
 	  "the DNS provider with which DNS updates for the dns-01 challenge "
 	  "are to be made" },
 
-	{ leec_agents_key_path, maybe( bin_file_path() ),
+	{ leec_agents_key_path, option( bin_file_path() ),
 	  "the absolute path to the common TLS private key file (if any) bound to "
 	  "the common ACME account to be used by all the LEEC agents driven by "
 	  "the certificate managers" },
 
-	{ dh_key_path, maybe( bin_file_path() ),
+	{ dh_key_path, option( bin_file_path() ),
 	  "the absolute path to the Diffie-Helman key file (if any) to ensure "
 	  "a secure key exchange with Forward Secrecy" },
 
-	{ ca_cert_key_path, maybe( bin_file_path() ),
+	{ ca_cert_key_path, option( bin_file_path() ),
 	  "the absolute path to the certificate authority PEM file (if any) "
 	  "for the chain of trust" },
 
-	{ https_transp_info, maybe( https_transport_options() ),
+	{ https_transp_info, option( https_transport_options() ),
 	  "information regarding Server Name Indication, so that virtual hosts "
 	  "can be supported with https" },
 
@@ -506,7 +534,7 @@
 	{ scheduler_registration_scope, registration_scope(),
 	  "the scope under which the dedicated scheduler is registered" },
 
-	{ log_analysis_settings, maybe( log_analysis_settings() ),
+	{ log_analysis_settings, option( log_analysis_settings() ),
 	  "the settings to use for any analysis of web access logs" } ] ).
 
 
@@ -536,11 +564,12 @@
 
 
 
-% @doc Constructs the US-Web configuration server.
-%
-% SupervisorPid is the PID of the main US-Web OTP supervisor, and AppRunContext
-% tells how US-Web is being run.
-%
+-doc """
+Constructs the US-Web configuration server.
+
+SupervisorPid is the PID of the main US-Web OTP supervisor, and AppRunContext
+tells how US-Web is being run.
+""".
 -spec construct( wooper:state(), supervisor_pid(),
 				 application_run_context() ) -> wooper:state().
 construct( State, SupervisorPid, AppRunContext ) ->
@@ -620,7 +649,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 
 
 
-% @doc Overridden destructor.
+-doc "Overridden destructor.".
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
@@ -650,9 +679,10 @@ destruct( State ) ->
 % Method section.
 
 
-% @doc Returns basic, general web configuration settings (typically for the
-% us_web supervisor).
-%
+-doc """
+Returns basic, general web configuration settings (typically for the us_web
+supervisor).
+""".
 -spec getWebConfigSettings( wooper:state() ) ->
 								const_request_return( general_web_settings() ).
 getWebConfigSettings( State ) ->
@@ -702,10 +732,10 @@ getWebConfigSettings( State ) ->
 
 
 
-
-% @doc Triggers and waits for a parallel certificate renewal from all known
-% certificate managers (may be done for example at server startup).
-%
+-doc """
+Triggers and waits for a parallel certificate renewal from all known certificate
+managers (may be done for example at server startup).
+""".
 -spec renewCertificates( wooper:state() ) ->
 					const_request_return( 'certificate_renewals_over' ).
 renewCertificates( State ) ->
@@ -763,7 +793,9 @@ renewCertificates( State ) ->
 
 
 
-% @doc Requests the TLS certificate of the specified virtual host to be renewed.
+-doc """
+Requests the TLS certificate of the specified virtual host to be renewed.
+""".
 -spec renewCertificate( wooper:state(), domain_id(), vhost_id() ) ->
 							const_oneway_return().
 renewCertificate( State, DomainId, VHostId ) ->
@@ -777,11 +809,12 @@ renewCertificate( State, DomainId, VHostId ) ->
 
 
 
-% @doc Requests the access log analysis reports to be generated for the %
-% specified % domain(s) / virtual host(s).
-%
--spec generateLogAnalysisReports( wooper:state(), maybe( bin_domain_name() ),
-								  maybe( bin_host_name() ) ) ->
+-doc """
+Requests the access log analysis reports to be generated for the specified
+domain(s) / virtual host(s).
+""".
+-spec generateLogAnalysisReports( wooper:state(), option( bin_domain_name() ),
+								  option( bin_host_name() ) ) ->
 							const_request_return( report_generation_outcome() ).
 generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
 							_MaybeBinHostName=undefined ) ->
@@ -943,13 +976,12 @@ generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 
 
 
+-doc """
+Activates the specified loggers in turn: triggers a log rotation to update the
+state of the tool for log analysis, then the generated of the reports as such.
 
-% @doc Activates the specified loggers in turn: triggers a log rotation to
-% update the state of the tool for log analysis, then the generated of the
-% reports as such.
-%
-% (helper)
-%
+(helper)
+""".
 -spec activate_loggers( [ logger_pid() ] ) -> report_generation_outcome().
 activate_loggers( Loggers ) ->
 
@@ -969,7 +1001,7 @@ activate_loggers( Loggers ) ->
 
 
 
-% @doc Callback triggered whenever a linked process exits.
+-doc "Callback triggered whenever a linked process exits.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 						basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StoppedPid, _ExitType=normal ) ->
@@ -1009,13 +1041,14 @@ onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 % Helper section.
 
 
-% @doc Loads and applies the relevant configuration settings first from the
-% overall US configuration file, then from the more web/vhost specific one.
-%
-% As a result, the US configuration file is not fully checked as such (e.g. no
-% extracting and check that no entry remains), we just select the relevant
-% information from it.
-%
+-doc """
+Loads and applies the relevant configuration settings first from the overall US
+configuration file, then from the more web/vhost specific one.
+
+As a result, the US configuration file is not fully checked as such (e.g. no
+extracting and check that no entry remains), we just select the relevant
+information from it.
+""".
 -spec load_and_apply_configuration( wooper:state() ) -> wooper:state().
 load_and_apply_configuration( State ) ->
 
@@ -1053,10 +1086,11 @@ load_and_apply_configuration( State ) ->
 
 
 
-% @doc Loads the web configuration information (that is the US-Web configuration
-% file, as identified from the US one), notably about virtual hosts.
-%
--spec load_web_config( bin_directory_path(), maybe( bin_file_path() ),
+-doc """
+Loads the web configuration information (that is the US-Web configuration file,
+as identified from the US one), notably about virtual hosts.
+""".
+-spec load_web_config( bin_directory_path(), option( bin_file_path() ),
 			wooper:state() ) -> wooper:state().
 load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
 
@@ -1141,32 +1175,33 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 
-% @doc Creates a certificate manager for the specified domain (e.g. foobar.org),
-% including for all its virtual hosts (e.g. baz.foobar.org), as SANs (Subject
-% Alternative Names), for the specified type of challenge and, if needed (dns-01
-% one), DNS provider.
-%
-% With the http-01 challenge, we used to create one single, standalone
-% certificate per virtual host, yet the Let's Encrypt rate limits (see
-% [https://letsencrypt.org/docs/rate-limits/]) could quite easily be hit
-% (e.g. if having a total of more than 50 virtual hosts and/or domains).
-%
-% So now we create only certificates at the domain level - hence a certificate
-% manager per domain, which lists all its corresponding virtual hosts as SANs;
-% however a per-virtual host dedicated dispatch route must still be created
-% (pointing to this certificate manager), as the ACME server will validate each
-% of these SANs with a dedicated challenge: the corresponding, upcoming ACME
-% http access must be intercepted and the corresponding token will have then to
-% be returned.
-%
-% With the dns-01 challenge, a directory containing the credentials to update
-% one's DNS entries and a corresponding DNS provider must be specified.
-%
+-doc """
+Creates a certificate manager for the specified domain (e.g. foobar.org),
+including for all its virtual hosts (e.g. baz.foobar.org), as SANs (Subject
+Alternative Names), for the specified type of challenge and, if needed (dns-01
+one), DNS provider.
+
+With the http-01 challenge, we used to create one single, standalone certificate
+per virtual host, yet the Let's Encrypt rate limits (see
+<https://letsencrypt.org/docs/rate-limits/>) could quite easily be hit (e.g. if
+having a total of more than 50 virtual hosts and/or domains).
+
+So now we create only certificates at the domain level - hence a certificate
+manager per domain, which lists all its corresponding virtual hosts as SANs;
+however a per-virtual host dedicated dispatch route must still be created
+(pointing to this certificate manager), as the ACME server will validate each of
+these SANs with a dedicated challenge: the corresponding, upcoming ACME http
+access must be intercepted and the corresponding token will have then to be
+returned.
+
+With the dns-01 challenge, a directory containing the credentials to update
+one's DNS entries and a corresponding DNS provider must be specified.
+""".
 -spec handle_certificate_manager_for( bin_domain_name(), [ bin_san() ],
-		cert_support(), cert_mode(), challenge_type(), maybe( dns_provider() ),
-		maybe( bin_directory_path() ), bin_directory_path(),
-		maybe( bin_file_path() ), scheduler_pid() ) ->
-											maybe( cert_manager_pid() ).
+		cert_support(), cert_mode(), challenge_type(), option( dns_provider() ),
+		option( bin_directory_path() ), bin_directory_path(),
+		option( bin_file_path() ), scheduler_pid() ) ->
+											option( cert_manager_pid() ).
 % localhost of course invisible from outside the LAN:
 handle_certificate_manager_for( _BinDomainName= <<"localhost">>, _BinSans,
 		_CertSupport, _CertMode, _ChalType, _MaybeDNSProvider,
@@ -1231,13 +1266,14 @@ handle_certificate_manager_for( _BinDomainName, _BinSans, _OtherCertSupport,
 % Helper section.
 
 
-% @doc Returns a domain table and dispatch routes corresponding to the specified
-% domain information list, and a possibly updated state.
-%
+-doc """
+Returns a domain table and dispatch routes corresponding to the specified domain
+information list, and a possibly updated state.
+""".
 -spec process_domain_info( [ { domain_name(), [ vhost_info() ] } ],
-	bin_directory_path(), maybe( bin_directory_path() ),
-	maybe( web_analysis_info() ), cert_support(), cert_mode(),
-	bin_directory_path(), maybe( bin_file_path() ), scheduler_pid(),
+	bin_directory_path(), option( bin_directory_path() ),
+	option( web_analysis_info() ), cert_support(), cert_mode(),
+	bin_directory_path(), option( bin_file_path() ), scheduler_pid(),
 	wooper:state() ) ->
 		{ domain_config_table(), dispatch_routes(), wooper:state() }.
 process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
@@ -1247,7 +1283,7 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 	%trace_utils:debug_fmt( "Domain list: ~p", [ UserRoutes ] ),
 
 	MaybeWebAnalysisInfo = prepare_web_analysis( MaybeLogAnalysisSettings,
-							UserRoutes, MaybeBinDefaultWebRoot, State ),
+		UserRoutes, MaybeBinDefaultWebRoot, State ),
 
 	% The user-specified route order is respected, and any host catch-all must
 	% come last:
@@ -1260,12 +1296,13 @@ process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
 
 
 
-% @doc Returns the web analysis information, if needed, to be able to generate
-% on the fly the web analysis configuration files afterwards.
-%
--spec prepare_web_analysis( maybe( log_analysis_settings() ), list(),
-							maybe( bin_directory_path() ), wooper:state() ) ->
-									maybe( web_analysis_info() ).
+-doc """
+Returns the web analysis information, if needed, to be able to generate on the
+fly the web analysis configuration files afterwards.
+""".
+-spec prepare_web_analysis( option( log_analysis_settings() ), list(),
+							option( bin_directory_path() ), wooper:state() ) ->
+									option( web_analysis_info() ).
 prepare_web_analysis( _MaybeLogAnalysisSettings=undefined, _UserRoutes,
 					  _MaybeBinDefaultWebRoot, _State ) ->
 	undefined;
@@ -1358,7 +1395,7 @@ prepare_web_analysis(
 	% one:
 
 	%GenAwCfgDir = file_utils:join( ?getAttr(data_directory),
-	%							   "awstats-vhost-configs" ),
+	%                               "awstats-vhost-configs" ),
 
 	%file_utils:create_directory_if_not_existing( GenAwCfgDir ),
 
@@ -1395,11 +1432,12 @@ prepare_web_analysis(
 
 
 
-% @doc Determines the (absolute) meta web root to use.
-%
-% Returns the first found, supposing only one is defined (build_vhost_table/8
-% will perform an exhaustive search thereof).
-%
+-doc """
+Determines the (absolute) meta web root to use.
+
+Returns the first found, supposing only one is defined (build_vhost_table/8 will
+perform an exhaustive search thereof).
+""".
 determine_meta_web_root( _UserRoutes=[], _MaybeBinDefaultWebRoot, State ) ->
 
 	?error( "Unable to determine the meta web root to use. Was a 'meta' "
@@ -1424,6 +1462,7 @@ determine_meta_web_root( _UserRoutes=[ { DomainId, VHostInfos } | T ],
 	end.
 
 
+
 % Per-vhost now:
 % (helper)
 determine_meta_web_root_for( _VHostInfos=[], _DomainId, _MaybeBinDefaultWebRoot,
@@ -1443,16 +1482,17 @@ determine_meta_web_root_for( _VHostInfos=[ _ | T ], DomainId,
 
 
 
-% @doc Goes through domains then through virtual hosts, notably to prepare
-% routes and any certificate management needed.
-%
-% (helper)
-%
+-doc """
+Goes through domains then through virtual hosts, notably to prepare routes and
+any certificate management needed.
+
+(helper)
+""".
 -spec process_domain_routes( [ { domain_name(), [ vhost_info() ] } ],
-		bin_directory_path(), maybe( bin_directory_path() ),
-		maybe( web_analysis_info() ), domain_config_table(), dispatch_routes(),
+		bin_directory_path(), option( bin_directory_path() ),
+		option( web_analysis_info() ), domain_config_table(), dispatch_routes(),
 		cert_support(), cert_mode(), bin_directory_path(),
-		maybe( bin_file_path() ), scheduler_pid(), wooper:state() ) ->
+		option( bin_file_path() ), scheduler_pid(), wooper:state() ) ->
 			{ domain_config_table(), dispatch_routes(), wooper:state() }.
 process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
 		_MaybeWebAnalysisInfo, AccVTable, AccRoutes, _CertSupport,
@@ -1541,15 +1581,16 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 
 
 
-% @doc Builds a vhost table corresponding to specified domain identifier.
-%
-% Multiple operations have to be done in one pass as they are quite interlinked.
-%
-% (helper)
-%
+-doc """
+Builds a vhost table corresponding to specified domain identifier.
+
+Multiple operations have to be done in one pass as they are quite interlinked.
+
+(helper)
+""".
 -spec build_vhost_table( bin_domain_name(), [ vhost_info() ],
-	maybe( cert_manager_pid() ), bin_directory_path(),
-	maybe( bin_directory_path() ), maybe( web_analysis_info() ),
+	option( cert_manager_pid() ), bin_directory_path(),
+	option( bin_directory_path() ), option( web_analysis_info() ),
 	vhost_config_table(), dispatch_routes(), cert_support(), wooper:state() ) ->
 			{ vhost_config_table(), dispatch_routes(), wooper:state() }.
 build_vhost_table( _DomainId, _VHostInfos=[], _MaybeCertManagerPid, _BinLogDir,
@@ -1703,7 +1744,6 @@ build_vhost_table( DomainId,
 		[ VHostRoute | AccRoutes ], CertSupport, SetState );
 
 
-
 % Unknown kind:
 build_vhost_table( _DomainId,
 		_VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
@@ -1719,10 +1759,11 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 
 
 
-% @doc Returns the corresponding {VHostEntry, VHostRoute} pair.
-%
-% (centralising helper)
-%
+-doc """
+Returns the corresponding {VHostEntry, VHostRoute} pair.
+
+(centralising helper)
+""".
 % Here no web analysis is requested (yet log rotation is still useful):
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 		MaybeCertManagerPid, BinLogDir, CertSupport,
@@ -1866,8 +1907,8 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 
 
-% @doc Checks and returns an absolute version of the specified content root.
--spec get_content_root( directory_path(), maybe( bin_directory_path() ),
+-doc "Checks and returns an absolute version of the specified content root.".
+-spec get_content_root( directory_path(), option( bin_directory_path() ),
 		vhost_id(), domain_id(), wooper:state() ) -> bin_directory_path().
 get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 				  State ) ->
@@ -1914,11 +1955,12 @@ get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 
 
 
-% @doc Returns an absolute version of the corresponding meta content root,
-% creating it if necessary.
-%
+-doc """
+Returns an absolute version of the corresponding meta content root, creating it
+if necessary.
+""".
 -spec ensure_meta_content_root_exists( directory_path(),
-	maybe( bin_directory_path() ), vhost_id(), domain_id(), wooper:state() ) ->
+	option( bin_directory_path() ), vhost_id(), domain_id(), wooper:state() ) ->
 											bin_directory_path().
 ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 								 DomainId, State ) ->
@@ -1962,7 +2004,7 @@ ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
 
 
 
-% @doc Returns a description of the specified vhost spec.
+-doc "Returns a description of the specified vhost spec.".
 describe_host( _VHostId=without_vhost, DomainId ) ->
 
 	DomainString = case DomainId of
@@ -2001,21 +2043,22 @@ describe_host( VHostId, BinDomainName ) ->
 
 
 
-% @doc Returns a static dispatch route rule corresponding to the specified
-% virtual host identifier, domain identifier and content root.
-%
-% See [https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/] for more details.
-%
+-doc """
+Returns a static dispatch route rule corresponding to the specified virtual host
+identifier, domain identifier and content root.
+
+See <https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/> for more details.
+""".
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
-		logger_pid(), cert_support(), maybe( cert_manager_pid() ) ) ->
+		logger_pid(), cert_support(), option( cert_manager_pid() ) ) ->
 									route_rule().
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 						 CertSupport, MaybeCertManagerPid ) ->
 
 	% We prepare, once for all, all settings for a given static (virtual) host.
 
-	% Refer to [https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/]
-	% and [https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/]:
+	% Refer to https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/
+	% and https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/:
 
 	% Plain strings wanted, if not catch-alls:
 	HostMatch = get_host_match_for( DomainId, VHostId ),
@@ -2106,14 +2149,15 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 
-% @doc Returns a Nitrogen-specific dispatch route rule corresponding to the
-% specified virtual host identifier, domain identifier and content root.
-%
-% See, in simple_bridge, cowboy_simple_bridge_sup.erl for more details.
-%
+-doc """
+Returns a Nitrogen-specific dispatch route rule corresponding to the specified
+virtual host identifier, domain identifier and content root.
+
+See, in simple_bridge, cowboy_simple_bridge_sup.erl for more details.
+""".
 -spec get_nitrogen_dispatch_for( vhost_id(), domain_id(),
 		bin_directory_path(), logger_pid(), cert_support(),
-		maybe( cert_manager_pid() ) ) -> route_rule().
+		option( cert_manager_pid() ) ) -> route_rule().
 get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 						   CertSupport, MaybeCertManagerPid ) ->
 
@@ -2214,9 +2258,9 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 
 
 
-% @doc Returns the host match corresponding to specified domain and virtual
-% host.
-%
+-doc """
+Returns the host match corresponding to specified domain and virtual host.
+""".
 -spec get_host_match_for( domain_id(), vhost_id() ) -> host_match().
 get_host_match_for( _DomainId=default_domain_catch_all,
 					_VHostId=without_vhost ) ->
@@ -2254,18 +2298,18 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
 
 
 
-% @doc Transforms specified dispatch routes into corresponding rules, that is
-% replaces the original handlers (name and initial state) with specified
-% forwarding ones.
-%
-% Typically useful to mimic routes to be used for https into purely-forwarding
-% ones to be used as their http counterparts.
-%
-% Note that (only) the challenge path matches (for well-known ACME URLs) are not
-% promoted from http to https - as otherwise it would not be possible by design
-% to succeed in an (http) ACME challenge (if starting from scratch, with no
-% valid certificate yet).
-%
+-doc """
+Transforms specified dispatch routes into corresponding rules, that is replaces
+the original handlers (name and initial state) with specified forwarding ones.
+
+Typically useful to mimic routes to be used for https into purely-forwarding
+ones to be used as their http counterparts.
+
+Note that (only) the challenge path matches (for well-known ACME URLs) are not
+promoted from http to https - as otherwise it would not be possible by design to
+succeed in an (http) ACME challenge (if starting from scratch, with no valid
+certificate yet).
+""".
 -spec transform_handler_in_routes( dispatch_routes(), handler_module(),
 								   handler_state() ) -> dispatch_rules().
 transform_handler_in_routes( DispatchRoutes, NewHandlerModule,
@@ -2340,11 +2384,12 @@ set_as_forward_paths(
 
 
 
-% @doc Returns the path match that shall be used in order to answer ACME
-% challenges from Let's Encrypt from a LEEC FSM.
-%
-% See [https://leec.esperide.org/#usage-example].
-%
+-doc """
+Returns the path match that shall be used in order to answer ACME challenges
+from Let's Encrypt from a LEEC FSM.
+
+See <https://leec.esperide.org/#usage-example>.
+""".
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
 	{ _BinPath= <<"/.well-known/acme-challenge/:token">>,
@@ -2355,7 +2400,7 @@ get_challenge_path_match( Unexpected ) ->
 
 
 
-% @doc Checks the specified web kind.
+-doc "Checks the specified web kind.".
 check_kind( _WebKind=static, _VHost, _DomainId, _State ) ->
 	static;
 
@@ -2378,12 +2423,13 @@ check_kind( WebKind, VHost, DomainId, State ) ->
 
 
 
-% @doc Manages any US-Web level user-configured EPMD port.
-%
-% The port may be already set at the US overall level, but it can be overridden
-% on a per-US application basis, as it may be convenient to share one's
-% us.config between multiple applications (e.g. US-Main and US-Web).
-%
+-doc """
+Manages any US-Web level user-configured EPMD port.
+
+The port may be already set at the US overall level, but it can be overridden on
+a per-US application basis, as it may be convenient to share one's us.config
+between multiple applications (e.g. US-Main and US-Web).
+""".
 -spec manage_epmd_port( us_web_config_table(), wooper:state() ) ->
 										wooper:state().
 manage_epmd_port( ConfigTable, State ) ->
@@ -2430,9 +2476,10 @@ manage_epmd_port( ConfigTable, State ) ->
 
 
 
-% @doc Manages any user-configured registration names for this instance, for the
-% US-Web server and their related services, which may be created here.
-%
+-doc """
+Manages any user-configured registration names for this instance, for the US-Web
+server and their related services, which may be created here.
+""".
 -spec manage_registrations( us_web_config_table(), wooper:state() ) ->
 									wooper:state().
 manage_registrations( ConfigTable, State ) ->
@@ -2472,9 +2519,10 @@ manage_registrations( ConfigTable, State ) ->
 
 
 
-% @doc Manages any user-configured specification regarding the (operating-system
-% level) US-Web user.
-%
+-doc """
+Manages any user-configured specification regarding the (operating-system level)
+US-Web user.
+""".
 -spec manage_os_user( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_os_user( ConfigTable, State ) ->
 
@@ -2519,9 +2567,10 @@ manage_os_user( ConfigTable, State ) ->
 
 
 
-% @doc Manages any user-configured application base directory, and sets related
-% directories.
-%
+-doc """
+Manages any user-configured application base directory, and sets related
+directories.
+""".
 -spec manage_app_base_directories( us_web_config_table(), wooper:state() ) ->
 										wooper:state().
 manage_app_base_directories( ConfigTable, State ) ->
@@ -2659,7 +2708,6 @@ manage_app_base_directories( ConfigTable, State ) ->
 					BinBaseDir;
 
 				false ->
-
 					?error_fmt( "The determined US-Web application base "
 						"directory '~ts' does not have a 'priv' subdirectory.",
 						[ BinBaseDir ] ),
@@ -2676,7 +2724,6 @@ manage_app_base_directories( ConfigTable, State ) ->
 			%undefined
 			throw( { non_existing_us_web_app_base_directory, BaseDir,
 					 ?us_web_app_base_dir_key } )
-
 
 	end,
 
@@ -2701,7 +2748,7 @@ manage_app_base_directories( ConfigTable, State ) ->
 
 
 
-% @doc Tries to guess the US-Web application directory.
+-doc "Tries to guess the US-Web application directory.".
 guess_app_dir( AppRunContext, State ) ->
 
 	CurrentDir = file_utils:get_current_directory(),
@@ -2747,9 +2794,9 @@ guess_app_dir( AppRunContext, State ) ->
 
 
 
-% @doc Manages any user-configured data directory to rely on, creating it if
-% necessary.
-%
+-doc """
+Manages any user-configured data directory to rely on, creating it if necessary.
+""".
 -spec manage_data_directory( us_web_config_table(), wooper:state() ) ->
 									wooper:state().
 manage_data_directory( ConfigTable, State ) ->
@@ -2823,9 +2870,9 @@ manage_data_directory( ConfigTable, State ) ->
 
 
 
-% @doc Manages any user-configured log directory to rely on, creating it if
-% necessary.
-%
+-doc """
+Manages any user-configured log directory to rely on, creating it if necessary.
+""".
 -spec manage_log_directory( us_web_config_table(), wooper:state() ) ->
 								wooper:state().
 manage_log_directory( ConfigTable, State ) ->
@@ -2901,14 +2948,14 @@ manage_log_directory( ConfigTable, State ) ->
 
 
 
-% @doc Centralises the definition of the directory where to store all web logs.
+-doc "Centralises the definition of the directory where to store all web logs.".
 -spec get_web_log_dir( any_directory_path() ) -> bin_directory_path().
 get_web_log_dir( LogDir ) ->
 	text_utils:string_to_binary( file_utils:join( LogDir, ?web_log_subdir ) ).
 
 
 
-% @doc Manages any user-configured default web root.
+-doc "Manages any user-configured default web root.".
 -spec manage_web_root( us_web_config_table(), wooper:state() ) ->
 			wooper:state().
 manage_web_root( ConfigTable, State ) ->
@@ -2951,8 +2998,7 @@ manage_web_root( ConfigTable, State ) ->
 
 
 
-
-% @doc Manages any user-configured TCP ports.
+-doc "Manages any user-configured TCP ports.".
 -spec manage_ports( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_ports( ConfigTable, State ) ->
 
@@ -3011,7 +3057,7 @@ manage_ports( ConfigTable, State ) ->
 
 
 
-% @doc Prepares the meta support.
+-doc "Prepares the meta support.".
 -spec manage_pre_meta( us_web_config_table(), wooper:state() ) ->
 							wooper:state().
 manage_pre_meta( ConfigTable, State ) ->
@@ -3030,7 +3076,7 @@ manage_pre_meta( ConfigTable, State ) ->
 
 
 
-% @doc Determines the settings of the web log analysis tool.
+-doc "Determines the settings of the web log analysis tool.".
 set_log_tool_settings( undefined, State ) ->
 	set_log_tool_settings( _DefaultToolName=awstats, State );
 
@@ -3095,7 +3141,7 @@ set_log_tool_settings( Unexpected, State ) ->
 
 
 
-% @doc Manages how X.509 certificates shall be handled.
+-doc "Manages how X.509 certificates shall be handled.".
 -spec manage_certificates( bin_directory_path(), us_web_config_table(),
 						   wooper:state() ) -> wooper:state().
 manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
@@ -3314,7 +3360,7 @@ manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
 
 
 
-% @doc Manages user-configured web dispatch routes.
+-doc "Manages user-configured web dispatch routes.".
 -spec manage_routes( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_routes( ConfigTable, State ) ->
 
@@ -3414,7 +3460,7 @@ manage_routes( ConfigTable, State ) ->
 
 
 
-% @doc Initialises Nitrogen for the specified content roots.
+-doc "Initialises Nitrogen for the specified content roots.".
 -spec initialise_nitrogen_for_contents( [ bin_directory_path() ],
 										wooper:state() ) -> void().
 initialise_nitrogen_for_contents( _ContentRoots=[], _State ) ->
@@ -3603,7 +3649,7 @@ initialise_nitrogen_for_contents( ContentRoots, State ) ->
 
 
 
-% @doc Applies the meta support.
+-doc "Applies the meta support.".
 -spec manage_post_meta( wooper:state() ) -> wooper:state().
 manage_post_meta( State ) ->
 
@@ -3659,7 +3705,7 @@ manage_post_meta( State ) ->
 
 
 
-% @doc Generates the meta website.
+-doc "Generates the meta website.".
 -spec generate_meta( meta_web_settings(), boolean(), domain_config_table(),
 					 wooper:state() ) -> wooper:state().
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
@@ -3680,7 +3726,7 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 	end,
 
 	StartTimestamp = time_utils:gregorian_ms_to_timestamp(
-						?getAttr(server_gregorian_start) ),
+		?getAttr(server_gregorian_start) ),
 
 	IndexContent = us_web_meta:get_page_header()
 		++ us_web_meta:get_page_body( Scheme, WebPort, DomainCfgTable,
@@ -3693,13 +3739,14 @@ generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
 
 
 
-% @doc Returns a list of the Subject Alternative Names for specified domain,
-% based on the specified information regarding its virtual hosts.
-%
-% Note that a per-virtual host list for SAN is preferred to a wildcard
-% certificate, as, at least currently, the latter can only be obtained from
-% Let's Encrypt based on a DNS challenge, which is not supported by LEEC.
-%
+-doc """
+Returns a list of the Subject Alternative Names for specified domain, based on
+the specified information regarding its virtual hosts.
+
+Note that a per-virtual host list for SAN is preferred to a wildcard
+certificate, as, at least currently, the latter can only be obtained from Let's
+Encrypt based on a DNS challenge, which is not supported by LEEC.
+""".
 -spec get_san_list( [ vhost_info() ], domain_name() ) -> [ bin_san() ].
 get_san_list( VHostInfos, DomainName ) ->
 	% Now we pre-collect the names of all virtual hosts (e.g. the *.foobar.org),
@@ -3752,14 +3799,16 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 
 % Version-related static methods.
 
-% @doc Returns the version of the US-Web library being used.
+
+-doc "Returns the version of the US-Web library being used.".
 -spec get_us_web_version() -> static_return( three_digit_version() ).
 get_us_web_version() ->
 	wooper:return_static(
 		basic_utils:parse_version( get_us_web_version_string() ) ).
 
 
-% @doc Returns the version of the US-Web library being used, as a string.
+
+-doc "Returns the version of the US-Web library being used, as a string.".
 -spec get_us_web_version_string() -> static_return( ustring() ).
 get_us_web_version_string() ->
 	% As defined (uniquely) in GNUmakevars.inc:
@@ -3767,12 +3816,13 @@ get_us_web_version_string() ->
 
 
 
-% @doc Returns, based on the US main configuration table and the US
-% configuration directory, the US-Web configuration table, as read from the
-% US-Web configuration file, together with the path of this file.
-%
-% Static method, to be available from external code such as clients or tests.
-%
+-doc """
+Returns, based on the US main configuration table and the US configuration
+directory, the US-Web configuration table, as read from the US-Web configuration
+file, together with the path of this file.
+
+Static method, to be available from external code such as clients or tests.
+""".
 -spec get_configuration_table( class_USConfigServer:us_config_table(),
 							   bin_directory_path() ) ->
   static_return( diagnosed_fallible( { us_web_config_table(), file_path() } ) ).
@@ -3784,7 +3834,7 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 	% the US-Web main one)
 
 	Res = case class_USConfigServer:get_us_web_configuration_filename(
-					USCfgTable ) of
+			USCfgTable ) of
 
 		{ ok, undefined } ->
 			ErrorMsg = "No US-Web configuration filename (for webservers and "
@@ -3801,7 +3851,7 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 
 					% Ensures as well that all top-level terms are pairs indeed:
 					ConfigTable = table:new_from_unique_entries(
-									file_utils:read_terms( WebCfgFilePath ) ),
+						file_utils:read_terms( WebCfgFilePath ) ),
 
 					{ ok, { ConfigTable, WebCfgFilePath } };
 
@@ -3825,11 +3875,11 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 
 
 
-% @doc Returns information about the naming registration of various US-Web
-% servers.
-%
-% Static for sharing with clients, tests, etc.
-%
+-doc """
+Returns information about the naming registration of various US-Web servers.
+
+Static for sharing with clients, tests, etc.
+""".
 -spec get_registration_info( us_web_config_table() ) -> static_return(
 		fallible( { registration_name(), registration_scope(),
 					registration_name(), registration_scope(), ustring() } ) ).
@@ -3930,7 +3980,7 @@ get_registration_info( ConfigTable ) ->
 
 
 
-% @doc Returns the allowed protocol versions in the context of https.
+-doc "Returns the allowed protocol versions in the context of https.".
 -spec get_protocol_versions() -> static_return( [ ssl:protocol_version() ] ).
 get_protocol_versions() ->
 
@@ -3943,9 +3993,10 @@ get_protocol_versions() ->
 
 
 
-% @doc Returns the HTTP options suitable for operations such as the downloading
-% of the CA certificates.
-%
+-doc """
+Returns the HTTP options suitable for operations such as the downloading of the
+CA certificates.
+""".
 -spec get_http_options() -> static_return( web_utils:http_options() ).
 get_http_options() ->
 
@@ -3955,7 +4006,7 @@ get_http_options() ->
 
 
 
-% @doc Returns a textual description of this domain table.
+-doc "Returns a textual description of this domain table.".
 -spec domain_table_to_string( domain_config_table() ) -> ustring().
 domain_table_to_string( DomainTable ) ->
 	% No ellipsing wanted:
@@ -3963,7 +4014,8 @@ domain_table_to_string( DomainTable ) ->
 		++ table:to_string( DomainTable, _DescriptionType=full ).
 
 
-% @doc Returns a list of all the PIDs of the webloggers.
+
+-doc "Returns a list of all the PIDs of the webloggers.".
 -spec get_all_logger_pids( wooper:state() ) -> [ logger_pid() ].
 get_all_logger_pids( State ) ->
 	get_all_logger_pids_from( ?getAttr(domain_config_table) ).
@@ -3979,7 +4031,8 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 	list_utils:filter_out_undefined( MaybePids ).
 
 
-% @doc Returns an (unordered) list of all the PIDs of the certificate managers.
+
+-doc "Returns an (unordered) list of all the PIDs of the certificate managers.".
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
 			[ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->
@@ -3996,7 +4049,7 @@ get_all_certificate_manager_pids_from( DomainCfgTable ) ->
 
 
 
-% @doc Returns a textual description of this configuration server.
+-doc "Returns a textual description of this configuration server.".
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 

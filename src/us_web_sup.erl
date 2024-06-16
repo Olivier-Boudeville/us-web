@@ -19,12 +19,14 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Wednesday, December 25, 2019.
 
-
-% @doc <b>Root OTP supervisor</b> of the us_web application.
-%
-% Directly created by us_web_app.
-%
 -module(us_web_sup).
+
+-moduledoc """
+**Root OTP supervisor** of the us_web application.
+
+Directly created by us_web_app.
+""".
+
 
 -behaviour(supervisor).
 
@@ -40,7 +42,8 @@
 -include("class_USWebConfigServer.hrl").
 
 
-% Shorthand:
+% Type shorthand:
+
 -type application_run_context() :: otp_utils:application_run_context().
 
 
@@ -61,10 +64,11 @@
 
 
 
-% @doc Starts and links the US-Web supervisor, with OTP conventions.
-%
-% (function probably useless)
-%
+-doc """
+Starts and links the US-Web supervisor, with OTP conventions.
+
+(function probably useless)
+""".
 -spec start_link() -> otp_utils:supervisor_pid().
 start_link() ->
 	supervisor:start_link( { ?server_registration_scope,
@@ -72,7 +76,9 @@ start_link() ->
 
 
 
-% @doc Starts and links the US-Web supervisor, with OTP conventions or not.
+-doc """
+Starts and links the US-Web supervisor, with OTP conventions or not.
+""".
 -spec start_link( application_run_context() ) -> otp_utils:supervisor_pid().
 start_link( AppRunContext ) ->
 	supervisor:start_link( { ?server_registration_scope,
@@ -80,7 +86,7 @@ start_link( AppRunContext ) ->
 
 
 
-% @doc Initialises the main US-Web OTP supervisor.
+-doc "Initialises the main US-Web OTP supervisor.".
 -spec init( [ application_run_context() ] ) ->
 				{ 'ok', { supervisor:sup_flags(), supervisor:child_spec() } }.
 init( _Args=[ AppRunContext ] ) ->
@@ -391,10 +397,11 @@ init( _Args=[ AppRunContext ] ) ->
 
 
 
-% @doc Stops the US-Web main supervisor, with OTP conventions or not.
-%
-% Note: unlike supervisor_bridge, no supervisor:terminate/* callback exists.
-%
+-doc """
+Stops the US-Web main supervisor, with OTP conventions or not.
+
+Note: unlike supervisor_bridge, no supervisor:terminate/* callback exists.
+""".
 -spec stop() -> void().
 stop() ->
 

@@ -19,11 +19,12 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Thursday, August 6, 2020.
 
-
-% @doc Class in charge of managing the <b>generation and renewal of X.509
-% certificates</b> for a given domain.
-%
 -module(class_USCertificateManager).
+
+-moduledoc """
+Class in charge of managing the **generation and renewal of X.509 certificates**
+for a given domain.
+""".
 
 
 -define( class_description,
@@ -45,7 +46,7 @@
 %
 % Certificates are obtained thanks to Let's Encrypt, more precisely thanks to
 % LEEC ("Let's Encrypt Erlang with Ceylan", our fork of letsencrypt-erlang),
-% namely [https://github.com/Olivier-Boudeville/Ceylan-LEEC]).
+% namely https://github.com/Olivier-Boudeville/Ceylan-LEEC.
 %
 % Each instance of this class is dedicated to the certificates for a given FQDN.
 % This allows multiplexing requests possibly for several FQDNs in parallel more
@@ -101,25 +102,32 @@
 % (a new nonce will be obtained as soon as the next instance starts).
 
 
-
+-doc "PID of a certificate manager.".
 -type manager_pid() :: class_USServer:server_pid().
 
 
 % One day ssl will export these types:
 
+
+-doc "Per-virtual-host SNI (SSL-related) option (ranch_ssl:opts()).".
 -type ssl_option() :: ssl:server_option() | ssl:common_option().
-% Per-virtual-host SNI (SSL-related) option (ranch_ssl:opts()).
 
 
+
+-doc "Virtual-host pair storing SNI-related certificate information.".
 -type sni_host_info() :: { net_utils:string_host_name(), [ ssl_option() ] }.
-% Virtual-host pair storing SNI-related certificate information.
 
 
+
+-doc """
+Information regarding Server Name Indication: transport information for the
+main, default hostname, and per-virtual host information.
+""".
 -type sni_info() :: { [ ssl_option() ], [ sni_host_info() ] }.
-% Information regarding Server Name Indication: transport information for the
-% main, default hostname, and per-virtual host information.
 
 
+
+-doc "Identifier of a cipher (e.g. 'AES128-SHA').".
 -type cipher_name() :: atom().
 % Identifier of a cipher (e.g. 'AES128-SHA').
 
@@ -170,35 +178,35 @@
 	  "the type of ACME challenge to be used in order to generate "
 	  "these certificates" },
 
-	{ dns_provider, maybe( dns_provider() ),
+	{ dns_provider, option( dns_provider() ),
 	  "the target DNS provider, to succeed any dns-01 challenge" },
 
-	{ credentials_dir, maybe( bin_directory_path() ),
+	{ credentials_dir, option( bin_directory_path() ),
 	  "the directory where the credentials information will be looked-up, "
 	  "typically to authenticate to one's DNS provider for dns-01 challenges" },
 
 	{ cert_dir, bin_directory_path(),
 	  "the directory where certificates shall be written" },
 
-	{ cert_path, maybe( bin_file_path() ),
+	{ cert_path, option( bin_file_path() ),
 	  "the full path where the final certificate file (if any) is located" },
 
 	{ sans, [ bin_san() ], "the Subject Alternative Names to be included "
 	  "in the generated certificates" },
 
-	{ private_key_path, maybe( bin_file_path() ),
+	{ private_key_path, option( bin_file_path() ),
 	  "the (absolute) path to the TLS private key to be used by the LEEC "
 	  "agent driven by this certificate manager (if not using certbot)" },
 
-	{ cert_renewal_period, maybe( seconds() ),
+	{ cert_renewal_period, option( seconds() ),
 	  "the base delay between two successful certificate renewals" },
 
-	{ renew_listener, maybe( pid() ),
+	{ renew_listener, option( pid() ),
 	  "the PID of the process (if any) to notify once the next certificate is "
 	  "obtained" },
 
 
-	{ leec_caller_state, maybe( leec_caller_state() ),
+	{ leec_caller_state, option( leec_caller_state() ),
 	  "the (opaque) caller state for our private LEEC FSM "
 	  "(if any currently exists)" },
 
@@ -213,7 +221,7 @@
 	{ scheduler_pid, scheduler_pid(),
 	  "the PID of the scheduler used by this manager" },
 
-	{ task_id, maybe( task_id() ), "the identifier of the scheduler task "
+	{ task_id, option( task_id() ), "the identifier of the scheduler task "
 	  "(if any) in charge of requesting the certificate renewals" } ] ).
 
 
@@ -284,17 +292,18 @@
 
 
 
-% @doc Constructs a US certificate manager for the specified FQDN (host in
-% specified domain), relying on the specified challenge type and possibly DNS
-% provider, in production mode, using the specified directory to write
-% certificate information, and the specified scheduler for automatic certificate
-% renewal.
-%
-% No directory for credentials specified.
-%
+-doc """
+Constructs a US certificate manager for the specified FQDN (host in specified
+domain), relying on the specified challenge type and possibly DNS provider, in
+production mode, using the specified directory to write certificate information,
+and the specified scheduler for automatic certificate renewal.
+
+No directory for credentials specified.
+""".
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], challenge_type(),
-		maybe( dns_provider() ), bin_directory_path(), maybe( bin_file_path() ),
-		maybe( scheduler_pid() ) ) -> wooper:state().
+		option( dns_provider() ), bin_directory_path(),
+		option( bin_file_path() ), option( scheduler_pid() ) ) ->
+										wooper:state().
 construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider, BinCertDir,
 		   MaybeBinAgentKeyPath, MaybeSchedulerPid ) ->
 	construct( State, BinFQDN, BinSans, ChalType,
@@ -304,16 +313,17 @@ construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider, BinCertDir,
 
 
 
-% @doc Constructs a US certificate manager for the specified FQDN (host in
-% specified domain), in the specified certificate management mode, relying on
-% the specified challenge type and possibly DNS provider, using specified
-% directory to write certificate information, and the specified scheduler.
-%
-% (most complete constructor)
-%
+-doc """
+Constructs a US certificate manager for the specified FQDN (host in specified
+domain), in the specified certificate management mode, relying on the specified
+challenge type and possibly DNS provider, using specified directory to write
+certificate information, and the specified scheduler.
+
+(most complete constructor)
+""".
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], cert_mode(),
-	challenge_type(), maybe( dns_provider() ), maybe( bin_directory_path() ),
-	bin_directory_path(), maybe( bin_file_path() ), maybe( scheduler_pid() ),
+	challenge_type(), option( dns_provider() ), option( bin_directory_path() ),
+	bin_directory_path(), option( bin_file_path() ), option( scheduler_pid() ),
 	boolean() ) -> wooper:state().
 construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 		MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
@@ -399,11 +409,11 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 
 
 
-% @doc Initializes our LEEC private instance.
+-doc "Initializes our LEEC private instance.".
 -spec init_leec( bin_fqdn(), cert_mode(), challenge_type(),
-		maybe( dns_provider() ), maybe( bin_directory_path() ),
-		bin_directory_path(), maybe( bin_file_path() ), wooper:state() ) ->
-	{ maybe( leec_caller_state() ), seconds(), leec_start_options(),
+		option( dns_provider() ), option( bin_directory_path() ),
+		bin_directory_path(), option( bin_file_path() ), wooper:state() ) ->
+	{ option( leec_caller_state() ), seconds(), leec_start_options(),
 	  bridge_spec() }.
 init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
 		   MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath, State ) ->
@@ -525,7 +535,7 @@ init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
 
 
 
-% @doc Overridden destructor.
+-doc "Overridden destructor.".
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
@@ -593,7 +603,7 @@ destruct( State ) ->
 % Method section.
 
 
-% @doc Renews asynchronously the certificate for the managed hostname.
+-doc "Renews asynchronously the certificate for the managed hostname.".
 -spec renewCertificate( wooper:state() ) -> oneway_return().
 renewCertificate( State ) ->
 
@@ -607,14 +617,14 @@ renewCertificate( State ) ->
 
 
 
-% @doc Renews the certificate for the managed hostname on a synchronisable
-% manner.
-%
-% The specified listener is typically the US-Web configuration server, so that
-% HTTPS support can be triggered only when certificates are ready and/or to
-% ensure no two certificate requests overlap (to avoid hitting a rate limit
-% regarding ACME servers or having concurrent certbot instances).
-%
+-doc """
+Renews the certificate for the managed hostname on a synchronisable manner.
+
+The specified listener is typically the US-Web configuration server, so that
+HTTPS support can be triggered only when certificates are ready and/or to ensure
+no two certificate requests overlap (to avoid hitting a rate limit regarding
+ACME servers or having concurrent certbot instances).
+""".
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
 												oneway_return().
 renewCertificateSynchronisable( State, ListenerPid ) ->
@@ -741,9 +751,9 @@ request_certificate( State ) ->
 
 
 
-% @doc Oneway called back whenever the outcome of a certificate request is
-% known.
-%
+-doc """
+Oneway called back whenever the outcome of a certificate request is known.
+""".
 -spec onCertificateRequestOutcome( wooper:state(),
 			leec:obtained_outcome() ) -> oneway_return().
 onCertificateRequestOutcome( State,
@@ -841,7 +851,7 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 
 
 % (helper)
--spec manage_renewal( maybe( seconds() ), maybe( bin_file_path() ),
+-spec manage_renewal( option( seconds() ), option( bin_file_path() ),
 					  wooper:state() ) -> wooper:state().
 manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
@@ -928,14 +938,14 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 
 
+-doc """
+Requests this manager to return (indirectly, through the current LEEC FSM) the
+current thumbprint challenges to specified target process.
 
-% @doc Requests this manager to return (indirectly, through the current LEEC
-% FSM) the current thumbprint challenges to specified target process.
-%
-% Typically called from a web handler (see us_web_leec_handler, specifying its
-% PID as target one) whenever the ACME well-known URL is read by an ACME server,
-% to check that the returned challenges match the expected ones.
-%
+Typically called from a web handler (see us_web_leec_handler, specifying its PID
+as target one) whenever the ACME well-known URL is read by an ACME server, to
+check that the returned challenges match the expected ones.
+""".
 -spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
 getChallenge( State, TargetPid ) ->
 
@@ -963,10 +973,10 @@ getChallenge( State, TargetPid ) ->
 
 
 
-
-% @doc Callback triggered, as we trap exits, whenever a linked process stops
-% (typically should the LEEC FSM crash).
-%
+-doc """
+Callback triggered, as we trap exits, whenever a linked process stops (typically
+should the LEEC FSM crash).
+""".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
 							basic_utils:exit_reason() ) -> oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
@@ -1017,23 +1027,24 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 
 
+
 % Static section.
 
 
+-doc """
+Returns the https transport options and the SNI information suitable for
+https-enabled virtual hosts, that is the transport options for the domain of
+interest - meaning the path to the PEM certificate for the main, default host
+(e.g. foobar.org) and to its private key, together with SNI (Server Name
+Indication, see <https://erlang.org/doc/man/ssl.html#type-sni_hosts>) host
+information for all virtual host of all hosts (e.g. baz.foobar.org, aa.buz.net,
+etc.).
 
-% @doc Returns the https transport options and the SNI information suitable for
-% https-enabled virtual hosts, that is the transport options for the domain of
-% interest - meaning the path to the PEM certificate for the main, default host
-% (e.g. foobar.org) and to its private key, together with SNI (Server Name
-% Indication, see [https://erlang.org/doc/man/ssl.html#type-sni_hosts]) host
-% information for all virtual host of all hosts (e.g. baz.foobar.org,
-% aa.buz.net, etc.).
-%
-% See also [https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/].
-%
-% Note: we rely on the user routes rather than on the domain table as we need to
-% determine the first hots listed as the main one.
-%
+See also <https://ninenines.eu/docs/en/ranch/2.0/manual/ranch_ssl/>.
+
+Note: we rely on the user routes rather than on the domain table as we need to
+determine the first hots listed as the main one.
+""".
 -spec get_https_transport_info( dispatch_routes(), bin_directory_path() ) ->
 		static_return( https_transport_info() ).
 get_https_transport_info( _, _BinCertDir=undefined ) ->
@@ -1071,19 +1082,20 @@ get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
 
 
 
-% @doc Returns an (ordered) list of the recommended ciphers for a webserver.
-%
-% An important security setting is to force the cipher to be set based on the
-% server-specified order instead of the client-specified oner, hence enforcing
-% the (usually more properly configured) security ordering of the server
-% administrator.
-%
-% Apparently Erlang (i.e. cowboy:start_tls/3, relying on ranch_ssl:opts(), which
-% corresponds roughly to ssl:erl_cipher_suite()) relies on cipher suites
-% expressed with IANA conventions, whereas sites such as SSL Labs uses OpenSSL
-% conventions. For conversions, see reference table in
-% [https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table].
-%
+-doc """
+Returns an (ordered) list of the recommended ciphers for a webserver.
+
+An important security setting is to force the cipher to be set based on the
+server-specified order instead of the client-specified oner, hence enforcing the
+(usually more properly configured) security ordering of the server
+administrator.
+
+Apparently Erlang (i.e. cowboy:start_tls/3, relying on ranch_ssl:opts(), which
+corresponds roughly to ssl:erl_cipher_suite()) relies on cipher suites expressed
+with IANA conventions, whereas sites such as SSL Labs uses OpenSSL
+conventions. For conversions, see reference table in
+<https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table>.
+""".
 -spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
 get_recommended_ciphers() ->
 
@@ -1162,8 +1174,7 @@ get_recommended_ciphers() ->
 % Helper section.
 
 
-% @doc Returns SNI information regarding specified virtual host.
-%
+-doc "Returns SNI information regarding specified virtual host.".
 % No domain-level wildcard certificate:
 get_virtual_host_sni_infos( _Hostname=default_domain_catch_all,
 							_VHostInfos, _BinCertDir ) ->
@@ -1229,10 +1240,11 @@ get_vh_pair( Hostname, VHostname, BinCertDir ) ->
 
 
 
-% @doc Returns transport options suitable for specified FQDN.
-%
-% Their existing is not tested, as they may be expected to be generated later.
-%
+-doc """
+Returns transport options suitable for specified FQDN.
+
+Their existing is not tested, as they may be expected to be generated later.
+""".
 -spec get_transport_opts_for( net_utils:string_fqdn(), bin_directory_path() ) ->
 								static_return( [ ssl_option() ] ).
 get_transport_opts_for( FQDN, BinCertDir ) ->
@@ -1248,12 +1260,13 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 
 
 
-% @doc Checks the specified HTTPS transport options regarding the 'certfile' and
-% 'keyfile' entries; throws an exception if they are not found or not currently
-% applicable (no associated file found).
-%
-% SNI information not checked, as usually deriving from HTTPS transport options.
-%
+-doc """
+Checks the specified HTTPS transport options regarding the 'certfile' and
+'keyfile' entries; throws an exception if they are not found or not currently
+applicable (no associated file found).
+
+SNI information not checked, as usually deriving from HTTPS transport options.
+""".
 -spec check_https_transport_options( https_transport_info() ) ->
 												static_void_return().
 check_https_transport_options( _MaybeHttpsTranspInfo=undefined ) ->
@@ -1295,7 +1308,7 @@ check_https_transport_options(
 
 
 
-% @doc Returns a textual description of this manager.
+-doc "Returns a textual description of this manager.".
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 

@@ -27,14 +27,14 @@
 	http_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
 
 	% TCP port (e.g. 80) to serve any http content:
-	http_tcp_port :: maybe( net_utils:tcp_port() ),
+	http_tcp_port :: option( net_utils:tcp_port() ),
 
 
 	% Rules so that https accesses are managed by the right handlers:
 	https_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
 
 	% TCP port (e.g. 443) to serve any https content:
-	https_tcp_port :: maybe( net_utils:tcp_port() ),
+	https_tcp_port :: option( net_utils:tcp_port() ),
 
 
 	% Tells whether certificates shall be used, and how:
@@ -42,17 +42,17 @@
 
 	% Including for SNI information:
 	https_transport_info ::
-			maybe( class_USWebConfigServer:https_transport_info() ),
+			option( class_USWebConfigServer:https_transport_info() ),
 
 	% The absolute path to the Diffie-Helman key file (if any) to ensure a
 	% secure key exchange with Forward Secrecy:
 	%
-	dh_key_path :: maybe( file_utils:bin_file_path() ),
+	dh_key_path :: option( file_utils:bin_file_path() ),
 
 	% The absolute path to the certificate authority PEM file (if any) for the
 	% chain of trust:
 	%
-	ca_cert_key_path :: maybe( file_utils:bin_file_path() ) } ).
+	ca_cert_key_path :: option( file_utils:bin_file_path() ) } ).
 
 
 
@@ -81,7 +81,7 @@
 	% The PID of the certificate manager (if any) for this virtual
 	% host, in charge of certificate generation and renewal:
 	%
-	cert_manager_pid :: maybe( class_USCertificateManager:manager_pid() ) } ).
+	cert_manager_pid :: option( class_USCertificateManager:manager_pid() ) } ).
 
 
 
@@ -97,7 +97,7 @@
 	%
 	% (typically awstats.pl, possibly in /usr/share/webapps/awstats/cgi-bin/)
 	%
-	update_tool_path :: maybe( file_utils:bin_executable_path() ),
+	update_tool_path :: option( file_utils:bin_executable_path() ),
 
 
 	% Full path to the executable in charge of the generation of HTML reports:

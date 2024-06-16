@@ -19,16 +19,20 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Monday, August 3, 2020.
 
-
-% @doc <b>LEEC-compliant handler</b> for US-Web, whose role is to answer ACME
-% challenges thanks to LEEC, in order to complete the verification procedure.
-%
-% See [https://leec.esperide.org/#usage-example] for more details.
-%
 -module(us_web_leec_handler).
+
+-moduledoc """
+**LEEC-compliant handler** for US-Web, whose role is to answer ACME challenges
+thanks to LEEC, in order to complete the verification procedure.
+
+See <https://leec.esperide.org/#usage-example> for more details.
+""".
 
 
 -export([ init/2, handle/2, terminate/3 ]).
+
+
+% Type shorthands:
 
 -type cert_manager_pid() :: class_USCertificateManager:manager_pid().
 
@@ -40,12 +44,13 @@
 
 
 
-% @doc Initialises this LEEC handler.
-%
-% This handler initialisation tries to serve the relevant challenge tokens to
-% the requesting http client (supposed to be an ACME server currently trying to
-% read the thumbprints from the well-known ACME URL).
-%
+-doc """
+Initialises this LEEC handler.
+
+This handler initialisation tries to serve the relevant challenge tokens to the
+requesting http client (supposed to be an ACME server currently trying to read
+the thumbprints from the well-known ACME URL).
+""".
 -spec init( cowboy_req:req(), handler_state() ) ->
 									us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
@@ -143,14 +148,14 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 
 
-% @doc Handles specified request (not expected to be used).
+-doc "Handles specified request (not expected to be used).".
 handle( Req, HandlerState ) ->
 	trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.
 
 
 
-% @doc Terminates this handler.
+-doc "Terminates this handler.".
 terminate( _Reason=normal, _Req, _HandlerState ) ->
 	ok;
 

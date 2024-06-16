@@ -19,17 +19,19 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Wednesday, December 25, 2019.
 
-
-% @doc The <b>main entry point</b> of the US-Web active OTP application.
-%
-% Typically triggered:
-%
-%  - through OTP/rebar3, by ebin/us_web.app (as obtained from
-%  conf/us_web.app.src; see start/2)
-%
-%  - directly, with the help of Myriad's otp_utils (see exec/0)
-%
 -module(us_web_app).
+
+-moduledoc """
+The **main entry point** of the US-Web active OTP application.
+
+Typically triggered:
+
+- through OTP/rebar3, by ebin/us_web.app (as obtained from conf/us_web.app.src;
+  see start/2)
+
+- directly, with the help of Myriad's otp_utils (see exec/0)
+""".
+
 
 -behaviour(application).
 
@@ -37,9 +39,10 @@
 -export([ exec/0, start/2, stop/1 ]).
 
 
-% Shorthands:
+% Type shorthand:
 
 -type application_name() :: otp_utils:application_name().
+
 
 
 % Implementation notes:
@@ -61,9 +64,10 @@
 
 
 
-% @doc Runs US-Web, directly (e.g. as 'make us_web_exec') rather than as an OTP
-% release.
-%
+-doc """
+Runs US-Web, directly (e.g. as 'make us_web_exec') rather than as an OTP
+release.
+""".
 -spec exec() -> void().
 exec() ->
 
@@ -124,18 +128,19 @@ exec() ->
 
 
 
-% @doc Called when US-Web itself is started as an OTP application (as opposed to
-% natively, "manually", see exec/0).
-%
-% The setup and dependency management shall have been done already by the OTP
-% release system. So here no ebin path to set or prerequisite applications to
-% start for applications listed in US-Web's .app file, we focus only on the
-% applications not listed whereas possibly useful in this context (shotgun,
-% elli) and on us_web itself.
-%
-% Note that it may easier/more reliable to add these applications directly in
-% the OTP release / rebar configuration.
-%
+-doc """
+Called when US-Web itself is started as an OTP application (as opposed to
+natively, "manually", see exec/0).
+
+The setup and dependency management shall have been done already by the OTP
+release system. So here no ebin path to set or prerequisite applications to
+start for applications listed in US-Web's .app file, we focus only on the
+applications not listed whereas possibly useful in this context (shotgun, elli)
+and on us_web itself.
+
+Note that it may easier/more reliable to add these applications directly in the
+OTP release / rebar configuration.
+""".
 start( StartType, StartArgs ) ->
 
 	% Myriad may be already available in this branch as well, though:
@@ -167,7 +172,7 @@ start( StartType, StartArgs ) ->
 
 
 
-% @doc Stops the US-Web application.
+-doc "Stops the US-Web application.".
 stop( _State ) ->
 	trace_bridge:info( "Stopping the us_web application." ),
 
@@ -183,7 +188,7 @@ stop( _State ) ->
 % Internal functions:
 
 
-% @doc Starts required applications (not used currently).
+-doc "Starts the required applications (not used currently).".
 -spec start_application( application_name() ) -> void().
 start_application( simple_bridge ) ->
 

@@ -19,12 +19,13 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Friday, February 26, 2021.
 
-
-% @doc Testing of <b>US-Web as an OTP active application</b>, directly from
-% within its code base (hence without needing to create a separate, mock-up test
-% OTP release for that).
-%
 -module(us_web_otp_application_test).
+
+-moduledoc """
+Testing of **US-Web as an OTP active application**, directly from within its
+code base (hence without needing to create a separate, mock-up test OTP release
+for that).
+""".
 
 
 % For run/0 export and test traces:
@@ -38,7 +39,7 @@
 
 
 
-% @doc Runs the actual test.
+-doc "Runs the actual test.".
 test_us_web_application( OrderedAppNames ) ->
 
 	test_facilities:display( "Starting the US-Web OTP active application." ),
@@ -262,13 +263,14 @@ test_us_web_application( OrderedAppNames ) ->
 
 
 
-% @doc Runs this application test.
-%
-% Note that the {us_web, us_common, traces, wooper, myriad}.app files will have
-% to be found and used for this test to succeed: US-Web, US-Common, Traces,
-% WOOPER and Myriad must be already available as prerequisite, fully-built OTP
-% applications.
-%
+-doc """
+Runs this application test.
+
+Note that the {us_web, us_common, traces, wooper, myriad}.app files will have to
+be found and used for this test to succeed: US-Web, US-Common, Traces, WOOPER
+and Myriad must be already available as prerequisite, fully-built OTP
+applications.
+""".
 -spec run() -> no_return().
 run() ->
 

@@ -1,10 +1,12 @@
-% @doc This is the US-Web module in charge of <b>handling requests aimed at
-% Nitrogen-based virtual hosts</b>.
-%
-% Directly adapted from simple_bridge's
-% src/cowboy_bridge_modules/cowboy_simple_bridge_anchor.erl module.
-%
 -module(us_web_nitrogen_anchor).
+
+-moduledoc """
+This is the US-Web module in charge of **handling requests aimed at
+Nitrogen-based virtual hosts**.
+
+Directly adapted from simple_bridge's
+src/cowboy_bridge_modules/cowboy_simple_bridge_anchor.erl module.
+""".
 
 
 -export([
@@ -156,9 +158,10 @@ websocket_terminate( Reason,
 	ok = Handler:ws_terminate( Reason, Bridge, State ).
 
 
-% @doc Reformats a simple_bridge return value into something that can
-% be handled by cowboy.
-%
+-doc """
+Reformats a simple_bridge return value into something that can
+be handled by cowboy.
+""".
 massage_reply( {reply, {Type, Data}, NewState }, WSState )
 		when Type==binary orelse Type==text ->
 	{reply, {Type, iolist_to_binary(Data)}, WSState#ws_state{state=NewState}};

@@ -19,13 +19,13 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Friday, August 7, 2020.
 
-
-% @doc <b>Cowboy-compliant port forwarder</b> for US-Web: automatically forwards
-% a request aimed at a given TCP port (e.g. 80) to another port (e.g. 443, for
-% an automatic promotion of http into https).
-%
 -module(us_web_port_forwarder).
 
+-moduledoc """
+**Cowboy-compliant port forwarder** for US-Web: automatically forwards a request
+aimed at a given TCP port (e.g. 80) to another port (e.g. 443, for an automatic
+promotion of http into https).
+""".
 
 -export([ init/2 ]).
 
@@ -34,8 +34,9 @@
 % https://github.com/rabbitmq/rabbitmq-web-dispatch/blob/master/src/.
 
 
+-doc "State carried by the process in charge of a request.".
 -type handler_state() :: net_utils:tcp_port().
-% State carried by the process in charge of a request.
+
 
 
 % For server_header_id:
@@ -43,9 +44,11 @@
 
 
 
-% @doc Initialises this handler.
-%
-% This handler initialisation performs the requested TCP port redirection.
+-doc """
+Initialises this handler.
+
+ This handler initialisation performs the requested TCP port redirection.
+""".
 -spec init( cowboy_req:req(), handler_state() ) ->
 									us_web_handler:handler_return().
 init( Req, HandlerState=TargetTCPPort ) ->

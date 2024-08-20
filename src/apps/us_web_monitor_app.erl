@@ -1,4 +1,4 @@
-% Copyright (C) 2020-2020 Olivier Boudeville
+% Copyright (C) 2020-2024 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -19,13 +19,15 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Sunday, January 19, 2020.
 
-
-
-% Actual US-Web monitoring logic.
-%
-% Typically called through the us_web/priv/bin/monitor-us-web.sh script.
-%
 -module(us_web_monitor_app).
+
+-moduledoc """
+Actual US-Web monitoring logic.
+
+Typically called through the us_web/priv/bin/monitor-us-web.sh script.
+""".
+
+
 
 % For exec/0 export:
 -include_lib("myriad/include/app_facilities.hrl").
@@ -40,7 +42,7 @@
 
 
 
-% Runs the app.
+-doc "Runs the app.".
 -spec exec() -> no_return().
 exec() ->
 
@@ -59,25 +61,22 @@ exec() ->
 
 	Cfg = file_utils:read_terms( CfgFilePath ),
 
-	%trace_utils:debug_fmt( "Read configuration from '~s': ~p",
-	%					   [ CfgFilePath, Cfg ] ),
+	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
+	%                       [ CfgFilePath, Cfg ] ),
 
 	TargetNodeName = get_target_node_name( Cfg ),
 
-	app_facilities:display( "Connecting to node '~s'.", [ TargetNodeName ] ),
+	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
 
-	case net_adm:ping( TargetNodeName ) of
+	net_adm:ping( TargetNodeName ) =:= pong orelse
+		begin
 
-		pong ->
-			ok;
-
-		pang ->
-			trace_utils:error_fmt( "Unable to connect to '~s'. Is this node "
+			trace_utils:error_fmt( "Unable to connect to '~ts'. Is this node "
 								   "really running?", [ TargetNodeName ] ),
 
 			throw( { unable_to_connect_to, TargetNodeName } )
 
-	end,
+		end,
 
 	% Otherwise the remote node could not be known before use:
 	global:sync(),
@@ -87,8 +86,8 @@ exec() ->
 
 	AggregatorName = ?trace_aggregator_name,
 
-	%app_facilities:display( "Looking up aggregator by name: ~s.",
-	%						[ AggregatorName ] ),
+	%app_facilities:display( "Looking up aggregator by name: ~ts.",
+	%                        [ AggregatorName ] ),
 
 	AggregatorPid = naming_utils:get_registered_pid_for( AggregatorName,
 														 global ),
@@ -130,12 +129,12 @@ exec() ->
 init_from_command_line() ->
 
 	% To force options for testing:
-	%ArgTable = shell_utils:generate_argument_table( "--help" ),
+	%ArgTable = cmd_line_utils:generate_argument_table( "--help" ),
 
-	ArgTable = shell_utils:get_argument_table(),
+	ArgTable = cmd_line_utils:get_argument_table(),
 
-	%trace_utils:debug_fmt( "Argument table: ~s",
-	%					   [ list_table:to_string( ArgTable ) ] ),
+	%trace_utils:debug_fmt( "Argument table: ~ts",
+	%                       [ list_table:to_string( ArgTable ) ] ),
 
 	% Argument expected to be set by the caller script:
 	{ CfgFilePath, ConfigShrunkTable } =
@@ -162,7 +161,7 @@ init_from_command_line() ->
 
 	end,
 
-	%trace_utils:debug_fmt( "Configuration file: '~s'.", [ CfgFilePath ] ),
+	%trace_utils:debug_fmt( "Configuration file: '~ts'.", [ CfgFilePath ] ),
 
 	% Argument also expected to be set by the caller script:
 	{ RemoteCookie, CookieShrunkTable } =
@@ -180,31 +179,24 @@ init_from_command_line() ->
 
 	end,
 
-	trace_utils:trace_fmt( "Setting remote cookie: '~s'.", [ RemoteCookie ] ),
+	trace_utils:trace_fmt( "Setting remote cookie: '~ts'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
 
-	case list_table:is_empty( CookieShrunkTable ) of
-
-		true ->
-			ok;
-
-		false ->
-			throw( { unexpected_arguments,
-					 list_table:enumerate( CookieShrunkTable ) } )
-
-	end,
+	list_table:is_empty( CookieShrunkTable ) orelse
+		throw( { unexpected_arguments,
+				 list_table:enumerate( CookieShrunkTable ) } ),
 
 	CfgFilePath.
 
 
 
-% Returns the target node name.
+-doc "Returns the target node name.".
 get_target_node_name( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
 
-	%trace_utils:trace_fmt( "Remote host: '~s'.", [ RemoteHostname ] ),
+	%trace_utils:trace_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
 
 	%NodeStringName =
 	case net_utils:localnode() of
@@ -222,11 +214,11 @@ get_target_node_name( Cfg ) ->
 
 
 
-% Returns the TCP port range to use (if any).
+-doc "Returns the TCP port range to use (if any).".
 get_tcp_port_range( Cfg ) ->
 
 	MaybePortRange = list_table:get_value_with_defaults( _K=tcp_port_range,
-												 _Default=undefined, Cfg ),
+		_Default=undefined, Cfg ),
 
 	%trace_utils:trace_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
 

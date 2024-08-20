@@ -1,0 +1,87 @@
+# This makefile is to be available (as a symlink) at the root of a native US-Web
+# installation (hence typically in the 'us_web-native' root directory), whereas
+# it is defined in us_web/conf/GNUmakefile-for-native-root.
+
+
+.PHONY: all pull build build-cowboy update rebuild run-debug kill clean
+
+
+
+CEYLAN_REPOSITORIES := myriad leec wooper traces
+US_REPOSITORIES := us_common us_web
+
+OUR_REPOSITORIES := $(CEYLAN_REPOSITORIES) $(US_REPOSITORIES)
+
+# Preferred in-order:
+ALL_REPOSITORIES := $(CEYLAN_REPOSITORIES) cowboy $(US_REPOSITORIES)
+
+
+
+# Default (most useful):
+all: update
+
+#	@echo "  Please select target among: pull build update rebuild clean"
+
+
+# Updates all repositories involved (any local change being then lost):
+pull:
+	@echo "  Updating (force-pulling) sources from all repositories involved"
+	@for r in $(ALL_REPOSITORIES); do (echo " - pulling $$r"; cd $$r && git fetch && git reset --hard HEAD && git merge '@{u}' ) || exit 5; done
+
+
+build:
+	@echo "  Building (if necessary) all our (Ceylan and US) repositories involved"
+	@for r in $(OUR_REPOSITORIES); do (echo " - building $$r"; cd $$r && $(MAKE) -s all ) || exit 15; done
+
+
+build-cowboy:
+	@echo "  Building cowboy"
+	@cd cowboy && rebar3 compile
+
+
+
+# Lightweight rebuild (no prior cleaning)
+update: pull build
+
+
+# Note that, after a sync done through the 'sync-us-web' target, on the server,
+# for a module X, X.erl and X.beam are likely to bear the same timestamp, so a
+# mere 'build' may not attempt to recreate the transferred X.beam, whereas it
+# might be obsolete from the start, compared to the X.erl.
+#
+# So 'rebuild' is a safer target than 'build', and BEAM files shall not be
+# rsync'ed. However, as the target tree is generally owned by a different user
+# then the user performing, on the client side, the rsync, the timestamps of the
+# rsync'ed files are not updated anymore (as otherwise that operation is bound
+# to fail) and thus shall not be relied upon.
+#
+# As a consequence, prefer rebuilding to building, or ensure to rsync'ed BEAM
+# files that are up-to-date (this is what the sync targets try to do).
+#
+rebuild: clean build build-cowboy
+
+
+run-debug: build kill
+	@echo "   Running a debug US-Web instance with default settings"
+	@us_web/priv/bin/start-us-web-native-build.sh
+
+
+kill:
+	@echo "  Removing (for debug) any prior US-Web instance".
+	@cd us_web/priv/bin/kill-us-web.sh
+
+
+# Previously would kill blindly all running Erlang programs:
+#	@echo "  Removing (for debug) any prior US-Web instance by killing EPMD and any Erlang VM".
+#	@killall -9 epmd beam.smp 2>/dev/null || true
+
+
+# We do not clean/build cowboy anymore as a version thereof is not supposed to
+# change.
+#
+# (the 'unset' was for Cowboy, if even included, as it is potentially troubled
+# by an unrelated 'sp' define)
+#
+clean:
+	@echo "  Cleaning all our (Ceylan and US) repositories involved"
+	@for r in $(OUR_REPOSITORIES); do (echo " - cleaning $$r"; cd $$r && $(MAKE) -s clean) || exit 10; done

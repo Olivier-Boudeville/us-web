@@ -10,8 +10,8 @@
 % ./ebin/us_web.app
 % ./src/us_web.app.src -> ../ebin/us_web.app
 %
-% For more information see the Ceylan-Myriad 'rebar3-create-app-file' make
-% target and its associated comments.
+% For more information see the Ceylan-Myriad 'create-app-file' make target and
+% its associated comments.
 
 % See also:
 % - http://erlang.org/doc/man/app.html
@@ -20,7 +20,7 @@
 
 {application, us_web,
  [{description, "US-Web, the OTP active application offering web services in the context of the Universal Server framework (see http://us-web.esperide.org)"},
-  {vsn, "0.0.5"},
+  {vsn, "1.1.5"},
   {registered, [us_web]},
 
  % Active application:
@@ -34,17 +34,28 @@
   %  - Traces, see http://traces.esperide.org/traces.html#otp
   %  - WOOPER, see http://wooper.esperide.org/wooper.html#otp
   %  - Myriad, see http://myriad.esperide.org/myriad.html#otp
-  %
 
-  % myriad is a dependency of wooper, which is itself a dependency of traces,
-  % dependency of us_common (dependency of this us_web); as such they may not be
-  % listed here, however we stay conservative;
+
+  % Myriad is a dependency of Wooper, which is itself a dependency of Traces,
+  % dependency of US-Common (dependency of this US-Web); as such they may not be
+  % listed here, however we stay conservative.
   %
-  {applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common]},
+  % Regarding Nitrogen and its dependencies, finally we do not list them here
+  % and have instead US-Web activate them iff a Nitrogen-based website is
+  % declared (inserting them in the standard scheme implemented by otp_utils
+  % would be tricky anyway, as for example
+  % nitrogen_core/deps/nprocreg/ebin/nprocreg.app would have to be found).
+
+  % Non-Nitrogen version:
+  {applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common, leec]},
+
+  % With Nitrogen:
+  %{applications, [kernel, stdlib, sasl, cowboy, myriad, wooper, traces, us_common, leec,
+  %                nprocreg, nitro_cache, nitrogen_core, simple_bridge]},
   {env,[]},
 
   % Flat hierarchy in ebin here:
-  {modules, [class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_handler, us_web_meta, us_web_monitor_app, us_web_static, us_web_sup]},
+  {modules, [class_USCertificateManager, class_USWebConfigServer, class_USWebLogger, us_web_app, us_web_generate_report_app, us_web_handler, us_web_leec_handler, us_web_meta, us_web_monitor_app, us_web_nitrogen_anchor, us_web_nitrogen_handler, us_web_port_forwarder, us_web_static, us_web_stop_app, us_web_sup]},
 
   {licenses, ["US-Web is licensed by its author (Olivier Boudeville) under the GNU Affero General Public License (AGPL), version 3.0 or later"]},
 

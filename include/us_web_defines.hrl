@@ -1,4 +1,4 @@
-% Copyright (C) 2020-2020 Olivier Boudeville
+% Copyright (C) 2020-2024 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -20,12 +20,29 @@
 % Creation date: Sunday, January 19, 2020.
 
 
-% Common us_web defines.
+% Common US-Web defines.
+
+-define( default_us_web_config_server_registration_name, us_web_config_server ).
+-define( default_us_web_scheduler_registration_name, us_web_scheduler ).
+
+% Global, as we can configure the corresponding name:
+-define( us_web_config_server_registration_scope, global_only ).
+
+% Local, as fixed name:
+-define( us_web_scheduler_registration_scope, local_only ).
 
 
-% Same from the upper US level:
--include_lib("us_common/include/us_defines.hrl").
+% Allows to spoof the webserver identity when sending back information (always
+% fun, yet not working currently):
+%
+% (typically instead of "Cowboy")
+%
+%-define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
+-define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
+
+% To discriminate with headers:
+-define( server_req_id, <<"Apache/2.4.2 (Unix)">> ).
 
 
-% us_web-level, for which the web-srv:web-srv ownership shall be enforced:
--define( us_web_user, "web-srv" ).
+% Same from the upper US-Common level:
+%-include_lib("us_common/include/us_common_defines.hrl").

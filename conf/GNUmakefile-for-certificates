@@ -1,0 +1,30 @@
+# Typically to be available from the [...]/us_web-data/certificates directory
+# (e.g. /opt/universal-server/us_web-data/certificates)
+
+# Where the current certificates may be stored, so that correct certificates may
+# be saved and possibly reused, should obtaining newer ones fail and overwrite
+# them:
+#
+CERT_SAVE_DIR := per-base-hostname-production-certificates/$$(date '+%Y%m%d')
+
+
+.PHONY: all check-certs save-certs info
+
+
+all:
+	@echo "Available make targets: check-certs, save-certs and info."
+
+
+check-certs:
+	@echo "  Checking local certificates for issuer, DNS coverage and end of validity:"
+	@for cert in *.crt; do echo "For $${cert}:"; openssl x509 -text -noout -in "$${cert}" | grep 'Issuer:\|DNS:\|Not After'; done
+	@echo "Run 'make save-certs' to backup them to '$(CERT_SAVE_DIR)'."
+
+
+save-certs:
+	@echo "  Copying local certificates to $(CERT_SAVE_DIR)"
+	@mkdir -p "$(CERT_SAVE_DIR)" && /bin/cp -f *.pem *.crt *.csr *.key "$(CERT_SAVE_DIR)"
+
+
+info:
+	@echo "CERT_SAVE_DIR = $(CERT_SAVE_DIR)"

@@ -1,4 +1,4 @@
-% Copyright (C) 2019-2020 Olivier Boudeville
+% Copyright (C) 2019-2024 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -19,16 +19,25 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Wednesday, December 25, 2019.
 
-
-% Cowboy-compliant handler for us_web:
-%
-% - provides static dispatches so that the websites corresponding to the virtual
-% hosts can be appropriately served; see conf/us_web_vhosts.config, which holds
-% the data relative to virtual hosts
-%
-% - handles HTTP errors (notably 404 ones, thanks to a specific web page)
-%
 -module(us_web_handler).
+
+-moduledoc """
+**Generic, Cowboy-compliant handler** for US-Web.
+
+This handler:
+
+- provides static dispatches so that the (static) websites corresponding to
+the virtual hosts can be appropriately served; see the US-Web configuration
+file (e.g. priv/for-testing/us-web-for-tests.config), which holds the data
+relative to virtual hosts
+
+- handles HTTP errors (notably 404 ones, thanks to a specifically-generated
+web page)
+
+Note that this handler is mostly a library (a toolbox centralising helpers on
+behalf of the other handlers), knowing that its sole purpose as an handler is
+to act as a placeholder.
+""".
 
 
 -export([ init/2, return_404/3,
@@ -36,57 +45,68 @@
 		  manage_access_log/3, manage_error_log/4 ]).
 
 
-
-% Module to handle web content through dispatch rules (ex: 'cowboy_rest'):
+-doc """
+Module to handle web content through dispatch rules (e.g. 'cowboy_rest').
+""".
 -type handler_module() :: basic_utils:module_name().
 
 
-% State carried by the process in charge of a request, for most handlers:
--type handler_state() :: maps:map().
+
+-doc "State carried by the process in charge of a request, for most handlers.".
+-type handler_state() :: option( map() ).
 
 
-% A US-specialised web handler, a map which may notably contain entries with
-% following keys:
-%
-% - css_path: file_utils:bin_file_path(), a path relative to the content root of
-% the corresponding virtual host pointing to the default CSS file to be used
-% (ex: for the 404 page)
-%
-% - image_404 :: file_utils:bin_file_path(), a path relative to the content root
-% of the corresponding virtual host pointing to an image (ex: PNG) to be used
-% when generating a 404 error page
-%
+
+-doc """
+A US-Web specialised handler, a map which may notably contain entries with
+following keys:
+
+- css_path: file_utils:bin_file_path(), a path relative to the content root of
+the corresponding virtual host pointing to the default CSS file to be used
+(e.g. for the 404 page)
+
+- image_404 :: file_utils:bin_file_path(), a path relative to the content root
+of the corresponding virtual host pointing to an image (e.g. PNG) to be used
+when generating a 404 error page
+""".
 -type us_handler_state() :: handler_state().
 
 
 
-% The (binary) path for a web content:
+-doc "The (binary) path for a web content.".
 -type bin_content_path() :: file_utils:bin_file_path().
 
-% See https://en.wikipedia.org/wiki/List_of_HTTP_status_codes:
--type http_status_code() :: non_neg_integer().
 
 
-% See https://ninenines.eu/docs/en/cowboy/2.7/manual/cowboy_handler/:
+-doc "See <https://ninenines.eu/docs/en/cowboy/2.9/manual/cowboy_handler/>.".
 -type handler_return() :: { 'ok' | handler_module(), cowboy_req:req(),
 							handler_state() | 'error' }.
 
 
 -export_type([ handler_module/0, handler_state/0, us_handler_state/0,
-			   bin_content_path/0, http_status_code/0, handler_return/0 ]).
+			   bin_content_path/0, handler_return/0 ]).
 
+
+% Shorthands:
+
+-type http_status_code() :: web_utils:http_status_code().
 
 -type log_line() :: class_USWebLogger:log_line().
 
 
+% For server_header_id:
+-include("us_web_defines.hrl").
 
-% Returns a suitable term to notify the request initiator that a 404 error was
-% triggered (meaning that the requested content could not be found).
-%
-% Maybe this dynamic implementation is too resource-demanding (prone to denial
-% of service attack) and may be replaced with a static binary string (yet then
-% copied to each per-request process), determined once for all.
-%
+
+
+-doc """
+Returns a suitable term to notify the request initiator that a 404 error was
+triggered (meaning that the requested content could not be found).
+
+Maybe this dynamic implementation could be too resource-demanding (prone to
+denial of service attack) and may be replaced with a static binary string (yet
+then copied to each per-request process), determined once for all.
+""".
 -spec return_404( cowboy_req:req(), bin_content_path(), handler_state() ) ->
 						handler_return().
 % maps not fully supported in R22:
@@ -95,11 +115,11 @@
 %  BinFullFilepath, #{ image_404 := MaybeImage404 }=HState ) ->
 return_404( Req, BinFullFilepath, HState ) ->
 
-	%trace_utils:debug_fmt( "Returning 404 for full path '~s' and request:~n~p",
-	%					   [ BinFullFilepath, Req ] ),
+	%trace_bridge:debug_fmt( "Returning 404 for full path '~ts' and "
+	%                        "request:~n~p", [ BinFullFilepath, Req ] ),
 
-	[ VHost, TCPPort, PathInfo ] =
-		[ maps:get( K, Req ) || K <- [ host, port, path_info ] ],
+	[ Scheme, VHost, TCPPort, PathInfo ] =
+		[ maps:get( K, Req ) || K <- [ scheme, host, port, path_info ] ],
 
 	MaybeBinCssFile = maps:get( css_path, HState ),
 
@@ -125,7 +145,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 	end,
 
-	PageTitle = text_utils:format( "Page '~s' not found on ~s",
+	PageTitle = text_utils:format( "Page '~ts' not found on ~ts",
 								   [ PathForBrowser, VHost ] ),
 
 	MiddleString = case MaybeImage404 of
@@ -142,25 +162,24 @@ return_404( Req, BinFullFilepath, HState ) ->
 			% server); so:
 			%
 			RootRelImgPath = file_utils:join(
-				   [ ".." || _PathElem <- tl( PathInfo ) ], ImagePath ),
+				[ ".." || _PathElem <- tl( PathInfo ) ], ImagePath ),
 
-			text_utils:format( "<td><center><img src=\"~s\" border=\"0\" "
-							   "width=\"50%\"></center></td>",
-							   [ RootRelImgPath ] )
+			text_utils:format( "<td><center><img src=\"~ts\" border=\"0\" "
+				"width=\"50%\"></center></td>", [ RootRelImgPath ] )
 
 	end,
 
 
 	PageBody = text_utils:format(
-	  <<"<h1>Requested page '~s' not found</h1>
+		<<"<h1>Requested content '~ts' not found</h1>
   <p>I could not find the document you wanted, sorry.</p>
-  <p style=\"padding-left:10%\">       --- The ~s server.</p>
+  <p style=\"padding-left:10%\">       --- The ~ts server.</p>
   <p>
 	<center>
 		<table style=\"border:none\" width=\"30%\">
 		  <tr>
 			<td style=\"font-size:1000%\">4</td>
-			~s
+			~ts
 			<td style=\"font-size:1000%\">4</td>
 		  </tr>
 		</table>
@@ -168,16 +187,16 @@ return_404( Req, BinFullFilepath, HState ) ->
   </p>">>,
   % Reporting currently disabled, not wanting to leak an e-mail address:
   %
-  %<p>You can report this issue: <a href=\"mailto:error-404@~s?subject=Error%20404\">click here</a>. Thanks!</p>">>,
+  %<p>You can report this issue: <a href=\"mailto:error-404@~ts?subject=Error%20404\">click here</a>. Thanks!</p>">>,
 	%[ PathForBrowser, VHost, MiddleString, VHost ] ),
 	[ PathForBrowser, VHost, MiddleString ] ),
 
 	ReplyBody = [ get_header( PageTitle, MaybeBinCssFile, MaybeBinIconFile ),
-				  PageBody, get_footer( VHost, TCPPort ) ],
+				  PageBody, get_footer( VHost, Scheme, TCPPort ) ],
 
 	ReplyHeaders = get_http_headers( ReplyBody ),
 
-	HttpStatusCode = 404,
+	HttpStatusCode = _NotFound = 404,
 
 	ReplyReq = cowboy_req:reply( HttpStatusCode, ReplyHeaders, ReplyBody, Req ),
 
@@ -189,7 +208,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 
 
-% Returns a suitable document header.
+-doc "Returns a suitable document header.".
 get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 	CSSString = case MaybeBinCssFile of
@@ -199,8 +218,8 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 		BinCssFile ->
 			text_utils:format(
-			  "<link rel=\"stylesheet\" type=\"text/css\" href=\"~s\">",
-			  [ BinCssFile ] )
+				"<link rel=\"stylesheet\" type=\"text/css\" href=\"~ts\">",
+				[ BinCssFile ] )
 
 	end,
 
@@ -210,7 +229,7 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 			"";
 
 		BinIconFile ->
-			text_utils:format( "<link rel=\"icon\" href=\"~s\">",
+			text_utils:format( "<link rel=\"icon\" href=\"~ts\">",
 							   [ BinIconFile ] )
 
 	end,
@@ -232,7 +251,7 @@ get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
 
 
 
-% Returns a base HTML footer.
+-doc "Returns a base HTML footer.".
 get_base_footer() ->
 	"
  </body>
@@ -240,49 +259,64 @@ get_base_footer() ->
 ".
 
 
-% Returns a suitable document footer.
-get_footer( VHost, Port ) ->
+-doc "Returns a suitable document footer.".
+get_footer( VHost, Scheme, Port ) ->
 	text_utils:format( <<"
 	<p>
-	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"http://~s:~B\">website root</a>.
+	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"~ts://~ts:~B\">website root</a>.
 	  </center>
 	</p>
-~s">>, [ VHost, Port, get_base_footer() ]).
+~ts">>, [ Scheme, VHost, Port, get_base_footer() ]).
 
 
-% Returns a suitable document header.
-get_http_headers( Body ) ->
+
+-doc "Returns a suitable document header.".
+get_http_headers( _Body ) ->
 	#{ <<"content-type">> => <<"text/html">>,
-	   <<"content-length">> => integer_to_list( iolist_size( Body ) ),
-	   % A bit of obfuscation:
-	   <<"server">> => <<"Apache/2.4.1 (Unix)">> }.
+
+	   % No (computed by Cowboy):
+	   %<<"content-length">> => integer_to_list( iolist_size( Body ) ),
+
+	   % A bit of obfuscation (not taken into account, unfortunately):
+	   % (see also https://arjanvandergaag.nl/blog/cowboy-server-signature.html)
+	   <<"server">> => ?server_header_id }.
 
 
 
 % Test handler possibly called through routing.
 
-% Typically called because a dispath rules mentioned that module as a (debug)
-% handler:
-%
+
+-doc """
+Inits the specified handler.
+
+Typically called because a dispatch rule mentioned that module as a (debug)
+handler.
+""".
 -spec init( cowboy_req:req(), handler_state() ) -> handler_return().
-init( Req, HState ) ->
+init( Req, HandlerState ) ->
 
-	us_web_utils:debug_fmt( "Request ~p to be handled, while handler state "
-							"is ~p...", [ Req, HState ] ),
+	trace_bridge:debug_fmt( "Request ~p to be handled, while handler state "
+							"is ~p...", [ Req, HandlerState ] ),
 
-	Reply = cowboy_req:reply( 200, #{ <<"content-type">> => <<"text/plain">> },
-							  <<"Hello from Universal web server!">>, Req ),
+	Body = <<"<html lang=\"en\"><body>Hello from the US-Web server!</body></html>">>,
 
-	{ ok, Reply, HState }.
+	Reply = cowboy_req:reply( _Status=200, get_http_headers( Body ), Body,
+							  Req ),
+
+	{ ok, Reply, HandlerState }.
+
 
 
 
 % Facilities.
 
 
-% Access log facility offered to web handlers, taking advantage of the
-% request-specific process in order to further parallelize their processing.
-%
+-doc """
+Manages specified handler access log.
+
+Access log facility offered to web handlers, taking advantage of the
+request-specific process in order to further parallelize their processing.
+""".
 -spec manage_access_log( handler_return(), http_status_code(),
 						 handler_state() ) -> void().
 manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
@@ -290,35 +324,37 @@ manage_access_log( HandlerReturn, HttpStatusCode, HState ) ->
 	case maps:get( logger_pid, HState ) of
 
 		undefined ->
-			%trace_utils:debug_fmt( "[~w] Request served (code: ~B), "
-			%   "no logger.", [ self(), HttpStatusCode ] );
-			ok;
+			cond_utils:if_defined( us_web_debug_log_analysis,
+				trace_bridge:debug_fmt( "[~w] Request served (code: ~B), "
+					"no logger.", [ self(), HttpStatusCode ] ),
+				ok );
 
 		LoggerPid ->
 
 			BinLog = generate_access_log( HandlerReturn, HttpStatusCode ),
 
 			% Oneway call:
-			LoggerPid ! { reportAccess, [ BinLog ] }
+			LoggerPid ! { reportAccess, [ BinLog ] },
 
-			%trace_utils:debug_fmt(
-			%  "[~w] Request served (code: ~B), logger ~w notified.",
-			%  [ self(), HttpStatusCode, LoggerPid ] )
+			cond_utils:if_defined( us_web_debug_log_analysis,
+				trace_bridge:debug_fmt(
+					"[~w] Request served (code: ~B), logger ~w notified.",
+					[ self(), HttpStatusCode, LoggerPid ] ) )
 
 	end.
 
 
 
-% Returns a binary access log line from specified request information.
+-doc "Returns a binary access log line from specified request information.".
 -spec generate_access_log( handler_return(), http_status_code() ) -> log_line().
 generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
-	%trace_utils:debug_fmt( "Generating access log for following handler "
-	%                       "return:~n~p", [ HandlerReturn ] ),
+	%trace_bridge:debug_fmt( "Generating access log for following handler "
+	%                        "return:~n~p", [ HandlerReturn ] ),
 
 	% We target here the "NCSA combined with several virtualhostname sharing
 	% same log file" log format, except that we replaced the clumsy '%time1'
-	% (ex: including the 3 first letters of the month, possibly with a capital,
+	% (e.g. including the 3 first letters of the month, possibly with a capital,
 	% and a UTC offset difficult to sort out) with more straightforward, less
 	% demanding '%time2': "[dd/mmm/yyyy:hh:mm:ss +0x00]" becomes for the better
 	% "yyyy-mm-dd hh:mm:ss".
@@ -349,7 +385,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 	% To be resolved later as an hostname (reverse look-up):
 	{ IP, _Port } = maps:get( peer, Req ),
 
-	IPString = io_lib:format( "~B.~B.~B.~B", tuple_to_list( IP ) ),
+	IPString = text_utils:format( "~B.~B.~B.~B", tuple_to_list( IP ) ),
 
 	% RFC 1413 identity of the client (unreliable):
 	Other = "-",
@@ -366,7 +402,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 	Path = maps:get( path, Req ),
 	Version = maps:get( version, Req ),
 
-	MethodURL = text_utils:format( "~s ~s ~s", [ Method, Path, Version ] ),
+	MethodURL = text_utils:format( "~ts ~ts ~ts", [ Method, Path, Version ] ),
 
 	% Size of the body object returned to the client, not including the response
 	% headers:
@@ -385,56 +421,60 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 	UserAgent = maps:get( <<"user-agent">>, Headers,
 						  _DefaultUserAgent= <<"(unknown user agent)">> ),
 
-	text_utils:bin_format( "~s ~s ~s ~s ~s \"~s\" ~B ~B \"~s\" \"~s\"~n",
+	text_utils:bin_format(
+		"~ts ~ts ~ts ~ts ~ts \"~ts\" ~B ~B \"~ts\" \"~ts\"~n",
 		[ VirtualName, IPString, Other, Login, Time, MethodURL, HttpStatusCode,
 		  SentSize, Referer, UserAgent ] ).
 
 
 
-% Error log facility offered to web handlers, taking advantage of the
-% request-specific process in order to further parallelize their processing.
-%
+-doc """
+Manages specified handler error log.
+
+Error log facility offered to web handlers, taking advantage of the
+request-specific process in order to further parallelize their processing.
+""".
 -spec manage_error_log( basic_utils:error_reason(), cowboy_req:req(),
-				bin_content_path(), handler_state() ) -> void().
+						bin_content_path(), handler_state() ) -> void().
 manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
-	%trace_utils:debug_fmt( "Logging error for full path '~s' and "
-	%					   "request:~n~p", [ BinFullFilePath, Req ] ),
+	%trace_bridge:debug_fmt( "Logging error for full path '~ts' and "
+	%                        "request:~n~p", [ BinFullFilePath, Req ] ),
 
 	% Unlike accesses, no specific log format seems to apply here:
 
 	Host = maps:get( host, Req, no_host ),
 
 	BinErrorMsg = text_utils:bin_format(
-		"[~s][~s] Error '~p' while requested to serve '~s'; full ~s~n",
+		"[~ts][~ts] Error '~p' while requested to serve '~ts'; full ~ts~n",
 		[ time_utils:get_textual_timestamp(), Host, Error, BinFullFilePath,
 		  request_to_string( Req ) ] ),
 
 	case maps:get( logger_pid, HState ) of
 
 		undefined ->
-			trace_utils:error_fmt( "[~w] No logger to record ~s",
-								   [ self(), BinErrorMsg ] );
+			trace_bridge:error_fmt( "[~w] No logger to record ~ts",
+									[ self(), BinErrorMsg ] );
 
 		LoggerPid ->
 
 			% Oneway call:
 			LoggerPid ! { reportError, [ BinErrorMsg ] }
 
-			%trace_utils:debug_fmt( "[~w] reported ~s.",
-			%					   [ self(), BinErrorMsg ] )
+			%trace_bridge:debug_fmt( "[~w] reported ~ts.",
+			%                        [ self(), BinErrorMsg ] )
 
 	end.
 
 
 
-% Returns a textual description of specified request.
--spec request_to_string( cowboy_req:req() ) -> text_utils:string().
+-doc "Returns a textual description of the specified request.".
+-spec request_to_string( cowboy_req:req() ) -> text_utils:ustring().
 request_to_string( Req ) ->
 
 	% Map in map better special cases:
 	{ Headers, ShrunkReq } = table:extract_entry( headers, Req ),
 
-	text_utils:format( "request corresponding without the headers to a ~s~n"
-					   "Request headers corresponding to a ~s",
-		  [ table:to_string( ShrunkReq ), table:to_string( Headers ) ] ).
+	text_utils:format( "request corresponding without the headers to a ~ts~n"
+		"Request headers corresponding to a ~ts",
+		[ table:to_string( ShrunkReq ), table:to_string( Headers ) ] ).

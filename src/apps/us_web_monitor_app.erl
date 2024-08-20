@@ -22,27 +22,27 @@
 -module(us_web_monitor_app).
 
 -moduledoc """
-Actual US-Web monitoring logic.
+Actual US-Web **trace monitoring logic**, as a (Myriad) application.
 
 Typically called through the us_web/priv/bin/monitor-us-web.sh script.
+
+Designed to monitor a US-Web instance typically from any remote host able to
+connect to the VM hosting that instance.
 """.
 
 
+-export([ exec/0 ]).
 
-% For exec/0 export:
--include_lib("myriad/include/app_facilities.hrl").
 
 % For update_code_path_for_myriad/0 and all:
 -include_lib("myriad/include/myriad_script_include.hrl").
-
-
 
 % For trace_aggregator_name:
 -include_lib("traces/include/class_TraceAggregator.hrl").
 
 
 
--doc "Runs the app.".
+-doc "Runs this monitoring app.".
 -spec exec() -> no_return().
 exec() ->
 
@@ -64,17 +64,32 @@ exec() ->
 	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
 	%                       [ CfgFilePath, Cfg ] ),
 
-	TargetNodeName = get_target_node_name( Cfg ),
+	[ MainTargetNodeName, UserTargetNodeName ] = get_target_node_names( Cfg ),
 
-	app_facilities:display( "Connecting to node '~ts'.", [ TargetNodeName ] ),
+	app_facilities:display( "Trying to connect to US-Web node '~ts'.",
+							[ MainTargetNodeName ] ),
 
-	net_adm:ping( TargetNodeName ) =:= pong orelse
+	net_adm:ping( MainTargetNodeName ) =:= pong orelse
 		begin
+			trace_utils:warning_fmt( "Unable to connect to a target main "
+				"node '~ts'; trying an alternate one, based on "
+				"user name: '~ts'.",
+				[ MainTargetNodeName, UserTargetNodeName ] ),
 
-			trace_utils:error_fmt( "Unable to connect to '~ts'. Is this node "
-								   "really running?", [ TargetNodeName ] ),
+			net_adm:ping( UserTargetNodeName ) =:= pong orelse
+				begin
+					trace_utils:error_fmt( "Unable to connect to either node "
+						"names, the main one ('~ts') or the user one ('~ts')."
+						"~nIf the target node is really running and is named "
+						"like either of the two, check that the cookies match "
+						"and, finally, that no firewall is in the way "
+						"(e.g. a server may filter the EPMD port of interest).",
+						[ MainTargetNodeName, UserTargetNodeName ] ),
 
-			throw( { unable_to_connect_to, TargetNodeName } )
+					throw( { unable_to_connect_to,
+							 { MainTargetNodeName, UserTargetNodeName } } )
+
+			end
 
 		end,
 
@@ -82,15 +97,19 @@ exec() ->
 	global:sync(),
 
 	%app_facilities:display( "Globally registered names: ~w.",
-	%						[ global:registered_names() ] ),
+	%                        [ global:registered_names() ] ),
 
 	AggregatorName = ?trace_aggregator_name,
 
 	%app_facilities:display( "Looking up aggregator by name: ~ts.",
 	%                        [ AggregatorName ] ),
 
-	AggregatorPid = naming_utils:get_registered_pid_for( AggregatorName,
-														 global ),
+	% The trace aggregator is expected to run in the target node, but to be
+	% registered there only locally, to avoid clashing with any other
+	% aggregator:
+	%
+	AggregatorPid = naming_utils:get_locally_registered_pid_for(
+		AggregatorName, MainTargetNodeName ),
 
 	app_facilities:display( "Creating now a local trace listener." ),
 
@@ -115,7 +134,6 @@ exec() ->
 
 	end,
 
-
 	% ?app_stop should not be used here as its wait_for_any_trace_supervisor
 	% macro would wait for a non-launched supervisor.
 	%
@@ -126,6 +144,7 @@ exec() ->
 
 
 
+-doc "Initialises this application from the command line.".
 init_from_command_line() ->
 
 	% To force options for testing:
@@ -138,8 +157,8 @@ init_from_command_line() ->
 
 	% Argument expected to be set by the caller script:
 	{ CfgFilePath, ConfigShrunkTable } =
-		case list_table:extract_entry_if_existing( '-config-file',
-												   ArgTable ) of
+			case list_table:extract_entry_if_existing( '-config-file',
+													   ArgTable ) of
 
 		false ->
 			throw( no_configuration_file_set );
@@ -165,8 +184,8 @@ init_from_command_line() ->
 
 	% Argument also expected to be set by the caller script:
 	{ RemoteCookie, CookieShrunkTable } =
-		case list_table:extract_entry_if_existing( '-target-cookie',
-												   ConfigShrunkTable ) of
+			case list_table:extract_entry_if_existing( '-target-cookie',
+													   ConfigShrunkTable ) of
 
 		false ->
 			throw( no_target_cookie_set );
@@ -179,9 +198,12 @@ init_from_command_line() ->
 
 	end,
 
-	trace_utils:trace_fmt( "Setting remote cookie: '~ts'.", [ RemoteCookie ] ),
+	trace_utils:debug_fmt( "Setting remote cookie: '~ts'.", [ RemoteCookie ] ),
 
 	net_utils:set_cookie( RemoteCookie ),
+
+	%trace_utils:debug_fmt( "Remaining arguments: ~ts",
+	%   [ shell_utils:argument_table_to_string( CookieShrunkTable ) ] ),
 
 	list_table:is_empty( CookieShrunkTable ) orelse
 		throw( { unexpected_arguments,
@@ -191,35 +213,45 @@ init_from_command_line() ->
 
 
 
--doc "Returns the target node name.".
-get_target_node_name( Cfg ) ->
+-doc """
+Returns the possible node names (main or user-based one) corresponding to the
+target server US-Web instance.
+
+Two names are considered, as two approaches can be used to launch US-Web nodes.
+""".
+get_target_node_names( Cfg ) ->
 
 	RemoteHostname = list_table:get_value( us_web_hostname, Cfg ),
 
-	%trace_utils:trace_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
+	%trace_utils:debug_fmt( "Remote host: '~ts'.", [ RemoteHostname ] ),
 
-	%NodeStringName =
-	case net_utils:localnode() of
+	net_utils:localnode() =/= local_node orelse
+		throw( { node_not_networked, node() } ),
 
-		local_node ->
-			throw( { node_not_networked, node() } );
+	% Supposing here uniform client/server conventions in terms of short or long
+	% names:
+	%
+	NodeNamingMode = net_utils:get_node_naming_mode(),
 
-		_N ->
-			%text_utils:atom_to_string( N )
-			ok
+	% Note that two hardcoded node names are used here, the main one (when run
+	% as a service) and one embedding the name of the current user (when run as
+	% an app, typically for testing):
 
-	end,
+	BaseNodeNames = [ "us_web", text_utils:format( "us_web_exec-~ts",
+									[ system_utils:get_user_name() ] ) ],
 
-	text_utils:string_to_atom( "us_web" ++ [ $@ | RemoteHostname ] ).
+	% Returns relevant, ordered candidates
+	[ net_utils:get_complete_node_name( N, RemoteHostname, NodeNamingMode )
+		|| N <- BaseNodeNames ].
 
 
 
 -doc "Returns the TCP port range to use (if any).".
 get_tcp_port_range( Cfg ) ->
 
-	MaybePortRange = list_table:get_value_with_defaults( _K=tcp_port_range,
+	MaybePortRange = list_table:get_value_with_default( _K=tcp_port_range,
 		_Default=undefined, Cfg ),
 
-	%trace_utils:trace_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
+	%trace_utils:debug_fmt( "TCP port range: ~p.", [ MaybePortRange ] ),
 
 	MaybePortRange.

@@ -145,9 +145,10 @@ This procedure relies on our *native* build/run system, which is the only one th
 - ensure that no prior webserver is running at the target port(s) (otherwise specify the ``--no-launch`` option below)
 
 
-After deployment the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
+After deployment, the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
 
-Step #2 exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.
+**Step #2** exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.
+
 
 
 Direct, Ad Hoc Deployment

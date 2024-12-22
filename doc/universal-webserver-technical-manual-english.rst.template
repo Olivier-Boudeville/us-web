@@ -673,7 +673,7 @@ As for our higher-level, **applicative traces**, they are stored in the the ``us
 In practice, this trace file is generally found:
 
 - in development mode, if testing, in ``priv/for-testing/log``, relatively to the base directory specified in ``us_app_base_dir``
-- in production mode, generally in ``/var/log/universal-server`` of ``/opt/universal-server``
+- in production mode, generally in ``/var/log/universal-server`` or ``/opt/universal-server``
 
 This path is updated at runtime once the US-Web configuration file is read; so typically it is renamed from ``/opt/universal-server/us_web-x.y.z/traces_via_otp.traces`` to ``/var/log/universal-server/us-web/us_web.traces``. If available, it is surely the most complete source of information.
 

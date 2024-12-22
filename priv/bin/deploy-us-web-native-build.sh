@@ -141,6 +141,7 @@ ceylan_opts="EXECUTION_TARGET=${execution_target}"
 #
 abs_native_install_dir="${base_us_dir}/${native_install_dir}"
 
+# So in the current directory, as 'deploy-us-web-native-build.sh.log':
 log_file="$(pwd)/$0.log"
 echo "Writing in log file '${log_file}'."
 
@@ -794,7 +795,7 @@ if [ ${do_build} -eq 0 ]; then
 
 	# Modifying LEEC so that it relies on the same, common Myriad build tree (as
 	# a checkout) rather than on its own version (as a _build dependency;
-	# removed to avoid a possibly cause of confusion):
+	# removed to avoid a possible cause of confusion):
 	#
 	# Note that rebar3 will still create a leec/_build/default/checkouts/myriad
 	# directory with its own BEAMs, that may become obsolete. This directory

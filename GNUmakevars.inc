@@ -184,6 +184,11 @@ endif
 MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
 
 
+# jsx section, now that installed separately (rebar3 having been dropped).
+
+JSX_BEAM_DIR := $(US_WEB_TOP)/../jsx/ebin
+
+
 # Nitrogen section.
 
 USE_NITROGEN = false
@@ -208,7 +213,7 @@ US_WEB_BEAM_DIRS := $(US_WEB_BEAM_DIR) $(US_WEB_TOP)/..
 # We rely on Myriad, WOOPER, Traces and US-Common as well, and, if enabled,
 # Nitrogen:
 #
-BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(NITROGEN_BEAM_DIRS)
+BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(JSX_BEAM_DIR) $(NITROGEN_BEAM_DIRS)
 
 
 # As behaviour-defining modules (such as the nitrogen_core's route_handler one)

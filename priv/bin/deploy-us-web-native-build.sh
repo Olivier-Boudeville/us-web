@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Copyright (C) 2020-2025 Olivier Boudeville
+
 # A script to automatically deploy a US-Web native build from scratch (provided
 # that Erlang is already available).
 #
@@ -64,21 +66,23 @@ Creates a full installation where most dependencies are sibling directories of U
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
- - rebar3 (see http://myriad.esperide.org/#getting-rebar3), for dependencies that are not ours
+ - [partly obsolete] rebar3 (see http://myriad.esperide.org/#getting-rebar3) was used, for dependencies that are not ours, yet we gave up relying on it, at least for LEEC, as it led to too much trouble (trying to recompile Myriad for obscure reasons, and of course failing)
  - [optional] Awstats (see http://www.awstats.org/)"
+
 
 our_github_base="https://github.com/Olivier-Boudeville"
 
 # Will thus install the following US-Web prerequisites:
 # - Myriad, WOOPER and Traces
+# - jsx
 # - LEEC
 # - Cowboy
 # - US-Common
 
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
-# itself, even if it used at least for some dependencies (e.g. LEEC, so that its
-# own dependencies - mostly a JSON parser - are automatically managed).
+# itself, even if it was used at least for some dependencies (e.g. LEEC, so that
+# its own dependencies - mostly a JSON parser - were automatically managed).
 #
 # This does not lead to duplications (e.g. Myriad being built once in the
 # context of LEEC and also once for the other packages), thanks to _checkouts
@@ -141,7 +145,16 @@ ceylan_opts="EXECUTION_TARGET=${execution_target}"
 #
 abs_native_install_dir="${base_us_dir}/${native_install_dir}"
 
-log_file="$(pwd)/$0.log"
+# $0 may already be absolute:
+if [ "$0" = /* ]; then
+	log_dir="$(dirname $0)"
+else
+	log_dor="$(pwd)"
+fi
+
+log_file="${log_dir}/$(basename $0).log"
+
+
 echo "Writing in log file '${log_file}'."
 
 if [ -f "${log_file}" ]; then
@@ -270,8 +283,18 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
+
 	display_and_log "Getting the relevant repositories (as $(id -un)):"
 
+
+	display_and_log " - cloning jsx"
+
+	if ! ${git} clone ${clone_opts} https://github.com/talentdeficit/jsx.git; then
+
+		echo " Error, unable to obtain jsx." 1>&2
+		exit 22
+
+	fi
 
 
 	display_and_log " - cloning US-Web"
@@ -712,6 +735,22 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
+
+	# Now building our own standalone version of jsx; rebar3 required:
+	display_and_log " - building jsx"
+
+	# The resulting BEAM files are both in 'ebin' and in
+	# '_build/default/lib/jsx/ebin':
+	#
+	cd jsx && ${rebar3} compile 1>>"${log_file}"
+
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of jsx failed." 1>&2
+		exit 61
+	fi
+	cd ..
+
+
 	# Only for US-Web (not for prerequisites of LEEC):
 	# (implies cowlib and ranch)
 	#
@@ -788,7 +827,10 @@ if [ ${do_build} -eq 0 ]; then
 	# jiffy, elli, getopt, yamerl, erlang_color), so, even if not all of them
 	# are actually needed by our use case (elli, getopt, yamerl, erlang_color
 	# are of no use here), we prefer relying on rebar3 (as indirect
-	# dependencies, such as cowlib or gun, are also induced):
+	# dependencies, such as cowlib or gun, were also induced); now the only real
+	# external dependency of LEEC is jsx, yet this could be alleviated, as
+	# Erlang now has its own JSON parser (not to mention that now certbot is
+	# mostly used instead of performing ACME calls)
 	#
 	display_and_log " - building LEEC"
 
@@ -820,22 +862,22 @@ if [ ${do_build} -eq 0 ]; then
 	# dependencies - namely JSX - shall be available separately):
 	#
 	# Relying on Erlang-native httpc instead (through Myriad's web_utils):
-	#${make} all USE_SHOTGUN=false 1>>"${log_file}"
+	${make} all USE_SHOTGUN=false 1>>"${log_file}"
 
 	# We do not declare the need for JSON support at this point, as this would
 	# lead to the Myriad-based lookup of a proper jsx install - whereas it is
 	# not available yet (it will actually be triggered by this make target):
 	#
-	if ! ${make} all-rebar3 ${ceylan_opts} USE_JSON=false USE_SHOTGUN=false 1>>"${log_file}"; then
-		echo " Error, the build of LEEC failed." 1>&2
-		exit 66
-	fi
+	#if ! ${make} all-rebar3 ${ceylan_opts} USE_JSON=false USE_SHOTGUN=false 1>>"${log_file}"; then
+	#	echo " Error, the build of LEEC failed." 1>&2
+	#	exit 66
+	#fi
 	cd ..
 
-	# We used to create a symlink to this jsx, so that US-Web later can find it
-	# during its own build, yet it is useless (LEEC here finds its jsx as an OTP
-	# application, see otp_utils) and this is bound to lead to clashes between
-	# jsx installs in the code path):
+	# We used to create a symlink to the jsx installed with LEEC, so that US-Web
+	# later could find it during its own build; it was then made useless (LEEC
+	# here found its jsx as an OTP application, see otp_utils) and was bound to
+	# lead to clashes between jsx installs in the code path):
 	#
 	#ln -s leec/_build/default/lib/jsx/
 
@@ -861,7 +903,7 @@ if [ ${do_build} -eq 0 ]; then
 	# required installing cowboy by ourselves):
 	#
 	display_and_log " - building US-Web"
-	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
+	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../jsx && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
 
 	# Our build; uses Ceylan's sibling trees:
 	if ! ${make} all ${ceylan_opts} 1>>"${log_file}"; then

@@ -228,8 +228,16 @@ init( _Args=[ AppRunContext ] ) ->
 	%
 	CertSupport =:= renew_certificates andalso
 		begin
-			trace_bridge:debug(
-				"Requesting the renewal of the X.509 certificates." ),
+
+			% Duplicated, as useful to see in the console/systemd logs as well,
+			% to wait for the completion:
+
+			RenewalMsg = "Requesting the renewal of the X.509 certificates "
+				"(expect a bit more than 2 minutes of processing "
+				"per domain...).",
+
+			trace_bridge:debug( RenewalMsg ),
+			trace_utils:info( RenewalMsg ),
 
 			USWebCfgServerPid ! { renewCertificates, [], self() },
 
@@ -239,7 +247,9 @@ init( _Args=[ AppRunContext ] ) ->
 				% immediately obtained:
 				%
 				{ wooper_result, certificate_renewals_over } ->
-					trace_bridge:debug( "Certificates renewed." )
+					RenewedMsg = "All certificates renewed.",
+					trace_bridge:debug( RenewedMsg ),
+					trace_utils:info( RenewedMsg )
 
 			end
 
@@ -338,6 +348,7 @@ init( _Args=[ AppRunContext ] ) ->
 						" running at https://localhost:~p.", [ HttpsTCPPort ] ),
 
 					trace_bridge:notice( URLMsg ),
+					trace_utils:info( URLMsg ),
 
 					URLMsg;
 

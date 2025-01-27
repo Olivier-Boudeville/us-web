@@ -236,7 +236,11 @@ endif
 # The default path where a US-Web native build is to be deployed on a server:
 # (useful to synchronise sources)
 #
-US_NATIVE_DEPLOY_ROOT := /opt/universal-server/us_web-native
+US_NATIVE_DEPLOY_ROOT := /opt/universal-server/$(PROJECT_SHORT_NAME)-native
+
+# For Myriad' sync-all-to-server target, if used:
+CEYLAN_SYNC_TARGET_ROOT := $(US_NATIVE_DEPLOY_ROOT)
+
 
 
 # For later reuse in the next layer of the software stack:

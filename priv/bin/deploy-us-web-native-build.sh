@@ -28,9 +28,11 @@
 
 # Tells whether repositories shall be cloned (if not done already):
 do_clone=0
+#do_clone=1
 
 # Tells whether dependencies shall be built (if not done already):
 do_build=0
+#do_build=1
 
 do_launch=0
 
@@ -73,6 +75,7 @@ The prerequisites expected to be already installed are:
 our_github_base="https://github.com/Olivier-Boudeville"
 
 # Will thus install the following US-Web prerequisites:
+# - jsx
 # - Myriad, WOOPER and Traces
 # - jsx
 # - LEEC
@@ -117,19 +120,32 @@ while [ $token_eaten -eq 0 ]; do
 
 done
 
+
 # Acts as a default option catchall as well:
 if [ -n "$1" ]; then
+
 	base_us_dir="$1"
+
 	# If specified, must exist:
 	if [ ! -d "${base_us_dir}" ]; then
 
-		echo "  Error, the specified installation directory, '${base_us_dir}', does not exist.
+		echo "  Error, the specified installation directory, '${base_us_dir}', does not exist (from '$(pwd)').
 ${usage}" 1>&2
 		exit 4
 
 	fi
 
+	# Ensure is absolute:
+	case "${base_us_dir}" in
+
+		/*) : ;;
+		*) base_us_dir="$(realpath ${base_us_dir})" ;;
+
+	esac
+
 fi
+
+#echo "base_us_dir = ${base_us_dir}"
 
 
 # Selects the (build-time) execution target for all Ceylan layers:
@@ -149,7 +165,7 @@ abs_native_install_dir="${base_us_dir}/${native_install_dir}"
 if [ "$0" = /* ]; then
 	log_dir="$(dirname $0)"
 else
-	log_dor="$(pwd)"
+	log_dir="$(pwd)"
 fi
 
 log_file="${log_dir}/$(basename $0).log"
@@ -252,16 +268,13 @@ fi
 us_web_dir="${abs_native_install_dir}/us_web"
 
 
-# First US-Web itself, so that any _checkouts directory can be created
-# afterwards:
-
 if [ $do_clone -eq 0 ]; then
 
 	cd "${base_us_dir}"
 
 	if [ -d "${native_install_dir}" ]; then
 
-		echo "  Error, target installation directory, '${base_us_dir}/${native_install_dir}', already exists. Remove it first (preferably as root, as US-Web may be set to run as a specific user that would then own some log files in this tree)." 1>&2
+		echo "  Error, target installation directory, '${base_us_dir}/${native_install_dir}', already exists (from '$(pwd)'). Remove it first (preferably as root, as US-Web may be set to run as a specific user that would then own some log files in this tree)." 1>&2
 
 		exit 20
 
@@ -287,15 +300,8 @@ if [ $do_clone -eq 0 ]; then
 	display_and_log "Getting the relevant repositories (as $(id -un)):"
 
 
-	display_and_log " - cloning jsx"
-
-	if ! ${git} clone ${clone_opts} https://github.com/talentdeficit/jsx.git; then
-
-		echo " Error, unable to obtain jsx." 1>&2
-		exit 22
-
-	fi
-
+	# First US-Web itself, so that any _checkouts directory can be created
+	# afterwards:
 
 	display_and_log " - cloning US-Web"
 
@@ -322,6 +328,110 @@ if [ $do_clone -eq 0 ]; then
 		fi
 
 	fi
+
+	ln -sf us_web/conf/GNUmakefile-for-native-root GNUmakefile
+
+
+	display_and_log " - cloning jsx"
+
+	if ! ${git} clone ${clone_opts} https://github.com/talentdeficit/jsx.git; then
+
+		echo " Error, unable to obtain jsx parser." 1>&2
+		exit 38
+
+	fi
+
+
+	display_and_log " - cloning Ceylan-Myriad"
+
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Myriad myriad; then
+
+		echo " Error, unable to obtain Ceylan-Myriad." 1>&2
+		exit 20
+
+	fi
+
+	# A specific branch might be selected:
+	myriad_branch="master"
+	#myriad_branch="opengl-augmentation"
+
+	# To avoid "Already on 'master'":
+	if [ "${myriad_branch}" != "master" ]; then
+
+		cd myriad && ${git} checkout "${myriad_branch}" 1>>"${log_file}" && cd ..
+		if [ ! $? -eq 0 ]; then
+
+			echo " Error, unable to switch to Ceylan-Myriad branch '${myriad_branch}'." 1>&2
+			exit 21
+
+		fi
+
+	fi
+
+	display_and_log " - cloning Ceylan-LEEC (Ceylan fork of letsencrypt-erlang)"
+
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-LEEC leec; then
+
+		echo " Error, unable to obtain Ceylan-LEEC." 1>&2
+		exit 32
+
+	fi
+
+	# A specific branch might be selected:
+	leec_branch="master"
+	#leec_branch="wildcard-certificate-support"
+
+	# To avoid "Already on 'master'":
+	if [ "${leec_branch}" != "master" ]; then
+
+		display_and_log " - setting Ceylan-LEEC to branch '${leec_branch}'"
+
+		cd leec
+
+		if ! ${git} checkout "${leec_branch}"; then
+
+			echo " Error, unable to set Ceylan-LEEC to branch '${leec_branch}'." 1>&2
+			exit 33
+
+		fi
+
+		cd ..
+
+	fi
+
+
+
+	display_and_log " - cloning Ceylan-WOOPER"
+
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-WOOPER wooper; then
+
+		echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
+		exit 25
+
+	fi
+
+
+
+	display_and_log " - cloning Ceylan-Traces"
+
+	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Traces traces; then
+
+		echo " Error, unable to obtain Ceylan-Traces." 1>&2
+		exit 30
+
+	fi
+
+
+
+	display_and_log " - cloning US-Common"
+
+	if ! ${git} clone ${clone_opts} ${our_github_base}/us-common us_common; then
+
+		echo " Error, unable to obtain US-Common." 1>&2
+		exit 35
+
+	fi
+
 
 
 	# The explicit build of Cowboy is needed due to a rebar3 bug encountered
@@ -593,108 +703,6 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
-
-	display_and_log " - cloning US-Common"
-
-	if ! ${git} clone ${clone_opts} ${our_github_base}/us-common us_common; then
-
-		echo " Error, unable to obtain US-Common." 1>&2
-		exit 35
-
-	fi
-
-
-	display_and_log " - cloning Ceylan-LEEC (Ceylan fork of letsencrypt-erlang)"
-
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-LEEC leec; then
-
-		echo " Error, unable to obtain Ceylan-LEEC." 1>&2
-		exit 32
-
-	fi
-
-	# A specific branch might be selected:
-	leec_branch="master"
-	#leec_branch="wildcard-certificate-support"
-
-	# To avoid "Already on 'master'":
-	if [ "${leec_branch}" != "master" ]; then
-
-		display_and_log " - setting Ceylan-LEEC to branch '${leec_branch}'"
-
-		cd leec
-
-		if ! ${git} checkout "${leec_branch}"; then
-
-			echo " Error, unable to set Ceylan-LEEC to branch '${leec_branch}'." 1>&2
-			exit 33
-
-		fi
-
-		cd ..
-
-	fi
-
-
-	display_and_log " - cloning Ceylan-Traces"
-
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Traces traces; then
-
-		echo " Error, unable to obtain Ceylan-Traces." 1>&2
-		exit 30
-
-	fi
-
-
-	display_and_log " - cloning Ceylan-WOOPER"
-
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-WOOPER wooper; then
-
-		echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
-		exit 25
-
-	fi
-
-
-	display_and_log " - cloning Ceylan-Myriad"
-
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Myriad myriad; then
-
-		echo " Error, unable to obtain Ceylan-Myriad." 1>&2
-		exit 20
-
-	fi
-
-	# A specific branch might be selected:
-	myriad_branch="master"
-	#myriad_branch="opengl-augmentation"
-
-	# To avoid "Already on 'master'":
-	if [ "${myriad_branch}" != "master" ]; then
-
-		cd myriad && ${git} checkout "${myriad_branch}" 1>>"${log_file}" && cd ..
-		if [ ! $? -eq 0 ]; then
-
-			echo " Error, unable to switch to Ceylan-Myriad branch '${myriad_branch}'." 1>&2
-			exit 21
-
-		fi
-
-	fi
-
-	ln -sf us_web/conf/GNUmakefile-for-native-root GNUmakefile
-
-	# Back in ${base_us_dir}:
-	cd ..
-
-	# Designates this install as the latest one then.
-	#
-	# Rare option needed, otherwise apparently mistook for a directory resulting
-	# in an incorrect link:
-	#
-	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native
-	sudo /bin/ln -sf --no-target-directory us_web-native us_web-latest
-
 fi
 
 
@@ -704,7 +712,16 @@ if [ ${do_build} -eq 0 ]; then
 	cd "${abs_native_install_dir}"
 
 	display_and_log
-	display_and_log "Building these packages (as $(id -un), with Erlang $(erl -eval '{ok, V} = file:read_file( filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"]) ), io:fwrite(V), halt().' -noshell) and following Ceylan options: ${ceylan_opts}):"
+	display_and_log "Building these packages as $(id -un), with Erlang $(erl -eval '{ok, V} = file:read_file( filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"]) ), io:fwrite(V), halt().' -noshell) and following Ceylan options: ${ceylan_opts}, from '$(pwd)':"
+
+	display_and_log " - building jsx"
+	cd jsx && ${rebar3} compile 1>>"${log_file}"
+	if [ ! $? -eq 0 ]; then
+		echo " Error, the build of jsx failed." 1>&2
+		exit 45
+	fi
+	ln -s _build/default/lib/jsx/ebin/
+	cd ..
 
 	# For Myriad, WOOPER and Traces, we prefer relying on our own good old build
 	# system (i.e. not on rebar3).
@@ -819,7 +836,6 @@ if [ ${do_build} -eq 0 ]; then
 
 		# cd ..
 
-
 	fi
 
 	# Apart from Myriad (used as a checkout to point to the same, unique install
@@ -836,7 +852,7 @@ if [ ${do_build} -eq 0 ]; then
 
 	# Modifying LEEC so that it relies on the same, common Myriad build tree (as
 	# a checkout) rather than on its own version (as a _build dependency;
-	# removed to avoid a possibly cause of confusion):
+	# removed to avoid a possible cause of confusion):
 	#
 	# Note that rebar3 will still create a leec/_build/default/checkouts/myriad
 	# directory with its own BEAMs, that may become obsolete. This directory
@@ -867,11 +883,15 @@ if [ ${do_build} -eq 0 ]; then
 	# We do not declare the need for JSON support at this point, as this would
 	# lead to the Myriad-based lookup of a proper jsx install - whereas it is
 	# not available yet (it will actually be triggered by this make target):
-	#
+
+	# With rebar3, now yields: '===> {missing_module,app_facilities}':
 	#if ! ${make} all-rebar3 ${ceylan_opts} USE_JSON=false USE_SHOTGUN=false 1>>"${log_file}"; then
-	#	echo " Error, the build of LEEC failed." 1>&2
-	#	exit 66
-	#fi
+
+	# Too much trouble with rebar3, now using our build:
+	if ! ${make} all ${ceylan_opts} USE_JSON=false USE_SHOTGUN=false 1>>"${log_file}"; then
+		echo " Error, the build of LEEC failed." 1>&2
+		exit 66
+	fi
 	cd ..
 
 	# We used to create a symlink to the jsx installed with LEEC, so that US-Web
@@ -903,7 +923,8 @@ if [ ${do_build} -eq 0 ]; then
 	# required installing cowboy by ourselves):
 	#
 	display_and_log " - building US-Web"
-	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../jsx && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
+
+	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && ln -s ../../jsx && cd ..
 
 	# Our build; uses Ceylan's sibling trees:
 	if ! ${make} all ${ceylan_opts} 1>>"${log_file}"; then
@@ -1041,10 +1062,24 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 
 
+	# Final touch for the build:
+
+	cd ${base_us_dir}
+
+	# Designates this install as the latest one then.
+	#
+	# Rare option needed, otherwise apparently mistook for a directory resulting
+	# in an incorrect link:
+	#
+	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native
+	sudo /bin/ln -sf --no-target-directory us_web-native us_web-latest
+
+
 	display_and_log
 	display_and_log "Native US-Web built and ready in ${abs_native_install_dir}."
 
 fi
+
 
 
 # Not checking specifically the expected US and US-Web configuration files:
@@ -1065,7 +1100,7 @@ if [ $do_launch -eq 0 ]; then
 
 	fi
 
-	display_and_log "   Running US-Web native application (as '$(id -un)' initially)"
+	display_and_log "   Running US-Web native application (as '$(id -un)' initially, from '${us_web_dir}')"
 
 	# Simplest: cd src && ${make} us_web_exec
 
@@ -1077,7 +1112,7 @@ if [ $do_launch -eq 0 ]; then
 
 	if [ ! -x "${start_script}" ]; then
 
-		echo " Error, no start script found (no '${start_script}' found)." 1>&2
+		echo "  Error, no start script found (no '${start_script}' found)." 1>&2
 		exit 30
 
 	fi
@@ -1132,14 +1167,20 @@ if [ $do_launch -eq 0 ]; then
 
 	# Maybe use get-us-web-native-build-status.sh in the future.
 
+	display_and_log "Consider running our 'us_web/priv/bin/monitor-us-web.sh' script if wanting more detailed information regarding that launched instance."
+
 
 else
 
-	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 150; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure (count at least 2 minutes per domain if relying on the dns-01 challenge; hence having 5 domains results in, at startup, 10 minutes of waiting until HTTP and HTTPS become ready) - and check possibly with wget that the expected virtual hosts are available indeed)."
+	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 150; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure (count at least 2 minutes per domain if relying on the dns-01 challenge; hence having 5 domains results in, at startup, 10 minutes of waiting until HTTP and HTTPS become ready) - and check, possibly with wget, that the expected virtual hosts are available indeed)."
 
 	display_and_log "Any prior US-Web instance that would still linger could be removed thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 
 fi
 
 
-display_and_log "Consider running our 'us_web/priv/bin/monitor-us-web.sh' script if wanting more detailed information regarding that launched instance."
+
+new_log_file="${base_us_dir}/$(basename $0).log"
+
+echo "(moving finally log file '${log_file}' to '${new_log_file}')"
+sudo /bin/mv -f "${log_file}" "${new_log_file}"

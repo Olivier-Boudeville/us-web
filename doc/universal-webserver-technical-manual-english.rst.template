@@ -145,9 +145,10 @@ This procedure relies on our *native* build/run system, which is the only one th
 - ensure that no prior webserver is running at the target port(s) (otherwise specify the ``--no-launch`` option below)
 
 
-After deployment the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
+After deployment, the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
 
-Step #2 exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.
+**Step #2** exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.
+
 
 
 Direct, Ad Hoc Deployment
@@ -673,7 +674,7 @@ As for our higher-level, **applicative traces**, they are stored in the the ``us
 In practice, this trace file is generally found:
 
 - in development mode, if testing, in ``priv/for-testing/log``, relatively to the base directory specified in ``us_app_base_dir``
-- in production mode, generally in ``/var/log/universal-server`` of ``/opt/universal-server``
+- in production mode, generally in ``/var/log/universal-server`` or ``/opt/universal-server``
 
 This path is updated at runtime once the US-Web configuration file is read; so typically it is renamed from ``/opt/universal-server/us_web-x.y.z/traces_via_otp.traces`` to ``/var/log/universal-server/us-web/us_web.traces``. If available, it is surely the most complete source of information.
 

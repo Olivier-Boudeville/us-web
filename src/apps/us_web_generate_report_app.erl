@@ -1,4 +1,4 @@
-% Copyright (C) 2020-2024 Olivier Boudeville
+% Copyright (C) 2020-2025 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -128,9 +128,9 @@ exec() ->
 init_from_command_line() ->
 
 	% To force options for testing:
-	%ArgTable = shell_utils:generate_argument_table( "--help" ),
+	%ArgTable = cmd_line_utils:generate_argument_table( "--help" ),
 
-	ArgTable = shell_utils:get_argument_table(),
+	ArgTable = cmd_line_utils:get_argument_table(),
 
 	%trace_utils:debug_fmt( "Argument table: ~ts",
 	%                       [ list_table:to_string( ArgTable ) ] ),

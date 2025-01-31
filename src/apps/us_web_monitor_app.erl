@@ -1,4 +1,4 @@
-% Copyright (C) 2020-2024 Olivier Boudeville
+% Copyright (C) 2020-2025 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -69,15 +69,23 @@ exec() ->
 	app_facilities:display( "Trying to connect to US-Web node '~ts'.",
 							[ MainTargetNodeName ] ),
 
-	net_adm:ping( MainTargetNodeName ) =:= pong orelse
-		begin
+	ActualTargetNodeName = case net_adm:ping( MainTargetNodeName ) of
+
+		pong ->
+			MainTargetNodeName;
+
+		pang ->
 			trace_utils:warning_fmt( "Unable to connect to a target main "
 				"node '~ts'; trying an alternate one, based on "
-				"user name: '~ts'.",
+				"user name: '~ts' (in case of ad hoc launch).",
 				[ MainTargetNodeName, UserTargetNodeName ] ),
 
-			net_adm:ping( UserTargetNodeName ) =:= pong orelse
-				begin
+			case net_adm:ping( UserTargetNodeName ) of
+
+				pong ->
+					UserTargetNodeName;
+
+				pang ->
 					trace_utils:error_fmt( "Unable to connect to either node "
 						"names, the main one ('~ts') or the user one ('~ts')."
 						"~nIf the target node is really running and is named "
@@ -89,9 +97,10 @@ exec() ->
 					throw( { unable_to_connect_to,
 							 { MainTargetNodeName, UserTargetNodeName } } )
 
-			end
+				end
 
 		end,
+
 
 	% Otherwise the remote node could not be known before use:
 	global:sync(),
@@ -109,7 +118,7 @@ exec() ->
 	% aggregator:
 	%
 	AggregatorPid = naming_utils:get_locally_registered_pid_for(
-		AggregatorName, MainTargetNodeName ),
+		AggregatorName, ActualTargetNodeName ),
 
 	app_facilities:display( "Creating now a local trace listener." ),
 
@@ -148,9 +157,9 @@ exec() ->
 init_from_command_line() ->
 
 	% To force options for testing:
-	%ArgTable = shell_utils:generate_argument_table( "--help" ),
+	%ArgTable = cmd_line_utils:generate_argument_table( "--help" ),
 
-	ArgTable = shell_utils:get_argument_table(),
+	ArgTable = cmd_line_utils:get_argument_table(),
 
 	%trace_utils:debug_fmt( "Argument table: ~ts",
 	%                       [ list_table:to_string( ArgTable ) ] ),
@@ -203,7 +212,7 @@ init_from_command_line() ->
 	net_utils:set_cookie( RemoteCookie ),
 
 	%trace_utils:debug_fmt( "Remaining arguments: ~ts",
-	%   [ shell_utils:argument_table_to_string( CookieShrunkTable ) ] ),
+	%   [ cmd_line_utils:argument_table_to_string( CookieShrunkTable ) ] ),
 
 	list_table:is_empty( CookieShrunkTable ) orelse
 		throw( { unexpected_arguments,
@@ -235,12 +244,16 @@ get_target_node_names( Cfg ) ->
 
 	% Note that two hardcoded node names are used here, the main one (when run
 	% as a service) and one embedding the name of the current user (when run as
-	% an app, typically for testing):
+	% an app, typically for testing; we used to suppose that the user names -
+	% local and server - matched, but now we expect a conventional user to be
+	% used on the server):
+	%
 
 	BaseNodeNames = [ "us_web", text_utils:format( "us_web_exec-~ts",
-									[ system_utils:get_user_name() ] ) ],
+									%[ system_utils:get_user_name() ] ) ],
+									[ "web-srv" ] ) ],
 
-	% Returns relevant, ordered candidates
+	% Returns relevant, ordered candidates:
 	[ net_utils:get_complete_node_name( N, RemoteHostname, NodeNamingMode )
 		|| N <- BaseNodeNames ].
 

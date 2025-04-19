@@ -10,20 +10,8 @@
 <hr>
 
 <h1>Module us_web_static</h1>
-<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>Handler <b>to manage static content</b>.
+<ul class="index"><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
 
-
-<h2><a name="description">Description</a></h2><p>Handler <b>to manage static content</b>.</p>
-
- <p>This is a US-Web custom, derived version of cowboy_static.erl, modified 
-(mostly stripped-down) in order to comply with the conventions of Universal 
-Server and to support 404 errors and logging.</p>
-
- <p>Table-based states could have been used, this could have even been a WOOPER 
-instance per request, however we went for the least overhead and for direct 
-map management.</p>
-
- As done by Cowboy, exactly one process is spawned per request.
 
 <h2><a name="types">Data Types</a></h2>
 
@@ -32,11 +20,11 @@ map management.</p>
 
 
 <h3 class="typedecl"><a name="type-bin_content_path">bin_content_path()</a></h3>
-<p><code>bin_content_path() = <a href="us_web_handler.html#type-bin_content_path">us_web_handler:bin_content_path()</a></code></p>
+<p><code>bin_content_path() = <a href="us_web_handler.html#type-bin_content_path" docgen-rel="seetype" docgen-href="us_web_handler#bin_content_path/0">us_web_handler:bin_content_path()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-extra">extra()</a></h3>
-<p><code>extra() = [<a href="#type-extra_charset">extra_charset()</a> | <a href="#type-extra_etag">extra_etag()</a> | <a href="#type-extra_mimetypes">extra_mimetypes()</a>]</code></p>
+<p><code>extra() = [<a href="#type-extra_charset" docgen-rel="seetype" docgen-href="#extra_charset/0">extra_charset()</a> | <a href="#type-extra_etag" docgen-rel="seetype" docgen-href="#extra_etag/0">extra_etag()</a> | <a href="#type-extra_mimetypes" docgen-rel="seetype" docgen-href="#extra_mimetypes/0">extra_mimetypes()</a>]</code></p>
 
 
 <h3 class="typedecl"><a name="type-extra_charset">extra_charset()</a></h3>
@@ -52,41 +40,40 @@ map management.</p>
 
 
 <h3 class="typedecl"><a name="type-file_info">file_info()</a></h3>
-<p><code>file_info() = <a href="file_utils.html#type-file_info">file_utils:file_info()</a></code></p>
+<p><code>file_info() = <a href="file_utils.html#type-file_info" docgen-rel="seetype" docgen-href="file_utils#file_info/0">file_utils:file_info()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-handler_return">handler_return()</a></h3>
-<p><code>handler_return() = <a href="us_web_handler.html#type-handler_return">us_web_handler:handler_return()</a></code></p>
+<p><code>handler_return() = <a href="us_web_handler.html#type-handler_return" docgen-rel="seetype" docgen-href="us_web_handler#handler_return/0">us_web_handler:handler_return()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
-<p><code>handler_state() = <a href="us_web_handler.html#type-handler_state">us_web_handler:handler_state()</a></code></p>
+<p><code>handler_state() = <a href="us_web_handler.html#type-handler_state" docgen-rel="seetype" docgen-href="us_web_handler#handler_state/0">us_web_handler:handler_state()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-opts">opts()</a></h3>
-<p><code>opts() = {file | dir, <a href="#type-ustring">ustring()</a> | binary()} | {file | dir, <a href="#type-ustring">ustring()</a> | binary(), <a href="#type-extra">extra()</a>} | {priv_file | priv_dir, atom(), <a href="#type-ustring">ustring()</a> | binary()} | {priv_file | priv_dir, atom(), <a href="#type-ustring">ustring()</a> | binary(), <a href="#type-extra">extra()</a>}</code></p>
+<p><code>opts() = {file | dir, <a href="#type-ustring" docgen-rel="seetype" docgen-href="#ustring/0">ustring()</a> | binary()} | {file | dir, <a href="#type-ustring" docgen-rel="seetype" docgen-href="#ustring/0">ustring()</a> | binary(), <a href="#type-extra" docgen-rel="seetype" docgen-href="#extra/0">extra()</a>} | {priv_file | priv_dir, atom(), <a href="#type-ustring" docgen-rel="seetype" docgen-href="#ustring/0">ustring()</a> | binary()} | {priv_file | priv_dir, atom(), <a href="#type-ustring" docgen-rel="seetype" docgen-href="#ustring/0">ustring()</a> | binary(), <a href="#type-extra" docgen-rel="seetype" docgen-href="#extra/0">extra()</a>}</code></p>
 
 
 <h3 class="typedecl"><a name="type-rest_handler_state">rest_handler_state()</a></h3>
-<p><code>rest_handler_state() = {<a href="#type-bin_content_path">bin_content_path()</a>, {<a href="#type-access_type">access_type()</a>, <a href="#type-file_info">file_info()</a>} | <a href="basic_utils.html#type-error_term">basic_utils:error_term()</a>, <a href="#type-extra">extra()</a>}</code></p>
-<p> State for the cowboy_rest handler.</p>
+<p><code>rest_handler_state() = {<a href="#type-bin_content_path" docgen-rel="seetype" docgen-href="#bin_content_path/0">bin_content_path()</a>, {<a href="#type-access_type" docgen-rel="seetype" docgen-href="#access_type/0">access_type()</a>, <a href="#type-file_info" docgen-rel="seetype" docgen-href="#file_info/0">file_info()</a>} | <a href="basic_utils.html#type-error_term" docgen-rel="seetype" docgen-href="basic_utils#error_term/0">basic_utils:error_term()</a>, <a href="#type-extra" docgen-rel="seetype" docgen-href="#extra/0">extra()</a>}</code></p>
+
 
 <h3 class="typedecl"><a name="type-ustring">ustring()</a></h3>
-<p><code>ustring() = <a href="text_utils.html#type-ustring">text_utils:ustring()</a></code></p>
+<p><code>ustring() = <a href="text_utils.html#type-ustring" docgen-rel="seetype" docgen-href="text_utils#ustring/0">text_utils:ustring()</a></code></p>
 
 
 <h2><a name="index">Function Index</a></h2>
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#charsets_provided-2">charsets_provided/2</a></td><td>Detects the charset of the file.</td></tr>
-<tr><td valign="top"><a href="#content_types_provided-2">content_types_provided/2</a></td><td>Detects the mimetype of the file.</td></tr>
-<tr><td valign="top"><a href="#forbidden-2">forbidden/2</a></td><td>Forbids relevant content.</td></tr>
-<tr><td valign="top"><a href="#generate_etag-2">generate_etag/2</a></td><td>Generates an etag for the handler-referenced file.</td></tr>
-<tr><td valign="top"><a href="#get_file-2">get_file/2</a></td><td>Streams the handler-referenced file.</td></tr>
-<tr><td valign="top"><a href="#init-2">init/2</a></td><td>Resolves the file that will be sent, and gets its file information.</td></tr>
-<tr><td valign="top"><a href="#last_modified-2">last_modified/2</a></td><td>Returns the time of last modification of the handler-referenced file.</td></tr>
-<tr><td valign="top"><a href="#malformed_request-2">malformed_request/2</a></td><td>Rejects requests that tried to access a file outside the target
- directory, or used reserved characters.</td></tr>
-<tr><td valign="top"><a href="#ranges_provided-2">ranges_provided/2</a></td><td>Enables support for range requests.</td></tr>
-<tr><td valign="top"><a href="#resource_exists-2">resource_exists/2</a></td><td>Assumes the resource does not exist if it is not a regular file.</td></tr>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#charsets_provided-2">charsets_provided/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#content_types_provided-2">content_types_provided/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#forbidden-2">forbidden/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#generate_etag-2">generate_etag/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_file-2">get_file/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#init-2">init/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#last_modified-2">last_modified/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#malformed_request-2">malformed_request/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#ranges_provided-2">ranges_provided/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#resource_exists-2">resource_exists/2</a></td><td></td></tr>
 </table>
 
 <h2><a name="functions">Function Details</a></h2>
@@ -94,78 +81,68 @@ map management.</p>
 <h3 class="function"><a name="charsets_provided-2">charsets_provided/2</a></h3>
 <div class="spec">
 <p><code>charsets_provided(Req, State) -&gt; {[binary()], Req, State}</code>
-<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
-</div><p>Detects the charset of the file.</p>
+</div>
 
 <h3 class="function"><a name="content_types_provided-2">content_types_provided/2</a></h3>
 <div class="spec">
 <p><code>content_types_provided(Req, State) -&gt; {[{binary(), get_file}], Req, State}</code>
-<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
-</div><p>Detects the mimetype of the file.</p>
+</div>
 
 <h3 class="function"><a name="forbidden-2">forbidden/2</a></h3>
 <div class="spec">
 <p><code>forbidden(Req, State) -&gt; {boolean(), Req, State}</code>
-<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
-</div><p><p>Forbids relevant content.</p>
-
- Directories, files that cannot be accessed at all, and files with no read flag
- are forbidden.
-</p>
+</div>
 
 <h3 class="function"><a name="generate_etag-2">generate_etag/2</a></h3>
 <div class="spec">
 <p><code>generate_etag(Req, State) -&gt; {{strong | weak, binary()}, Req, State}</code>
-<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
-</div><p>Generates an etag for the handler-referenced file.</p>
+</div>
 
 <h3 class="function"><a name="get_file-2">get_file/2</a></h3>
 <div class="spec">
-<p><code>get_file(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state">rest_handler_state()</a>) -&gt; {{sendfile, 0, non_neg_integer(), binary()}, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-rest_handler_state">rest_handler_state()</a>}</code><br></p>
+<p><code>get_file(Req::<a href="cowboy_req.html#type-req" docgen-rel="seetype" docgen-href="cowboy_req#req/0">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a>) -&gt; {{sendfile, 0, non_neg_integer(), binary()}, <a href="cowboy_req.html#type-req" docgen-rel="seetype" docgen-href="cowboy_req#req/0">cowboy_req:req()</a>, <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a>}</code><br></p>
 <p> </p>
-</div><p>Streams the handler-referenced file.</p>
+</div>
 
 <h3 class="function"><a name="init-2">init/2</a></h3>
 <div class="spec">
-<p><code>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="#type-handler_return">handler_return()</a></code><br></p>
+<p><code>init(Req::<a href="cowboy_req.html#type-req" docgen-rel="seetype" docgen-href="cowboy_req#req/0">cowboy_req:req()</a>, HState::<a href="#type-handler_state" docgen-rel="seetype" docgen-href="#handler_state/0">handler_state()</a>) -&gt; <a href="#type-handler_return" docgen-rel="seetype" docgen-href="#handler_return/0">handler_return()</a></code><br></p>
 <p> </p>
-</div><p><p>Resolves the file that will be sent, and gets its file information.</p>
-
- If the handler is configured to manage a directory, checks that the requested
- file is inside the configured directory.
-</p>
+</div>
 
 <h3 class="function"><a name="last_modified-2">last_modified/2</a></h3>
 <div class="spec">
-<p><code>last_modified(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state">rest_handler_state()</a>) -&gt; {<a href="http://www.erlang.org/edoc/doc/stdlib/doc/calendar.html#type-datetime">calendar:datetime()</a>, <a href="cowboy_req.html#type-req">cowboy_req:req()</a>, <a href="#type-rest_handler_state">rest_handler_state()</a>}</code><br></p>
+<p><code>last_modified(Req::<a href="cowboy_req.html#type-req" docgen-rel="seetype" docgen-href="cowboy_req#req/0">cowboy_req:req()</a>, HState::<a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a>) -&gt; {<a href="http://www.erlang.org/edoc/doc/stdlib/doc/calendar.html#type-datetime" docgen-rel="seetype" docgen-href="stdlib:calendar#datetime/0">calendar:datetime()</a>, <a href="cowboy_req.html#type-req" docgen-rel="seetype" docgen-href="cowboy_req#req/0">cowboy_req:req()</a>, <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a>}</code><br></p>
 <p> </p>
-</div><p>Returns the time of last modification of the handler-referenced file.</p>
+</div>
 
 <h3 class="function"><a name="malformed_request-2">malformed_request/2</a></h3>
 <div class="spec">
 <p><code>malformed_request(Req, State) -&gt; {boolean(), Req, State}</code><br></p>
 <p> </p>
-</div><p>Rejects requests that tried to access a file outside the target
- directory, or used reserved characters.
-</p>
+</div>
 
 <h3 class="function"><a name="ranges_provided-2">ranges_provided/2</a></h3>
 <div class="spec">
 <p><code>ranges_provided(Req, State) -&gt; {[{binary(), auto}], Req, State}</code>
-<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
-</div><p>Enables support for range requests.</p>
+</div>
 
 <h3 class="function"><a name="resource_exists-2">resource_exists/2</a></h3>
 <div class="spec">
 <p><code>resource_exists(Req, State) -&gt; {boolean(), Req, State}</code>
-<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state">rest_handler_state()</a></code></li></ul></p>
+<ul class="definitions"><li><code>State = <a href="#type-rest_handler_state" docgen-rel="seetype" docgen-href="#rest_handler_state/0">rest_handler_state()</a></code></li></ul></p>
 <p> </p>
-</div><p>Assumes the resource does not exist if it is not a regular file.</p>
+</div>
 <hr>
 
 <div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>

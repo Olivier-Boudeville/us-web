@@ -10,33 +10,26 @@
 <hr>
 
 <h1>Module us_web_port_forwarder</h1>
-<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul><b>Cowboy-compliant port forwarder</b> for US-Web: automatically forwards
- a request aimed at a given TCP port (e.g.
+<ul class="index"><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
 
-
-<h2><a name="description">Description</a></h2><b>Cowboy-compliant port forwarder</b> for US-Web: automatically forwards
- a request aimed at a given TCP port (e.g. 80) to another port (e.g. 443, for
- an automatic promotion of http into https).
 
 <h2><a name="types">Data Types</a></h2>
 
 <h3 class="typedecl"><a name="type-handler_state">handler_state()</a></h3>
-<p><code>handler_state() = <a href="net_utils.html#type-tcp_port">net_utils:tcp_port()</a></code></p>
-<p> State carried by the process in charge of a request.</p>
+<p><code>handler_state() = <a href="net_utils.html#type-tcp_port" docgen-rel="seetype" docgen-href="net_utils#tcp_port/0">net_utils:tcp_port()</a></code></p>
+
 
 <h2><a name="index">Function Index</a></h2>
-<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#init-2">init/2</a></td><td>Initialises this handler.</td></tr>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#init-2">init/2</a></td><td></td></tr>
 </table>
 
 <h2><a name="functions">Function Details</a></h2>
 
 <h3 class="function"><a name="init-2">init/2</a></h3>
 <div class="spec">
-<p><code>init(Req::<a href="cowboy_req.html#type-req">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state">handler_state()</a>) -&gt; <a href="us_web_handler.html#type-handler_return">us_web_handler:handler_return()</a></code><br></p>
+<p><code>init(Req::<a href="cowboy_req.html#type-req" docgen-rel="seetype" docgen-href="cowboy_req#req/0">cowboy_req:req()</a>, HandlerState::<a href="#type-handler_state" docgen-rel="seetype" docgen-href="#handler_state/0">handler_state()</a>) -&gt; <a href="us_web_handler.html#type-handler_return" docgen-rel="seetype" docgen-href="us_web_handler#handler_return/0">us_web_handler:handler_return()</a></code><br></p>
 <p> </p>
-</div><p><p>Initialises this handler.</p>
-
- This handler initialisation performs the requested TCP port redirection.</p>
+</div>
 <hr>
 
 <div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>

@@ -492,12 +492,17 @@ destruct( State ) ->
 	MaybeSchedPid =:= undefined orelse
 		receive
 
-			task_unregistered ->
+            { wooper_result, { task_unregistered, LogTaskId } } ->
 				ok;
 
-			{ task_unregistration_failed, Error } ->
+            % Would be surprising:
+			{ wooper_result, { task_already_done, LogTaskId } } ->
+				ok;
+
+			{ wooper_result,
+                    { task_unregistration_failed, Reason, LogTaskId } } ->
 				?error_fmt( "Unregistration of task #~B failed "
-							"at deletion: ~p.", [ LogTaskId, Error ] )
+							"at deletion: ~p.", [ LogTaskId, Reason ] )
 
 		end,
 

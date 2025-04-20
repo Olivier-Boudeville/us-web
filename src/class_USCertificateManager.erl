@@ -129,7 +129,6 @@ main, default hostname, and per-virtual host information.
 
 -doc "Identifier of a cipher (e.g. 'AES128-SHA').".
 -type cipher_name() :: atom().
-% Identifier of a cipher (e.g. 'AES128-SHA').
 
 
 -export_type([ manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
@@ -137,7 +136,7 @@ main, default hostname, and per-virtual host information.
 
 
 
-% Shorthands:
+% Type shorthands:
 
 -type ustring() :: text_utils:ustring().
 
@@ -584,12 +583,17 @@ destruct( State ) ->
 	MaybeSchedPid =/= undefined andalso
 		receive
 
-			task_unregistered ->
+            { wooper_result, { task_unregistered, CertTaskId } } ->
 				ok;
 
-			{ task_unregistration_failed, Error } ->
+            % Would be surprising:
+			{ wooper_result, { task_already_done, CertTaskId } } ->
+				ok;
+
+			{ wooper_result,
+                    { task_unregistration_failed, Reason, CertTaskId } } ->
 				?error_fmt( "Unregistration of task #~B failed "
-							"at deletion: ~p.", [ CertTaskId, Error ] )
+							"at deletion: ~p.", [ CertTaskId, Reason ] )
 
 		end,
 

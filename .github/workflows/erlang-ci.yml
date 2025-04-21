@@ -73,13 +73,14 @@ jobs:
         #
         test_tree="${HOME}"
         mkdir -p "${test_tree}"
-        export USER=$(id -nu)
+        export USER="$(id -nu)"
         echo "Deploying as ${USER} in '${test_tree}'."
         "${base_dir}/priv/bin/deploy-us-web-native-build.sh" --no-launch --allow-root-exec "${test_tree}"
         #echo " - content of _checkouts directory: $(ls _checkouts 2>/dev/null)"
         #echo " - content of _build/default/lib directory: $(ls _build/default/lib 2>/dev/null)"
         cd "${base_dir}"
     - name: Run tests
+      run: |
         # So now we will test based on the second US-Web tree, using the
         # US-Web clone that we just deployed (i.e. not the initial one provided
         # by the CI) and its other sibling clones:

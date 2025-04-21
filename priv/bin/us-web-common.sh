@@ -10,6 +10,9 @@
 # easily specific directories (e.g. for the VM logs).
 
 
+#echo "### US-Web script being sourced."
+
+
 # We expect us_web_install_root to be already set by the caller:
 if [ -z "${us_web_install_root}" ]; then
 
@@ -79,6 +82,7 @@ us_common_script="${us_common_root}/priv/bin/us-common.sh"
 
 if [ -f "${us_common_script}" ]; then
 
+	#echo "### Sourcing now ${us_common_script}"
 	. "${us_common_script}" 1>/dev/null
 
 else
@@ -187,7 +191,7 @@ read_us_web_config_file()
 
 		fi
 
-		echo "No web username specified, using current one, '${us_web_username}'."
+		echo "No US-Web username specified, using current one, '${us_web_username}'."
 
 	else
 
@@ -399,30 +403,38 @@ read_us_web_config_file()
 
 		us_web_log_dir="/var/log/universal-server/us-web"
 		echo "No base directory specified for web logs (no 'us_web_log_dir' entry in the US-Web configuration file '${us_web_config_file}'), trying default log directory '${us_web_log_dir}'."
+		mkdir -p "${us_web_log_dir}"
 
 	else
 
+		#echo "Read for US-web log dir '${us_web_log_dir}'."
+
 		# Checks whether absolute:
-		if [[ "${us_web_log_dir:0:1}" == / || "${us_web_log_dir:0:2}" == ~[/a-z] ]]; then
+		case "${us_web_log_dir}" in
 
-			echo "Using directly specified directory for web logs, '${us_web_log_dir}'."
+			/*)
+				echo "Using directly specified absolute directory for US-Web logs, '${us_web_log_dir}'."
+				;;
+			*)
+				# If it is relative, it is relative to the US-Web application
+				# base directory:
+				#
+				us_web_log_dir="${us_web_app_base_dir}/${us_web_log_dir}"
+				echo "Using specified directory for US-Web logs (made absolute), '${us_web_log_dir}'."
+				;;
 
-		else
-
-			# If it is relative, it is relative to the US-Web application base
-			# directory:
-			#
-			us_web_log_dir="${us_web_app_base_dir}/${us_web_log_dir}"
-			echo "Using specified directory for web logs (made absolute), '${us_web_log_dir}'."
-
-		fi
+		esac
 
 	fi
 
 	if [ ! -d "${us_web_log_dir}" ]; then
 
-		echo "  Error, no US-Web log directory (for web-level logs) found ('${us_web_log_dir}')." 1>&2
-		exit 160
+		#echo "  Error, no US-Web log directory (for non-VM logs) found ('${us_web_log_dir}')." 1>&2
+		#exit 160
+
+		# Better to auto-create then:
+		echo "  Warning: no US-Web log directory (for non-VM logs) found ('${us_web_log_dir}')." 1>&2
+		mkdir -p "${us_web_log_dir}"
 
 	fi
 

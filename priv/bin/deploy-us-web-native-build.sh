@@ -35,10 +35,12 @@ do_build=0
 #do_build=1
 
 do_launch=0
-
 no_launch_opt="--no-launch"
 
 checkout_opt="--checkout"
+
+root_exec_allowed=1
+allow_root_exec_opt="--allow-root-exec"
 
 # Not by default:
 support_nitrogen=1
@@ -52,17 +54,20 @@ base_us_dir="/opt/universal-server"
 
 
 # To be able to coexist with OTP releases (named as us_web-${archive_version});
-# relative to base_us_dir:
+# relative to base_us_dir, and more convenient if timestamped (so that multiple
+# versions can easily coexist):
 #
-#native_install_dir="us_web-native"
-native_install_dir="us_web-native-$(date '+%Y%m%d')"
+native_install_dir="us_web-native-deployment-$(date '+%Y%m%d')"
+
 
 nitrogen_option="--support-nitrogen"
 
 usage="
-Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
+Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [${allow_root_exec_opt}]  [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
-The '${nitrogen_option}' option enables the support of a Nitrogen-based website.
+Options:'
+ - ${allow_root_exec_opt}: allows this script to run as root (mostly useful for continuous integration)
+ - ${nitrogen_option}: enables the support of a Nitrogen-based website (mostly obsolete)
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
@@ -72,8 +77,6 @@ The prerequisites expected to be already installed are:
  - [optional] Awstats (see http://www.awstats.org/)"
 
 
-our_github_base="https://github.com/Olivier-Boudeville"
-
 # Will thus install the following US-Web prerequisites:
 # - jsx
 # - Myriad, WOOPER and Traces
@@ -81,6 +84,8 @@ our_github_base="https://github.com/Olivier-Boudeville"
 # - LEEC
 # - Cowboy
 # - US-Common
+
+our_github_base="https://github.com/Olivier-Boudeville"
 
 
 # Note that this mode of obtaining US-Web does not rely on rebar3 for US-Web
@@ -111,6 +116,12 @@ while [ $token_eaten -eq 0 ]; do
 	if [ "$1" = "${no_launch_opt}" ]; then
 		echo "(auto-launch disabled)"
 		do_launch=1
+		token_eaten=0
+	fi
+
+	if [ "$1" = "${allow_root_exec_opt}" ]; then
+		echo "(root execution enabled)"
+		root_exec_allowed=0
 		token_eaten=0
 	fi
 
@@ -149,6 +160,10 @@ fi
 
 
 # Selects the (build-time) execution target for all Ceylan layers:
+#
+# We prefer now 'production', as we want a US-Web server to be robust (e.g. by
+# restarting any failed child):
+#
 #execution_target="development"
 execution_target="production"
 
@@ -156,17 +171,15 @@ ceylan_opts="EXECUTION_TARGET=${execution_target}"
 
 
 
-# Typically a release-like '/opt/universal-server/us_web-native' tree,
-# containing all dependencies:
-#
-abs_native_install_dir="${base_us_dir}/${native_install_dir}"
-
 # $0 may already be absolute:
-if [ "$0" = /* ]; then
-	log_dir="$(dirname $0)"
-else
-	log_dir="$(pwd)"
-fi
+case "$0" in
+
+   /*)
+	   log_dir="$(dirname $0)";;
+
+   *)
+	   log_dir="$(pwd)";;
+esac
 
 log_file="${log_dir}/$(basename $0).log"
 
@@ -192,23 +205,23 @@ display_and_log()
 #display_and_log "ceylan_opts = ${ceylan_opts}"
 
 
-display_and_log "   Installing US-Web in '${abs_native_install_dir}'..."
-display_and_log
-
-
 # Just to avoid error messages if running from a non-existing directory:
 cd /
 
 
-
 # Checking first:
 
-if [ "$(id -u)" = "0" ]; then
+if [ $root_exec_allowed -eq 1 ]; then
 
-	echo "  Error, this script must not be run as root (sudo will be requested only when necessary)." 1>&2
-	exit 5
+	if [ "$(id -u)" = "0" ]; then
+
+		echo "  Error, this script must not be run as root (sudo will be requested only when necessary)." 1>&2
+		exit 5
+
+	fi
 
 fi
+
 
 erlc="$(which erlc 2>/dev/null)"
 
@@ -243,6 +256,7 @@ if [ ! -x "${make}" ]; then
 
 fi
 
+
 display_and_log "Securing sudoer rights for the upcoming operations that require it."
 if ! sudo echo; then
 
@@ -264,8 +278,19 @@ if [ ! -d "${base_us_dir}" ]; then
 fi
 
 
+# Typically a release-like '/opt/universal-server/us_web{-native,}-deployment'
+# tree, containing all dependencies:
+#
+abs_native_install_dir="${base_us_dir}/${native_install_dir}"
+
 # The US-Web tree itself:
 us_web_dir="${abs_native_install_dir}/us_web"
+
+
+
+display_and_log "   Installing US-Web in '${abs_native_install_dir}'..."
+display_and_log
+
 
 
 if [ $do_clone -eq 0 ]; then
@@ -302,10 +327,10 @@ if [ $do_clone -eq 0 ]; then
 
 	# First US-Web itself, so that any _checkouts directory can be created
 	# afterwards:
-
+	#
 	display_and_log " - cloning US-Web"
 
-	if ! ${git} clone ${clone_opts} ${our_github_base}/us-web us_web; then
+	if ! ${git} clone ${clone_opts} "${our_github_base}/us-web" us_web; then
 
 		echo " Error, unable to obtain US-Web." 1>&2
 		exit 40
@@ -319,7 +344,7 @@ if [ $do_clone -eq 0 ]; then
 	# To avoid "Already on 'master'":
 	if [ "${us_web_branch}" != "master" ]; then
 
-		cd us_web && ${git} checkout "${us_web_branch}" 1>>"${log_file}" && cd ..
+		cd us_web && ${git} switch "${us_web_branch}" 1>>"${log_file}" && cd ..
 		if [ ! $? -eq 0 ]; then
 
 			echo " Error, unable to switch to US-Web branch '${us_web_branch}'." 1>&2
@@ -344,7 +369,7 @@ if [ $do_clone -eq 0 ]; then
 
 	display_and_log " - cloning Ceylan-Myriad"
 
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Myriad myriad; then
+	if ! ${git} clone ${clone_opts} "${our_github_base}/Ceylan-Myriad" myriad; then
 
 		echo " Error, unable to obtain Ceylan-Myriad." 1>&2
 		exit 20
@@ -358,7 +383,7 @@ if [ $do_clone -eq 0 ]; then
 	# To avoid "Already on 'master'":
 	if [ "${myriad_branch}" != "master" ]; then
 
-		cd myriad && ${git} checkout "${myriad_branch}" 1>>"${log_file}" && cd ..
+		cd myriad && ${git} switch "${myriad_branch}" 1>>"${log_file}" && cd ..
 		if [ ! $? -eq 0 ]; then
 
 			echo " Error, unable to switch to Ceylan-Myriad branch '${myriad_branch}'." 1>&2
@@ -368,9 +393,10 @@ if [ $do_clone -eq 0 ]; then
 
 	fi
 
+
 	display_and_log " - cloning Ceylan-LEEC (Ceylan fork of letsencrypt-erlang)"
 
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-LEEC leec; then
+	if ! ${git} clone ${clone_opts} "${our_github_base}/Ceylan-LEEC" leec; then
 
 		echo " Error, unable to obtain Ceylan-LEEC." 1>&2
 		exit 32
@@ -388,7 +414,7 @@ if [ $do_clone -eq 0 ]; then
 
 		cd leec
 
-		if ! ${git} checkout "${leec_branch}"; then
+		if ! ${git} switch "${leec_branch}"; then
 
 			echo " Error, unable to set Ceylan-LEEC to branch '${leec_branch}'." 1>&2
 			exit 33
@@ -400,10 +426,9 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 
-
 	display_and_log " - cloning Ceylan-WOOPER"
 
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-WOOPER wooper; then
+	if ! ${git} clone ${clone_opts} "${our_github_base}/Ceylan-WOOPER" wooper; then
 
 		echo " Error, unable to obtain Ceylan-WOOPER." 1>&2
 		exit 25
@@ -411,10 +436,9 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 
-
 	display_and_log " - cloning Ceylan-Traces"
 
-	if ! ${git} clone ${clone_opts} ${our_github_base}/Ceylan-Traces traces; then
+	if ! ${git} clone ${clone_opts} "${our_github_base}/Ceylan-Traces" traces; then
 
 		echo " Error, unable to obtain Ceylan-Traces." 1>&2
 		exit 30
@@ -422,16 +446,14 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 
-
 	display_and_log " - cloning US-Common"
 
-	if ! ${git} clone ${clone_opts} ${our_github_base}/us-common us_common; then
+	if ! ${git} clone ${clone_opts} "${our_github_base}/us-common" us_common; then
 
 		echo " Error, unable to obtain US-Common." 1>&2
 		exit 35
 
 	fi
-
 
 
 	# The explicit build of Cowboy is needed due to a rebar3 bug encountered
@@ -458,7 +480,7 @@ if [ $do_clone -eq 0 ]; then
 
 		cd cowboy
 
-		if ! ${git} -c advice.detachedHead=false checkout tags/${cowboy_tag}; then
+		if ! ${git} -c advice.detachedHead=false switch tags/${cowboy_tag}; then
 
 			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
 			exit 52
@@ -510,7 +532,7 @@ if [ $do_clone -eq 0 ]; then
 
 			cd nitrogen_core
 
-			if ! ${git} checkout "tags/${nitrogen_core_tag}"; then
+			if ! ${git} switch "tags/${nitrogen_core_tag}"; then
 
 				echo " Error, unable to set nitrogen_core to tag '${nitrogen_core_tag}'." 1>&2
 				exit 82
@@ -527,7 +549,7 @@ if [ $do_clone -eq 0 ]; then
 
 			cd nitrogen_core
 
-			if ! ${git} checkout "${nitro_fork_branch}"; then
+			if ! ${git} switch "${nitro_fork_branch}"; then
 
 				echo " Error, unable to set nitrogen_core to branch '${nitro_fork_branch}'." 1>&2
 				exit 83
@@ -562,7 +584,7 @@ if [ $do_clone -eq 0 ]; then
 
 		#	cd simple_bridge
 
-		#	if ! ${git} checkout "tags/${simple_bridge_tag}"; then
+		#	if ! ${git} switch "tags/${simple_bridge_tag}"; then
 
 		#		echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
 		#		exit 62
@@ -579,7 +601,7 @@ if [ $do_clone -eq 0 ]; then
 
 		#	cd simple_bridge
 
-		#	if ! ${git} checkout "${nitro_fork_branch}"; then
+		#	if ! ${git} switch "${nitro_fork_branch}"; then
 
 		#		echo " Error, unable to set simple_bridge to branch '${nitro_fork_branch}'." 1>&2
 		#		exit 63
@@ -606,7 +628,7 @@ if [ $do_clone -eq 0 ]; then
 		#	display_and_log " - setting qdate to tag '${qdate_tag}'"
 
 		#	cd qdate
-		#	if ! ${git} checkout tags/${qdate_tag}; then
+		#	if ! ${git} switch tags/${qdate_tag}; then
 
 		#		echo " Error, unable to set qdate to tag '${qdate_tag}'." 1>&2
 		#		exit 72
@@ -634,7 +656,7 @@ if [ $do_clone -eq 0 ]; then
 		#	display_and_log " - setting nprocreg to tag '${nprocreg_tag}'"
 
 		#	cd nprocreg
-		#	if ! ${git} checkout tags/${nprocreg_tag}; then
+		#	if ! ${git} switch tags/${nprocreg_tag}; then
 
 		#		echo " Error, unable to set nprocreg to tag '${nprocreg_tag}'." 1>&2
 		#		exit 72
@@ -662,7 +684,7 @@ if [ $do_clone -eq 0 ]; then
 
 		#	cd sync
 		#
-		#	if !${git} checkout tags/${sync_tag}; then
+		#	if !${git} switch tags/${sync_tag}; then
 
 		#		echo " Error, unable to set sync to tag '${sync_tag}'." 1>&2
 		#		exit 92
@@ -690,7 +712,7 @@ if [ $do_clone -eq 0 ]; then
 		#	display_and_log " - setting nitro_cache to tag '${nitro_cache_tag}'"
 
 		#	cd nitro_cache
-		#	if !${git} checkout tags/${nitro_cache_tag}; then
+		#	if !${git} switch tags/${nitro_cache_tag}; then
 
 		#		echo " Error, unable to set nitro_cache to tag '${nitro_cache_tag}'." 1>&2
 		#		exit 102
@@ -714,17 +736,26 @@ if [ ${do_build} -eq 0 ]; then
 	display_and_log
 	display_and_log "Building these packages as $(id -un), with Erlang $(erl -eval '{ok, V} = file:read_file( filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"]) ), io:fwrite(V), halt().' -noshell) and following Ceylan options: ${ceylan_opts}, from '$(pwd)':"
 
+	# Now building our own standalone version of jsx; rebar3 required.
+	#
+	# The resulting BEAM files are both in 'ebin' and in
+	# '_build/default/lib/jsx/ebin':
+	#
 	display_and_log " - building jsx"
 	cd jsx && ${rebar3} compile 1>>"${log_file}"
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of jsx failed." 1>&2
-		exit 45
+		exit 90
 	fi
-	ln -s _build/default/lib/jsx/ebin/
+
+	# Otherwise may not be found by US-Web:
+	#ln -s _build/default/lib/jsx/ebin
+
 	cd ..
 
-	# For Myriad, WOOPER and Traces, we prefer relying on our own good old build
-	# system (i.e. not on rebar3).
+
+	# As much as possible, notably for our developments, we prefer relying on
+	# our any vanilla good old build system (i.e. not on rebar3).
 
 	display_and_log " - building Ceylan-Myriad"
 	cd myriad && ${make} all ${ceylan_opts} 1>>"${log_file}"
@@ -752,20 +783,6 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 	cd ..
 
-
-	# Now building our own standalone version of jsx; rebar3 required:
-	display_and_log " - building jsx"
-
-	# The resulting BEAM files are both in 'ebin' and in
-	# '_build/default/lib/jsx/ebin':
-	#
-	cd jsx && ${rebar3} compile 1>>"${log_file}"
-
-	if [ ! $? -eq 0 ]; then
-		echo " Error, the build of jsx failed." 1>&2
-		exit 61
-	fi
-	cd ..
 
 
 	# Only for US-Web (not for prerequisites of LEEC):
@@ -910,7 +927,7 @@ if [ ${do_build} -eq 0 ]; then
 	cd us_common && ${make} all ${ceylan_opts} 1>>"${log_file}"
 	if [ ! $? -eq 0 ]; then
 		echo " Error, the build of US-Common failed." 1>&2
-		exit 70
+		exit 85
 	fi
 	cd ..
 
@@ -923,13 +940,12 @@ if [ ${do_build} -eq 0 ]; then
 	# required installing cowboy by ourselves):
 	#
 	display_and_log " - building US-Web"
-
 	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && ln -s ../../jsx && cd ..
 
 	# Our build; uses Ceylan's sibling trees:
 	if ! ${make} all ${ceylan_opts} 1>>"${log_file}"; then
 		echo " Error, the build of US-Web failed." 1>&2
-		exit 75
+		exit 95
 	fi
 
 	# Post-install: fixing permissions and all.
@@ -955,12 +971,12 @@ if [ ${do_build} -eq 0 ]; then
 	us_launch_type="native"
 	us_web_install_root="${us_web_dir}"
 
-	#display_and_log "Sourcing '${us_web_common_script}' from $(pwd)."
+	display_and_log "Sourcing '${us_web_common_script}' from $(pwd)."
 	. "${us_web_common_script}" 1>>"${log_file}"
 
-	read_us_config_file 1>>"${log_file}"
+	read_us_config_file #1>>"${log_file}"
 
-	read_us_web_config_file 1>>"${log_file}"
+	read_us_web_config_file #1>>"${log_file}"
 
 	# Add a convenient certificate-related makefile:
 	if [ -n "${us_cert_dir}" ]; then
@@ -1064,16 +1080,15 @@ if [ ${do_build} -eq 0 ]; then
 
 	# Final touch for the build:
 
-	cd ${base_us_dir}
+	cd "${base_us_dir}"
 
 	# Designates this install as the latest one then.
 	#
 	# Rare option needed, otherwise apparently mistook for a directory resulting
 	# in an incorrect link:
 	#
-	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native
+	sudo /bin/ln -sf --no-target-directory "${native_install_dior}" us_web-native
 	sudo /bin/ln -sf --no-target-directory us_web-native us_web-latest
-
 
 	display_and_log
 	display_and_log "Native US-Web built and ready in ${abs_native_install_dir}."
@@ -1157,7 +1172,7 @@ if [ $do_launch -eq 0 ]; then
 		display_and_log " US-Web launched (start script reported success)."
 
 	else
-		echo " Error, start script ('${start_script}') failed (code: ${res})." 1>&2
+		echo "  Error, start script ('${start_script}') failed (code: ${res})." 1>&2
 
 		exit ${res}
 
@@ -1177,7 +1192,6 @@ else
 	display_and_log "Any prior US-Web instance that would still linger could be removed thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 
 fi
-
 
 
 new_log_file="${base_us_dir}/$(basename $0).log"

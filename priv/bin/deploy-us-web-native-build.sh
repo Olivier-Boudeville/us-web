@@ -472,7 +472,7 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A lot safer than relying on the tip of the master branch:
-	cowboy_tag="2.10.0"
+	cowboy_tag="2.13.0"
 
 	if [ -n "${cowboy_tag}" ]; then
 
@@ -480,7 +480,7 @@ if [ $do_clone -eq 0 ]; then
 
 		cd cowboy
 
-		if ! ${git} -c advice.detachedHead=false switch tags/${cowboy_tag}; then
+		if ! ${git} -c advice.detachedHead=false checkout tags/${cowboy_tag}; then
 
 			echo " Error, unable to set Cowboy to tag '${cowboy_tag}'." 1>&2
 			exit 52
@@ -532,7 +532,7 @@ if [ $do_clone -eq 0 ]; then
 
 			cd nitrogen_core
 
-			if ! ${git} switch "tags/${nitrogen_core_tag}"; then
+			if ! ${git} checkout "tags/${nitrogen_core_tag}"; then
 
 				echo " Error, unable to set nitrogen_core to tag '${nitrogen_core_tag}'." 1>&2
 				exit 82
@@ -584,7 +584,7 @@ if [ $do_clone -eq 0 ]; then
 
 		#	cd simple_bridge
 
-		#	if ! ${git} switch "tags/${simple_bridge_tag}"; then
+		#	if ! ${git} checkout "tags/${simple_bridge_tag}"; then
 
 		#		echo " Error, unable to set simple_bridge to tag '${simple_bridge_tag}'." 1>&2
 		#		exit 62

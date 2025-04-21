@@ -39,7 +39,7 @@ jobs:
         #apt-get update
         echo "## Updating packages"
         apt-get update
-        apt-get install --assume-yes tree
+        apt-get install --assume-yes sudo tree
         echo " - running as: $(id)"
         echo " - building from: $(pwd)"
         echo " - content of this directory: $(ls . 2>/dev/null | tr '\n' ' ')"

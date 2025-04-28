@@ -37,7 +37,7 @@ do_build=0
 do_launch=0
 no_launch_opt="--no-launch"
 
-checkout_opt="--checkout"
+#checkout_opt="--checkout"
 
 root_exec_allowed=1
 allow_root_exec_opt="--allow-root-exec"
@@ -47,7 +47,7 @@ support_nitrogen=1
 
 
 # To avoid typos:
-checkout_dir="_checkouts"
+#checkout_dir="_checkouts"
 priv_dir="priv"
 
 base_us_dir="/opt/universal-server"
@@ -65,25 +65,27 @@ nitrogen_option="--support-nitrogen"
 usage="
 Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [${allow_root_exec_opt}]  [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
-Options:'
- - ${allow_root_exec_opt}: allows this script to run as root (mostly useful for continuous integration)
- - ${nitrogen_option}: enables the support of a Nitrogen-based website (mostly obsolete)
+Options:
+ ${no_launch_opt}: installs US-Web, but does not launch it automatically (possibly because a prior install is still running)
+ ${allow_root_exec_opt}: allows this script to run as root (mostly useful for continuous integration)
+ ${nitrogen_option}: enables the support of a Nitrogen-based website (mostly obsolete)
 
 Creates a full installation where most dependencies are sibling directories of US-Web, symlinked in checkout directories, so that code-level upgrades are easier to perform than in an OTP/rebar3 context.
 
 The prerequisites expected to be already installed are:
  - Erlang/OTP (see http://myriad.esperide.org/#prerequisites)
- - [partly obsolete] rebar3 (see http://myriad.esperide.org/#getting-rebar3) was used, for dependencies that are not ours, yet we gave up relying on it, at least for LEEC, as it led to too much trouble (trying to recompile Myriad for obscure reasons, and of course failing)
  - [optional] Awstats (see http://www.awstats.org/)"
 
 
+# Not used anymore:
+# - [partly obsolete] rebar3 (see http://myriad.esperide.org/#getting-rebar3) was used, for dependencies that are not ours, yet we gave up relying on it, at least for LEEC, as it led to too much trouble (trying to recompile Myriad for obscure reasons, and of course failing)
+
+
 # Will thus install the following US-Web prerequisites:
-# - jsx
 # - Myriad, WOOPER and Traces
-# - jsx
 # - LEEC
-# - Cowboy
 # - US-Common
+# - Cowboy
 
 our_github_base="https://github.com/Olivier-Boudeville"
 
@@ -357,14 +359,15 @@ if [ $do_clone -eq 0 ]; then
 	ln -sf us_web/conf/GNUmakefile-for-native-root GNUmakefile
 
 
-	display_and_log " - cloning jsx"
+	# Superseded by the built-in 'json' parser:
+	# display_and_log " - cloning jsx"
 
-	if ! ${git} clone ${clone_opts} https://github.com/talentdeficit/jsx.git; then
+	# if ! ${git} clone ${clone_opts} https://github.com/talentdeficit/jsx.git; then
 
-		echo " Error, unable to obtain jsx parser." 1>&2
-		exit 38
+	#   echo " Error, unable to obtain jsx parser." 1>&2
+	#   exit 38
 
-	fi
+	# fi
 
 
 	display_and_log " - cloning Ceylan-Myriad"
@@ -736,22 +739,24 @@ if [ ${do_build} -eq 0 ]; then
 	display_and_log
 	display_and_log "Building these packages as $(id -un), with Erlang $(erl -eval '{ok, V} = file:read_file( filename:join([code:root_dir(), "releases", erlang:system_info(otp_release), "OTP_VERSION"]) ), io:fwrite(V), halt().' -noshell) and following Ceylan options: ${ceylan_opts}, from '$(pwd)':"
 
-	# Now building our own standalone version of jsx; rebar3 required.
+	# ('json' now used instead)
+	#
+	# Previously building our own standalone version of jsx; rebar3 required.
 	#
 	# The resulting BEAM files are both in 'ebin' and in
 	# '_build/default/lib/jsx/ebin':
 	#
-	display_and_log " - building jsx"
-	cd jsx && ${rebar3} compile 1>>"${log_file}"
-	if [ ! $? -eq 0 ]; then
-		echo " Error, the build of jsx failed." 1>&2
-		exit 90
-	fi
+	# display_and_log " - building jsx"
+	# cd jsx && ${rebar3} compile 1>>"${log_file}"
+	# if [ ! $? -eq 0 ]; then
+	#   echo " Error, the build of jsx failed." 1>&2
+	#   exit 90
+	# fi
 
 	# Otherwise may not be found by US-Web:
-	#ln -s _build/default/lib/jsx/ebin
-
-	cd ..
+	# ln -s _build/default/lib/jsx/ebin
+	#
+	# cd ..
 
 
 	# As much as possible, notably for our developments, we prefer relying on
@@ -856,16 +861,18 @@ if [ ${do_build} -eq 0 ]; then
 	fi
 
 	# Apart from Myriad (used as a checkout to point to the same, unique install
-	# thereof here), LEEC has dependencies of its own (shotgun, jsx otherwise
+	# thereof here), LEEC had dependencies of its own (shotgun, jsx otherwise
 	# jiffy, elli, getopt, yamerl, erlang_color), so, even if not all of them
 	# are actually needed by our use case (elli, getopt, yamerl, erlang_color
-	# are of no use here), we prefer relying on rebar3 (as indirect
-	# dependencies, such as cowlib or gun, were also induced); now the only real
-	# external dependency of LEEC is jsx, yet this could be alleviated, as
-	# Erlang now has its own JSON parser (not to mention that now certbot is
-	# mostly used instead of performing ACME calls)
+	# are of no use here), we preferred relying on rebar3 (as indirect
+	# dependencies, such as cowlib or gun, were also induced); then the only
+	# real external dependency of LEEC was jsx, yet it is now superseded by the
+	# Erlang built-in JSON parser, 'json' (not to mention that now certbot is
+	# mostly used instead of performing ACME calls).
 	#
 	display_and_log " - building LEEC"
+
+	# Obsolete, as not using rebar3 anymore:
 
 	# Modifying LEEC so that it relies on the same, common Myriad build tree (as
 	# a checkout) rather than on its own version (as a _build dependency;
@@ -883,12 +890,13 @@ if [ ${do_build} -eq 0 ]; then
 	# not find an ebin for jsx; what a mess!) so we just deactivate the check
 	# here:
 	#
-	cd leec && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
+	#cd leec && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && cd ..
+    cd leec
 
-	if [ ! $? -eq 0 ]; then
-		echo " Error, the pre-build of LEEC failed." 1>&2
-		exit 65
-	fi
+	#if [ ! $? -eq 0 ]; then
+	#   echo " Error, the pre-build of LEEC failed." 1>&2
+	#   exit 65
+	#fi
 
 	# Relies either on rebar3, so that prerequisites such as the JSON parser are
 	# managed (otherwise our native build could be used, yet then the extra
@@ -897,9 +905,10 @@ if [ ${do_build} -eq 0 ]; then
 	# Relying on Erlang-native httpc instead (through Myriad's web_utils):
 	${make} all USE_SHOTGUN=false 1>>"${log_file}"
 
-	# We do not declare the need for JSON support at this point, as this would
-	# lead to the Myriad-based lookup of a proper jsx install - whereas it is
-	# not available yet (it will actually be triggered by this make target):
+	# We did not declare the need for JSON support at this point, as this would
+	# have led to the Myriad-based lookup of a proper jsx install - whereas it
+	# was not available yet (it was actually triggered by this make target);
+	# anyway jsx is not used anymore:
 
 	# With rebar3, now yields: '===> {missing_module,app_facilities}':
 	#if ! ${make} all-rebar3 ${ceylan_opts} USE_JSON=false USE_SHOTGUN=false 1>>"${log_file}"; then
@@ -940,7 +949,9 @@ if [ ${do_build} -eq 0 ]; then
 	# required installing cowboy by ourselves):
 	#
 	display_and_log " - building US-Web"
-	cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && ln -s ../../jsx && cd ..
+	# Removed: '&& ln -s ../../jsx'; anyway rebar3 not used anymore.
+	#cd us_web && mkdir ${checkout_dir} && cd ${checkout_dir} && ln -s ../../myriad && ln -s ../../wooper && ln -s ../../traces && ln -s ../../us_common && ln -s ../../leec && ln -s ../../cowboy && cd ..
+	cd us_web
 
 	# Our build; uses Ceylan's sibling trees:
 	if ! ${make} all ${ceylan_opts} 1>>"${log_file}"; then
@@ -1107,7 +1118,7 @@ if [ $do_launch -eq 0 ]; then
 
 	# Not expecting here a previous native instance to run.
 
-	# Absolute path; typically in '/opt/universal-server/us_web-native/us_web':
+	# Absolute path; typically in '/opt/universal-server/us_web-native-deployment-*/us_web':
 	if [ ! -d "${us_web_dir}" ]; then
 
 		echo " Error, the target US-Web directory, '${us_web_dir}', does not exist." 1>&2

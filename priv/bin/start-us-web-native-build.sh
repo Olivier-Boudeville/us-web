@@ -2,7 +2,7 @@
 
 # Starts a US-Web instance, to be run as a native build (on the current host).
 
-# Script possibly:
+# Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
 # - run from systemctl, as root, as:
 # 'systemctl start us-web-as-native-build.service'
@@ -23,33 +23,6 @@
 #    lingers
 
 
-
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (which must end by a 'universal-server' directory), otherwise found through the default US search paths.
-
-The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
-
-Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config."
-
-
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-
-	echo "${usage}"
-
-	exit 0
-
-fi
-
-
-if [ ! $(id -u) -eq 0 ]; then
-
-	# As operations like chown will have to be performed:
-	echo "  Error, this script must be run as root.
-${usage}" 1>&2
-	exit 5
-
-fi
-
-
 # Either this script is called during development, directly from within a US-Web
 # installation, in which case this installation shall be used, or (typically if
 # called through systemd) the standard US-Web base directory shall be targeted:
@@ -68,16 +41,44 @@ if [ -d "${local_us_web_install_root}/priv" ]; then
 else
 
 	# The location enforced by deploy-us-web-native-build.sh:
-	us_web_install_root="/opt/universal-server/us_web-native/us_web"
+	us_web_install_root="/opt/universal-server/us_web-native-deployment/us_web"
 	echo "Selecting US-Web native build in standard server location '${us_web_install_root}'."
 
 	if [ ! -d "${us_web_install_root}/priv" ]; then
 
-		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard server location." 1>&2
+		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard location." 1>&2
 
 		exit 15
 
 	fi
+
+fi
+
+
+usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (note that the final directory of this path must be 'universal-server'), otherwise found through the default US search paths.
+
+The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
+
+Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config.
+
+This script must be run as root."
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+
+	echo "${usage}"
+
+	exit 0
+
+fi
+
+
+if [ ! $(id -u) -eq 0 ]; then
+
+	# As operations like chown will have to be performed:
+	echo "  Error, this script must be run as root.
+${usage}" 1>&2
+	exit 5
 
 fi
 
@@ -182,6 +183,7 @@ secure_authbind
 
 prepare_us_web_launch
 
+# From us_web:
 cd src || exit 17
 
 
@@ -195,17 +197,8 @@ cd src || exit 17
 #
 make -s launch-epmd ${epmd_make_opt} || exit 18
 
-
-if [ -n "${erl_epmd_port}" ]; then
-	epmd_start_msg="configured EPMD port ${erl_epmd_port}"
-else
-	epmd_start_msg="default US-Web port ${default_us_web_epmd_port}"
-fi
-
-
 echo
-echo " -- Starting US-Web natively-built application as user '${us_web_username}', on ${epmd_start_msg}, VM log expected in '${us_web_vm_log_dir}/erlang.log.1'..."
-
+echo " -- Starting US-Web natively-built application as user '${us_web_username}', on US-Web EPMD port ${us_web_epmd_port}, VM log expected in '${us_web_vm_log_dir}/erlang.log.1'..."
 
 # A correct way of passing environment variables (despite a sudo and an
 # authbind) proved finally to specify them prior to authbind, like in:
@@ -248,7 +241,7 @@ if [ ${res} -eq 0 ]; then
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:
 	#
-	sleep 5
+	sleep 8
 
 	# Better diagnosis than the previous res code:
 	#

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# A script to kill for sure a local Web instance.
+
 usage="Usage: $(basename $0): kills any running US-Web instance(s), and ensures none is registered in the specifically-associated EPMD."
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -15,6 +17,17 @@ if [ ! $# -eq 0 ]; then
 ${usage}" 1>&2
 
 	exit 10
+
+fi
+
+
+epmd="$(which epmd 2>/dev/null)"
+
+if [ ! -x "${epmd}" ]; then
+
+	echo "  Error, no EPMD executable found." 1>&2
+
+	exit 8
 
 fi
 
@@ -102,7 +115,13 @@ if [ -n "${to_kill}" ]; then
 	echo "Following US-Web processes to kill found, as $(id -un): ${to_kill}."
 
 	# The signal 9 *is* necessary in some cases:
-	kill -9 ${to_kill} # 2>/dev/null
+	if ! kill -9 ${to_kill}; then  # 2>/dev/null
+
+		echo "  Error: failed to kill processes of PIDs ${to_kill}." 1>&2
+
+		exit 40
+
+	fi
 
 	# Actually not specifically safer:
 	#for p in ${to_kill}; do
@@ -119,26 +138,32 @@ else
 fi
 
 
+# Previously any (possibly the default) US-level EPMD port applied here, now the
+# US-Web one applies unconditionally:
 
-if [ -n "${erl_epmd_port}" ]; then
+#if [ -n "${erl_epmd_port}" ]; then
+#
+#   echo "Using user-defined US-Web EPMD port ${erl_epmd_port}."
+#   export ERL_EPMD_PORT="${erl_epmd_port}"
+#
+#else
 
-	echo "Using user-defined US-Web EPMD port ${erl_epmd_port}."
-	export ERL_EPMD_PORT="${erl_epmd_port}"
+    # Using the default US-Web EPMD port (see the EPMD_PORT make variable),
+    # supposing that the instance was properly launched (see the 'launch-epmd'
+    # make target):
 
-else
+#   echo "Using default US-Web EPMD port ${default_us_web_epmd_port}."
 
-	# Using the default US-Web EPMD port (see the EPMD_PORT make variable),
-	# supposing that the instance was properly launched (see the 'launch-epmd'
-	# make target):
+#   export ERL_EPMD_PORT="${default_us_web_epmd_port}"
 
-	echo "Using default US-Web EPMD port ${default_us_web_epmd_port}."
+#fi
 
-	export ERL_EPMD_PORT="${default_us_web_epmd_port}"
+# Already resolved by us-web-common.sh:
+echo "Using, for US-Web EPMD port, ${us_web_epmd_port}."
+export ERL_EPMD_PORT="${us_web_epmd_port}"
 
-fi
-
-
-if ! epmd -stop us_web; then
+# Not always working:
+if ! ${epmd} -stop us_web; then
 
 	echo "  Error while unregistering the US-Web server from the EPMD daemon at port ${ERL_EPMD_PORT}." 1>&2
 
@@ -146,8 +171,8 @@ if ! epmd -stop us_web; then
 
 fi
 
-
 sleep 1
 
 # At least this script:
 echo "Resulting US-Web found: $(ps -edf | grep us_web | grep -v grep)"
+echo "Resulting EPMD entries found: $(${epmd} -names)"

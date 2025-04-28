@@ -73,7 +73,7 @@ We present here a short overview of the services offered by the *Universal Webse
 
 The goal of **US-Web** is to provide an integrated, extensible web framework in order:
 
-- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, using/generating/renewing automatically SSL certificates, etc.
+- to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, using/generating/renewing automatically TLS certificates, etc.
 - to link to the `Universal Server <https://github.com/Olivier-Boudeville/us-main>`_ optionally (i.e. if available, knowing both should be able to run in the absence of the other), in order to offer a web front-end for it
 
 Beyond this document, the next level of information about US-Web is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web/src>`_, which are intensely commented and generally straightforward.
@@ -134,28 +134,29 @@ If the whole deployment procedure went smoothly, then only switch back to ``{cer
 Native Deployment (recommended)
 ===============================
 
-This procedure relies on our *native* build/run system, which is the only one that is officially supported in the context of US-Web, and involves only two steps.
+This procedure relies on our *native* build/run system, which is the only one that is officially supported in the context of US-Web, and involves only two steps, on the target host.
 
 **First step** is to:
 
 - create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (e.g. ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
 
-- transfer to the target server our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script (in a US-Web clone, it is located in ``priv/bin``), possibly simply at the root of one's normal user
+  - ensure that our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script in available on that host (in a US-Web clone, it is located in ``priv/bin``), possibly simply at the root of one's normal user
 
-- ensure that no prior webserver is running at the target port(s) (otherwise specify the ``--no-launch`` option below)
+- ensure that no prior server is running at the target port(s) (otherwise specify the ``--no-launch`` option below); to be sure that no previous US-Web instance lingers, one may execute ``systemctl stop us-web-as-native-build.service`` and/or run our ``priv/bin/kill-us-web.sh`` script
+
+After deployment, the installation itself will be located by default in the ``/opt/universal-server/us_web-native-deployment-YYYYMMDD`` (timestamped) directory.
 
 
-After deployment, the installation itself will be located by default in the ``/opt/universal-server/us_web-native`` directory.
-
-**Step #2** exists in two versions, either based on a direct launching or, preferably, on one managed by Systemd.
+**Step #2** exists in two versions below, either based on a direct launching or, preferably, on one managed by Systemd (with ``systemctl``); refer to `Launching US-Main`_ for that.
 
 
 
 Direct, Ad Hoc Deployment
 -------------------------
 
-This **second step** boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument.
+This **second step** boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument (except possibly ``--no-launch`).
 
+That's it.
 
 
 Deployment for Systemd Integration (recommended)
@@ -198,7 +199,7 @@ See the next section for more in-depth checking and monitoring.
 Checking Launch Outcome
 -----------------------
 
-If having requested the renewal of SSL certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully *only* once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
+If having requested the renewal of TLS certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully *only* once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
 
 These certificates can be checked (e.g. in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically in ``/opt/universal-server/us_web-data/certificates``).
 
@@ -1041,16 +1042,18 @@ Current Stable Version & Download
 
 As mentioned, the single, direct prerequisites of the `Universal Webserver <https://github.com/Olivier-Boudeville/Universal Webserver>`_ are:
 
-- `Cowboy <https://github.com/ninenines/cowboy>`_ (version 2.8 or above)
+- `Cowboy <https://github.com/ninenines/cowboy>`_ (version 2.13 or above)
 - `LEEC <https://github.com/Olivier-Boudeville/Ceylan-LEEC/>`_ as an optional, runtime-only dependency
 - `Awstats <http://www.awstats.org/>`_ as an optional, runtime-only dependency (version 7.8 or above)
 - `US-Common <http://us-common.esperide.org/>`_
 
 The latter relies on `Ceylan-Traces <https://github.com/Olivier-Boudeville/Ceylan-Traces>`_, which implies in turn `Ceylan-WOOPER <https://github.com/Olivier-Boudeville/Ceylan-WOOPER>`_, then `Ceylan-Myriad <https://github.com/Olivier-Boudeville/Ceylan-Myriad>`_ and `Erlang <http://erlang.org>`_.
 
-We prefer using GNU/Linux, sticking to the latest stable release of Erlang, and building it from sources, thanks to GNU ``make``. We recommend indeed obtaining Erlang thanks to a manual installation; refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines.
+We prefer using GNU/Linux, sticking to the latest stable release of Erlang (refer to the corresponding `Myriad prerequisite section <http://myriad.esperide.org#prerequisites>`_  for more precise guidelines [#]_), and building the Universal Server from sources, thanks to GNU ``make``.
 
-The build of the US-Web server is driven by `rebar3 <https://www.rebar3.org/>`_, which can be obtained by following our `guidelines <http://myriad.esperide.org/#getting-rebar3>`_.
+.. [#] Note that servers like US-Main have a machinery meant to be executed as root before switching to an application-specific user. As a result, Erlang is best available system-wide (as opposed to only a regular, non-privileged user).
+
+The build of the US-Web server used to be optionally driven by `rebar3 <https://www.rebar3.org/>`_, which can be obtained by following our `guidelines <http://myriad.esperide.org/#getting-rebar3>`_, however now our native build is strongly preferred.
 
 .. _getting-awstats:
 
@@ -1059,7 +1062,7 @@ If a tool for web analysis is needed (typically if enabling a meta website), thi
 .. [#] To avoid a future reading access error, execute after installation: ``chmod -R +r /usr/share/webapps/awstats/icon``.
 
 
-If wanting to be able to operate on the source code of the `Ceylan <https://github.com/Olivier-Boudeville/Ceylan>`_ and/or `US <https://github.com/Olivier-Boudeville/Universal-Server>`_ dependencies, you may define appropriate symbolic links in a ``_checkouts`` directory created at the root one's ``US-Web`` clone, these links pointing to relevant Git repositories (see the ``create-us-web-checkout`` make target for that).
+If relying on rebar3 and wanting to be able to operate on the source code of the `Ceylan <https://github.com/Olivier-Boudeville/Ceylan>`_ and/or `US <https://github.com/Olivier-Boudeville/Universal-Server>`_ dependencies, you may define appropriate symbolic links in a ``_checkouts`` directory created at the root one's ``US-Web`` clone, these links pointing to relevant Git repositories (see the ``create-us-web-checkout`` make target for that). As for our native build, its reliance on basic clones allows for direct, seamless updates.
 
 
 
@@ -1632,7 +1635,7 @@ So this latter, autonomous webserver ``my-server`` instance would run thanks to 
 Challenges
 ----------
 
-The HTTP/HTTPS routing shall be fully transparent, notably not breaking any connectivity (e.g. regarding Comet, AJAX, Websockets) and complying with the proper use of the underlying protocols (e.g. so that browsers do not interpret a proxying as the spoofing of SSL certificates).
+The HTTP/HTTPS routing shall be fully transparent, notably not breaking any connectivity (e.g. regarding Comet, AJAX, Websockets) and complying with the proper use of the underlying protocols (e.g. so that browsers do not interpret a proxying as the spoofing of TLS certificates).
 
 
 

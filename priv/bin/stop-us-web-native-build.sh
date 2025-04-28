@@ -226,7 +226,7 @@ read_us_web_config_file #1>/dev/null
 #secure_authbind
 
 
-echo " -- Stopping US-Web natively-built application (EPMD port: ${us_web_erl_epmd_port})..."
+echo " -- Stopping US-Web natively-built application (EPMD port: ${us_web_epmd_port})..."
 
 
 # We must stop the VM with the right (Erlang) cookie, i.e. the actual runtime
@@ -246,11 +246,11 @@ fi
 cd src/apps || exit 17
 
 # No sudo or authbind necessary here, no US_* environment variables either:
-echo XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
+echo XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s us_web_stop_exec EPMD_PORT=${us_web_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
 
 
 # A correct way of passing environment variables:
-XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s us_web_stop_exec EPMD_PORT=${us_web_erl_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
+XDG_CONFIG_DIRS="${xdg_cfg_dirs}" make -s us_web_stop_exec EPMD_PORT=${us_web_epmd_port} CMD_LINE_OPT="$* --target-cookie ${vm_cookie}"
 
 res=$?
 
@@ -292,22 +292,29 @@ fi
 # applications (see kill-us-web.sh to minimise the harm done), so it is not done
 # here.
 
-if [ -n "${us_web_erl_epmd_port}" ]; then
+# Previously any (possibly the default) US-level EPMD port applied here, now the
+# US-Web one applies unconditionally:
 
-	echo "Using user-defined US-Web EPMD port ${us_web_erl_epmd_port}."
-	export ERL_EPMD_PORT="${us_web_erl_epmd_port}"
+#if [ -n "${us_web_epmd_port}" ]; then
 
-else
+#   echo "Using user-defined US-Web EPMD port ${us_web_epmd_port}."
+#   export ERL_EPMD_PORT="${us_web_epmd_port}"
 
-	# Using the default US-Web EPMD port (see the EPMD_PORT make variable),
-	# supposing that the instance was properly launched (see the 'launch-epmd'
-	# make target):
+#else
 
-	echo "Using default US-Web EPMD port ${default_us_web_epmd_port}."
+#   # Using the default US-Web EPMD port (see the EPMD_PORT make variable),
+#   # supposing that the instance was properly launched (see the 'launch-epmd'
+#   # make target):
 
-	export ERL_EPMD_PORT="${default_us_web_epmd_port}"
+#   echo "Using default US-Web EPMD port ${default_us_web_epmd_port}."
 
-fi
+#   export ERL_EPMD_PORT="${default_us_web_epmd_port}"
+
+#fi
+
+# Already resolved by us-web-common.sh:
+echo "Using, for the US-Web EPMD port, ${us_web_epmd_port}."
+export ERL_EPMD_PORT="${us_web_epmd_port}"
 
 if ! ${epmd} -stop us_web; then
 

@@ -143,38 +143,47 @@ read_us_web_config_file()
 	us_web_base_content=$(/bin/cat "${us_web_config_file}" | sed 's|^[[:space:]]*%.*||1')
 
 
-	# The EPMD port (possibly already set at the overall US-level) may be
-	# overridden here in US-Web, so that it does not clash with the one of any
-	# other US-* application (e.g. US-Main).
+	# The EPMD port (possibly already set at the overall US-level) is actually
+	# never used here, as either it is overridden for US-Web here, or the
+	# default US-Web one applies.
+	#
+	# Interest: not clashing with the one of any other US-* application
+	# (e.g. US-Main).
+	#
+	us_web_epmd_port=$(echo "${us_web_base_content}" | grep epmd_port | sed 's|^[[:space:]]*{[[:space:]]*epmd_port,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
 
-	us_web_erl_epmd_port=$(echo "${us_web_base_content}" | grep epmd_port | sed 's|^[[:space:]]*{[[:space:]]*epmd_port,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
-
-	if [ -z "${us_web_erl_epmd_port}" ]; then
+	if [ -z "${us_web_epmd_port}" ]; then
 
 		#echo "No US-Web level Erlang EPMD port specified."
 
+		# Previously any (possibly the default) US-level EPMD applied in this
+		# case, now the US-Web one applies:
+
 		# Applying defaults iff US-Common did not already:
-		if [ -n "${erl_epmd_port}" ]; then
+		#if [ -n "${erl_epmd_port}" ]; then
 
-			# Keeping US-Common defaults:
-			us_web_erl_epmd_port="${erl_epmd_port}"
+		#   # Keeping US-Common defaults:
+		#   us_web_epmd_port="${erl_epmd_port}"
 
-		else
+		#else
 
-			echo "No Erlang EPMD port specified at any US level, applying defaults (port ${default_us_web_epmd_port})."
+		#	echo "No Erlang EPMD port specified at any US level, applying defaults (port ${default_us_web_epmd_port})."
 
-			us_web_erl_epmd_port="${default_us_web_epmd_port}"
+		#   us_web_epmd_port="${default_us_web_epmd_port}"
 
-		fi
+		#fi
+
+		echo "No US-Web level Erlang EPMD port specified, applying the default US-Web one, ${default_us_web_epmd_port}."
+		us_web_epmd_port="${default_us_web_epmd_port}"
 
 	fi
 
 	# For shell-like uses:
-	epmd_opt="ERL_EPMD_PORT=${us_web_erl_epmd_port}"
+	epmd_opt="ERL_EPMD_PORT=${us_web_epmd_port}"
 	#echo "epmd_opt = ${epmd_opt}"
 
 	# For make uses:
-	epmd_make_opt="EPMD_PORT=${us_web_erl_epmd_port}"
+	epmd_make_opt="EPMD_PORT=${us_web_epmd_port}"
 
 
 
@@ -296,7 +305,7 @@ read_us_web_config_file()
 
 
 	# VM-level logs (not based on us_web_log_dir - which is dedicated to the
-	# web-related ones):
+	# US-Web applicative ones):
 	#
 	# (note that us_web_vm_log_dir is for US-Web what us_log_dir is for
 	# US-Common)
@@ -438,7 +447,7 @@ read_us_web_config_file()
 
 	fi
 
-	echo "US-Web (web-level) logs expected in the '${us_web_log_dir}' directory."
+	echo "US-Web applicative logs expected in the '${us_web_log_dir}' directory."
 
 	# Defined for all script users:
 	trace_file="${us_web_log_dir}/us_web.traces"

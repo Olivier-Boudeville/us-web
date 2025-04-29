@@ -1,15 +1,15 @@
 .. _Top:
 
 
-.. title:: Welcome to the Universal Webserver documentation
+.. title:: Welcome to the Universal Webserver US-Web documentation
 
 .. comment stylesheet specified through GNUmakefile
 
 
 
-===============================================
-Technical Manual of the ``Universal Webserver``
-===============================================
+=======================================================
+Technical Manual of the ``Universal Webserver``: US-Web
+=======================================================
 
 
 .. role:: raw-html(raw)
@@ -19,9 +19,9 @@ Technical Manual of the ``Universal Webserver``
    :format: latex
 
 
-:raw-html:`<a name="universal-webserver_top"></a>`
+:raw-html:`<a name="us-web_top"></a>`
 
-:raw-html:`<div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://us-web.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#universal-webserver_top">go to top</a> <a href="#universal-webserver_toc">go to toc</a> <a href="#universal-webserver_bottom">go to bottom</a> <a href="api-doc/index.html">browse API</a> <a href="https://github.com/Olivier-Boudeville/us-web">go to project</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div>`
+:raw-html:`<div class="banner"><p><em>Universal Webserver documentation</em> <a href="http://us-web.esperide.org">browse latest</a> <a href="https://olivier-boudeville.github.io/us-web/index.html">browse mirror</a> <a href="universal-webserver-technical-manual-english.pdf">get PDF</a> <a href="#us-web_top">go to top</a> <a href="#us-web_toc">go to toc</a> <a href="#us-web_bottom">go to bottom</a> <a href="api-doc/index.html">browse API</a> <a href="https://github.com/Olivier-Boudeville/us-web">go to project</a> <a href="mailto:about(dash)universal-webserver(at)esperide(dot)com?subject=[Universal%20Webserver]%20Remark">email us</a></p></div>`
 
 
 
@@ -36,14 +36,12 @@ Technical Manual of the ``Universal Webserver``
 :Lastly updated: GENERATION_DATE_TAG
 :Version: PROJECT_VERSION_TAG
 :Status: Stable
-:Dedication: Users and maintainers of the ``Universal Webserver``.
+:Dedication: Users and maintainers of the ``Universal Webserver``, US-Web.
 :Abstract:
 
-	The `Universal Webserver <http://us-web.esperide.org/>`_, part of the `Universal Server <https://github.com/Olivier-Boudeville/Universal-Server>`_ umbrella project, provides a multi-domain, multi-virtualhost webserver integrating various web-related services.
+	The `Universal Webserver <http://us-web.esperide.org/>`_ (US-Web), part of the `Universal Server <https://github.com/Olivier-Boudeville/Universal-Server>`_ umbrella project, provides a multi-domain, multi-virtualhost webserver integrating various web-related services.
 
 	We present here a short overview of these services, to introduce them to newcomers.
-
-	The next level of information is either to browse the `US-Web API documentation <api-doc/index.html>`_ or simply to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
 
 
 .. meta::
@@ -54,7 +52,7 @@ Technical Manual of the ``Universal Webserver``
 
 :raw-latex:`\pagebreak`
 
-:raw-html:`<a name="universal-webserver_toc"></a>`
+:raw-html:`<a name="us-web_toc"></a>`
 
 .. _`table of contents`:
 
@@ -69,29 +67,30 @@ Technical Manual of the ``Universal Webserver``
 Overview
 --------
 
-We present here a short overview of the services offered by the *Universal Webserver*, to introduce them to newcomers.
+We present here a short overview of the services offered by our so-called *Universal Webserver*, to introduce them to newcomers. These services are implemented by `US-Web <https://github.com/Olivier-Boudeville/us-web>`_, which relies notably on `US-Common <https://github.com/Olivier-Boudeville/us-common>`_.
 
 The goal of **US-Web** is to provide an integrated, extensible web framework in order:
 
 - to better operate websites based on `virtual hosting <https://en.wikipedia.org/wiki/Virtual_hosting>`_, so that a networked computer can serve as many websites corresponding to as many domains as wanted; this involves reading and interpreting vhost and other configuration information, handling properly 404 errors, producing access logs that are adequate for web analytics, rotating all logs, using/generating/renewing automatically TLS certificates, etc.
-- to link to the `Universal Server <https://github.com/Olivier-Boudeville/us-main>`_ optionally (i.e. if available, knowing both should be able to run in the absence of the other), in order to offer a web front-end for it
+- to link to the `Universal Server <https://github.com/Olivier-Boudeville/us-main>`_ optionally (i.e. if available, knowing that both should be able to run in the absence of the other), in order to possibly offer a web front-end for it
 
-Beyond this document, the next level of information about US-Web is to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web/src>`_, which are intensely commented and generally straightforward.
+Beyond this document, the next level of information about US-Web is either to browse the `US-Web API documentation <api-doc/index.html>`_ or simply to read the corresponding `source files <https://github.com/Olivier-Boudeville/us-web>`_, which are intensely commented and generally straightforward.
 
 The project repository is located `here <https://github.com/Olivier-Boudeville/us-web>`_.
 
 
-----------------------
-Easy Testing of US-Web
-----------------------
+..
+ ----------------------
+ Easy Testing of US-Web
+ ----------------------
 
-Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter (e.g. ``sh get-us-web-from-sources.sh``, as a normal user) should suffice.
+ Provided that no server already runs at TCP port #8080, just downloading the `get-us-web-from-sources.sh <https://raw.githubusercontent.com/Olivier-Boudeville/us-web/master/priv/bin/get-us-web-from-sources.sh>`_ script and running it with no specific parameter (e.g. ``sh get-us-web-from-sources.sh``, as a normal user) should suffice.
 
-This should result in US-Web being cloned and built, and a test server (if requested, see the ``--help`` script option for usage) should be configured and run. It should be then available at `http://localhost:8080 <http://localhost:8080>`_.
+ This should result in US-Web being cloned and built, and a test server (if requested, see the ``--help`` script option for usage) should be configured and run. It should be then available at `http://localhost:8080 <http://localhost:8080>`_.
 
-Another way of testing, this time from a US-Web Git compiled with its prerequisites, is simply to execute ``make debug`` from its root.
+ Another way of testing, this time from a US-Web Git compiled with its prerequisites, is simply to execute ``make debug`` from its root.
 
-See also the `Server Deployment`_ section for, beyond a mere testing of US-Web, a setting up of it in a production context.
+ See also the `Server Deployment`_ section for, beyond a mere testing of US-Web, a proper setting up of it in a production context.
 
 
 -----------
@@ -125,9 +124,12 @@ Server Deployment
 
 .. Note:: Please ensure that no prior instance of US-Web is already running, otherwise the new one will not be able to auto-launch, with an error message like: ``Protocol 'inet_tcp': the name us_web@YOUR_SERVER seems to be in use by another Erlang node``. Refer to the Troubleshooting_ section for further guidance.
 
-In all cases, if opting for the generation of certificates, in order to avoid hitting, in case of problem, any rate limit enforced by the ACME servers, we recommend to perform first a "dry run" by setting in your US-Web configuration file ``{certificate_mode, development}`` so that the staging ACME infrastructure is targeted first, leading only to temporary certificates.
+..
+  Not very relevant now that using certbot:
 
-If the whole deployment procedure went smoothly, then only switch back to ``{certificate_mode, production}`` and restart US-Web, in order to rely on the actual ACME servers and thus obtain the intended final certificates.
+  In all cases, if opting for the generation of certificates, in order to avoid hitting, in case of problem, any rate limit enforced by the ACME servers, we recommend to perform first a "dry run" by setting in your US-Web configuration file ``{certificate_mode, development}`` so that the staging ACME infrastructure is targeted first, leading only to temporary certificates.
+
+  If the whole deployment procedure went smoothly, then only switch back to ``{certificate_mode, production}`` and restart US-Web, in order to rely on the actual ACME servers and thus obtain the intended final certificates.
 
 
 
@@ -136,25 +138,25 @@ Native Deployment (recommended)
 
 This procedure relies on our *native* build/run system, which is the only one that is officially supported in the context of US-Web, and involves only two steps, on the target host.
 
-**First step** is to:
+**First step** boils down to:
 
 - create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (e.g. ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
 
-  - ensure that our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script in available on that host (in a US-Web clone, it is located in ``priv/bin``), possibly simply at the root of one's normal user
+- ensure that our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script in available on that host (in a US-Web clone, it is located in ``priv/bin``), for example by downloading it at the root of one's normal user
 
 - ensure that no prior server is running at the target port(s) (otherwise specify the ``--no-launch`` option below); to be sure that no previous US-Web instance lingers, one may execute ``systemctl stop us-web-as-native-build.service`` and/or run our ``priv/bin/kill-us-web.sh`` script
 
 After deployment, the installation itself will be located by default in the ``/opt/universal-server/us_web-native-deployment-YYYYMMDD`` (timestamped) directory.
 
 
-**Step #2** exists in two versions below, either based on a direct launching or, preferably, on one managed by Systemd (with ``systemctl``); refer to `Launching US-Main`_ for that.
+The **second step** exists in two versions below, either based on a direct launching or, preferably, on one managed by Systemd (with ``systemctl``); refer to `Launching US-Web`_ for that.
 
 
 
 Direct, Ad Hoc Deployment
 -------------------------
 
-This **second step** boils down to executing (as a normal user - the sudo permissions will be requested only whenever necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument (except possibly ``--no-launch`).
+This **second step** boils down to executing (as a normal user - the sudo permissions will be requested only when necessary) our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script, with no specific argument (except possibly, if preferred, ``--no-launch``).
 
 That's it.
 
@@ -183,7 +185,7 @@ If relying on ``systemctl`` (hence on our ``us-web-as-native-build.service`` fil
  #
  #$ sudo killall epmd
 
- # Relaunch US-Web, and initiate the certificate renewal process:
+ # Relaunch US-Web, initiating any certificate renewal procedure:
  $ sudo systemctl start us-web-as-native-build.service
 
 
@@ -199,7 +201,7 @@ See the next section for more in-depth checking and monitoring.
 Checking Launch Outcome
 -----------------------
 
-If having requested the renewal of TLS certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served yet will be redirected to HTTPS ones that will complete successfully *only* once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
+If having requested the renewal of TLS certificates (the ``certificate_support`` entry of the US-Web configuration file being set to ``renew_certificates``), incoming HTTP requests will be directly served, yet will be redirected to HTTPS ones that will complete successfully *only* once proper certificates will have been obtained (hence after a few dozens of seconds after server startup).
 
 These certificates can be checked (e.g. in terms of timestamps) in the ``certificates`` subdirectory of the one designated by the ``us_web_data_dir`` entry (typically in ``/opt/universal-server/us_web-data/certificates``).
 
@@ -568,9 +570,9 @@ For that, relying on the same user/group conventions as before, one may enter, a
 Otherwise an exception will be raised (about ``eperm`` / ``not owner``) when US-Web will try to create its HTTPS listening socket.
 
 
--------------------------------
-Running the Universal-Webserver
--------------------------------
+----------------
+Launching US-Web
+----------------
 
 In this section we suppose that a native deployment is being used, with uniform conventions between the development and server settings; if using a release-based deployment, note that the Erlang versions used to produce the release (typically in a development computer) and run it (typically in a production server) must match (we prefer using *exactly* the same version).
 
@@ -601,7 +603,7 @@ The ``stop-us-web-native-build.sh`` script can be used for stopping a US-Web ins
  $ priv/bin/stop-us-web-native-build.sh
 
 
-In development mode, still from the root of US-Web, one might use ``make stop-brutal`` to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for:
+In development mode, still from the root of US-Web, one might use ``make stop-brutal`` (or directly run ``priv/bin/kill-us-web.sh``) to operate regardless of dynamically-changed cookies, while in a production setting one would go preferably for:
 
 .. code:: bash
 
@@ -609,8 +611,9 @@ In development mode, still from the root of US-Web, one might use ``make stop-br
 
 
 
-Launching the US-Web Server
-===========================
+
+Running the US-Web Server
+=========================
 
 In development mode, from the root of US-Web, one may use ``make debug``, while, in production mode, the US-Web server can be launched either with its dedicated script ``start-us-web-native-build.sh`` or, even better, directly through:
 
@@ -716,7 +719,7 @@ One may define one's dedicated convenience script for that, like a ``check-baz-w
  wget ${target_url} -O - | head
 
 
-More elaborate scripts may be devised, testing various virtual hosts with various protocols (http/https), looping continously should a failure be detected, like in:
+More elaborate scripts may be devised, testing various virtual hosts with various protocols (http/https), looping continuously should a failure be detected, like in:
 
 .. code:: bash
 
@@ -1694,4 +1697,4 @@ Have fun with the Universal Webserver!
 :raw-html:`<center><img src="us-web-title.png" id="responsive-image-medium"></img></center>`
 :raw-latex:`\begin{figure}[h] \centering \includegraphics[scale=0.8]{us-web-title.png} \end{figure}`
 
-:raw-html:`<a name="universal-webserver_bottom"></a>`
+:raw-html:`<a name="us-web_bottom"></a>`

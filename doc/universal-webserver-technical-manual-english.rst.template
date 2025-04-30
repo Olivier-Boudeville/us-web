@@ -79,6 +79,11 @@ Beyond this document, the next level of information about US-Web is either to br
 The project repository is located `here <https://github.com/Olivier-Boudeville/us-web>`_.
 
 
+.. Note:: This is a rather long document, which still in some places discusses configurations that are mostly obsolete, and thus that can be skipped.
+
+		  Notably US-Web shall now be made available based on our conventions, i.e. thanks to our **native deployment** automated procedure (script), and thus built by our **make system** (rather than by rebar3) and as an (OTP) standalone **application** (rather than as an OTP release).
+
+
 ..
  ----------------------
  Easy Testing of US-Web
@@ -117,6 +122,371 @@ The shorthand for the ``Universal Webserver`` (a.k.a. ``US-Web``) is ``uw``.
 
 
 
+.. _`configuration file`:
+
+.. _`configure US-Web`:
+
+.. _`US-Web configuration file`:
+
+
+-------------------
+Configuring US-Web
+-------------------
+
+.. Note:: We discuss configuration before installation, as the settings of interest shall be defined prior to deployment, notably so that adequate permissions can be set on the installation, according to the user under which US-Web is intended to run.
+
+
+Operating System Settings
+=========================
+
+
+.. _`authbind`:
+
+Regarding ``authbind``
+----------------------
+
+
+Many distributions will parameter ``authbind`` so that only the TCP port 80 will be available to "authbound" programs.
+
+If wanting to run an HTTPS server, the TCP port 443 will be most probably needed and thus must be specifically enabled.
+
+For that, relying on the same user/group conventions as before, one may run, as root:
+
+.. code:: bash
+
+ $ cd /etc/authbind/byport
+ $ cp 80 443
+ $ chown us-web-user:us-group 443
+
+Otherwise an exception will be raised (about ``eperm`` / ``not owner``) when US-Web will try to create its HTTPS listening socket.
+
+
+
+General US Configuration
+========================
+
+Even if these are just conventions, we consider that a US-Server can be deployed either in:
+
+- **development** mode: by a regular user, with no specific permissions, directly from the user account, and with direct process control
+- **production** mode: by dedicated US(-Web) user and group, with low privileges, in the system tree (``/etc``, ``/opt``, ``/var``), and controlled through systemd
+
+All US-related configuration files respect the `ETF file format <https://myriad.esperide.org/#etf>`_.
+
+
+
+US-Common-level Configuration
+=============================
+
+The US-Web server is part of our "Universal Server" infrastructure, and as such relies on the `base US-Common configuration settings <https://us-common.esperide.org/#configuration>`_.
+
+As the US-related configuration files are heavily commented, proceeding based on examples is the simplest approach [#]_.
+
+.. [#] The second best approach being to have directly a look at the code reading them; for ``us.config``, see `class_USConfigServer.erl <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USConfigServer.erl>`_
+
+Refer for that at this `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_.
+
+
+Location of the US Configuration Files
+--------------------------------------
+
+The US configuration files will be searched through various filesystem locations [#]_ in turn:
+
+- first in any directory designated by the ``XDG_CONFIG_HOME`` environment variable (default value: ``$HOME/.config``)
+- second in any of the directories listed in the ``XDG_CONFIG_DIRS`` environment variable (default: ``/etc/xdg``;, directories being separated by ``:``)
+
+.. [#] As explained notably in `class_USConfigServer.erl <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USConfigServer.erl#L60>`_.
+
+So the main, overall US configuration file, ``us.config``, is found based on this series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* (single) US configuration directory; let's name it ``US_CFG_ROOT``.
+
+This directory, in which generally all configuration files for a US-Web deployment lie is, with our conventions, typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
+
+The other US-related configuration files (e.g. any ``us-web.config``) are then referenced directly from the main one (``us.config``), and are designated from there through specific keys, here ``us_web_config_filename``; the associate value may be either an absolute path, or one relative to the aforementioned US configuration directory (which is recommended).
+
+
+
+US-Common Configuration
+-----------------------
+
+So the general, user-specified configuration file for US servers is named ``us.config``, and the content of this `example us.config <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ should be pretty self-explanatory.
+
+Note that, as US-Web supports an ``epmd_port`` entry in its own configuration file and has its own default port, such an entry should not be set in the general ``us.config`` file, as its value would not be taken into account anyway - it would just be misleading.
+
+
+
+Setting User and Group
+----------------------
+
+For operational use, we recommend to create at least a US specific user (to be set in the ``us_username`` entry of one's ``us.config`` file) - and possibly additionally a US-Web specific one, in order to better compartmentalise the accesses to the US-Web resources.
+
+For example, provided that a US-specific group (named for instance ``us-group``) has already been created (otherwise, do it with ``groupadd us-group``), a ``us-web-user`` user can be defined, and made belonging to that group:
+
+.. code:: bash
+
+ # Only sftp allowed if relying on a rssh (package available on the AUR) shell,
+ # or prefer just /bin/false:
+ #
+ $ useradd --create-home --shell /bin/rssh -g us-group us-web-user
+ # (if wanting to change afterwards: 'chsh --shell /bin/false us-web-user')
+
+
+If having a regular user (e.g. named ``bond``) who shall be also able to operate on US-Web deployments (e.g. to monitor their traces locally), it can be added to that group as well: ``usermod -a -G us-group bond`` (if this user is logged in, this will not be effective before the logout of this user or the user runs ``newgrp us-group``).
+
+Finally, the ``us.config`` US-Common configuration file and the US-Web one it references shall have the right user and group; for example:
+
+.. code:: bash
+
+ $ chown us-web-user:us-group /etc/xdg/universal-server/*.config
+
+
+
+Permissions of Configuration Files
+----------------------------------
+
+Note that, as these files might contain sensitive information (e.g. Erlang cookies), they shall be duly protected and, in terms of permissions, we should have ``640`` for them.
+
+So, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_, we could have:
+
+.. code:: bash
+
+ -rw-r----- 1 us-user      us-group [...] us.config
+ -rw-r----- 1 us-web-user  us-group [...] foobar-us-web-for-production.config
+
+.. [#] They should better be in the same ``US_CFG_ROOT`` directory (discussed above), and may be symbolic links.
+
+``chmod`` and ``chown`` shall thus be used accordingly.
+
+
+On a related topic, the web content shall also have proper permissions (and ownership).
+
+This make target may be of help:
+
+.. code:: make
+
+  fix-www-metadata:
+		@echo "  Setting all owners and permissions from $$(pwd)..."
+		@chown -R us-web-user:us-group .
+		@find . -type f -exec chmod 660 '{}' ';'
+		@find . -type d -exec chmod 770 '{}' ';'
+
+
+``chmod`` and ``chown`` shall thus be used accordingly.
+
+Finally, if being able to rely on multiple, different US configuration directories is necessary in order to be able to launch multiple US-Web instances (these configurations can then register the managers involved - typically the US-Web Configuration server - under different names), only a single *node* can be used per EPMD instance as, by default, such a node is named ``us_web`` (so two US-Web instances would then clash at this level).
+
+As a consequence, in order to run multiple US-Web instances (e.g. one in production, one for testing) on a given host, they shall be multiplexed on different EPMD ports (see the ``epmd_port`` key of the US-Web configuration file; as a result, different ``universal-server`` configuration directories shall then be relied upon).
+
+
+
+Specifying the US-Web Configuration File
+-----------------------------------------
+
+In ``us.config`` , an ``us_web_config_filename`` entry can be specified in order to designate the US-Web configuration file that shall be used (its name can thus be freely chosen); for example:
+
+.. code:: erlang
+
+ {us_web_config_filename, "foobar-us-web-for-production.config"}.
+
+
+
+
+US-Web-level Configuration
+==========================
+
+This US-Web configuration file designated by ``us.config`` concentrates the settings of all the facilities presented in this document; it is additionally used by the `US-Web scripts <https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin>`_, notably in order to start, stop, kill, monitor, control a designated US-Web server.
+
+Here also, proceeding based on examples in the simplest approach [#]_, thanks to the comments they include.
+
+.. [#] The second best approach being to have directly a look at the code reading them, see, for the US-Web configuration, `class_USWebConfigServer.erl <https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl>`_.
+
+Refer for that at this `US-Web example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
+
+In a nutshell, this US-Web configuration files allows unsurprisingly to specify all web-related settings, regarding users, directory locations, options such as ports, log analysis or certificate management and, most importantly, the routes.
+
+
+
+Defining the US-Web Routes
+--------------------------
+
+Specifying routes allows to tell what is the web root directory [#]_ and page that shall be served for each given client-specified URL (the target hostname part is also of interest here, to perform SNI, i.e. `Server Name Indication <https://en.wikipedia.org/wiki/Server_Name_Indication>`_), based on pattern-matching.
+
+.. [#] A web root directory is either specified as an absolute path, otherwise it is relative to a ``default_web_root`` entry to be specified in the US-Web configuration file.
+
+Regarding the selection of the web root directory to serve for a given request, a route definition consists mostly on enumerating each DNS domain name that it is to manage (e.g. ``"foobar.org"`` - knowing that the ``default_domain_catch_all`` atom designates all hostnames that could not be matched specifically otherwise) and enumerating then all the (possibly virtual) hosts that shall be served for this domain (e.g. the ``"hurricane"`` host, whose FQDN is thus ``hurricane.foobar.org`` - knowing that the ``default_vhost_catch_all`` atom designates all hostnames that could not be matched specifically otherwise, in the form of the ``*.foobar.org`` wildcard, and that the ``without_vhost`` atom designates the hostname itself, i.e. ``foobar.org``).
+
+For example:
+
+.. code:: erlang
+
+  { default_web_root, "/var/web-storage/www" }.
+
+  %{ log_analysis, awstats }.
+
+  { certificate_support, use_existing_certificates }.
+  { certificate_mode, production }.
+
+  % Use 'dns-01' if wanting wildcard certificates:
+  { challenge_type, 'http-01' }.
+
+  % With 'dns-01', the DNS provider must be specified:
+  { dns_provider, ovh }.
+
+  { routes, [
+
+	% Note that the first hostname listed will be, regarding
+	% https (SNI), the main, default one:
+
+	{ "foobar.org", [
+
+		% So any content requested regarding the www.foobar.org
+		% FQDN (e.g. http://www.foobar.org/index.html) will be
+		% looked-up relatively to the
+		% /var/web-storage/www/Foobar-main directory:
+		%
+		{ "www", "Foobar-main" },
+		{ "club", "Foobar-club" },
+		{ "archives", "/var/web-storage/Archives-for-Foobar" },
+
+		% If just the domain is specified:
+		{ without_vhost, "Foobar" }
+
+		% With https, catch-all shall be best avoided (non-wildcard certificates
+		% may not match):
+		%
+		%{ default_vhost_catch_all, "Foobar" }
+
+					] },
+
+	{ "foobar.net", [
+		% (similar rules may be defined)
+					] }
+
+	% Best avoided as well with https:
+	%{ default_domain_catch_all, [
+	%
+	%			{ default_vhost_catch_all, "Foobar" }
+	%
+	%				 ] }
+
+		  ]
+
+  }.
+
+
+
+US-Web Application Base Directory
+---------------------------------
+
+This directory allows US-Web to select the various runtime elements it is to use.
+
+This **US-Web Application Base Directory** may be set in the US-Web configuration file thanks to its (optional) ``us_web_app_base_dir`` entry.
+
+If not set there, US-Web will try to use the  ``US_WEB_APP_BASE_DIR`` environment variable instead.
+
+If not usable either, US-Web will try to determine this directory automatically, based on how the server is launched (with our native deployment approach or as an OTP release).
+
+Of course failing to resolve a proper application base directory will result in a fatal launch error to be reported at start-up.
+
+Let's designate this directory from now on with the ``US_WEB_APP_BASE_DIR`` pseudo-variable.
+
+
+Separating the US-Web Software from its data
+--------------------------------------------
+
+It is useful to regularly upgrade the US-Web code while maintaining the data it uses as it is (not losing it because of a mere software update).
+
+This notably includes the information such as the state of the log analysis tool (i.e. the synthesis aggregated after having processed a potentially longer history of access logs when rotating them) or the currently generated certificates (which are not always easy to renew frequently, if having to respect rate limits) [#]_.
+
+.. [#] Access/error logs and the own US-Web traces are not considered belonging to the application data; their storage location is discussed in the `Webserver Logs`_ section.
+
+
+These various states are stored in the **US-Web data directory**, which can be set, by decreasing order of priority:
+
+- in the ``us_web_data_dir`` entry of the US-Web configuration file, as an absolute directory, or as one that is relative to the US-Web application base directory (see `US-Web Application Base Directory`_), then as ``US_WEB_APP_BASE_DIR/data``
+- otherwise in the ``US_WEB_DATA_DIR`` environment variable
+
+If the default path for this location is ``us-web-data`` (relatively to the US-Web instance base directory, typically deployed in ``/opt/universal-server/us_web-native``), a recommended practice is nevertheless to set this location explicitly *outside* of that instance so that the instance can be upgraded/replaced without any loss of state.
+
+So the ``us_web_data_dir`` entry might be set in the US-Web configuration file for example to ``/opt/universal-server/us_web-data``. Of course, as always, proper permissions shall be set in this data tree as well.
+
+Let's designate this directory from now on with the ``US_WEB_DATA_DIR`` pseudo-variable.
+
+This directory may notably gather following elements:
+
+- the ``log-analysis-state`` subdirectory (if log analysis is enabled), containing the working state of the tool for web access analysis, typically Awstat, thus containing ``awstats*.baz.foobar.org.txt`` files for the preprocessing of its reports
+
+- the ``certificates`` subdirectory (if certificate support is enabled), containing the related keys and certificates for the domains of interest:
+
+  - if managing domains D in ``["foobar.org", "example.com"]``, then ``D.csr``, ``D.key`` and ``D.crt`` will be stored or produced there (refer to `this section <https://leec.esperide.org/#getting-information-about-the-generated-certificates>`_ of the documentation of LEEC for further explanations)
+  - LEEC-related transverse security elements may be found there (if using it to renew certificates) as well, notably (see `this LEEC documentation section <https://leec.esperide.org/#other-files-of-interest>`_):
+
+	- ``us-web-leec-agent-private.key``, the RSA private key of the US-Web LEEC agent so that it can safely authenticate to the ACME servers it is interacting with and afterwards validate https handshakes with clients
+	- ``lets-encrypt-r3-cross-signed.pem``, the certificate associated to the *Certificate Authority* (Let's Encrypt here) that is relied upon
+  - ``dh-params.pem``, a key generated by LEEC to allow for safer *Ephemeral Diffie-Helman key exchanges*
+
+One may create from this ``certificates`` subdirectory a ``GNUmakefile`` symlink pointing to `GNUmakefile-for-certificates <https://github.com/Olivier-Boudeville/us-web/blob/master/conf/GNUmakefile-for-certificates>`_ to easy any checking or backup of these certificates.
+
+
+
+Catch-alls, HTTPS, Challenge Types and Wildcard Certificates
+------------------------------------------------------------
+
+Having wildcard certificates (which is the default now) - thus relying on the ``dns-01`` challenge - allows in turn to define catch-alls (host-level and/or domain-level) routes and wildcard DNS entries (such as ``* IN CNAME foobar.org.``).
+
+Conversely, if setting another challenge type (refer to the ``challenge_type`` configuration entry, typically then set to the ``http-01`` challenge), defining catch-all routes is not recommended if using https, as these unanticipated hostnames are by design absent from the corresponding certificates, and thus any user requesting them (possibly due to a typo) will have their browser report a security risk (such as ``SSL_ERROR_BAD_CERT_DOMAIN``).
+
+Similarly, wildcard DNS entries should be then avoided (on the other hand, they allow not to advertise what are the precise virtual hostnames supported; note though that with https, these virtual hostnames will be visible in the SANs).
+
+
+
+Test Configuration Files
+------------------------
+
+Versions of the US and US-Web configuration files may be used for testing purposes and/or for examples.
+
+For example, as root:
+
+.. code:: bash
+
+  $ cd /etc/xdg/universal-server/
+  $ ln -s $US_COMMON_ROOT/priv/conf/us.config
+  $ ln -s $US_WEB_ROOT/priv/conf/us-web-for-tests.config
+
+Of course in the general case one will devise one's configuration files according to one's context and needs.
+
+
+
+Other Configuration Files
+-------------------------
+
+
+Credentials for One's DNS Provider
+__________________________________
+
+If wanting wildcard certificates, the ``dns-01`` challenge will be used, and this will require credentials to be specified in order to update DNS entries from one's DNS provider.
+
+US-Web expect credential files to be available in the base directory where all US configuration is to be found (typically ``/etc/xdg/universal-server``). Note that such credentials files (e.g. ``leec-ovh-credentials-for-foobar.org.txt``) must be well-protected; refer to `this LEEC section <https://leec.esperide.org/#credentials-file>`_ for more information.
+
+
+
+
+Specifying a US-Web Specific EPMD Port
+---------------------------------------
+
+For US-Web, the default EPMD port is ``4508`` (preferred to the default, more general US-level EPMD port, ``4506``).
+
+This helps compartmentalising the nodes, and then US-Web (possibly including its EPMD daemon) can be restarted without affecting the other Erlang applications that may be running concurrently.
+
+The user may specify an EPMD of their liking, providing it neither clashes nor is filtered by the local firewall. This can be done by specifying in the US-Web configuration file (instead of in ``us.config``) an ``epmd_port`` entry.
+
+For example:
+
+.. code:: erlang
+
+ {epmd_port, 4667}.
+
+
+
+
 -----------------
 Server Deployment
 -----------------
@@ -140,7 +510,7 @@ This procedure relies on our *native* build/run system, which is the only one th
 
 **First step** boils down to:
 
-- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (e.g. ``foobar-us-web.config``) located in the same directory; refer to the `Configuring the Universal-Webserver`_ section
+- create a ``/etc/xdg/universal-server`` directory in which a relevant US configuration file (``us.config``) is added, referencing a suitable US-Web configuration file (e.g. ``foobar-us-web.config``) located in the same directory; refer to the `Configuring US-Web`_ section
 
 - ensure that our `deploy-us-web-native-build.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh>`_ script in available on that host (in a US-Web clone, it is located in ``priv/bin``), for example by downloading it at the root of one's normal user
 
@@ -280,296 +650,6 @@ Then US-Web is fully *deployed*. Once properly *configured*, it will be able to 
 Some related information are specified below.
 
 
-
------------------------------------
-Configuring the Universal-Webserver
------------------------------------
-
-As explained in `start-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/start-us-web.sh>`_ and in `class_USWebConfigServer.erl <https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl>`_, the US configuration files will be searched through various locations.
-
-The main, overall US configuration file, ``us.config``, is found based on a series of directories that are gone through in an orderly manner; the first directory to host such a file becomes *the* (single) US configuration directory.
-
-The other US-related configuration files (e.g. any ``us-web.config``) are referenced directly from the main one (``us.config``), designated there through specific keys (e.g. ``us_web_config_filename``); they may be either absolutely defined, or relatively to the aforementioned US configuration directory.
-
-Let's name ``US_CFG_ROOT`` the actual directory in which they all lie; it is typically either ``~/.config/universal-server/`` (in development mode), or ``/etc/xdg/universal-server/`` (in production mode).
-
-Note that, as these files might contain sensitive information (e.g. Erlang cookies), they shall be duly protected. Indeed, in terms of permissions, we should have ``640``, supposing that the ``us.config`` designates, in its ``us_web_config_filename`` entry, ``foobar-us-web-for-production.config`` as the name of the US-Web configuration file [#]_:
-
-.. code:: bash
-
- -rw-r----- 1 us-user     us-group [...] us.config
- -rw-r----- 1 us-web-user us-group [...] foobar-us-web-for-production.config
-
-.. [#] They shall be in the same ``US_CFG_ROOT`` directory (discussed below), and may be symbolic links.
-
-Finally, if being able to rely on multiple, different US configuration directories is necessary in order to be able to launch multiple US-Web instances (these configurations can then register the managers involved - typically the US-Web Configuration server - under different names), only a single node can be used per EPMD instance as, by default, such a node is named ``us_web`` (two US-Web instances would then clash at this level).
-
-So, in order to run multiple US-Web instances (e.g. one in production, one for testing) on a given host, they shall be multiplexed on different EPMD ports (see the ``epmd_port`` key of the US and US-Web configuration files; as a result, different ``universal-server`` configuration directories shall then be defined and used).
-
-
-
-In a Development Setting
-========================
-
-The US main configuration file, ``us.config``, is in a directory (``US_CFG_ROOT``) that is ``~/.config/universal-server/`` here. This US-level configuration file will reference (through its ``us_web_config_filename`` entry) a US-Web counterpart configuration file, probably in the same directory.
-
-The US-Web configuration file may define a ``us_web_app_base_dir`` entry. If not, this application directory will then be found thanks to the ``US_WEB_APP_BASE_DIR`` environment variable (if defined, typically through one's ``~/.bashrc``); otherwise, as a last resort, an attempt to guess it will be done.
-
-The US webserver may be then run thanks to ``make debug``, from the relevant ``us_web`` directory (typically the root of a Git clone located in the user's directory).
-
-In such a development context, in ``us_web/conf/sys.config``, we recommend to leave the batch mode disabled (just let the default ``{is_batch,false}``), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that).
-
-
-
-In a Production Setting
-=======================
-
-The start/stop management scripts will be run initially as root (possibly through ``systemd``) and must access the ``us.config`` file. Then, once run, ``us_web`` will most probably switch to a dedicated user (see the ``us_web_username`` entry in the US-Web configuration file), who will need in turn to be able to read the ``us.config`` file and any related one (e.g. for US-Web, here supposed to be named ``foobar-us-web-for-production.config``).
-
-As a result, a relevant configuration directory (denoted ``US_CFG_ROOT`` in this document), in that shared setting, is the standard ``/etc/xdg`` one, resulting in the ``/etc/xdg/universal-server`` directory to be used.
-
-As mentioned, care must be taken so that ``root`` and also the US and US-Web users can read the content of that directory - at least the US and US-Web configuration files in it - and that the other users cannot.
-
-For that, a dedicated ``us-group`` group can be created, and any web user (e.g. ``us-web-user``) shall belong to that group. For example:
-
-.. code:: bash
-
- $ id us-web-user
- uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),
-  1007(us-group)
-
-
-Then, in ``/etc/xdg/universal-server``, for the US and US-Web configuration files:
-
-.. code:: bash
-
- $ chown us-user us.config
- $ chown us-web-user foobar-us-web-for-production.config
-
- $ us_files="us.config foobar-us-web-for-production.config"
- $ chgrp us-group ${us_files}
- $ chmod 640 ${us_files}
-
- $ chgrp us-group /etc/xdg/universal-server
- $ chmod 700 /etc/xdg/universal-server
-
-We recommend directly setting the ``us_web_app_base_dir`` configuration entry to the relevant, absolute path.
-
-Let's name here ``US_WEB_REL_ROOT`` the root of the US-Web release of interest (e.g. corresponding to ``${REL_BASE_ROOT}/us_web-latest/``) and ``US_WEB_APP_ROOT`` the root of the corresponding US-Web application (e.g. corresponding to ``${US_WEB_REL_ROOT}/lib/us_web-latest/``).
-
-A ``systemd`` service shall be declared for US-Web, in ``/etc/systemd/system``; creating there, as root, a symbolic link to ``${US_WEB_APP_ROOT}/priv/conf/us-web.service`` will suffice.
-
-This service requires ``start-us-web.sh`` and ``stop-us-web.sh``. Adding for user convenience ``get-us-web-status.sh``, they should all be symlinked that way, still as root:
-
-.. code:: bash
-
- $ cd /usr/local/bin
- $ for f in start-us-web.sh stop-us-web.sh get-us-web-status.sh; \
-   do ln -s ${US_WEB_APP_ROOT}/priv/bin/$f ; done
-
-
-The log base directory (see the ``log_base_directory`` entry) shall be created and writable; for example:
-
-.. code:: bash
-
- $ LOG_DIR=/var/log/universal-server
- $ mkdir -p ${LOG_DIR}
- $ chown us-user ${LOG_DIR}
- $ chgrp us-group ${LOG_DIR}
- $ chmod 770 ${LOG_DIR}
-
-
-In such a production context, in ``sys.config`` (typically located in ``${US_WEB_REL_ROOT}/releases/latest-release``), we recommend to enable batch mode (just set ``{is_batch,true}``), so that by default no direct, graphical trace supervision is triggered (a server usually does not have a X server anyway).
-
-Instead the traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that), by running the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
-
-For that the relevant settings (notably which server host shall be targeted, with what cookie) shall be stored in that client, in a ``us-monitor.config`` file that is typically located in the ``~/.config/universal-server`` directory.
-
-
-
-.. _`configuration file`:
-
-Configuration Files
-===================
-
-A ``us.config`` file *referencing* a suitable US-Web configuration file will be needed; most of the behaviour of the US-Web server is determined by this last configuration file.
-
-As the US-related configuration files are heavily commented, proceeding based on examples in the simplest approach [#]_.
-
-.. [#] The second best approach being to have directly a look at the code reading them, see `class_USConfigServer.erl <https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USConfigServer.erl>`_ for us.config and `class_USWebConfigServer.erl <https://github.com/Olivier-Boudeville/us-web/blob/master/src/class_USWebConfigServer.erl>`_ for its US-Web counterpart.
-
-Refer for that at this (US) `us.config example <https://github.com/Olivier-Boudeville/us-common/blob/master/priv/for-testing/us.config>`_ and at this `US-Web counterpart example <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/for-testing/us-web-for-tests.config>`_.
-
-In a nutshell, this US-Web configuration files allows unsurprisingly to specify all web-related settings, regarding users, directory locations, options such as ports, log analysis or certificate management and, most importantly, the routes.
-
-Defining routes allows to tell what it the web root directory [#]_ to serve for each given client-specified URL (in general, only the hostname part is of interest here), based on pattern-matching.
-
-.. [#] A web root directory is either specified as an absolute path, otherwise it is relative to a ``default_web_root`` entry to be specified in the US-Web configuration file.
-
-
-Such a route definition consists mostly on enumerating each hostname that is to manage (e.g. ``"foobar.org"`` - knowing that the ``default_domain_catch_all`` atom designates all hostnames that could not be matched specifically otherwise) and enumerating then all the virtual hosts to manage for this domain (e.g. the ``"hurricane"`` host, whose FQDN is thus ``hurricane.foobar.org`` - knowing that the ``default_vhost_catch_all`` atom designates all hostnames that could not be matched specifically otherwise, in the form ``*.foobar.org``, and that the ``without_vhost`` atom designates the hostname itself, i.e. ``foobar.org`` ).
-
-For example:
-
-.. code:: erlang
-
-  { default_web_root, "/var/web-storage/www" }.
-
-  %{ log_analysis, awstats }.
-
-  { certificate_support, use_existing_certificates }.
-  { certificate_mode, production }.
-
-  % Use 'dns-01' if wanting wildcard certificates:
-  { challenge_type, 'http-01' }.
-
-  % With 'dns-01', the DNS provider must be specified:
-  { dns_provider, ovh }.
-
-  { routes, [
-
-	% Note that the first hostname listed will be, regarding
-	% https (SNI), the main, default one:
-
-	{ "foobar.org", [
-
-		% So any content requested regarding the www.foobar.org
-		% FQDN (e.g. http://www.foobar.org/index.html) will be
-		% looked-up relatively to the
-		% /var/web-storage/www/Foobar-main directory:
-		%
-		{ "www", "Foobar-main" },
-		{ "club", "Foobar-club" },
-		{ "archives", "/var/web-storage/Archives-for-Foobar" },
-
-		% If just the domain is specified:
-		{ without_vhost, "Foobar" }
-
-		% With https, catch-all shall be best avoided:
-		%{ default_vhost_catch_all, "Foobar" }
-
-					] },
-
-	{ "foobar.net", [
-		% (similar rules may be defined)
-					] }
-
-	% Best avoided as well with https:
-	%{ default_domain_catch_all, [
-	%
-	%			{ default_vhost_catch_all, "Foobar" }
-	%
-	%				 ] }
-
-		  ]
-
-  }.
-
-
-
-US-Web Application Base Directory
----------------------------------
-
-This directory allows US-Web to select the various runtime elements it is to use.
-
-This **US-Web Application Base Directory** may be set in the US-Web configuration file thanks to its (optional) ``us_web_app_base_dir`` entry.
-
-If not set there, US-Web will try to use the  ``US_WEB_APP_BASE_DIR`` environment variable instead.
-
-If not usable either, US-Web will try to determine this directory automatically, based on how the server is launched (with our native deployment approach or as an OTP release).
-
-Of course failing to resolve a proper application base directory will result in a fatal launch error to be reported at start-up.
-
-Let's designate this directory from now on with the ``US_WEB_APP_BASE_DIR`` pseudo-variable.
-
-
-
-Separating the US-Web Software from its data
---------------------------------------------
-
-It is useful to regularly upgrade the US-Web code while maintaining the data it uses as it is (not losing it because of a mere software update).
-
-This notably includes the information such as the state of the log analysis tool (i.e. the synthesis aggregated after having processed a potentially longer history of access logs when rotating them) or the currently generated certificates (which are not always easy to renew frequently, if having to respect rate limits) [#]_.
-
-.. [#] Access/error logs and the own US-Web traces are not considered belonging to the application data; their storage location is discussed in the `Webserver Logs`_ section.
-
-
-These various states are stored in the **US-Web data directory**, which can be set, by decreasing order of priority:
-
-- in the ``us_web_data_dir`` entry of the US-Web configuration file, as an absolute directory, or as one that is relative to the US-Web application base directory (see `US-Web Application Base Directory`_), then as ``US_WEB_APP_BASE_DIR/data``
-- otherwise in the ``US_WEB_DATA_DIR`` environment variable
-
-If the default path for this location is ``us-web-data`` (relatively to the US-Web instance base directory, typically deployed in ``/opt/universal-server/us_web-native``), a recommended practice is nevertheless to set this location explicitly *outside* of that instance so that the instance can be upgraded/replaced without any loss of state.
-
-So the ``us_web_data_dir`` entry might be set in the US-Web configuration file for example to ``/opt/universal-server/us_web-data``. Of course, as always, proper permissions shall be set in this data tree as well.
-
-Let's designate this directory from now on with the ``US_WEB_DATA_DIR`` pseudo-variable.
-
-This directory may notably gather following elements:
-
-- the ``log-analysis-state`` subdirectory (if log analysis is enabled), containing the working state of the tool for web access analysis, typically Awstat, thus containing ``awstats*.baz.foobar.org.txt`` files for the preprocessing of its reports
-
-- the ``certificates`` subdirectory (if certificate support is enabled), containing the related keys and certificates for the domains of interest:
-
-  - if managing domains D in ``["foobar.org", "example.com"]``, then ``D.csr``, ``D.key`` and ``D.crt`` will be stored or produced there (refer to `this section <https://leec.esperide.org/#getting-information-about-the-generated-certificates>`_ of the documentation of LEEC for further explanations)
-  - LEEC-related transverse security elements may be found there (if using it to renew certificates) as well, notably (see `this LEEC documentation section <https://leec.esperide.org/#other-files-of-interest>`_):
-
-	- ``us-web-leec-agent-private.key``, the RSA private key of the US-Web LEEC agent so that it can safely authenticate to the ACME servers it is interacting with and afterwards validate https handshakes with clients
-	- ``lets-encrypt-r3-cross-signed.pem``, the certificate associated to the *Certificate Authority* (Let's Encrypt here) that is relied upon
-  - ``dh-params.pem``, a key generated by LEEC to allow for safer *Ephemeral Diffie-Helman key exchanges*
-
-One may create from this ``certificates`` subdirectory a ``GNUmakefile`` symlink pointing to `GNUmakefile-for-certificates <https://github.com/Olivier-Boudeville/us-web/blob/master/conf/GNUmakefile-for-certificates>`_ to easy any checking or backup of these certificates.
-
-
-
-Catch-alls, HTTPS, Challenge Types and Wildcard Certificates
-------------------------------------------------------------
-
-Having wildcard certificates (which is the default now) - thus relying on the ``dns-01`` challenge - allows in turn to define catch-alls (host-level and/or domain-level) routes and wildcard DNS entries (such as ``* IN CNAME foobar.org.``).
-
-Conversely, if setting another challenge type (refer to the ``challenge_type`` configuration entry, typically then set to the ``http-01`` challenge), defining catch-all routes is not recommended if using https, as these unanticipated hostnames are by design absent from the corresponding certificates, and thus any user requesting them (possibly due to a typo) will have their browser report a security risk (such as ``SSL_ERROR_BAD_CERT_DOMAIN``).
-
-Similarly, wildcard DNS entries should be then avoided (on the other hand, they allow not to advertise what are the precise virtual hostnames supported; note though that with https, these virtual hostnames will be visible in the SANs).
-
-
-
-Other Configuration Files
--------------------------
-
-Credentials for One's DNS Provider
-__________________________________
-
-If wanting wildcard certificates, the ``dns-01`` challenge will be used, and this will require credentials to be specified in order to update DNS entries from one's DNS provider.
-
-US-Web expect credential files to be available in the base directory where all US configuration is to be found (typically ``/etc/xdg/universal-server``). Note that such credentials files (e.g. ``leec-ovh-credentials-for-foobar.org.txt``) must be well-protected; refer to `this LEEC section <https://leec.esperide.org/#credentials-file>`_ for more information.
-
-
-
-
-Operating System Settings
-=========================
-
-.. _`authbind`:
-
-Regarding ``authbind``
-----------------------
-
-
-Many distributions will parameter ``authbind`` so that only the TCP port 80 will be available to "authbound" programs.
-
-If wanting to run an HTTPS server, the TCP port 443 will be most probably needed and thus must be specifically enabled.
-
-For that, relying on the same user/group conventions as before, one may enter, as root:
-
-.. code:: bash
-
- $ cd /etc/authbind/byport
- $ cp 80 443
- $ chown us-web-user:us-group 443
-
-Otherwise an exception will be raised (about ``eperm`` / ``not owner``) when US-Web will try to create its HTTPS listening socket.
-
-
 ----------------
 Launching US-Web
 ----------------
@@ -594,7 +674,7 @@ One may disable temporarily the cache by opening the developer toolbox (``Ctrl+S
 Stopping any prior instance first
 =================================
 
-From now on, we will suppose the current directory is ``US_WEB_APP_ROOT``.
+From now on, we will suppose the current directory is ``US_WEB_CLONE_ROOT``.
 
 The ``stop-us-web-native-build.sh`` script can be used for stopping a US-Web instance, typically simply as:
 
@@ -820,6 +900,176 @@ For that one should execute the `generate-us-web-log-report.sh <https://github.c
 
 
 
+--------------
+Extra Features
+--------------
+
+
+Auto-generated Meta Website
+===========================
+
+If requested, at server start-up, a "meta" website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
+
+For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (e.g. ``foobar.org``):
+
+.. code:: erlang
+
+ {"mymeta", "My-meta-generated", meta}
+
+
+This will generate a suitable website in the ``My-meta-generated`` subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as ``mymeta.foobar.org`` (of course both ``mymeta`` and ``My-meta-generated`` are examples; these names can be freely chosen).
+
+Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).
+
+Note that apparently, at least under some circumstances, some versions of Firefox may incorrectly render a Meta web page: despite its HTML source being correct, for some reason the entry page of websites may correspond to another virtual host (whereas other browsers display correctly the same Meta page).
+
+
+
+Icon (favicon) Management
+=========================
+
+This designates the little image that is displayed by browsers on the top of the tab of the website being visited.
+
+A default icon file can be defined, it is notably used in order to generate better-looking 404 pages.
+
+To do so, the ``icon_path`` key in the US-Web handler state shall be set to the path of such file (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
+
+In the context of the (default) US-Web static web handler, if such a ``common/default-icon.png`` exists (e.g. obtained thanks to this kind of `generator <https://favicon.io/favicon-generator/>`_), it is automatically registered in ``icon_path``.
+
+
+
+CSS Management
+==============
+
+A default CSS file can be defined, notably in order to generate better-looking 404 pages.
+
+To do so, the ``css_path`` key in the US-Web handler state shall be set to the path of such file (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
+
+In the context of the (default) US-Web static web handler, if such a ``common/default.css`` exists, it is automatically registered in ``css_path``.
+
+
+
+Error 404 Management
+====================
+
+Should some requested web page not be found:
+
+- a suitable 404 page is automatically generated by the US-Web server, and returned to the caller
+- the error is appropriately logged
+
+A 404 image can be optionally displayed instead of the "0" of "404". To do so, the ``image_404`` key in the US-Web handler state shall be set to the path of such image (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
+
+In the context of the (default) US-Web static web handler, if such a ``images/404.png`` file exists, it is automatically registered in ``image_404``.
+
+
+
+Site Customisation
+==================
+
+As a summary of the sections above, if there is a file (regular or symbolic link), from the content root of a hosted static website, in:
+
+-  ``common/default.css``, then this CSS will be used for all generated pages for that website (e.g. the one for errors such as 404 ones)
+-  ``images/default-icon.png``, then this image will be used as an icon (the small image put on browser tabs next to their labels) for all generated pages
+-  ``images/404.png``, then this image will be used for the "0" in the main "404" label of the page denoting a content not found
+
+Each content root is expected to contain at least a (proper) ``index.html`` file (possibly as a symbolic link).
+
+
+
+--------------------------
+Wrapping Up for Deployment
+--------------------------
+
+In both cases we recommend first just to `configure US-Web`_ and then to execute the ``deploy-us-web-native-build.sh`` with relevant options.
+
+
+In a Development Setting
+========================
+
+The US main configuration file, ``us.config``, is in a directory (``US_CFG_ROOT``) that is ``~/.config/universal-server/`` here. This US-level configuration file will reference (through its ``us_web_config_filename`` entry) a US-Web counterpart configuration file, probably in the same directory.
+
+The US-Web configuration file may define a ``us_web_app_base_dir`` entry. If not, this application directory will then be found thanks to the ``US_WEB_APP_BASE_DIR`` environment variable (if defined, typically through one's ``~/.bashrc``); otherwise, as a last resort, an attempt to guess it will be done.
+
+The US webserver may be then run thanks to ``make debug``, from the relevant ``us_web`` directory (typically the root of a Git clone located in the user's directory).
+
+.. For releases: In such a development context, in ``us_web/conf/sys.config``, we recommend to leave the batch mode disabled (just let the default ``{is_batch,false}``), so that a direct, graphical trace supervision is enabled (provided that a relevant trace supervisor is available, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that).
+
+
+
+In a Production Setting
+=======================
+
+The start/stop management scripts will be run initially as root (possibly through ``systemd``) and must access the ``us.config`` file. Then, once run, ``us_web`` will most probably switch to a dedicated user (see the ``us_web_username`` entry in the US-Web configuration file), who will need in turn to be able to read the ``us.config`` file and any related one (e.g. for US-Web, here supposed to be named ``foobar-us-web-for-production.config``).
+
+As a result, a relevant configuration directory (denoted ``US_CFG_ROOT`` in this document), in that shared setting, is the standard ``/etc/xdg`` one, resulting in the ``/etc/xdg/universal-server`` directory to be used.
+
+As mentioned, care must be taken so that ``root`` and also the US and US-Web users can read the content of that directory - at least the US and US-Web configuration files in it - and that the other users cannot.
+
+For that, a dedicated ``us-group`` group can be created, and any web user (e.g. ``us-web-user``) shall belong to that group. For example:
+
+.. code:: bash
+
+ $ id us-web-user
+ uid=1002(us-web-user) gid=1002(us-web-user) groups=1002(us-web-user),
+  1007(us-group)
+
+
+Then, in ``/etc/xdg/universal-server``, for the US and US-Web configuration files:
+
+.. code:: bash
+
+ $ chown us-user us.config
+ $ chown us-web-user foobar-us-web-for-production.config
+
+ $ us_files="us.config foobar-us-web-for-production.config"
+ $ chgrp us-group ${us_files}
+ $ chmod 640 ${us_files}
+
+ $ chgrp us-group /etc/xdg/universal-server
+ $ chmod 700 /etc/xdg/universal-server
+
+We recommend directly setting the ``us_web_app_base_dir`` configuration entry to the relevant, absolute path.
+
+
+.. Previously REL_BASE_ROOT and US_WEB_REL_ROOT were used.
+
+
+Let's suppose a full US-Web install has been deployed in ``DEPLOY_ROOT=/opt/universal-server/us_web-native-deployment-YYYYMMDD``; then ``US_WEB_CLONE_ROOT=${DEPLOY_ROOT}/us_web`` corresponds to the clone of US-Web itself.
+
+.. Let's name here ``US_WEB_REL_ROOT`` the root of the US-Web release of interest (e.g. corresponding to ``${REL_BASE_ROOT}/us_web-latest/``; for example ``/opt/universal-server/us_web-native-deployment-YYYYMMDD``) and ``US_WEB_CLONE_ROOT`` the root of the corresponding US-Web application (e.g. corresponding to ``${US_WEB_REL_ROOT}/lib/us_web-latest/``).
+
+A ``systemd`` service shall be declared for US-Web, in ``/etc/systemd/system``; creating there, as root, a symbolic link to ``${US_WEB_CLONE_ROOT}/priv/conf/us-web-as-native-build.service`` will suffice.
+
+This service requires ``start-us-web.sh`` and ``stop-us-web.sh``, expected to be found in ``/usr/local/bin``. Taking into account also the other rather numerous convenience scripts, they should all be symlinked that way, still as root:
+
+.. code:: bash
+
+ $ cd /usr/local/bin
+ $ for s in *.sh; do ln -s ${US_WEB_CLONE_ROOT}/priv/bin/$s ; done
+
+
+The log base directory (see the ``log_base_directory`` entry) shall be created and writable; if ever it was not the case after a successful deployment:
+
+.. code:: bash
+
+ $ LOG_DIR=/var/log/universal-server/us-web/
+ $ mkdir -p ${LOG_DIR}
+ $ chown us-user ${LOG_DIR}
+ $ chgrp us-group ${LOG_DIR}
+ $ chmod 770 ${LOG_DIR}
+
+
+.. ${US_WEB_REL_ROOT}/releases/latest-release
+
+.. In such a production context, if using a release rather than a native deployment, in ``sys.config`` (typically located in ``${``), we recommend to enable batch mode (just set ``{is_batch,true}``), so that by default no direct, graphical trace supervision is triggered (a server usually does not have a X server anyway).
+
+Instead the traces may then be supervised and browsed remotely (at any time, and any number of times), from a graphical client (provided that a relevant trace supervisor is available locally, see `Ceylan-Traces <http://traces.esperide.org/#trace-supervision-browsing>`_ for that), by running the `monitor-us-web.sh <https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/monitor-us-web.sh>`_ script.
+
+.. if the US-Web instance runs in a host named ``hurricane``
+
+For that, the relevant settings (notably which server hosts the US-Web instance to monitor - let's say ``hurricane``, and what cookie this instance requires) shall be stored on that client host, in a configuration file that could be named ``us-web-on-hurricane-remote-access.config`` file that is typically located in the ``~/.config/universal-server`` directory.
+
+
 
 .. _`Nitrogen-based`:
 
@@ -913,82 +1163,6 @@ Extra information:
 - `Zotonic <http://zotonic.com/features>`_ relied on Nitrogen
 - `How Nitrogen processes requests <https://rshestakov.wordpress.com/2013/02/17/how-nitrogen-processes-requests/>`_
 - `How to add Nitrogen and Cowboy as dependency libs to your erlang application <https://rshestakov.wordpress.com/2013/03/03/how-to-add-nitrogen-and-cowboy-as-dependecy-libs-to-your-erlang-application/>`_
-
-
---------------
-Extra Features
---------------
-
-
-
-Auto-generated Meta Website
-===========================
-
-If requested, at server start-up, a "meta" website - i.e. a website sharing information about all other websites being hosted by that server - can be generated and made available through a dedicated virtual host and web root.
-
-For that, in the US-Web configuration file, among the user-specified ``routes``, one may add the following element in the list of virtual host entries associated to a given domain (e.g. ``foobar.org``):
-
-.. code:: erlang
-
- {"mymeta", "My-meta-generated", meta}
-
-
-This will generate a suitable website in the ``My-meta-generated`` subdirectory of the default web root (as, here, the specified directory is not an absolute one), and this website will be available as ``mymeta.foobar.org`` (of course both ``mymeta`` and ``My-meta-generated`` are examples; these names can be freely chosen).
-
-Currently no specific access control to this website is enforced (thus by default anyone knowing or able to guess its virtual hostname can access it).
-
-Note that apparently, at least under some circumstances, some versions of Firefox may incorrectly render a Meta web page: despite its HTML source being correct, for some reason the entry page of websites may correspond to another virtual host (whereas other browsers display correctly the same Meta page).
-
-
-
-Icon (favicon) Management
-=========================
-
-This designates the little image that is displayed by browsers on the top of the tab of the website being visited.
-
-A default icon file can be defined, it is notably used in order to generate better-looking 404 pages.
-
-To do so, the ``icon_path`` key in the US-Web handler state shall be set to the path of such file (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
-
-In the context of the (default) US-Web static web handler, if such a ``common/default-icon.png`` exists (e.g. obtained thanks to this kind of `generator <https://favicon.io/favicon-generator/>`_), it is automatically registered in ``icon_path``.
-
-
-
-CSS Management
-==============
-
-A default CSS file can be defined, notably in order to generate better-looking 404 pages.
-
-To do so, the ``css_path`` key in the US-Web handler state shall be set to the path of such file (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
-
-In the context of the (default) US-Web static web handler, if such a ``common/default.css`` exists, it is automatically registered in ``css_path``.
-
-
-
-Error 404 Management
-====================
-
-Should some requested web page not be found:
-
-- a suitable 404 page is automatically generated by the US-Web server, and returned to the caller
-- the error is appropriately logged
-
-A 404 image can be optionally displayed instead of the "0" of "404". To do so, the ``image_404`` key in the US-Web handler state shall be set to the path of such image (possibly a symbolic link), relatively to the content root of the corresponding virtual host.
-
-In the context of the (default) US-Web static web handler, if such a ``images/404.png`` file exists, it is automatically registered in ``image_404``.
-
-
-
-Site Customisation
-==================
-
-As a summary of the sections above, if there is a file (regular or symbolic link), from the content root of a hosted static website, in:
-
--  ``common/default.css``, then this CSS will be used for all generated pages for that website (e.g. the one for errors such as 404 ones)
--  ``images/default-icon.png``, then this image will be used as an icon (the small image put on browser tabs next to their labels) for all generated pages
--  ``images/404.png``, then this image will be used for the "0" in the main "404" label of the page denoting a content not found
-
-Each content root is expected to contain at least a (proper) ``index.html`` file (possibly as a symbolic link).
 
 
 

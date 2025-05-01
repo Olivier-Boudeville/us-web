@@ -235,8 +235,8 @@ if [ ${res} -eq 0 ]; then
 
 	echo "  (authbind success reported)"
 
-	# If wanting to check or have more details:
-	inspect_us_web_log
+	# If wanting to check logs or have more details:
+	inspect_us_web_launch_outcome
 
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:
@@ -270,7 +270,7 @@ else
 	echo "  Error: authbind failure reported (code '$res')" 1>&2
 	echo
 
-	inspect_us_web_log
+	inspect_us_web_launch_outcome
 
 	exit ${res}
 

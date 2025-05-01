@@ -1,8 +1,20 @@
 #!/bin/sh
 
 # A script to kill for sure a local Web instance.
+#
+# See also the {start,stop,control,monitor}-us-web.sh and get-us-web-status.sh
+# scripts.
 
-usage="Usage: $(basename $0): kills any running US-Web instance(s), and ensures none is registered in the specifically-associated EPMD."
+
+usage="Usage: $(basename $0) [US_CONF_DIR]: kills any running US-Web instance(s), and ensures that none is registered in the specifically-associated EPMD.
+
+Determines which US-Web instance is to kill based on any specified US configuration directory, otherwise on the standard locations of US configuration files.
+
+Examples of use:
+ $ kill-us-web.sh
+ $ sudo kill-us-web.sh $HOME/.config/universal-server
+"
+
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
@@ -11,14 +23,18 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 
 fi
 
-if [ ! $# -eq 0 ]; then
+if [ $# -gt 1 ]; then
 
-	echo "  Error, no argument expected.
+	echo "  Error, no extra argument expected.
 ${usage}" 1>&2
 
 	exit 10
 
 fi
+
+# If an argument is set, it will be interpreted as US_CONF_DIR by
+# read_us_config_file.
+
 
 
 epmd="$(which epmd 2>/dev/null)"
@@ -99,9 +115,9 @@ us_launch_type="native"
 . "${us_web_common_script}" #1>/dev/null
 
 # We expect a pre-installed US configuration file to exist:
-read_us_config_file "$1" #1>/dev/null
+read_us_config_file "$1" 1>/dev/null
 
-read_us_web_config_file #1>/dev/null
+read_us_web_config_file 1>/dev/null
 
 
 
@@ -163,7 +179,7 @@ echo "Using, for US-Web EPMD port, ${us_web_epmd_port}."
 export ERL_EPMD_PORT="${us_web_epmd_port}"
 
 # Not always working:
-if ! ${epmd} -stop us_web; then
+if ! ${epmd} -stop us_web 1>/dev/null; then
 
 	echo "  Error while unregistering the US-Web server from the EPMD daemon at port ${ERL_EPMD_PORT}." 1>&2
 
@@ -174,5 +190,5 @@ fi
 sleep 1
 
 # At least this script:
-echo "Resulting US-Web found: $(ps -edf | grep us_web | grep -v grep)"
+echo "Resulting US-Web processes found: $(ps -edf | grep us_web | grep -v grep)"
 echo "Resulting EPMD entries found: $(${epmd} -names)"

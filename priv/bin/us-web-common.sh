@@ -614,11 +614,12 @@ prepare_us_web_launch()
 }
 
 
-# Inspects the VM logs of US-Web (beware of ancient entries being displayed).
+# Inspects the VM logs of US-Web (beware of ancient entries being displayed),
+# and possibly the related EPMD port.
 #
 # read_us_web_config_file must have been run beforehand.
 #
-inspect_us_web_log()
+inspect_us_web_launch_outcome()
 {
 
 	# (run_erl.log not that useful)
@@ -661,16 +662,8 @@ inspect_us_web_log()
 
 	if [ -f "${us_web_vm_log_file}" ]; then
 
-		if [ -n "${erl_epmd_port}" ]; then
-			echo "EPMD names output (on port ${erl_epmd_port}):"
-			epmd_port_opt="-port ${erl_epmd_port}"
-		else
-			echo "EPMD names output (on default US-Web port ${erl_epmd_port}):"
-			epmd_port_opt="-port ${default_us_web_epmd_port}"
-		fi
-
-		${epmd} ${epmd_port_opt} -names
-
+		echo "US-Web EPMD names output:"
+		${epmd} -port ${us_web_epmd_port} -names
 
 		echo
 		echo "Displaying the end of '${us_web_vm_log_file}':"

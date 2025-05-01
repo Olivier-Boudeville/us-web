@@ -120,7 +120,7 @@ if [ $res -eq 0 ]; then
 	echo "  (authbind success reported)"
 
 	# If wanting to check or have more details:
-	inspect_us_web_log
+	inspect_us_web_launch_outcome
 
 	# Better diagnosis than the previous res code:
 	# (only renamed once construction is mostly finished)
@@ -153,7 +153,7 @@ else
 	echo "  Error: authbind failure reported (code '$res')" 1>&2
 	echo
 
-	inspect_us_web_log
+	inspect_us_web_launch_outcome
 
 	exit $res
 

@@ -127,7 +127,7 @@ echo " -- corresponding US-Web applicative logs:"
 # If not finding a us-web log file, might be the sign that US-Web is actually
 # not running:
 #
-inspect_us_web_log
+inspect_us_web_launch_outcome
 
 
 # Would not be easy to implement, as it would require to extract from the US-Web

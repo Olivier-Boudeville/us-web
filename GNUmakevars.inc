@@ -185,8 +185,9 @@ MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
 
 
 # jsx section, now that installed separately (rebar3 having been dropped).
-
-JSX_BEAM_DIR := $(US_WEB_TOP)/../jsx/ebin
+# (not needed anymore, relying on the 'json' built-in module now)
+#
+#JSX_BEAM_DIR := $(US_WEB_TOP)/../jsx/ebin
 
 
 # Nitrogen section.
@@ -213,7 +214,9 @@ US_WEB_BEAM_DIRS := $(US_WEB_BEAM_DIR) $(US_WEB_TOP)/..
 # We rely on Myriad, WOOPER, Traces and US-Common as well, and, if enabled,
 # Nitrogen:
 #
-BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(JSX_BEAM_DIR) $(NITROGEN_BEAM_DIRS)
+# ($(JSX_BEAM_DIR) is obsolete)
+#
+BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(NITROGEN_BEAM_DIRS)
 
 
 # As behaviour-defining modules (such as the nitrogen_core's route_handler one)
@@ -222,12 +225,17 @@ BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(JSX_BEAM_DIR) $(NITROGEN_BEAM_DIRS)
 #
 NITROGEN_BEHAVIOUR_OPT = -pz $(NITROGEN_CORE_TOP)/ebin
 
-ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
+ifeq ($(USE_NITROGEN),true)
+
+    ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
+
+endif
 
 
-# This is the US-Web specific EPMD port, different from the default Myriad one
-# and from the one of our other applications, so that we can act upon the US-Web
-# EPMD without interfering with others (see also the 'launch-epmd' make target):
+# This is the US-Web specific default EPMD port, different from the default
+# Myriad one and from the one of the other US applications, so that we can act
+# upon the US-Web EPMD without interfering with others (see also the
+# 'launch-epmd' make target):
 #
 EPMD_PORT := 4508
 
@@ -300,7 +308,9 @@ endif
 # is autodetected by the make system, knowing that jsx will be automatically
 # found at runtime as an OTP application dependency of LEEC (see otp_utils).
 #
-JSX_TOP = $(space)
+# (now obsolete)
+#
+#JSX_TOP = $(space)
 
 # We do the same as US-Web for LEEC:
 ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec/.),)

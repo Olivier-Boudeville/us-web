@@ -1,4 +1,3 @@
-{"1.2.0",
 [{<<"cowboy">>,
   {git,"https://github.com/ninenines/cowboy.git",
        {ref,"24d32de931a0c985ff7939077463fc8be939f0e9"}},
@@ -7,19 +6,13 @@
   {git,"https://github.com/ninenines/cowlib",
        {ref,"d0ab49ed797e5bb48209825428d26947d74aabd5"}},
   1},
- {<<"jsx">>,{pkg,<<"jsx">>,<<"3.0.0">>},1},
  {<<"leec">>,
   {git,"https://github.com/Olivier-Boudeville/Ceylan-LEEC.git",
-       {ref,"c83ff5178626899cf6b1bd381a273270dbd9bd3a"}},
+       {ref,"483dfc492741a378cbac2d56b82d6528dcc2945d"}},
   0},
- {<<"mutagen">>,{pkg,<<"mutagen">>,<<"0.1.0">>},1},
  {<<"myriad">>,
   {git,"https://github.com/Olivier-Boudeville/Ceylan-Myriad.git",
-       {ref,"611aa7844b9ea95c236ea8929190d365386dc3db"}},
-  0},
- {<<"nitro_cache">>,
-  {git,"https://github.com/nitrogen/nitro_cache",
-       {ref,"c7228e89970c5ec7e4bccdbea0b63c75382c74a0"}},
+       {ref,"183b9323be599ae565d6f90bf89a328e18869fed"}},
   0},
  {<<"ranch">>,
   {git,"https://github.com/ninenines/ranch",
@@ -27,21 +20,13 @@
   1},
  {<<"traces">>,
   {git,"https://github.com/Olivier-Boudeville/Ceylan-Traces.git",
-       {ref,"872a83005a09ee4f9f798d0d508de55fcdb32cd2"}},
+       {ref,"1b18d6b66f620616e621a7bf24651b57336020ee"}},
   0},
  {<<"us_common">>,
   {git,"https://github.com/Olivier-Boudeville/us-common.git",
-       {ref,"ca024b95c1cd1cf6a0d2bba48e7d6ba7c5fc7b85"}},
+       {ref,"f706268ed3ec2ea18c5560f75bbe65156041c509"}},
   0},
  {<<"wooper">>,
   {git,"https://github.com/Olivier-Boudeville/Ceylan-WOOPER.git",
-       {ref,"203855fca54a246d6c95bcb2af851eff6a873cc3"}},
-  0}]}.
-[
-{pkg_hash,[
- {<<"jsx">>, <<"20A170ABD4335FC6DB24D5FAD1E5D677C55DADF83D1B20A8A33B5FE159892A39">>},
- {<<"mutagen">>, <<"18EFF9F0E6C570F278ABFC6255D4674D0FD3F9A84D3749BE60F473F4124A9055">>}]},
-{pkg_hash_ext,[
- {<<"jsx">>, <<"37BECA0435F5CA8A2F45F76A46211E76418FBEF80C36F0361C249FC75059DC6D">>},
- {<<"mutagen">>, <<"59F25DF87A6F99B605A96F2338983631A8186B5B28988739D6B880C2D86DF72E">>}]}
-].
+       {ref,"b5b7155b22c669885de52913adc736015a2175da"}},
+  0}].

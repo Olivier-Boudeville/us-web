@@ -31,6 +31,11 @@ do_clone=0
 #do_clone=1
 
 # Tells whether dependencies shall be built (if not done already):
+#
+# (best left enabled, as this step is almost immediately gone through if builds
+# have already been done, and it has for side effect to read the US
+# configuration files, which is needed for deployment afterwards)
+#
 do_build=0
 #do_build=1
 
@@ -1098,7 +1103,7 @@ if [ ${do_build} -eq 0 ]; then
 	# Rare option needed, otherwise apparently mistook for a directory resulting
 	# in an incorrect link:
 	#
-	sudo /bin/ln -sf --no-target-directory "${native_install_dior}" us_web-native
+	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native
 	sudo /bin/ln -sf --no-target-directory us_web-native us_web-latest
 
 	display_and_log
@@ -1118,7 +1123,9 @@ if [ $do_launch -eq 0 ]; then
 
 	# Not expecting here a previous native instance to run.
 
-	# Absolute path; typically in '/opt/universal-server/us_web-native-deployment-*/us_web':
+	# Absolute path; typically in
+	# '/opt/universal-server/us_web-native-deployment-*/us_web':
+	#
 	if [ ! -d "${us_web_dir}" ]; then
 
 		echo " Error, the target US-Web directory, '${us_web_dir}', does not exist." 1>&2

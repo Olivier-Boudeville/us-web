@@ -46,7 +46,7 @@
 	% Never necessary: {sync, {git, "https://github.com/rustyio/sync", {tag, "v0.2.0"}}},
 
 	% Fork not needed: {nitro_cache, {git, "https://github.com/Olivier-Boudeville/nitro_cache", {tag, "master"}}},
-	{nitro_cache, {git, "https://github.com/nitrogen/nitro_cache", {branch, master}}},
+	%{nitro_cache, {git, "https://github.com/nitrogen/nitro_cache", {branch, master}}},
 
 	%{nitrogen_core, {git, "https://github.com/Olivier-Boudeville/nitrogen_core", {branch, "master"}}},
 	%{nitrogen_core, {git, "https://github.com/Olivier-Boudeville/nitrogen_core", {branch, "testing"}}},

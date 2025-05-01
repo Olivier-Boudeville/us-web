@@ -68,7 +68,7 @@ native_install_dir="us_web-native-deployment-$(date '+%Y%m%d')"
 nitrogen_option="--support-nitrogen"
 
 usage="
-Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [${allow_root_exec_opt}]  [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
+Usage: $(basename $0) [-h|--help] [${no_launch_opt}] [${allow_root_exec_opt}] [-n|${nitrogen_option}] [BASE_US_DIR]: deploys (clones and builds) locally, as a normal user (sudo requested only whenever necessary), a fully functional US-Web environment natively (i.e. from its sources, not as an integrated OTP release) in the specified base directory (otherwise in the default '${base_us_dir}' directory), as '${native_install_dir}', then launches it (unless requested not to, with the '${no_launch_opt}' option).
 
 Options:
  ${no_launch_opt}: installs US-Web, but does not launch it automatically (possibly because a prior install is still running)
@@ -1103,8 +1103,8 @@ if [ ${do_build} -eq 0 ]; then
 	# Rare option needed, otherwise apparently mistook for a directory resulting
 	# in an incorrect link:
 	#
-	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native
-	sudo /bin/ln -sf --no-target-directory us_web-native us_web-latest
+	sudo /bin/ln -sf --no-target-directory "${native_install_dir}" us_web-native-deployment
+	sudo /bin/ln -sf --no-target-directory us_web-native-deployment us_web-latest
 
 	display_and_log
 	display_and_log "Native US-Web built and ready in ${abs_native_install_dir}."

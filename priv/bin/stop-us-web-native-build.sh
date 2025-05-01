@@ -82,7 +82,7 @@ if [ -d "${local_us_web_install_root}/priv" ]; then
 else
 
 	# The location enforced by deploy-us-web-native-build.sh:
-	us_web_install_root="/opt/universal-server/us_web-native/us_web"
+	us_web_install_root="/opt/universal-server/us_web-native-deployment/us_web"
 	echo "Selecting US-Web native build in standard server location '${us_web_install_root}'."
 
 	if [ ! -d "${us_web_install_root}/priv" ]; then

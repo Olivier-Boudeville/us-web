@@ -698,7 +698,7 @@ request_certificate( State ) ->
 
 	% So that it is visible even in production mode:
 	?notice_fmt( "Requesting a ~ts certificate for '~ts', with following SAN "
-			"information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
+                 "information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
 	% yet this is not a proper solution, as months are likely elapse between

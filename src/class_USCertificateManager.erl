@@ -944,7 +944,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 -doc """
 Requests this manager to return (indirectly, through the current LEEC FSM) the
-current thumbprint challenges to specified target process.
+current thumbprint challenges to the specified target process.
 
 Typically called from a web handler (see us_web_leec_handler, specifying its PID
 as target one) whenever the ACME well-known URL is read by an ACME server, to
@@ -966,6 +966,10 @@ getChallenge( State, TargetPid ) ->
 		leec:send_ongoing_challenges( LCS, TargetPid )
 
 	catch AnyClass:Exception:StackTrace ->
+
+        % Then probably that the target process will never receive these
+        % challenges, so it should time-out:
+
 		?error_fmt( "Sending of challenges failed, with a thrown "
 			"exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
 			[ Exception, AnyClass,

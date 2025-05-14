@@ -42,11 +42,6 @@ Directly created by us_web_app.
 -include("class_USWebConfigServer.hrl").
 
 
-% Type shorthand:
-
--type application_run_context() :: otp_utils:application_run_context().
-
-
 
 % Implementation notes:
 %
@@ -62,6 +57,11 @@ Directly created by us_web_app.
 %  are ready
 %  5. starts the corresponding HTTPS server
 
+
+
+% Type shorthand:
+
+-type application_run_context() :: otp_utils:application_run_context().
 
 
 -doc """
@@ -148,21 +148,17 @@ init( _Args=[ AppRunContext ] ) ->
 	end,
 
 	CertSupport =:= use_existing_certificates andalso
-		begin
+		case MaybeHttpsTranspOpts of
 
-			case MaybeHttpsTranspOpts of
+			undefined ->
+				throw( no_https_transport_options );
 
-				undefined ->
-					throw( no_https_transport_options );
-
-				TranspOpts ->
-					% At least currently, checking only the two top-level file
-					% entries, not the ones in each entry of the sni_hosts list:
-					%
-					class_USCertificateManager:check_https_transport_options(
-						TranspOpts )
-
-			end
+			TranspOpts ->
+				% At least currently, checking only the two top-level file
+				% entries, not the ones in each entry of the sni_hosts list:
+				%
+				class_USCertificateManager:check_https_transport_options(
+					TranspOpts )
 
 		end,
 
@@ -239,19 +235,27 @@ init( _Args=[ AppRunContext ] ) ->
 			trace_bridge:debug( RenewalMsg ),
 			trace_utils:info( RenewalMsg ),
 
-			USWebCfgServerPid ! { renewCertificates, [], self() },
+			USWebCfgServerPid ! { renewCertificates, [], self() }
 
-			receive
+            % Previously we were waiting here for all certificates to be
+            % renewed, however it could be quite long, and in the meantime no
+            % (HTTPS) website was available; however, at least in some cases,
+            % former certificates exist, and thus could be used, for shorter
+            % client-perceived downtimes.
+            %
+            % Now we start the HTTPS server immediately, instead of:
 
-				% Note the plural; does not imply that all certificates could be
-				% immediately obtained:
-				%
-				{ wooper_result, certificate_renewals_over } ->
-					RenewedMsg = "All certificates renewed.",
-					trace_bridge:debug( RenewedMsg ),
-					trace_utils:info( RenewedMsg )
+			%% receive
 
-			end
+			%%  % Note the plural; does not imply that all certificates could be
+			%%  % immediately obtained:
+			%%  %
+			%%  { wooper_result, certificate_renewals_over } ->
+			%%      RenewedMsg = "All certificates renewed.",
+			%%      trace_bridge:debug( RenewedMsg ),
+			%%      trace_utils:info( RenewedMsg )
+
+			%% end
 
 		end,
 
@@ -341,7 +345,7 @@ init( _Args=[ AppRunContext ] ) ->
 				[ HttpsTransportOpts, HttpsProtoOptMap ] ),
 
 			case cowboy:start_tls( us_web_https_listener,
-								HttpsTransportOpts, HttpsProtoOptMap ) of
+					HttpsTransportOpts, HttpsProtoOptMap ) of
 
 				{ ok, _HttpsRanchListenerSupPid } ->
 					URLMsg = text_utils:format( "The HTTPS server is now ready,"
@@ -403,6 +407,20 @@ init( _Args=[ AppRunContext ] ) ->
 	Env = [ { _Param=us_web_config_server_pid, _V=USWebCfgServerPid } ],
 
 	application:set_env( _Config=[ { us_web, Env } ] ),
+
+    % Waits for any answer to the renewCertificates request:
+	CertSupport =:= renew_certificates andalso
+			receive
+
+				% Note the plural; does not imply that all certificates could be
+				% immediately obtained:
+				%
+				{ wooper_result, certificate_renewals_over } ->
+					RenewedMsg = "All certificates renewed.",
+					trace_bridge:debug( RenewedMsg ),
+					trace_utils:info( RenewedMsg )
+
+            end,
 
 	{ ok, { SupSettings, ChildSpecs } }.
 

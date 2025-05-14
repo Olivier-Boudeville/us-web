@@ -145,8 +145,8 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 	end,
 
-	PageTitle = text_utils:format( "Page '~ts' not found on ~ts",
-								   [ PathForBrowser, VHost ] ),
+	BinPageTitle = text_utils:bin_format( "Page '~ts' not found on ~ts",
+                                          [ PathForBrowser, VHost ] ),
 
 	MiddleString = case MaybeImage404 of
 
@@ -170,7 +170,7 @@ return_404( Req, BinFullFilepath, HState ) ->
 	end,
 
 
-	PageBody = text_utils:format(
+	BinPageBody = text_utils:bin_format(
 		<<"<h1>Requested content '~ts' not found</h1>
   <p>I could not find the document you wanted, sorry.</p>
   <p style=\"padding-left:10%\">       --- The ~ts server.</p>
@@ -187,12 +187,16 @@ return_404( Req, BinFullFilepath, HState ) ->
   </p>">>,
   % Reporting currently disabled, not wanting to leak an e-mail address:
   %
-  %<p>You can report this issue: <a href=\"mailto:error-404@~ts?subject=Error%20404\">click here</a>. Thanks!</p>">>,
+
+  %<p>You can report this issue: <a
+  %href=\"mailto:error-404@~ts?subject=Error%20404\">click
+  %here</a>. Thanks!</p>">>,
+
 	%[ PathForBrowser, VHost, MiddleString, VHost ] ),
 	[ PathForBrowser, VHost, MiddleString ] ),
 
-	ReplyBody = [ get_header( PageTitle, MaybeBinCssFile, MaybeBinIconFile ),
-				  PageBody, get_footer( VHost, Scheme, TCPPort ) ],
+	ReplyBody = [ get_header( BinPageTitle, MaybeBinCssFile, MaybeBinIconFile ),
+				  BinPageBody, get_footer( VHost, Scheme, TCPPort ) ],
 
 	ReplyHeaders = get_http_headers( ReplyBody ),
 
@@ -209,41 +213,41 @@ return_404( Req, BinFullFilepath, HState ) ->
 
 
 -doc "Returns a suitable document header.".
-get_header( Title, MaybeBinCssFile, MaybeBinIconFile ) ->
+get_header( BinTitle, MaybeBinCssFile, MaybeBinIconFile ) ->
 
-	CSSString = case MaybeBinCssFile of
+	BinCSSStr = case MaybeBinCssFile of
 
 		undefined ->
-			"";
+			<<"">>;
 
 		BinCssFile ->
-			text_utils:format(
+			text_utils:bin_format(
 				"<link rel=\"stylesheet\" type=\"text/css\" href=\"~ts\">",
 				[ BinCssFile ] )
 
 	end,
 
-	FavIconString = case MaybeBinIconFile of
+	BinFavIconStr = case MaybeBinIconFile of
 
 		undefined ->
-			"";
+			<<"">>;
 
 		BinIconFile ->
-			text_utils:format( "<link rel=\"icon\" href=\"~ts\">",
-							   [ BinIconFile ] )
+			text_utils:bin_format( "<link rel=\"icon\" href=\"~ts\">",
+                                   [ BinIconFile ] )
 
 	end,
 
 	[ <<"<!DOCTYPE html>
 <html lang=\"EN\">
  <head>
-  <title>">>, Title, <<"</title>
+  <title>">>, BinTitle, <<"</title>
   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">
   <meta http-equiv=\"Content-Language\" content=\"en\">">>,
-	  CSSString,
+	  BinCSSStr,
 	%<meta name=\"Description\" content=\"Foobar\">
 	%<meta name=\"Identifier-URL\" content=\"http://foobar.com\">"
-	  FavIconString,
+	  BinFavIconStr,
 <<"
  </head>
  <body>
@@ -261,7 +265,7 @@ get_base_footer() ->
 
 -doc "Returns a suitable document footer.".
 get_footer( VHost, Scheme, Port ) ->
-	text_utils:format( <<"
+	text_utils:bin_format( <<"
 	<p>
 	  <center>From there you can go back to the <a href=\"javascript:history.back();\">previous page</a>, or to the <a href=\"~ts://~ts:~B\">website root</a>.
 	  </center>

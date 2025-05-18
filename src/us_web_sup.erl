@@ -240,10 +240,14 @@ init( _Args=[ AppRunContext ] ) ->
             % Previously we were waiting here for all certificates to be
             % renewed, however it could be quite long, and in the meantime no
             % (HTTPS) website was available; however, at least in some cases,
-            % former certificates exist, and thus could be used, for shorter
-            % client-perceived downtimes.
+            % former certificates existed, and thus could in theory be used, for
+            % shorter client-perceived downtimes. However, now that LEEC uses
+            % certbot, as soon as a renewal starts, the former certificates are
+            % removed, resulting in dead symlinks found by US-Web, and the
+            % PR_END_OF_FILE_ERROR being returned to the client.
             %
-            % Now we start the HTTPS server immediately, instead of:
+            % Anyway now we still start the HTTPS server immediately, instead
+            % of:
 
 			%% receive
 

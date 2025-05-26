@@ -16,11 +16,28 @@
 # To consult them, use:
 #   $ journalctl --pager-end --unit=us-web-as-native-build.service
 
-# See also:
-#  - kill-us-web-native-build.sh
-#  - start-us-web-native-build.sh
-#  - deploy-us-web-native-build.sh
+# See also the {start,kill,monitor}-us-web.sh scripts, and the
+# get-us-web-status.sh one.
 
+
+# systemctl manages to run a root shell with no $HOME set:
+#echo "(test for $0: HOME=$HOME, USER=$USER)"
+
+if [ -z "${HOME}" ]; then
+
+	if [ "${USER}" = "root" ]; then
+
+		export HOME="/root"
+
+	else
+
+		export HOME="/home/${USER}"
+
+	fi
+
+	echo "(warning: the HOME environment variable was not set (while USER=${USER}), assigned it to ${HOME})" 1>&2
+
+fi
 
 
 # Implementation notes:
@@ -40,16 +57,28 @@
 #
 #^L
 
-# And no entered command is managed (only CTRL-C and CTL-D work), altough the
+# And no entered command is managed (only Ctrl-C and Ctrl-D work), although the
 # TERM environment variable was set before run_erl and to_erl.
 
 
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: stops a US-Web server, running as a native build, based on a US configuration directory specified on the command-line (which must end by a 'universal-server' directory), otherwise found through the default US search paths.
+kill_empd_opt="--kill-epmd"
+
+kill_empd=1
+
+erlang_epmd_port=4369
+myriad_epmd_port=4506
+
+usage="Usage: $(basename $0) [${kill_empd_opt}] [US_CONF_DIR]: stops a US-Web server, running as a native build, based on a US configuration directory specified on the command-line (which must end by a 'universal-server' directory), otherwise found through the default US search paths.
 
 The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
 
-Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config."
+Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config.
+
+The ${kill_empd_opt} option allows to kill any EPMD daemon associated to this US-Web instance, provided that it does not run on a standard port (neither the Erlang one, ${erlang_epmd_port}, nor the Myriad one, ${myriad_epmd_port}). Note that any other Erlang application using that daemon would be likely to encouter issues afterwards. This option has been added as if 'systemctl stop' can successfully stop its US-Web instance, it leaves behind its EPMD daemon, which in turn may prevent any subsequent launch of US-Web (with \"Protocol 'inet_tcp': the name us_web@xxx seems to be in use by another Erlang node\").
+"
+
+# Not necessarily run as root.
 
 
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
@@ -61,7 +90,12 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 fi
 
 
-# Not necessarily run as root.
+if [ "$1" = "${kill_empd_opt}" ]; then
+
+	kill_empd=0
+	shift
+
+fi
 
 
 # Either this script is called during development, directly from within a US-Web
@@ -98,7 +132,8 @@ fi
 
 if [ $# -gt 1 ]; then
 
-	echo "  Error, extra argument expected.
+	shift
+	echo "  Error, extra argument specified (at least $*).
 ${usage}" 1>&2
 
 	exit 10
@@ -256,13 +291,26 @@ res=$?
 
 if [ $res -eq 0 ]; then
 
-	echo "  (stop success reported)"
+	echo "  (stop success reported by client)"
 	echo
 
 	# If wanting to check or have more details:
 	#inspect_us_web_launch_outcome
 
-	exit 0
+	# Exiting with 0 is not sufficient, as we may have with other US services:
+	#
+	# run_erl[xxx]: Erlang closed the connection.
+	# systemd[1]: us-xxx-as-native-build.service: Main process exited,
+	# code=exited, status=1/FAILURE
+	# us-xxx-as-native-build.service: Failed with result 'exit-code'.
+	#
+	# and, most probably because of that, systemd considers that the stop
+	# failed.
+	#
+	# Best solution could be getting rid of this systemd non-sense.
+
+	#exit 0
+	res=0
 
 else
 
@@ -284,39 +332,12 @@ fi
 #/bin/cp -f "${backup_vm_args_file}" "${vm_args_file}"
 
 
-# Unfortunately, at least in some cases, EPMD will believe that this just
-# shutdown US-Web instance is still running; as the next epmd command may not
-# work (if -relaxed_command_check was not used at EPMD startup; we nevertheless
-# ensure that it is the case if using our start scripts), the only remaining
-# solution would be to kill this EPMD; yet this may impact other running Erlang
-# applications (see kill-us-web.sh to minimise the harm done), so it is not done
-# here.
-
-# Previously any (possibly the default) US-level EPMD port applied here, now the
-# US-Web one applies unconditionally:
-
-#if [ -n "${us_web_epmd_port}" ]; then
-
-#   echo "Using user-defined US-Web EPMD port ${us_web_epmd_port}."
-#   export ERL_EPMD_PORT="${us_web_epmd_port}"
-
-#else
-
-#   # Using the default US-Web EPMD port (see the EPMD_PORT make variable),
-#   # supposing that the instance was properly launched (see the 'launch-epmd'
-#   # make target):
-
-#   echo "Using default US-Web EPMD port ${default_us_web_epmd_port}."
-
-#   export ERL_EPMD_PORT="${default_us_web_epmd_port}"
-
-#fi
 
 # Already resolved by us-web-common.sh:
 echo "Using, for the US-Web EPMD port, ${us_web_epmd_port}."
 export ERL_EPMD_PORT="${us_web_epmd_port}"
 
-if ! ${epmd} -stop us_web; then
+if ! ${epmd} -stop us_web 1>/dev/null; then
 
 	echo "  Error while unregistering the US-Web server from the EPMD daemon at port ${ERL_EPMD_PORT}." 1>&2
 
@@ -324,6 +345,46 @@ if ! ${epmd} -stop us_web; then
 
 fi
 
+
+# ERL_EPMD_PORT already set, expecting no more name registered:
+echo "Listing EPMD names:"
+${epmd} -names
+
+# Unfortunately, at least in some cases (constantly at least with our settings),
+# EPMD will believe that this just shutdown US-Web instance is still running; as
+# the next epmd command may not work (if -relaxed_command_check was not used at
+# EPMD startup; we nevertheless ensure that it is the case if using our start
+# scripts), the only remaining solution would be to kill this EPMD.
+#
+# As this may impact other running Erlang applications (see kill-us-web.sh to
+# minimise the harm done), it was planned to do it there iff the option is
+# enabled and the EPMD port is not standard.
+#
+# However we noticed that kill-us-web.sh is always sufficient - whereas it does
+# not kill EPMD; perhaps this comes from its way of killing US-Web. Anyway, as a
+# consequence, we do kill EPMD here either.
+
+if [ $kill_empd -eq 0 ]; then
+
+	if [ "${us_web_epmd_port}" = "${erlang_epmd_port}" ] || [ "${us_web_epmd_port}" = "${myriad_epmd_port}" ]; then
+
+		echo "  Warning: EPMD supposed to be killed, but its port (${us_web_epmd_port}) is a standard one, hence no attempt to kill this daemon is made." 1>&2
+
+	else
+
+		#echo "  Warning: currently never killing EPMD (even on port ${us_web_epmd_port}). We recommend executing kill-us-web.sh prior to any start thereof." 1>&2
+
+		echo "(requesting EPMD kill)"
+
+        # ERL_EPMD_PORT already set:
+		${epmd} -kill
+
+	fi
+
+fi
+
 # kill-us-web.sh may also be your last-resort friend.
+
+echo "(exiting with code ${res})"
 
 exit ${res}

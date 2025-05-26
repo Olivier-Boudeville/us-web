@@ -23,6 +23,26 @@
 #    lingers
 
 
+# systemctl manages to run a root shell with no $HOME set:
+# echo "(test for $0: HOME=$HOME, USER=$USER)"
+
+if [ -z "${HOME}" ]; then
+
+	if [ "${USER}" = "root" ]; then
+
+		export HOME="/root"
+
+	else
+
+		export HOME="/home/${USER}"
+
+	fi
+
+	echo "(warning: the HOME environment variable was not set (while USER=${USER}), assigned it to ${HOME})" 1>&2
+
+fi
+
+
 # Either this script is called during development, directly from within a US-Web
 # installation, in which case this installation shall be used, or (typically if
 # called through systemd) the standard US-Web base directory shall be targeted:
@@ -36,13 +56,13 @@ local_us_web_install_root="${this_script_dir}/../.."
 if [ -d "${local_us_web_install_root}/priv" ]; then
 
 	us_web_install_root="$(realpath ${local_us_web_install_root})"
-	echo "Selecting US-Web development native build in clone-local '${us_web_install_root}'."
+	echo "(selecting US-Web development native build in clone-local '${us_web_install_root}')"
 
 else
 
 	# The location enforced by deploy-us-web-native-build.sh:
 	us_web_install_root="/opt/universal-server/us_web-native-deployment/us_web"
-	echo "Selecting US-Web native build in standard server location '${us_web_install_root}'."
+	echo "(selecting US-Web native build in standard server location '${us_web_install_root}')"
 
 	if [ ! -d "${us_web_install_root}/priv" ]; then
 
@@ -55,11 +75,16 @@ else
 fi
 
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (note that the final directory of this path must be 'universal-server'), otherwise found through the default US search paths.
+kill_prior_opt="--kill-prior-instance"
+kill_prior=1
+
+usage="Usage: $(basename $0) [${kill_prior_opt}] [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (note that the final directory of this path must be 'universal-server'), otherwise found through the default US search paths.
 
 The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
 
 Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config.
+
+The ${kill_prior_opt} option allows killing any previous US-Web instance (useful with systemctl, with which a possibly lingering one may reported by EPMD).
 
 This script must be run as root."
 
@@ -69,6 +94,23 @@ if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
 	echo "${usage}"
 
 	exit 0
+
+fi
+
+if [ "$1" = "${kill_prior_opt}" ]; then
+
+	kill_prior=0
+	shift
+
+fi
+
+if [ $# -gt 1 ]; then
+
+	shift
+	echo "  Error, extra parameters specified (at least $*).
+${usage}" 1>&2
+
+	exit 3
 
 fi
 
@@ -180,6 +222,26 @@ read_us_config_file "${maybe_us_config_dir}" #1>/dev/null
 read_us_web_config_file #1>/dev/null
 
 secure_authbind
+
+if [ $kill_prior -eq 0 ]; then
+
+	# Not using $(dirname $0), which can be /usr/local/bin, with not all
+	# scripts:
+	#
+	kill_script="$(PATH=${us_web_install_root}/priv/bin:${PATH} which kill-us-web.sh 2>/dev/null)"
+
+	if [ ! -x "${kill_script}" ]; then
+
+		echo "  Error, the script to kill any prior US-Web instance could not be found." 1>&2
+
+		exit 40
+
+	fi
+
+	"${kill_script}" $*
+
+fi
+
 
 prepare_us_web_launch
 

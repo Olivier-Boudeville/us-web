@@ -2336,7 +2336,8 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
 
 -doc """
 Transforms specified dispatch routes into corresponding rules, that is replaces
-the original handlers (name and initial state) with specified forwarding ones.
+the original handlers (name and initial state) with the specified forwarding
+ones.
 
 Typically useful to mimic routes to be used for https into purely-forwarding
 ones to be used as their http counterparts.
@@ -2424,7 +2425,7 @@ set_as_forward_paths(
 Returns the path match that shall be used in order to answer ACME challenges
 from Let's Encrypt from a LEEC FSM.
 
-See <https://leec.esperide.org/#usage-example>.
+See [https://leec.esperide.org/#usage-example].
 """.
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->

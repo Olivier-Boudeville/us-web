@@ -61,6 +61,13 @@ init( Req, _HandlerState=CertManagerPid ) ->
 				"certificate manager ~w", [ CertManagerPid ] ),
 				_Categ="LEEC handler" ) ),
 
+    % Force-enabled to investigate why so many challenges are requested:
+	%cond_utils:if_defined( us_web_debug_handlers,
+        trace_bridge:debug_fmt(
+            "Request ~p to be handled on behalf of LEEC, while "
+            "handler state is the PID of the associated certificate "
+            "manager: ~w.", [ Req, CertManagerPid ] ), % ),
+
     % Apparently in some cases the current thumbprint challenges are requested
     % (through an access to the ACME URL for tokens) whereas they should not
     % (just roughly one week after the certificate generation).
@@ -76,11 +83,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	%
 	CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
 
-	%cond_utils:if_defined( us_web_debug_handlers,
-        trace_bridge:debug_fmt(
-		"Request ~p to be handled on behalf of LEEC, while "
-		"handler state is the PID of the associated certificate manager: ~w.",
-		[ Req, CertManagerPid ] ), % ),
+    % Suspected to be sometimes killed before reaching further.
 
 	BinHost = cowboy_req:host( Req ),
 

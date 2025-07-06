@@ -817,6 +817,16 @@ For that one should execute the `generate-us-web-log-report.sh <https://github.c
 
 
 
+------------------
+Cowboy Information
+------------------
+
+`Cowboy <https://ninenines.eu/>`_ is the HTTP server used internally by US-Web.
+
+We recommend the reading of the `usage examples <https://github.com/ninenines/cowboy/blob/master/examples/README.asciidoc>`_ of Cowboy.
+
+
+
 .. _`Nitrogen-based`:
 
 ----------------

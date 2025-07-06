@@ -10,6 +10,9 @@
 # easily specific directories (e.g. for the VM logs).
 
 
+#echo "### US-Web script being sourced."
+
+
 # We expect us_web_install_root to be already set by the caller:
 if [ -z "${us_web_install_root}" ]; then
 
@@ -79,6 +82,7 @@ us_common_script="${us_common_root}/priv/bin/us-common.sh"
 
 if [ -f "${us_common_script}" ]; then
 
+	#echo "### Sourcing now ${us_common_script}"
 	. "${us_common_script}" 1>/dev/null
 
 else
@@ -139,38 +143,47 @@ read_us_web_config_file()
 	us_web_base_content=$(/bin/cat "${us_web_config_file}" | sed 's|^[[:space:]]*%.*||1')
 
 
-	# The EPMD port (possibly already set at the overall US-level) may be
-	# overridden here in US-Web, so that it does not clash with the one of any
-	# other US-* application (e.g. US-Main).
+	# The EPMD port (possibly already set at the overall US-level) is actually
+	# never used here, as either it is overridden for US-Web here, or the
+	# default US-Web one applies.
+	#
+	# Interest: not clashing with the one of any other US-* application
+	# (e.g. US-Main).
+	#
+	us_web_epmd_port=$(echo "${us_web_base_content}" | grep epmd_port | sed 's|^[[:space:]]*{[[:space:]]*epmd_port,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
 
-	us_web_erl_epmd_port=$(echo "${us_web_base_content}" | grep epmd_port | sed 's|^[[:space:]]*{[[:space:]]*epmd_port,[[:space:]]*||1' | sed 's|[[:space:]]*}.$||1')
-
-	if [ -z "${us_web_erl_epmd_port}" ]; then
+	if [ -z "${us_web_epmd_port}" ]; then
 
 		#echo "No US-Web level Erlang EPMD port specified."
 
+		# Previously any (possibly the default) US-level EPMD applied in this
+		# case, now the US-Web one applies:
+
 		# Applying defaults iff US-Common did not already:
-		if [ -n "${erl_epmd_port}" ]; then
+		#if [ -n "${erl_epmd_port}" ]; then
 
-			# Keeping US-Common defaults:
-			us_web_erl_epmd_port="${erl_epmd_port}"
+		#   # Keeping US-Common defaults:
+		#   us_web_epmd_port="${erl_epmd_port}"
 
-		else
+		#else
 
-			echo "No Erlang EPMD port specified at any US level, applying defaults (port ${default_us_web_epmd_port})."
+		#	echo "No Erlang EPMD port specified at any US level, applying defaults (port ${default_us_web_epmd_port})."
 
-			us_web_erl_epmd_port="${default_us_web_epmd_port}"
+		#   us_web_epmd_port="${default_us_web_epmd_port}"
 
-		fi
+		#fi
+
+		echo "No US-Web level Erlang EPMD port specified, applying the default US-Web one, ${default_us_web_epmd_port}."
+		us_web_epmd_port="${default_us_web_epmd_port}"
 
 	fi
 
 	# For shell-like uses:
-	epmd_opt="ERL_EPMD_PORT=${us_web_erl_epmd_port}"
+	epmd_opt="ERL_EPMD_PORT=${us_web_epmd_port}"
 	#echo "epmd_opt = ${epmd_opt}"
 
 	# For make uses:
-	epmd_make_opt="EPMD_PORT=${us_web_erl_epmd_port}"
+	epmd_make_opt="EPMD_PORT=${us_web_epmd_port}"
 
 
 
@@ -187,7 +200,7 @@ read_us_web_config_file()
 
 		fi
 
-		echo "No web username specified, using current one, '${us_web_username}'."
+		echo "No US-Web username specified, using current one, '${us_web_username}'."
 
 	else
 
@@ -292,7 +305,7 @@ read_us_web_config_file()
 
 
 	# VM-level logs (not based on us_web_log_dir - which is dedicated to the
-	# web-related ones):
+	# US-Web applicative ones):
 	#
 	# (note that us_web_vm_log_dir is for US-Web what us_log_dir is for
 	# US-Common)
@@ -399,34 +412,42 @@ read_us_web_config_file()
 
 		us_web_log_dir="/var/log/universal-server/us-web"
 		echo "No base directory specified for web logs (no 'us_web_log_dir' entry in the US-Web configuration file '${us_web_config_file}'), trying default log directory '${us_web_log_dir}'."
+		mkdir -p "${us_web_log_dir}"
 
 	else
 
+		#echo "Read for US-web log dir '${us_web_log_dir}'."
+
 		# Checks whether absolute:
-		if [[ "${us_web_log_dir:0:1}" == / || "${us_web_log_dir:0:2}" == ~[/a-z] ]]; then
+		case "${us_web_log_dir}" in
 
-			echo "Using directly specified directory for web logs, '${us_web_log_dir}'."
+			/*)
+				echo "Using directly specified absolute directory for US-Web logs, '${us_web_log_dir}'."
+				;;
+			*)
+				# If it is relative, it is relative to the US-Web application
+				# base directory:
+				#
+				us_web_log_dir="${us_web_app_base_dir}/${us_web_log_dir}"
+				echo "Using specified directory for US-Web logs (made absolute), '${us_web_log_dir}'."
+				;;
 
-		else
-
-			# If it is relative, it is relative to the US-Web application base
-			# directory:
-			#
-			us_web_log_dir="${us_web_app_base_dir}/${us_web_log_dir}"
-			echo "Using specified directory for web logs (made absolute), '${us_web_log_dir}'."
-
-		fi
+		esac
 
 	fi
 
 	if [ ! -d "${us_web_log_dir}" ]; then
 
-		echo "  Error, no US-Web log directory (for web-level logs) found ('${us_web_log_dir}')." 1>&2
-		exit 160
+		#echo "  Error, no US-Web log directory (for non-VM logs) found ('${us_web_log_dir}')." 1>&2
+		#exit 160
+
+		# Better to auto-create then:
+		echo "  Warning: no US-Web log directory (for non-VM logs) found ('${us_web_log_dir}')." 1>&2
+		mkdir -p "${us_web_log_dir}"
 
 	fi
 
-	echo "US-Web (web-level) logs expected in the '${us_web_log_dir}' directory."
+	echo "US-Web applicative logs expected in the '${us_web_log_dir}' directory."
 
 	# Defined for all script users:
 	trace_file="${us_web_log_dir}/us_web.traces"
@@ -593,11 +614,12 @@ prepare_us_web_launch()
 }
 
 
-# Inspects the VM logs of US-Web (beware of ancient entries being displayed).
+# Inspects the VM logs of US-Web (beware of ancient entries being displayed),
+# and possibly the related EPMD port.
 #
 # read_us_web_config_file must have been run beforehand.
 #
-inspect_us_web_log()
+inspect_us_web_launch_outcome()
 {
 
 	# (run_erl.log not that useful)
@@ -640,16 +662,8 @@ inspect_us_web_log()
 
 	if [ -f "${us_web_vm_log_file}" ]; then
 
-		if [ -n "${erl_epmd_port}" ]; then
-			echo "EPMD names output (on port ${erl_epmd_port}):"
-			epmd_port_opt="-port ${erl_epmd_port}"
-		else
-			echo "EPMD names output (on default US-Web port ${erl_epmd_port}):"
-			epmd_port_opt="-port ${default_us_web_epmd_port}"
-		fi
-
-		${epmd} ${epmd_port_opt} -names
-
+		echo "US-Web EPMD names output:"
+		${epmd} -port ${us_web_epmd_port} -names
 
 		echo
 		echo "Displaying the end of '${us_web_vm_log_file}':"

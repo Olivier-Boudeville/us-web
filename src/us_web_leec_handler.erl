@@ -61,6 +61,17 @@ init( Req, _HandlerState=CertManagerPid ) ->
 				"certificate manager ~w", [ CertManagerPid ] ),
 				_Categ="LEEC handler" ) ),
 
+    % Force-enabled to investigate why so many challenges are requested:
+	%cond_utils:if_defined( us_web_debug_handlers,
+        trace_bridge:debug_fmt(
+            "Request ~p to be handled on behalf of LEEC, while "
+            "handler state is the PID of the associated certificate "
+            "manager: ~w.", [ Req, CertManagerPid ] ), % ),
+
+    % Apparently in some cases the current thumbprint challenges are requested
+    % (through an access to the ACME URL for tokens) whereas they should not
+    % (just roughly one week after the certificate generation).
+
 	% We request the corresponding challenge to the associated (stable, fixed)
 	% certificate manager, which will send in turn a corresponding request to
 	% the (current, possibly respawning) LEEC FSM that will answer directly to
@@ -72,10 +83,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	%
 	CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
 
-	cond_utils:if_defined( us_web_debug_handlers, trace_bridge:debug_fmt(
-		"Request ~p to be handled on behalf of LEEC, while "
-		"handler state is the PID of the associated certificate manager: ~w.",
-		[ Req, CertManagerPid ] ) ),
+    % Suspected to be sometimes killed before reaching further.
 
 	BinHost = cowboy_req:host( Req ),
 
@@ -96,7 +104,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 	end,
 
-	ChallengeTimeout = 30000,
+	ChallengeTimeoutMs = 30000,
 
 	% Returns 'error' if token+thumbprint are not available, or 'no_challenge'
 	% if being in 'idle' state:
@@ -104,9 +112,9 @@ init( Req, _HandlerState=CertManagerPid ) ->
 	Thumbprints = receive
 
 		{ leec_result, Thmbprnts } ->
-			cond_utils:if_defined( us_web_debug_handlers,
+			%cond_utils:if_defined( us_web_debug_handlers,
 				trace_bridge:debug_fmt( "Received thumbprints: ~p.",
-										[ Thmbprnts ] ) ),
+										[ Thmbprnts ] ), % ),
 			Thmbprnts
 
 		% Just for debugging:
@@ -115,12 +123,12 @@ init( Req, _HandlerState=CertManagerPid ) ->
 		%       "thumbprints: ~p.", [ Other ] ),
 		%   throw( { unexpected_thumbprint_answer, Other } )
 
-	after ChallengeTimeout ->
+	after ChallengeTimeoutMs ->
 		trace_bridge:error_fmt( "Time-out, no challenge received "
 			"for host '~ts' after ~ts.",
-			[ BinHost, time_utils:duration_to_string( ChallengeTimeout ) ] ),
+			[ BinHost, time_utils:duration_to_string( ChallengeTimeoutMs ) ] ),
 
-		throw( { challenge_timeout_for, BinHost, ChallengeTimeout } )
+		throw( { challenge_timeout_for, BinHost, ChallengeTimeoutMs } )
 
 	end,
 
@@ -148,7 +156,7 @@ init( Req, _HandlerState=CertManagerPid ) ->
 
 
 
--doc "Handles specified request (not expected to be used).".
+-doc "Handles the specified request (not expected to be used).".
 handle( Req, HandlerState ) ->
 	trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
 	{ ok, Req, HandlerState }.

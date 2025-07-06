@@ -1,4 +1,4 @@
-name: Erlang CI
+name: US-Web CI
 
 on:
   push:
@@ -9,7 +9,12 @@ on:
 jobs:
 
   build:
-
+    # Relying on a standard GitHub-hosted runner, see
+    # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#standard-github-hosted-runners-for-public-repositories
+    #
+    # The actual OS is dictated by the image, which is currently reported as a
+    # Debian distribution (currently: bookworm).
+    #
     runs-on: ubuntu-latest
 
     # See https://hub.docker.com/_/erlang:
@@ -22,7 +27,7 @@ jobs:
       run: |
         echo "Checking distribution and version"
         cat /etc/*-release
-        # Actually does not look as an Ubuntu but a Debian:
+        # Actually does not look as an Ubuntu but as a Debian:
         #echo "## Listing repositories: $(cat /etc/apt/sources.list)"
         #echo "## Updating packages (1/2)"
         #apt-get update
@@ -34,23 +39,53 @@ jobs:
         #apt-get update
         echo "## Updating packages"
         apt-get update
-        apt-get install --assume-yes tree
-        rebar3 compile
+        apt-get install --assume-yes sudo tree
+        echo " - running as: $(id)"
         echo " - building from: $(pwd)"
+        echo " - content of this directory: $(ls . 2>/dev/null | tr '\n' ' ')"
         echo " - content of parent directory: $(ls .. 2>/dev/null | tr '\n' ' ')"
-        echo " - content of _checkouts directory: $(ls _checkouts 2>/dev/null)"
-        echo " - content of _build/default/lib directory: $(ls _build/default/lib 2>/dev/null)"
-        make info-context
-    - name: Run tests
-      run: |
+        # For example '/github/home':
+        echo " - home is: ${HOME}"
+        # This corresponds to the (absolute) root directory of the (initial,
+        # CI-made) US-Web clone; for example '/__w/us-web/us-web':
         base_dir="$(pwd)"
-        echo "Base directory is: '${base_dir}'."
+        echo " - base (initial) directory: ${base_dir}"
+        # We will need proper US-Web and also US-Common configuration files;
+        # the former can be found in the present clone, but the latter would
+        # require a US-Common clone, which will be available only later, once
+        # the deployment has been done. So we create a minimum version thereof
+        # directly here:
+        #
         cfg_dir="${HOME}/.config/universal-server/"
-        echo "Configuration directory is: '${cfg_dir}'."
-        us_common_base_dir="${base_dir}/_build/default/lib/us_common"
+        echo " - configuration directory: ${cfg_dir}"
         mkdir -p "${cfg_dir}"
         cd "${cfg_dir}"
-        ln -s "${us_common_base_dir}/priv/for-testing/us.config"
-        ln -s "${base_dir}/priv/for-testing/us-web-for-tests.config"
+        ln -s "${base_dir}/priv/conf/us-web-for-tests.config"
+        # Derived from us_common/priv/for-testing/us.config, as we need a proper
+        # us.config file:
+        echo '{us_web_config_filename, "us-web-for-tests.config"}.' > "${cfg_dir}/us.config"
+        # Way too much troubles with: 'rebar3 compile' (faulty attempts to
+        # look-up/rebuild sources of already-built layers), so we use our own
+        # deployment script.
+        #
+        # Here we chose to force our own test path (resulting for example in
+        # /github/home/us_web-native-deployment-20250420'):
+        #
+        test_tree="${HOME}"
+        mkdir -p "${test_tree}"
+        export USER="$(id -nu)"
+        echo "Deploying as ${USER} in '${test_tree}'."
+        "${base_dir}/priv/bin/deploy-us-web-native-build.sh" --no-launch --allow-root-exec "${test_tree}"
+        #echo " - content of _checkouts directory: $(ls _checkouts 2>/dev/null)"
+        #echo " - content of _build/default/lib directory: $(ls _build/default/lib 2>/dev/null)"
         cd "${base_dir}"
+    - name: Run tests
+      run: |
+        # So now we will test based on the second US-Web tree, using the
+        # US-Web clone that we just deployed (i.e. not the initial one provided
+        # by the CI) and its other sibling clones:
+        deployed_tree="$(ls -d ${HOME}/us_web-native-deployment-*)"
+        echo "Using deployed tree '${deployed_tree}'."
+        cd "${deployed_tree}/us_web"
+        make info-context
         make test-ci NODE_NAMING="--sn"

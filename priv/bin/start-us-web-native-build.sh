@@ -2,7 +2,7 @@
 
 # Starts a US-Web instance, to be run as a native build (on the current host).
 
-# Script possibly:
+# Script typically meant to be:
 # - placed in /usr/local/bin of a gateway
 # - run from systemctl, as root, as:
 # 'systemctl start us-web-as-native-build.service'
@@ -23,29 +23,22 @@
 #    lingers
 
 
+# systemctl manages to run a root shell with no $HOME set:
+# echo "(test for $0: HOME=$HOME, USER=$USER)"
 
-usage="Usage: $(basename $0) [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (which must end by a 'universal-server' directory), otherwise found through the default US search paths.
+if [ -z "${HOME}" ]; then
 
-The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
+	if [ "${USER}" = "root" ]; then
 
-Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config."
+		export HOME="/root"
 
+	else
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+		export HOME="/home/${USER}"
 
-	echo "${usage}"
+	fi
 
-	exit 0
-
-fi
-
-
-if [ ! $(id -u) -eq 0 ]; then
-
-	# As operations like chown will have to be performed:
-	echo "  Error, this script must be run as root.
-${usage}" 1>&2
-	exit 5
+	echo "(warning: the HOME environment variable was not set (while USER=${USER}), assigned it to ${HOME})" 1>&2
 
 fi
 
@@ -63,21 +56,71 @@ local_us_web_install_root="${this_script_dir}/../.."
 if [ -d "${local_us_web_install_root}/priv" ]; then
 
 	us_web_install_root="$(realpath ${local_us_web_install_root})"
-	echo "Selecting US-Web development native build in clone-local '${us_web_install_root}'."
+	echo "(selecting US-Web development native build in clone-local '${us_web_install_root}')"
 
 else
 
 	# The location enforced by deploy-us-web-native-build.sh:
-	us_web_install_root="/opt/universal-server/us_web-native/us_web"
-	echo "Selecting US-Web native build in standard server location '${us_web_install_root}'."
+	us_web_install_root="/opt/universal-server/us_web-native-deployment/us_web"
+	echo "(selecting US-Web native build in standard server location '${us_web_install_root}')"
 
 	if [ ! -d "${us_web_install_root}/priv" ]; then
 
-		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard server location." 1>&2
+		echo "  Error, no valid US-Web native build found, neither locally (as '$(realpath ${local_us_web_install_root})') nor at the '${us_web_install_root}' standard location." 1>&2
 
 		exit 15
 
 	fi
+
+fi
+
+
+kill_prior_opt="--kill-prior-instance"
+kill_prior=1
+
+usage="Usage: $(basename $0) [${kill_prior_opt}] [US_CONF_DIR]: starts a US-Web server, to run as a native build, based on a US configuration directory specified on the command-line (note that the final directory of this path must be 'universal-server'), otherwise found through the default US search paths.
+
+The US-Web installation itself will be looked up relatively to this script, otherwise in the standard path applied by our deploy-us-web-native-build.sh script.
+
+Example: '$0 /opt/test/universal-server' is to read /opt/test/universal-server/us.config.
+
+The ${kill_prior_opt} option allows killing any previous US-Web instance (useful with systemctl, with which a possibly lingering one may reported by EPMD).
+
+This script must be run as root."
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+
+	echo "${usage}"
+
+	exit 0
+
+fi
+
+if [ "$1" = "${kill_prior_opt}" ]; then
+
+	kill_prior=0
+	shift
+
+fi
+
+if [ $# -gt 1 ]; then
+
+	shift
+	echo "  Error, extra parameters specified (at least $*).
+${usage}" 1>&2
+
+	exit 3
+
+fi
+
+
+if [ ! $(id -u) -eq 0 ]; then
+
+	# As operations like chown will have to be performed:
+	echo "  Error, this script must be run as root.
+${usage}" 1>&2
+	exit 5
 
 fi
 
@@ -180,8 +223,29 @@ read_us_web_config_file #1>/dev/null
 
 secure_authbind
 
+if [ $kill_prior -eq 0 ]; then
+
+	# Not using $(dirname $0), which can be /usr/local/bin, with not all
+	# scripts:
+	#
+	kill_script="$(PATH=${us_web_install_root}/priv/bin:${PATH} which kill-us-web.sh 2>/dev/null)"
+
+	if [ ! -x "${kill_script}" ]; then
+
+		echo "  Error, the script to kill any prior US-Web instance could not be found." 1>&2
+
+		exit 40
+
+	fi
+
+	"${kill_script}" $*
+
+fi
+
+
 prepare_us_web_launch
 
+# From us_web:
 cd src || exit 17
 
 
@@ -195,17 +259,8 @@ cd src || exit 17
 #
 make -s launch-epmd ${epmd_make_opt} || exit 18
 
-
-if [ -n "${erl_epmd_port}" ]; then
-	epmd_start_msg="configured EPMD port ${erl_epmd_port}"
-else
-	epmd_start_msg="default US-Web port ${default_us_web_epmd_port}"
-fi
-
-
 echo
-echo " -- Starting US-Web natively-built application as user '${us_web_username}', on ${epmd_start_msg}, VM log expected in '${us_web_vm_log_dir}/erlang.log.1'..."
-
+echo " -- Starting US-Web natively-built application as user '${us_web_username}', on US-Web EPMD port ${us_web_epmd_port}, VM log expected in '${us_web_vm_log_dir}/erlang.log.1'..."
 
 # A correct way of passing environment variables (despite a sudo and an
 # authbind) proved finally to specify them prior to authbind, like in:
@@ -242,13 +297,13 @@ if [ ${res} -eq 0 ]; then
 
 	echo "  (authbind success reported)"
 
-	# If wanting to check or have more details:
-	inspect_us_web_log
+	# If wanting to check logs or have more details:
+	inspect_us_web_launch_outcome
 
 	# Not wanting to diagnose too soon, otherwise we might return a failure code
 	# and trigger the brutal killing by systemd of an otherwise working us_web:
 	#
-	sleep 5
+	sleep 8
 
 	# Better diagnosis than the previous res code:
 	#
@@ -277,7 +332,7 @@ else
 	echo "  Error: authbind failure reported (code '$res')" 1>&2
 	echo
 
-	inspect_us_web_log
+	inspect_us_web_launch_outcome
 
 	exit ${res}
 

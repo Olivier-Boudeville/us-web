@@ -102,7 +102,7 @@ for a given domain.
 % (a new nonce will be obtained as soon as the next instance starts).
 
 
--doc "PID of a certificate manager.".
+-doc "The PID of a certificate manager.".
 -type manager_pid() :: class_USServer:server_pid().
 
 
@@ -129,7 +129,6 @@ main, default hostname, and per-virtual host information.
 
 -doc "Identifier of a cipher (e.g. 'AES128-SHA').".
 -type cipher_name() :: atom().
-% Identifier of a cipher (e.g. 'AES128-SHA').
 
 
 -export_type([ manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
@@ -137,7 +136,7 @@ main, default hostname, and per-virtual host information.
 
 
 
-% Shorthands:
+% Type shorthands:
 
 -type ustring() :: text_utils:ustring().
 
@@ -409,7 +408,7 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 
 
 
--doc "Initializes our LEEC private instance.".
+-doc "Initialises our LEEC private instance.".
 -spec init_leec( bin_fqdn(), cert_mode(), challenge_type(),
 		option( dns_provider() ), option( bin_directory_path() ),
 		bin_directory_path(), option( bin_file_path() ), wooper:state() ) ->
@@ -584,12 +583,17 @@ destruct( State ) ->
 	MaybeSchedPid =/= undefined andalso
 		receive
 
-			task_unregistered ->
+            { wooper_result, { task_unregistered, CertTaskId } } ->
 				ok;
 
-			{ task_unregistration_failed, Error } ->
+            % Would be surprising:
+			{ wooper_result, { task_already_done, CertTaskId } } ->
+				ok;
+
+			{ wooper_result,
+                    { task_unregistration_failed, Reason, CertTaskId } } ->
 				?error_fmt( "Unregistration of task #~B failed "
-							"at deletion: ~p.", [ CertTaskId, Error ] )
+							"at deletion: ~p.", [ CertTaskId, Reason ] )
 
 		end,
 
@@ -622,8 +626,8 @@ Renews the certificate for the managed hostname on a synchronisable manner.
 
 The specified listener is typically the US-Web configuration server, so that
 HTTPS support can be triggered only when certificates are ready and/or to ensure
-no two certificate requests overlap (to avoid hitting a rate limit regarding
-ACME servers or having concurrent certbot instances).
+that no two certificate requests overlap (to avoid hitting a rate limit
+regarding ACME servers or having concurrent certbot instances).
 """.
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
 												oneway_return().
@@ -661,6 +665,11 @@ request_certificate( State ) ->
 	% We used to rely on a synchronous (blocking) call (no callback was used),
 	% which was a mistake (this certificate manager must remain responsive here;
 	% see implementation notes); now using an asynchronous call instead.
+    %
+    % Another problem occurred then: certbot checks that only a single instance
+    % thereof exists, resulting in all of the mostly parallel certificate
+    % requests to fail except the first. Now the (US-Web) configuration server
+    % triggers the certificate renewals only in turn.
 
 	% Closure:
 	Self = self(),
@@ -694,7 +703,7 @@ request_certificate( State ) ->
 
 	% So that it is visible even in production mode:
 	?notice_fmt( "Requesting a ~ts certificate for '~ts', with following SAN "
-			"information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
+                 "information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
 
 	% We used to request a certificate directly from the initial LEEC instance,
 	% yet this is not a proper solution, as months are likely elapse between
@@ -715,7 +724,7 @@ request_certificate( State ) ->
 
 	end,
 
-
+    % Creates a linked, bridged instance of the LEEC service FSM:
 	case leec:start( ChallengeType, ?getAttr(leec_start_opts),
 					 ?getAttr(bridge_spec) ) of
 
@@ -725,6 +734,8 @@ request_certificate( State ) ->
 			?notice_fmt( "New ~ts created for '~ts'.", [ LCSStr, FQDN ] ),
 
 			try
+
+                % Should result in onCertificateRequestOutcome/2 being called:
 				async = leec:obtain_certificate_for( FQDN, LEECCallerState,
 					% An 'email' entry could be added:
 					_CertReqOptionMap=#{ async => true,
@@ -752,10 +763,12 @@ request_certificate( State ) ->
 
 
 -doc """
-Oneway called back whenever the outcome of a certificate request is known.
+Oneway called back whenever the outcome of a certificate request is known, in
+response to `request_certificate/1`.
 """.
 -spec onCertificateRequestOutcome( wooper:state(),
 			leec:obtained_outcome() ) -> oneway_return().
+% Success case:
 onCertificateRequestOutcome( State,
 		_CertObtainedOutcome={ certificate_generation_success, BinCertFilePath,
 							   BinPrivKeyFilePath } ) ->
@@ -802,8 +815,12 @@ onCertificateRequestOutcome( State,
 			State;
 
 		ListenerPid ->
-			% Most probably the US-Web server waiting in renewCertificates/1:
-			ListenerPid ! { _AckAtom=certificate_renewal_over, self() },
+			% Most probably the US-Web server, either waiting for a
+			% acknowledgement atom in renewCertificates/1 in the case of the
+			% initial certificate creations, or to be interpreted as an actual
+			% oneway call for the later, next renewals:
+            %
+			ListenerPid ! { onCertificateRenewalOver, self() },
 			setAttribute( State, renew_listener, undefined )
 
 	end,
@@ -814,6 +831,7 @@ onCertificateRequestOutcome( State,
 	wooper:return_state( NewState );
 
 
+% Failure case:
 onCertificateRequestOutcome( State,
 		_CertObtainedOutcome={ certificate_generation_failure, ErrorTerm } ) ->
 
@@ -823,7 +841,7 @@ onCertificateRequestOutcome( State,
 				[ FQDN, ErrorTerm ] ),
 
 	% Reasonable offset for next attempt:
-	RenewDelay = case ?getAttr(cert_mode) of
+	FailureRenewDelay = case ?getAttr(cert_mode) of
 
 		development ->
 			time_utils:dhms_to_seconds(
@@ -837,7 +855,7 @@ onCertificateRequestOutcome( State,
 
 	MaybeBinCertFilePath = undefined,
 
-	NewState = manage_renewal( RenewDelay, MaybeBinCertFilePath, State ),
+	NewState = manage_renewal( FailureRenewDelay, MaybeBinCertFilePath, State ),
 
 	wooper:return_state( NewState );
 
@@ -850,13 +868,18 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 
 
 
+% Manages the next renewal, either after a success (hence quite later, when the
+% obtained certificates will be not far from expiring) or after a failure (hence
+% very soon, but not too much to let any cause of problem vanish by itself while
+% reducing the risk of hitting rate limits).
+%
 % (helper)
 -spec manage_renewal( option( seconds() ), option( bin_file_path() ),
 					  wooper:state() ) -> wooper:state().
 manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
-	?notice_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
-				 [ MaybeRenewDelay ] ),
+	%?notice_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
+	%             [ MaybeRenewDelay ] ),
 
 	% In all cases we shut down our LEEC instance, as it cannot linger between
 	% longer renewals:
@@ -889,7 +912,8 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 	end,
 
 	% Switching to notice to remain available in production mode:
-	?notice( "Continuing in manage_renewal/1" ),
+	%?notice( "Continuing in manage_renewal/1" ),
+
 	SchedState = case ?getAttr(scheduler_pid) of
 
 		undefined ->
@@ -906,11 +930,15 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 					ShutState;
 
 				RenewDelay ->
-					?notice( "Preparing task"),
+					%?notice( "Preparing task"),
 
 					% A bit of interleaving:
-					SchedPid ! { registerOneshotTask, [ _Cmd=renewCertificate,
+
+                    RenewCmd = renewCertificate,
+
+					SchedPid ! { registerOneshotTask, [ RenewCmd,
 								 _Delay=RenewDelay, _ActPid=self() ], self() },
+
 					NextTimestamp = time_utils:offset_timestamp(
 						time_utils:get_timestamp(), RenewDelay ),
 
@@ -940,7 +968,7 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
 -doc """
 Requests this manager to return (indirectly, through the current LEEC FSM) the
-current thumbprint challenges to specified target process.
+current thumbprint challenges to the specified target process.
 
 Typically called from a web handler (see us_web_leec_handler, specifying its PID
 as target one) whenever the ACME well-known URL is read by an ACME server, to
@@ -962,6 +990,10 @@ getChallenge( State, TargetPid ) ->
 		leec:send_ongoing_challenges( LCS, TargetPid )
 
 	catch AnyClass:Exception:StackTrace ->
+
+        % Then probably that the target process will never receive these
+        % challenges, so it should time-out:
+
 		?error_fmt( "Sending of challenges failed, with a thrown "
 			"exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
 			[ Exception, AnyClass,
@@ -992,38 +1024,56 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 	%   {wooper_oneway_failed,<0.44.0>,class_XXX,
 	%       FunName,Arity,Args,AtomCause}}, [...]}"
 
-	FQDN = ?getAttr(fqdn),
+    % We would like to restart LEEC iff the crashed process is its FSM, yet we
+    % do not know its PID, so:
+    %
+    NonFSMMaybePids = ?getAttrList([renew_listener, scheduler_pid]),
 
-	% No need to overwhelm the ACME server in case of permacrash:
-	%WaitDurationMs = 15000,
-	% 4 hours:
-	WaitDurationMs = 4*3600*1000,
+    case lists:member( CrashPid, NonFSMMaybePids ) of
 
-	?error_fmt( "Received an exit message '~p' from ~w (for FQDN '~ts'), "
-		"starting a new LEEC instance after a delay of ~ts.",
-		[ ExitType, CrashPid, FQDN,
-		  time_utils:duration_to_string( WaitDurationMs ) ] ),
+        true ->
+            ?warning_fmt( "Received an exit message of type '~p' from "
+                "non-FSM process ~w; ignoring it.", [ ExitType, CrashPid ] ),
 
-	timer:sleep( WaitDurationMs ),
+            wooper:const_return();
 
-	{ MaybeLEECCallerState, _RenewPeriodSecs, StartOpts, _BridgeSpec } =
-		init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(challenge_type),
-			?getAttr(dns_provider), ?getAttr(credentials_dir),
-			?getAttr(cert_dir), ?getAttr(private_key_path), State ),
+        false ->
 
-	?notice_fmt( "New LEEC instance started for '~ts', "
-		"with ~ts (start options: ~p); "
-		"requesting a new certificate.",
-		[ FQDN, leec:maybe_caller_state_to_string( MaybeLEECCallerState ),
-		  StartOpts ] ),
+            FQDN = ?getAttr(fqdn),
 
-	% Immediately retries:
-	self() ! renewCertificate,
+            % No need to overwhelm the ACME server in case of permacrash:
+            %WaitDurationMs = 15000,
+            % 1 hour:
+            WaitDurationMs = 1*3600*1000,
 
-	RestartState =
-		setAttribute( State, leec_caller_state, MaybeLEECCallerState ),
+            ?error_fmt( "Received an exit message '~p' from ~w, "
+                "presumably from the LEEC FSM for FQDN '~ts'; "
+                "starting a new LEEC instance after a delay of ~ts.",
+                [ ExitType, CrashPid, FQDN,
+                  time_utils:duration_to_string( WaitDurationMs ) ] ),
 
-	wooper:return_state( RestartState ).
+            timer:sleep( WaitDurationMs ),
+
+            { MaybeLEECCallerState, _RenewPeriodSecs, StartOpts, _BridgeSpec } =
+                init_leec( FQDN, ?getAttr(cert_mode), ?getAttr(challenge_type),
+                    ?getAttr(dns_provider), ?getAttr(credentials_dir),
+                    ?getAttr(cert_dir), ?getAttr(private_key_path), State ),
+
+            ?notice_fmt( "New LEEC instance started for '~ts', "
+                "with ~ts (start options: ~p); requesting a new certificate.",
+                [ FQDN,
+                  leec:maybe_caller_state_to_string( MaybeLEECCallerState ),
+                  StartOpts ] ),
+
+            % Then immediately retries:
+            self() ! renewCertificate,
+
+            RestartState =
+                setAttribute( State, leec_caller_state, MaybeLEECCallerState ),
+
+            wooper:return_state( RestartState )
+
+    end.
 
 
 

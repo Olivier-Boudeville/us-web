@@ -26,3 +26,14 @@ src/us_web.app.src
 
 # Generated:
 conf/rebar.config
+
+doc/api-doc/
+doc/overview.edoc
+doc/universal-webserver-technical-manual-english.html
+doc/universal-webserver-technical-manual-english.pdf
+doc/universal-webserver-technical-manual-english.rst
+doc/universal-webserver-technical-manual-english.aux
+doc/universal-webserver-technical-manual-english.tex
+doc/universal-webserver-technical-manual-english.toc
+
+priv/for-testing/

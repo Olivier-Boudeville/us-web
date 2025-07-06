@@ -773,7 +773,12 @@ renewCertificates( State ) ->
 	case wooper:send_acknowledged_oneway_in_turn(
 			_OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
 			_TargetInstancePIDs=CertManagers, MaxDurationInMs,
-			_AckAtom=certificate_renewal_over ) of
+            % Now labelled as a (oneway) method (rather than the previous
+            % on_certificate_renewal_over atom), since rescheduled renewals will
+            % sent it as well, and thus it will be then interpreted as a oneway
+            % call:
+            %
+			_AckAtom=onCertificateRenewalOver ) of
 
 		[] ->
 			?notice_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
@@ -790,6 +795,37 @@ renewCertificates( State ) ->
 
 	% Note the plural in atom:
 	wooper:const_return_result( certificate_renewals_over ).
+
+
+
+-doc """
+Triggered by a certificate manager once its last attempt (successful or not) of
+certification renewal finished.
+
+For the initial creation of certificates, the corresponding incoming message has
+been interpreted as an acknowledgement atom (see `renewCertificates/1`), whereas
+here this message triggered this oneway.
+
+It should correspond to a certificate actual renewal (rather than to an initial
+creation attempt), either after a previous failure or as a normal anticipation
+of expiration.
+
+This may also (albeit this would be less likely) correspond, in the context of
+the initial certificate creations, to a late acknowledgement being received if
+ever a certificate manager finished - yet too late for `renewCertificates/1`
+(after it timed-out).
+""".
+ -spec onCertificateRenewalOver( wooper:state(), pid() ) ->
+                                            const_oneway_return().
+onCertificateRenewalOver( State, CertManagerPid ) ->
+
+    ?debug_fmt( "Received from certificate manager ~w a notification "
+        "regarding the outcome of a certificate renewal.", [ CertManagerPid ] ),
+
+    % This call can be ignored, and the certificate managers are in charge of
+    % the renewal planning.
+
+    wooper:const_return().
 
 
 
@@ -2300,7 +2336,8 @@ get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
 
 -doc """
 Transforms specified dispatch routes into corresponding rules, that is replaces
-the original handlers (name and initial state) with specified forwarding ones.
+the original handlers (name and initial state) with the specified forwarding
+ones.
 
 Typically useful to mimic routes to be used for https into purely-forwarding
 ones to be used as their http counterparts.
@@ -2388,7 +2425,7 @@ set_as_forward_paths(
 Returns the path match that shall be used in order to answer ACME challenges
 from Let's Encrypt from a LEEC FSM.
 
-See <https://leec.esperide.org/#usage-example>.
+See [https://leec.esperide.org/#usage-example].
 """.
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->

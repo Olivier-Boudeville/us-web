@@ -114,7 +114,7 @@ endif
 # and the code itself, see
 # class_USWebConfigServer:get_us_web_version{_string,}/0):
 #
-US_WEB_VERSION := 1.1.5
+US_WEB_VERSION := 1.1.6
 
 
 # PROJECT_VERSION should be defined on a per-project basis:
@@ -185,8 +185,9 @@ MONITOR_SCRIPT = $(US_WEB_TOP)/priv/bin/monitor-us-web.sh
 
 
 # jsx section, now that installed separately (rebar3 having been dropped).
-
-JSX_BEAM_DIR := $(US_WEB_TOP)/../jsx/ebin
+# (not needed anymore, relying on the 'json' built-in module now)
+#
+#JSX_BEAM_DIR := $(US_WEB_TOP)/../jsx/ebin
 
 
 # Nitrogen section.
@@ -213,7 +214,9 @@ US_WEB_BEAM_DIRS := $(US_WEB_BEAM_DIR) $(US_WEB_TOP)/..
 # We rely on Myriad, WOOPER, Traces and US-Common as well, and, if enabled,
 # Nitrogen:
 #
-BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(JSX_BEAM_DIR) $(NITROGEN_BEAM_DIRS)
+# ($(JSX_BEAM_DIR) is obsolete)
+#
+BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(NITROGEN_BEAM_DIRS)
 
 
 # As behaviour-defining modules (such as the nitrogen_core's route_handler one)
@@ -222,30 +225,36 @@ BEAM_DIRS += $(US_WEB_BEAM_DIRS) $(JSX_BEAM_DIR) $(NITROGEN_BEAM_DIRS)
 #
 NITROGEN_BEHAVIOUR_OPT = -pz $(NITROGEN_CORE_TOP)/ebin
 
-ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
+ifeq ($(USE_NITROGEN),true)
+
+    ERLANG_COMPILER_EXTRA_OPTS = $(NITROGEN_BEHAVIOUR_OPT)
+
+endif
 
 
-# This is the US-Web specific EPMD port, different from the default Myriad one
-# and from the one of our other applications, so that we can act upon the US-Web
-# EPMD without interfering with others (see also the 'launch-epmd' make target):
+# This is the US-Web specific default EPMD port, different from the default
+# Myriad one and from the one of the other US applications, so that we can act
+# upon the US-Web EPMD without interfering with others (see also the
+# 'launch-epmd' make target):
 #
 EPMD_PORT := 4508
 
 
-
+# No $(LAYER_TOP) in includes, it would be misleading as edoc is run from the
+# clone root, not from doc:
+#
 ifndef EDOC_OPTS
-	EDOC_OPTS = '[{dir,"$(API_DOC_ROOT)"}, {def,{vsn,"$(PROJECT_VERSION)"}}, {preprocess,true}, {macros,[{$(PROJECT_EDOC_VERSION_KEY),"$(PROJECT_VERSION)"}]}, {includes,["$(LAYER_TOP)/include", "$(US_COMMON_TOP)/.."]}, {overview, "$(LAYER_TOP)/overview.edoc"}]'
+	EDOC_OPTS = '[{dir,"$(API_DOC_ROOT)"}, {def,{vsn,"$(PROJECT_VERSION)"}}, {preprocess,true}, {macros,[{$(PROJECT_EDOC_VERSION_KEY),"$(PROJECT_VERSION)"}]}, {includes,["..", "$(US_COMMON_TOP)/..", "$(TRACES_TOP)/..", "$(WOOPER_TOP)/..", "$(MYRIAD_TOP)/.."]}, {overview, "doc/overview.edoc"}]'
 endif
 
 
 # The default path where a US-Web native build is to be deployed on a server:
 # (useful to synchronise sources)
 #
-US_NATIVE_DEPLOY_ROOT := /opt/universal-server/$(PROJECT_SHORT_NAME)-native
+US_NATIVE_DEPLOY_ROOT := /opt/universal-server/$(PROJECT_SHORT_NAME)-native-deployment
 
 # For Myriad' sync-all-to-server target, if used:
 CEYLAN_SYNC_TARGET_ROOT := $(US_NATIVE_DEPLOY_ROOT)
-
 
 
 # For later reuse in the next layer of the software stack:
@@ -298,7 +307,9 @@ endif
 # is autodetected by the make system, knowing that jsx will be automatically
 # found at runtime as an OTP application dependency of LEEC (see otp_utils).
 #
-JSX_TOP = $(space)
+# (now obsolete)
+#
+#JSX_TOP = $(space)
 
 # We do the same as US-Web for LEEC:
 ifneq ($(wildcard $(US_WEB_TOP)/_checkouts/leec/.),)

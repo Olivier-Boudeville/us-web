@@ -123,7 +123,7 @@ test_us_web_application( OrderedAppNames ) ->
 	% US-related elements:
 	%
 	USCfgSrvPid = naming_utils:wait_for_registration_of( USCfgRegName,
-		naming_utils:registration_to_look_up_scope( USCfgRegScope ) ),
+		naming_utils:registration_to_lookup_scope( USCfgRegScope ) ),
 
 	% The top-level user process may not be aware that an OTP application fails
 	% (e.g. because its main process crashed), which is a problem for a test. So
@@ -136,14 +136,14 @@ test_us_web_application( OrderedAppNames ) ->
 
 	% First the US-Web configuration server:
 	USWebCfgSrvPid = naming_utils:wait_for_registration_of( USWebCfgRegName,
-		naming_utils:registration_to_look_up_scope( USWebCfgRegScope ) ),
+		naming_utils:registration_to_lookup_scope( USWebCfgRegScope ) ),
 
 	erlang:link( USWebCfgSrvPid ),
 
 	% Then the US-Web scheduler:
 
 	USWebSchedPid = naming_utils:wait_for_registration_of( USWebSchedRegName,
-		naming_utils:registration_to_look_up_scope( USWebSchedRegScope ) ),
+		naming_utils:registration_to_lookup_scope( USWebSchedRegScope ) ),
 
 	erlang:link( USWebSchedPid ),
 

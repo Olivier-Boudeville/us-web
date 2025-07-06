@@ -97,7 +97,7 @@ exec() ->
 	UWCfgRegScope = ?us_web_config_server_registration_scope,
 
 	UWCfgPid = naming_utils:get_registered_pid_for( UWCfgRegName,
-		naming_utils:registration_to_look_up_scope( UWCfgRegScope ) ),
+		naming_utils:registration_to_lookup_scope( UWCfgRegScope ) ),
 
 	%trace_utils:debug_fmt( "Found PID of US-Web configuration server: ~w.",
 	%                       [ UWCfgPid ] ),

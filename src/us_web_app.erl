@@ -39,12 +39,6 @@ Typically triggered:
 -export([ exec/0, start/2, stop/1 ]).
 
 
-% Type shorthand:
-
--type application_name() :: otp_utils:application_name().
-
-
-
 % Implementation notes:
 %
 % We define two starting procedures here:
@@ -61,6 +55,11 @@ Typically triggered:
 
 % Silencing:
 -export([ start_application/1 ]).
+
+
+% Type shorthand:
+
+-type application_name() :: otp_utils:application_name().
 
 
 

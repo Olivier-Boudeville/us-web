@@ -13,14 +13,17 @@
 default-us-web-rule: all
 
 
-# Create a _checkouts directory in which all Ceylan and US dependencies for the
-# current layer are referenced through a symlink.
+# Create, in the context of any rebar3-based US build, a _checkouts directory in
+# which all Ceylan and US dependencies for the current layer are referenced
+# through a symlink, to point to external clones.
 #
 # This should take care automatically of myriad, wooper, traces, us_common, and
 # leec.
+#
+# (jsx not used anymore, so no symlink for it)
 #
 create-us-web-checkout:
 	@echo "  Creating a checkout directory for US-Web"
 	@$(MAKE) -s create-us-common-checkout
 	@cd _checkouts && ln -sf ../$(US_COMMON_TOP) && ln -sf ../$(LEEC_TOP)
-	@echo "  Please add, in the _checkouts directory, symlinks for jsx and cowboy (typically pointing to respective clones in ~/Software)."
+	@echo "  Please add, in the _checkouts directory, a symlink for cowboy (pointing to a clone of it, typically in ~/Software)."

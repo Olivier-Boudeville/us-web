@@ -1162,7 +1162,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	% Checks that only pairs are found:
 	WebCfgTable = table:new_from_unique_entries(
-		file_utils:read_terms( WebCfgFilePath ) ),
+		file_utils:read_etf_file( WebCfgFilePath ) ),
 
 	?debug_fmt( "Read web configuration ~ts",
 				[ table:to_string( WebCfgTable ) ] ),
@@ -3888,7 +3888,7 @@ get_configuration_table( USCfgTable, BinCfgDir ) ->
 
 					% Ensures as well that all top-level terms are pairs indeed:
 					ConfigTable = table:new_from_unique_entries(
-						file_utils:read_terms( WebCfgFilePath ) ),
+						file_utils:read_etf_file( WebCfgFilePath ) ),
 
 					{ ok, { ConfigTable, WebCfgFilePath } };
 

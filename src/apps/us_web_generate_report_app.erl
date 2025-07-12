@@ -59,7 +59,7 @@ exec() ->
 	{ CfgFilePath, MaybeDomainBinStr, MaybeHostBinStr } =
 		init_from_command_line(),
 
-	Cfg = file_utils:read_terms( CfgFilePath ),
+	Cfg = file_utils:read_etf_file( CfgFilePath ),
 
 	%trace_utils:debug_fmt( "Read configuration from '~ts': ~p",
 	%                       [ CfgFilePath, Cfg ] ),

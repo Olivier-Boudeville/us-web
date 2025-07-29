@@ -284,7 +284,7 @@ configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
 
 -doc "Tells whether the generation of a log analysis report succeeded.".
 -type report_generation_outcome() :: 'report_generation_success'
-	| { 'report_generation_failed', error_reason() }.
+ | { 'report_generation_failed', error_reason() }.
 
 
 

@@ -22,9 +22,9 @@
 -module(us_web_sup).
 
 -moduledoc """
-**Root OTP supervisor** of the us_web application.
+**Root OTP supervisor** of the `us_web` application.
 
-Directly created by us_web_app.
+Directly created by `us_web_app`.
 """.
 
 
@@ -119,8 +119,8 @@ init( _Args=[ AppRunContext ] ) ->
 	% The overall US (not US-Web) configuration server will be either found or
 	% created by the US-Web configuration one:
 	%
-	USWebCfgServerPid =
-		class_USWebConfigServer:new_link( self(), AppRunContext ),
+    % (this server does not need to know its OTP supervisor)
+	USWebCfgServerPid = class_USWebConfigServer:new_link( AppRunContext ),
 
 	% Implicit synchronisation:
 	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
@@ -433,7 +433,7 @@ init( _Args=[ AppRunContext ] ) ->
 -doc """
 Stops the US-Web main supervisor, with OTP conventions or not.
 
-Note: unlike supervisor_bridge, no supervisor:terminate/* callback exists.
+Note: unlike supervisor_bridge, no `supervisor:terminate/*` callback exists.
 """.
 -spec stop() -> void().
 stop() ->

@@ -166,8 +166,9 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 
 
 	{ scheduler_pid, option( scheduler_pid() ),
-	  "the PID of any scheduler used by this logger; otherwise that logger is "
-	  "expected to be driven by a task ring" },
+	  "the PID of any scheduler used by this logger (thus not resolved "
+      "dynamically); otherwise that logger is expected to be driven by a "
+      "task ring" },
 
 
 	{ log_task_id, option( task_id() ),
@@ -220,8 +221,8 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 -doc """
 Constructs the US-Web logger for the specified host.
 
-A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
-(i.e. not set to 'undefined').
+A web analytics tool will be used iff `MaybeBinLogAnalysisToolPath` is defined
+(i.e. not set to `undefined`).
 """.
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
 				 option( scheduler_pid() ), option( web_analysis_info() ) ) ->
@@ -239,8 +240,8 @@ Constructs the US-Web logger (possibly a singleton) for the specified host in
 the specified domain, using specified directory to write access and error log,
 and any specified scheduler and period for log rotation.
 
-A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
-(i.e. not set to 'undefined').
+A web analytics tool will be used iff `MaybeBinLogAnalysisToolPath` is defined
+(i.e. not set to `undefined`).
 """.
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
 				 option( scheduler_pid() ), user_periodicity(),
@@ -467,14 +468,14 @@ destruct( State ) ->
 			?debug( "Being destructed, performing a last rotation of the "
 					"log files." );
 
-		_ ->
+		SchedPid ->
 			?debug( "Being destructed, unregistering from scheduler and "
 					"performing a last rotation of the log files." ),
 
 			% Any extra schedule trigger sent will be lost; not a problem as it
 			% is a oneway:
 			%
-			MaybeSchedPid ! { unregisterTask, [ LogTaskId ], self() }
+			SchedPid ! { unregisterTask, [ LogTaskId ], self() }
 
 	end,
 
@@ -748,7 +749,7 @@ generate_report( State ) ->
 
 -doc "Callback triggered whenever a linked process stops.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-						basic_utils:exit_reason() ) -> const_oneway_return().
+	basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
 
 	% Not even a trace sent for that, as running a log report tool will trigger

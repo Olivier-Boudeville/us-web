@@ -77,6 +77,8 @@ the other hosted websites
 -type general_web_settings() :: #general_web_settings{}.
 
 
+-type web_config_server_pid() :: server_pid().
+
 % For default_us_web_config_server_registration_name:
 -include("us_web_defines.hrl").
 
@@ -88,7 +90,8 @@ the other hosted websites
 
 
 -export_type([ web_kind/0, vhost_id/0, log_analysis_tool_name/0,
-			   general_web_settings/0, web_analysis_info/0 ]).
+			   general_web_settings/0, web_config_server_pid/0,
+               web_analysis_info/0 ]).
 
 
 % Must be kept consistent with the default_us_web_epmd_port variable in
@@ -228,7 +231,7 @@ the other hosted websites
 %
 % The US-Web configuration server creates a scheduler, for its own use (e.g. for
 % certificate renewal and the task ring regarding web loggers), and possibly for
-% other related services.
+% other related services; so the US general scheduler is not used here.
 
 
 -doc "To identify a domain name (or a catch-all for them).".
@@ -390,11 +393,10 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 
 %-type tcp_port() :: net_utils:tcp_port().
 
--type supervisor_pid() :: otp_utils:supervisor_pid().
 -type application_run_context() :: otp_utils:application_run_context().
 
 
-%-type server_pid() :: class_UniversalServer:server_pid().
+-type server_pid() :: class_USServer:server_pid().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 
@@ -436,8 +438,8 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 	% likely clashes through the code path:
 	%
 	{ nitrogen_roots, [ bin_directory_path() ], "the known content roots of "
-	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, i.e. if
-	  at least one virtual host is of this type" },
+	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, "
+      "i.e. if at least one virtual host is of this type" },
 
 	{ meta_web_settings, option( meta_web_settings() ),
 	  "the domain, virtual host identifiers and web root of the auto-generated "
@@ -451,18 +453,15 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 	  "the TCP port (if any) at which the webserver is to listen for the https "
 	  "scheme" },
 
-	{ us_config_server_pid, server_pid(),
-	  "the PID of the overall US configuration server" },
-
-	{ us_web_scheduler_pid, scheduler_pid(),
-	  "the PID of the US-Web dedicated scheduler (at least for certificate
-	  renewal, for task ring or possibly directly for web loggers)" },
+    { us_web_scheduler_pid, scheduler_pid(),
+      "the PID of the US-Web dedicated scheduler (at least for certificate "
+      "renewal, for task ring or possibly directly for web loggers); this PID "
+      "is not resolved through the naming service (as for example the global "
+      "US scheduler), as this instance controls its life-cycle directly" },
 
 	{ logger_task_ring, class_USTaskRing:ring_pid(),
-	  "the PID of the task ring in charge of sequencing the webloggers" },
-
-	{ us_web_supervisor_pid, supervisor_pid(),
-	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
+	  "the PID of the (private) task ring in charge of sequencing the "
+      "webloggers" },
 
 	{ dispatch_routes, dispatch_routes(), "the dispatch routes to decide "
 	  "by which handler the requested URLs shall be processed" },
@@ -528,11 +527,9 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 	  "information regarding Server Name Indication, so that virtual hosts "
 	  "can be supported with https" },
 
-	{ scheduler_registration_name, registration_name(),
-	  "the name under which the dedicated scheduler is registered" },
-
-	{ scheduler_registration_scope, registration_scope(),
-	  "the scope under which the dedicated scheduler is registered" },
+	{ scheduler_lookup_info, lookup_info(),
+	  "the look-up information that allows resolving the PID of our private "
+      "scheduler" },
 
 	{ log_analysis_settings, option( log_analysis_settings() ),
 	  "the settings to use for any analysis of web access logs" } ] ).
@@ -567,12 +564,10 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 -doc """
 Constructs the US-Web configuration server.
 
-SupervisorPid is the PID of the main US-Web OTP supervisor, and AppRunContext
-tells how US-Web is being run.
+AppRunContext tells how US-Web is being run.
 """.
--spec construct( wooper:state(), supervisor_pid(),
-				 application_run_context() ) -> wooper:state().
-construct( State, SupervisorPid, AppRunContext ) ->
+-spec construct( wooper:state(), application_run_context() ) -> wooper:state().
+construct( State, AppRunContext ) ->
 
 	TraceCateg = ?trace_categorize("Configuration Server"),
 
@@ -590,7 +585,7 @@ construct( State, SupervisorPid, AppRunContext ) ->
 		"running ~ts, in ~ts security mode.",
 		[ otp_utils:application_run_context_to_string( AppRunContext ),
 		  cond_utils:switch_set_to( us_web_security,
-				[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ] ),
+			[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ] ),
 
 	?send_debug_fmt( TraceState, "Running Erlang ~ts, whose ~ts",
 		[ system_utils:get_interpreter_version(),
@@ -614,7 +609,6 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	% Other attributes set by the next function:
 	SupState = setAttributes( TraceState, [
 		{ app_run_context, AppRunContext },
-		{ us_web_supervisor_pid, SupervisorPid },
 		{ dispatch_routes, undefined },
 		{ dispatch_rules, undefined },
 		{ credentials_directory, undefined },
@@ -668,6 +662,7 @@ destruct( State ) ->
 	[ CMPid ! delete
 		|| CMPid <- get_all_certificate_manager_pids( State ) ],
 
+    % It is our private one:
 	?getAttr(us_web_scheduler_pid) ! delete,
 
 	?info( "Deleted." ),
@@ -815,7 +810,7 @@ the initial certificate creations, to a late acknowledgement being received if
 ever a certificate manager finished - yet too late for `renewCertificates/1`
 (after it timed-out).
 """.
- -spec onCertificateRenewalOver( wooper:state(), pid() ) ->
+-spec onCertificateRenewalOver( wooper:state(), cert_manager_pid() ) ->
                                             const_oneway_return().
 onCertificateRenewalOver( State, CertManagerPid ) ->
 
@@ -1022,7 +1017,7 @@ state of the tool for log analysis, then the generated of the reports as such.
 activate_loggers( Loggers ) ->
 
 	Results = wooper:send_request_in_turn( _Req=rotateThenGenerateReportSync,
-							_Args=[], _TargetInstancePIDs=Loggers ),
+		_Args=[], _TargetInstancePIDs=Loggers ),
 
 	case list_utils:delete_all_in( _Elem=report_generated, Results ) of
 
@@ -1039,7 +1034,7 @@ activate_loggers( Loggers ) ->
 
 -doc "Callback triggered whenever a linked process exits.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-						basic_utils:exit_reason() ) -> const_oneway_return().
+	basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StoppedPid, _ExitType=normal ) ->
 
 	% Not even a trace sent for that, as too many of them.
@@ -1113,7 +1108,6 @@ load_and_apply_configuration( State ) ->
 				{ nitrogen_roots, [] },
 				{ meta_web_settings, undefined },
 				{ config_base_directory, BinCfgDir },
-				{ us_config_server_pid, CfgServerPid },
 				{ log_analysis_settings, undefined } ] ),
 
 			load_web_config( BinCfgDir, MaybeWebCfgFilename, StoreState )
@@ -1692,10 +1686,10 @@ build_vhost_table( DomainId,
 
 % Meta kind here:
 build_vhost_table( DomainId,
-	   _VHostInfos=[ { VHostId, _ContentRoot, WebKind=meta } | T ],
-	   MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-	   MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport,
-	   State ) ->
+        _VHostInfos=[ { VHostId, _ContentRoot, WebKind=meta } | T ],
+        MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport,
+        State ) ->
 
 	% Quite similar to 'static', even if a logger and a web analysis
 	% organisation are not that useful:
@@ -2083,11 +2077,11 @@ describe_host( VHostId, BinDomainName ) ->
 Returns a static dispatch route rule corresponding to the specified virtual host
 identifier, domain identifier and content root.
 
-See <https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/> for more details.
+See [https://ninenines.eu/docs/en/cowboy/2.13/guide/routing/] for more details.
 """.
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
 		logger_pid(), cert_support(), option( cert_manager_pid() ) ) ->
-									route_rule().
+                                                        route_rule().
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 						 CertSupport, MaybeCertManagerPid ) ->
 
@@ -2505,7 +2499,7 @@ manage_epmd_port( ConfigTable, State ) ->
 	end,
 
 	% For correct information; available by design:
-	?getAttr(us_config_server_pid) !
+    class_USConfigServer:get_server_pid() !
 		{ notifyEPMDPort, [ Port, Origin, ?MODULE, self() ] },
 
 	% Const:
@@ -2550,8 +2544,7 @@ manage_registrations( ConfigTable, State ) ->
 		{ registration_name, CfgRegName },
 		{ registration_scope, CfgRegScope },
 
-		{ scheduler_registration_name, SchedRegName },
-		{ scheduler_registration_scope, SchedRegScope },
+		{ scheduler_registration_lookup_info, { SchedRegName, SchedRegScope } },
 		{ us_web_scheduler_pid, SchedPid } ] ).
 
 
@@ -3854,6 +3847,29 @@ get_us_web_version_string() ->
 
 
 -doc """
+Returns the PID of the current, supposedly already-launched, US-Web
+configuration server, waiting (up to a few seconds, as all US-Web server
+processes are bound to be launched mostly simultaneously) if needed.
+
+Possibly useful for any US-Web auxiliary, thematical servers, so that they can
+easily access to their configuration information.
+
+It is better to obtain the PID of a server each time from the naming service
+rather than to resolve and store its PID once for all, as, for an increased
+robustness, servers may be restarted (hence any stored PID may not reference a
+live process anymore).
+""".
+-spec get_server_pid () -> static_return( web_config_server_pid() ).
+get_server_pid() ->
+
+	MainCfgSrvPid = class_USServer:resolve_server_pid(
+        _RegName=?default_us_web_config_server_registration_name,
+        _RegScope=?us_web_config_server_registration_scope ),
+
+	wooper:return_static( MainCfgSrvPid ).
+
+
+-doc """
 Returns, based on the US main configuration table and the US configuration
 directory, the US-Web configuration table, as read from the US-Web configuration
 file, together with the path of this file.
@@ -4071,7 +4087,7 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 
 -doc "Returns an (unordered) list of all the PIDs of the certificate managers.".
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
-			[ cert_manager_pid() ].
+                                                    [ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->
 	get_all_certificate_manager_pids_from( ?getAttr(domain_config_table) ).
 
@@ -4155,17 +4171,16 @@ to_string( State ) ->
 	end,
 
 	text_utils:format( "US-Web configuration ~ts, running ~ts, ~ts, ~ts, ~ts, "
-		"running in the ~ts execution context, ~ts, knowing "
-		"US overall configuration server ~w and "
-		"OTP supervisor ~w, relying on the '~ts' configuration directory and "
-		"on the '~ts' log directory, ~ts.~n~nIn terms of routes, using ~ts~n~n"
-		"Corresponding dispatch rules:~n~p",
+		"running in the ~ts execution context, ~ts, relying on its private "
+        "scheduler ~w, on '~ts' configuration directory and "
+        "on the '~ts' log directory, ~ts.~n~n"
+        "In terms of routes, using ~ts~n~nCorresponding dispatch rules:~n~p",
 		[ class_USServer:to_string( State ),
 		  otp_utils:application_run_context_to_string(
 			?getAttr(app_run_context) ),
 		  HttpString, HttpsString,
 		  WebRootString, ?getAttr(execution_context), CertString,
-		  ?getAttr(us_config_server_pid), ?getAttr(us_web_supervisor_pid),
-		  ?getAttr(config_base_directory), ?getAttr(log_directory), NitroString,
+          ?getAttr(us_web_scheduler_pid), ?getAttr(config_base_directory),
+          ?getAttr(log_directory), NitroString,
 		  domain_table_to_string( ?getAttr(domain_config_table) ),
 		  ?getAttr(dispatch_rules) ] ).

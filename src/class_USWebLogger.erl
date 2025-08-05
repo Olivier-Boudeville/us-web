@@ -114,18 +114,18 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 
 -type file() :: file_utils:file().
 
--type domain_id() :: class_USWebConfigServer:domain_id().
--type vhost_id() :: class_USWebConfigServer:vhost_id().
+-type domain_id() :: class_USWebCentralServer:domain_id().
+-type vhost_id() :: class_USWebCentralServer:vhost_id().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 -type user_periodicity() :: class_USScheduler:user_periodicity().
 
 -type log_analysis_tool_name() ::
-		class_USWebConfigServer:log_analysis_tool_name().
+		class_USWebCentralServer:log_analysis_tool_name().
 
--include("class_USWebConfigServer.hrl").
+-include("class_USWebCentralServer.hrl").
 
--type web_analysis_info() :: class_USWebConfigServer:web_analysis_info().
+-type web_analysis_info() :: class_USWebCentralServer:web_analysis_info().
 
 
 
@@ -166,8 +166,9 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 
 
 	{ scheduler_pid, option( scheduler_pid() ),
-	  "the PID of any scheduler used by this logger; otherwise that logger is "
-	  "expected to be driven by a task ring" },
+	  "the PID of any scheduler used by this logger (thus not resolved "
+      "dynamically); otherwise that logger is expected to be driven by a "
+      "task ring" },
 
 
 	{ log_task_id, option( task_id() ),
@@ -220,8 +221,8 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 -doc """
 Constructs the US-Web logger for the specified host.
 
-A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
-(i.e. not set to 'undefined').
+A web analytics tool will be used iff `MaybeBinLogAnalysisToolPath` is defined
+(i.e. not set to `undefined`).
 """.
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
 				 option( scheduler_pid() ), option( web_analysis_info() ) ) ->
@@ -239,8 +240,8 @@ Constructs the US-Web logger (possibly a singleton) for the specified host in
 the specified domain, using specified directory to write access and error log,
 and any specified scheduler and period for log rotation.
 
-A web analytics tool will be used iff MaybeBinLogAnalysisToolPath is defined
-(i.e. not set to 'undefined').
+A web analytics tool will be used iff `MaybeBinLogAnalysisToolPath` is defined
+(i.e. not set to `undefined`).
 """.
 -spec construct( wooper:state(), vhost_id(), domain_id(), bin_directory_path(),
 				 option( scheduler_pid() ), user_periodicity(),
@@ -467,14 +468,14 @@ destruct( State ) ->
 			?debug( "Being destructed, performing a last rotation of the "
 					"log files." );
 
-		_ ->
+		SchedPid ->
 			?debug( "Being destructed, unregistering from scheduler and "
 					"performing a last rotation of the log files." ),
 
 			% Any extra schedule trigger sent will be lost; not a problem as it
 			% is a oneway:
 			%
-			MaybeSchedPid ! { unregisterTask, [ LogTaskId ], self() }
+			SchedPid ! { unregisterTask, [ LogTaskId ], self() }
 
 	end,
 
@@ -748,7 +749,7 @@ generate_report( State ) ->
 
 -doc "Callback triggered whenever a linked process stops.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-						basic_utils:exit_reason() ) -> const_oneway_return().
+	basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
 
 	% Not even a trace sent for that, as running a log report tool will trigger
@@ -864,7 +865,7 @@ Rotates the relevant log files, supposed already closed (and does not reopen
 them, as this is not wanted in all cases).
 """.
 -spec rotate_log_files( wooper:state() ) ->
-			{ option( file_path() ), option( file_path() ), wooper:state() }.
+	{ option( file_path() ), option( file_path() ), wooper:state() }.
 rotate_log_files( State ) ->
 
 	[ basic_utils:check_undefined( ?getAttr(FAttr) )
@@ -942,7 +943,7 @@ get_host_description_for( BinHostId, DomainId, _Tool=awstats ) ->
 
 -doc "Returns the default period of log rotation.".
 -spec get_default_log_rotation_period() ->
-							static_return( time_utils:dhms_duration() ).
+						static_return( time_utils:dhms_duration() ).
 get_default_log_rotation_period() ->
 	wooper:return_static( ?default_dhms_log_rotation_period ).
 
@@ -953,7 +954,7 @@ Returns the actual access and error filenames corresponding to the specified
 host.
 """.
 -spec get_log_paths( vhost_id(), domain_id() ) ->
-					static_return( { bin_file_name(), bin_file_name() } ).
+                        static_return( { bin_file_name(), bin_file_name() } ).
 get_log_paths( _BinHostId=default_vhost_catch_all, DomainId ) ->
 
 	DomainString = get_domain_description( DomainId ),
@@ -1097,7 +1098,7 @@ Rotates any basic log file (typically the access or error one), with no specific
 post-processing.
 
 Returns the path of the resulting archive (e.g.
-"/tmp/access-for-baz.foobar.org.log.41.2021-1-20-at-19h-53m-18s.xz").
+`"/tmp/access-for-baz.foobar.org.log.41.2021-1-20-at-19h-53m-18s.xz"`).
 
 This file should not be currently open (it should have been closed and its
 handle forgotten beforehand if necessary); and it will not be reopened here.
@@ -1132,7 +1133,7 @@ context of specified tool.
 Useful both for input files (e.g. configuration ones) and (possibly) output ones
 (e.g. HTML generated ones).
 
-Much like get_log_paths/2.
+Much like `get_log_paths/2`.
 """.
 -spec get_file_prefix_for( domain_id(), vhost_id(),
 		log_analysis_tool_name() ) -> static_return( file_name() ).
@@ -1159,9 +1160,9 @@ fixed name in a fixed directory.
 
 We follow our conventions, resulting in having potentially
 default_domain_catch_all and/or default_vhost_catch_all in returned filename, as
-we need anyway a marker to denote wildcards ('*.foobar.org' could result in
-awstats.foobar.org.conf, yet we prefer '*' not to result in unclear, ambiguous
-awstats.conf).
+we need anyway a marker to denote wildcards (`*.foobar.org` could result in
+`awstats.foobar.org.conf`, yet we prefer `*` not to result in unclear, ambiguous
+`awstats.conf`).
 """.
 -spec get_conf_filename_for( domain_id(), vhost_id(),
 		log_analysis_tool_name() ) -> static_return( file_name() ).

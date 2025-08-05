@@ -34,7 +34,7 @@ websites, to help their quick monitoring.
 
 
 % For the vhost_config_entry record:
--include("class_USWebConfigServer.hrl").
+-include("class_USWebCentralServer.hrl").
 
 
 % Type shorthands:
@@ -46,11 +46,11 @@ websites, to help their quick monitoring.
 -type protocol_type() :: web_utils:protocol_type().
 -type html_element() :: web_utils:html_element().
 
--type domain_id() :: class_USWebConfigServer:domain_id().
--type vhost_config_table() :: class_USWebConfigServer:vhost_config_table().
--type vhost_config_entry() :: class_USWebConfigServer:vhost_config_entry().
--type domain_config_table() :: class_USWebConfigServer:domain_config_table().
--type meta_web_settings() :: class_USWebConfigServer:meta_web_settings().
+-type domain_id() :: class_USWebCentralServer:domain_id().
+-type vhost_config_table() :: class_USWebCentralServer:vhost_config_table().
+-type vhost_config_entry() :: class_USWebCentralServer:vhost_config_entry().
+-type domain_config_table() :: class_USWebCentralServer:domain_config_table().
+-type meta_web_settings() :: class_USWebCentralServer:meta_web_settings().
 
 
 % Anchors:
@@ -215,8 +215,8 @@ Describes (in HTML) the current hosting, that is all the virtual hosts (except
 the meta website itself) of all known domains.
 """.
 describe_hosting( Scheme, Port, DomainCfgTable,
-	  _MetaWebSettings={ MetaDomainId, MetaVhostId, _BinMetaContentRoot },
-	  LogAnalysisEnabled ) ->
+        _MetaWebSettings={ MetaDomainId, MetaVhostId, _BinMetaContentRoot },
+        LogAnalysisEnabled ) ->
 
 	% For example MaybeBinMetaURL="http://meta.foobar.org:8080".
 	MaybeMetaBaseURL = case LogAnalysisEnabled of
@@ -252,7 +252,7 @@ describe_hosting( Scheme, Port, DomainCfgTable,
 
 -doc "Returns the HTML description for the specified domains.".
 -spec get_domain_descriptions( protocol_type(), tcp_port(),
-	[ class_USWebConfigServer:domain_info() ], maybe_url() ) -> html_element().
+	[ class_USWebCentralServer:domain_info() ], maybe_url() ) -> html_element().
 get_domain_descriptions( Scheme, Port, DomainInfos, MaybeMetaBaseURL ) ->
 
 	DomStrings = lists:sort( [

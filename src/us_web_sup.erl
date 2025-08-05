@@ -22,9 +22,9 @@
 -module(us_web_sup).
 
 -moduledoc """
-**Root OTP supervisor** of the us_web application.
+**Root OTP supervisor** of the `us_web` application.
 
-Directly created by us_web_app.
+Directly created by `us_web_app`.
 """.
 
 
@@ -39,7 +39,7 @@ Directly created by us_web_app.
 -define( server_registration_scope, local ).
 
 % For the general_web_settings record:
--include("class_USWebConfigServer.hrl").
+-include("class_USWebCentralServer.hrl").
 
 
 
@@ -119,11 +119,11 @@ init( _Args=[ AppRunContext ] ) ->
 	% The overall US (not US-Web) configuration server will be either found or
 	% created by the US-Web configuration one:
 	%
-	USWebCfgServerPid =
-		class_USWebConfigServer:new_link( self(), AppRunContext ),
+    % (this server does not need to know its OTP supervisor)
+	USWebCtrServerPid = class_USWebCentralServer:new_link( AppRunContext ),
 
 	% Implicit synchronisation:
-	USWebCfgServerPid ! { getWebConfigSettings, [], self() },
+	USWebCtrServerPid ! { getWebConfigSettings, [], self() },
 
 	#general_web_settings{
 			http_dispatch_rules=HttpDispatchRules,
@@ -235,7 +235,7 @@ init( _Args=[ AppRunContext ] ) ->
 			trace_bridge:debug( RenewalMsg ),
 			trace_utils:info( RenewalMsg ),
 
-			USWebCfgServerPid ! { renewCertificates, [], self() }
+			USWebCtrServerPid ! { renewCertificates, [], self() }
 
             % Previously we were waiting here for all certificates to be
             % renewed, however it could be quite long, and in the meantime no
@@ -308,7 +308,7 @@ init( _Args=[ AppRunContext ] ) ->
 			%
 			GenericHttpsOpts = [
 				{ port, HttpsTCPPort },
-				{ versions, class_USWebConfigServer:get_protocol_versions() },
+				{ versions, class_USWebCentralServer:get_protocol_versions() },
 
 				% Server Name Indication (virtual) hosts:
 				{ sni_hosts, SNIVhInfos },
@@ -382,7 +382,7 @@ init( _Args=[ AppRunContext ] ) ->
 	SupSettings = otp_utils:get_supervisor_settings(
 		% If a child process terminates, only that process is restarted:
 		_RestartStrategy=one_for_one,
-		class_USWebConfigServer:get_execution_target() ),
+		class_USWebCentralServer:get_execution_target() ),
 
 	% WebManagerSpec = #{
 	%   id => us_web_manager_bridge_id,
@@ -408,7 +408,7 @@ init( _Args=[ AppRunContext ] ) ->
 	% some means to know the PID of this server). Only pragmatic solution found
 	% is to use the application environment for that:
 	%
-	Env = [ { _Param=us_web_config_server_pid, _V=USWebCfgServerPid } ],
+	Env = [ { _Param=us_web_central_server_pid, _V=USWebCtrServerPid } ],
 
 	application:set_env( _Config=[ { us_web, Env } ] ),
 
@@ -433,13 +433,13 @@ init( _Args=[ AppRunContext ] ) ->
 -doc """
 Stops the US-Web main supervisor, with OTP conventions or not.
 
-Note: unlike supervisor_bridge, no supervisor:terminate/* callback exists.
+Note: unlike supervisor_bridge, no `supervisor:terminate/*` callback exists.
 """.
 -spec stop() -> void().
 stop() ->
 
 	{ ok, USWebCfgSrvPid } =
-		application:get_env( _Param=us_web_config_server_pid ),
+		application:get_env( _Param=us_web_central_server_pid ),
 
 	trace_bridge:warning_fmt( "Stopping US-Web, including its configuration "
 							  "server ~w.", [ USWebCfgSrvPid ] ),

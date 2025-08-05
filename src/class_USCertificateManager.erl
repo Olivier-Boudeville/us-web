@@ -103,7 +103,7 @@ for a given domain.
 
 
 -doc "The PID of a certificate manager.".
--type manager_pid() :: class_USServer:server_pid().
+-type cert_manager_pid() :: class_USServer:server_pid().
 
 
 % One day ssl will export these types:
@@ -131,7 +131,7 @@ main, default hostname, and per-virtual host information.
 -type cipher_name() :: atom().
 
 
--export_type([ manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
+-export_type([ cert_manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
 			   cipher_name/0 ]).
 
 
@@ -149,12 +149,11 @@ main, default hostname, and per-virtual host information.
 
 -type bridge_spec() :: trace_bridge:bridge_spec().
 
--type scheduler_pid() :: class_USScheduler:scheduler_pid().
 %-type task_id() :: class_USScheduler:task_id().
 
--type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
--type cert_mode() :: class_USWebConfigServer:cert_mode().
--type https_transport_info() :: class_USWebConfigServer:https_transport_info().
+-type dispatch_routes() :: class_USWebCentralServer:dispatch_routes().
+-type cert_mode() :: class_USWebCentralServer:cert_mode().
+-type https_transport_info() :: class_USWebCentralServer:https_transport_info().
 
 -type leec_caller_state() :: leec:leec_caller_state().
 -type challenge_type() :: leec:challenge_type().
@@ -204,7 +203,6 @@ main, default hostname, and per-virtual host information.
 	  "the PID of the process (if any) to notify once the next certificate is "
 	  "obtained" },
 
-
 	{ leec_caller_state, option( leec_caller_state() ),
 	  "the (opaque) caller state for our private LEEC FSM "
 	  "(if any currently exists)" },
@@ -216,10 +214,6 @@ main, default hostname, and per-virtual host information.
 	  "the specification of a corresponding trace bridge, typically for "
 	  "the next created LEEC instance" },
 
-
-	{ scheduler_pid, scheduler_pid(),
-	  "the PID of the scheduler used by this manager" },
-
 	{ task_id, option( task_id() ), "the identifier of the scheduler task "
 	  "(if any) in charge of requesting the certificate renewals" } ] ).
 
@@ -229,9 +223,9 @@ main, default hostname, and per-virtual host information.
 -define( trace_emitter_categorization, "US.Certificate Management" ).
 
 
--define( registration_name, us_web_certificate_manager ).
+-define( cert_manager_registration_name, us_web_certificate_manager ).
 
--define( registration_scope, global_only ).
+-define( cert_manager_registration_scope, global_only ).
 
 
 
@@ -294,21 +288,18 @@ main, default hostname, and per-virtual host information.
 -doc """
 Constructs a US certificate manager for the specified FQDN (host in specified
 domain), relying on the specified challenge type and possibly DNS provider, in
-production mode, using the specified directory to write certificate information,
-and the specified scheduler for automatic certificate renewal.
+production mode, using the specified directory to write certificate information.
 
 No directory for credentials specified.
 """.
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], challenge_type(),
 		option( dns_provider() ), bin_directory_path(),
-		option( bin_file_path() ), option( scheduler_pid() ) ) ->
-										wooper:state().
+		option( bin_file_path() ) ) -> wooper:state().
 construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider, BinCertDir,
-		   MaybeBinAgentKeyPath, MaybeSchedulerPid ) ->
-	construct( State, BinFQDN, BinSans, ChalType,
-		MaybeDNSProvider, _MaybeBinCredentialsDir=undefined,
-		_CertMode=production, BinCertDir, MaybeBinAgentKeyPath,
-		MaybeSchedulerPid, _IsSingleton=false ).
+		   MaybeBinAgentKeyPath ) ->
+	construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider,
+        _MaybeBinCredentialsDir=undefined, _CertMode=production, BinCertDir,
+        MaybeBinAgentKeyPath, _IsSingleton=false ).
 
 
 
@@ -316,26 +307,26 @@ construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider, BinCertDir,
 Constructs a US certificate manager for the specified FQDN (host in specified
 domain), in the specified certificate management mode, relying on the specified
 challenge type and possibly DNS provider, using specified directory to write
-certificate information, and the specified scheduler.
+certificate information.
 
 (most complete constructor)
 """.
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], cert_mode(),
 	challenge_type(), option( dns_provider() ), option( bin_directory_path() ),
-	bin_directory_path(), option( bin_file_path() ), option( scheduler_pid() ),
-	boolean() ) -> wooper:state().
+	bin_directory_path(), option( bin_file_path() ), boolean() ) ->
+                                                            wooper:state().
 construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 		MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
-		MaybeSchedulerPid, _IsSingleton=true ) ->
+        _IsSingleton=true ) ->
 
 	% Relies first on the next, main constructor clause:
 	InitState = construct( State, BinFQDN, BinSans, CertMode, ChalType,
 		MaybeDNSProvider, MaybeBinCredentialsDir, BinCertDir,
-		MaybeBinAgentKeyPath, MaybeSchedulerPid, _Sing=false ),
+		MaybeBinAgentKeyPath, _Sing=false ),
 
 	% Then self-registering:
-	RegName = ?registration_name,
-	RegScope = ?registration_scope,
+	RegName = ?cert_manager_registration_name,
+	RegScope = ?cert_manager_registration_scope,
 
 	naming_utils:register_as( RegName, RegScope ),
 
@@ -347,7 +338,7 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 % Main constructor; no self-registering here:
 construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 		   MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
-		   MaybeSchedulerPid, _IsSingleton=false ) ->
+           _IsSingleton=false ) ->
 
 	ServerName =
 		text_utils:format( "Certificate manager for ~ts", [ BinFQDN ] ),
@@ -357,13 +348,11 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 	% (trapping EXITs, as wanting to detect any crash of a LEEC FSM, calling
 	% then onWOOPERExitReceived/3)
 	%
-	TraceState = class_USServer:construct( State,
+	SrvState = class_USServer:construct( State,
 		?trace_categorize(ServerName), _TrapExits=true ),
 
-	% For example for any stateless helper:
-	class_TraceEmitter:register_bridge( TraceState ),
 
-	%?send_info( TraceState, "Construction started." ),
+	%?send_info( SrvState, "Construction started." ),
 
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
@@ -371,12 +360,12 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 	{ MaybeLEECCallerState, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
 		init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
 			MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
-			TraceState ),
+			SrvState ),
 
 	% Registration to scheduler to happen in next (first) renewCertificate/1
 	% call.
 
-	ReadyState = setAttributes( TraceState, [
+	ReadyState = setAttributes( SrvState, [
 		{ fqdn, BinFQDN },
 		{ cert_mode, CertMode },
 
@@ -393,7 +382,6 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 		{ leec_caller_state, MaybeLEECCallerState },
 		{ leec_start_opts, LEECStartOpts },
 		{ bridge_spec, BridgeSpec },
-		{ scheduler_pid, MaybeSchedulerPid },
 		{ task_id, undefined } ] ),
 
 	?send_info_fmt( ReadyState, "Constructed: ~ts.",
@@ -541,19 +529,23 @@ destruct( State ) ->
 	% Unregistering only from any scheduler, not from any task ring, as we
 	% registered to any former and have been registered to any latter.
 
-	MaybeSchedPid = ?getAttr(scheduler_pid),
+    MaybeCertTaskId = case ?getAttr(task_id) of
 
-	CertTaskId = ?getAttr(task_id),
+        undefined ->
+            undefined;
 
-	MaybeSchedPid =:= undefined orelse
-		begin
+        CertTaskId ->
 			?debug( "Being destructed, unregistering from scheduler." ),
 
 			% Any extra schedule trigger sent will be lost; not a problem, as it
 			% is a oneway:
 			%
-			MaybeSchedPid ! { unregisterTask, [ CertTaskId ], self() }
-		end,
+            class_USScheduler:get_server_pid() !
+                { unregisterTask, [ CertTaskId ], self() },
+
+            CertTaskId
+
+	end,
 
 	case ?getAttr(leec_caller_state) of
 
@@ -580,22 +572,30 @@ destruct( State ) ->
 	end,
 
 	% End of interleaving:
-	MaybeSchedPid =/= undefined andalso
-		receive
+    case MaybeCertTaskId of
 
-            { wooper_result, { task_unregistered, CertTaskId } } ->
-				ok;
+        undefined ->
+            ok;
 
-            % Would be surprising:
-			{ wooper_result, { task_already_done, CertTaskId } } ->
-				ok;
+        ThisCertTaskId ->
+            receive
 
-			{ wooper_result,
-                    { task_unregistration_failed, Reason, CertTaskId } } ->
-				?error_fmt( "Unregistration of task #~B failed "
-							"at deletion: ~p.", [ CertTaskId, Reason ] )
+                { wooper_result, { task_unregistered, ThisCertTaskId } } ->
+                    ok;
 
-		end,
+                % Would be surprising:
+                { wooper_result, { task_already_done, ThisCertTaskId } } ->
+                    ok;
+
+                { wooper_result,
+                        { task_unregistration_failed, Reason,
+                          ThisCertTaskId } } ->
+                    ?error_fmt( "Unregistration of task #~B failed "
+							"at deletion: ~p.", [ ThisCertTaskId, Reason ] )
+
+            end
+
+	end,
 
 	?info( "Deleted." ),
 
@@ -914,55 +914,45 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 	% Switching to notice to remain available in production mode:
 	%?notice( "Continuing in manage_renewal/1" ),
 
-	SchedState = case ?getAttr(scheduler_pid) of
+    RenewState = case MaybeRenewDelay of
 
-		undefined ->
-			?notice( "No certificate renewal will be attempted "
-					 "(no scheduler registered)." ),
-			ShutState;
+        undefined ->
+            ?notice( "No certificate renewal will be attempted "
+                     "(no periodicity defined)." ),
+            ShutState;
 
-		SchedPid ->
-			case MaybeRenewDelay of
+        RenewDelay ->
+			%?notice( "Preparing task"),
 
-				undefined ->
-					?notice( "No certificate renewal will be attempted "
-							 "(no periodicity defined)." ),
-					ShutState;
+			% A bit of interleaving:
 
-				RenewDelay ->
-					%?notice( "Preparing task"),
+            RenewCmd = renewCertificate,
 
-					% A bit of interleaving:
+			class_USScheduler:get_server_pid() ! { registerOneshotTask,
+                [ RenewCmd, _Delay=RenewDelay, _ActPid=self() ], self() },
 
-                    RenewCmd = renewCertificate,
+			NextTimestamp = time_utils:offset_timestamp(
+				time_utils:get_timestamp(), RenewDelay ),
 
-					SchedPid ! { registerOneshotTask, [ RenewCmd,
-								 _Delay=RenewDelay, _ActPid=self() ], self() },
+			?notice_fmt( "Next attempt of certificate renewal to "
+				"take place in ~ts, i.e. at ~ts.",
+				[ time_utils:duration_to_string( 1000 * RenewDelay ),
+				  time_utils:timestamp_to_string( NextTimestamp ) ] ),
 
-					NextTimestamp = time_utils:offset_timestamp(
-						time_utils:get_timestamp(), RenewDelay ),
+			receive
 
-					?notice_fmt( "Next attempt of certificate renewal to "
-						"take place in ~ts, i.e. at ~ts.",
-						[ time_utils:duration_to_string( 1000 * RenewDelay ),
-						  time_utils:timestamp_to_string( NextTimestamp ) ] ),
+				{ wooper_result, { task_registered, TaskId } } ->
+					setAttribute( ShutState, task_id, TaskId );
 
-					receive
-
-						{ wooper_result, { task_registered, TaskId } } ->
-							setAttribute( ShutState, task_id, TaskId );
-
-						% Quite unlikely, yet possible:
-						{ wooper_result, task_done } ->
-							ShutState
-
-					end
+				% Quite unlikely, yet possible:
+				{ wooper_result, task_done } ->
+					ShutState
 
 			end
 
 	end,
 
-	setAttribute( SchedState, cert_path, MaybeBinCertFilePath ).
+	setAttribute( RenewState, cert_path, MaybeBinCertFilePath ).
 
 
 
@@ -1027,7 +1017,8 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
     % We would like to restart LEEC iff the crashed process is its FSM, yet we
     % do not know its PID, so:
     %
-    NonFSMMaybePids = ?getAttrList([renew_listener, scheduler_pid]),
+    % (potentially linked also to the scheduler)
+    NonFSMMaybePids = [ ?getAttr(renew_listener) ],
 
     case lists:member( CrashPid, NonFSMMaybePids ) of
 
@@ -1079,6 +1070,29 @@ onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
 
 % Static section.
+
+
+-doc """
+Returns the PID of the certificate manager, if it was created as a singleton,
+waiting (up to a few seconds, as all US-Web server processes are bound to be
+launched mostly simultaneously) if needed.
+
+Typically useful for the various US-Main auxiliary, thematical servers, so that
+they can easily access to their configuration information.
+
+It is better to obtain the PID of a server each time from the naming service
+rather than to resolve and store its PID once for all, as, for an increased
+robustness, servers may be restarted (hence any stored PID may not reference a
+live process anymore).
+""".
+-spec get_server_pid () -> static_return( cert_manager_pid() ).
+get_server_pid() ->
+
+	CertManPid = class_USServer:resolve_server_pid(
+        _RegName=?cert_manager_registration_name,
+        _RegScope=?cert_manager_registration_scope ),
+
+	wooper:return_static( CertManPid ).
 
 
 -doc """
@@ -1140,11 +1154,13 @@ server-specified order instead of the client-specified oner, hence enforcing the
 (usually more properly configured) security ordering of the server
 administrator.
 
-Apparently Erlang (i.e. cowboy:start_tls/3, relying on ranch_ssl:opts(), which
-corresponds roughly to ssl:erl_cipher_suite()) relies on cipher suites expressed
+Apparently Erlang (i.e. `cowboy:start_tls/3`, relying on `ranch_ssl:opts()`, which
+corresponds roughly to `ssl:erl_cipher_suite()`) relies on cipher suites expressed
 with IANA conventions, whereas sites such as SSL Labs uses OpenSSL
-conventions. For conversions, see reference table in
-<https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table>.
+conventions.
+
+For conversions, see reference table in
+[https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table].
 """.
 -spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
 get_recommended_ciphers() ->
@@ -1311,8 +1327,8 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 
 
 -doc """
-Checks the specified HTTPS transport options regarding the 'certfile' and
-'keyfile' entries; throws an exception if they are not found or not currently
+Checks the specified HTTPS transport options regarding the `certfile` and
+`keyfile` entries; throws an exception if they are not found or not currently
 applicable (no associated file found).
 
 SNI information not checked, as usually deriving from HTTPS transport options.

@@ -19,21 +19,21 @@
 % Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
 % Creation date: Wednesday, December 25, 2019.
 
--module(class_USWebConfigServer).
+-module(class_USWebCentralServer).
 
 -moduledoc """
-Singleton server holding the **configuration information** of the US-Web
-framework.
+Singleton central server holding the configuration information, managing the
+automated actions, etc. for the **US-Web** framework.
 """.
 
 
 -define( class_description,
-		 "Singleton server holding the configuration information of the "
-		 "US-Web framework." ).
+		 "Singleton central server holding the configuration information, "
+         "managing the automated actions, etc. for the US-Web framework" ).
 
 
 % Determines what are the direct mother classes of this class (if any):
--define( superclasses, [ class_USServer ] ).
+-define( superclasses, [ class_USCentralServer ] ).
 
 
 -doc """
@@ -44,7 +44,7 @@ The various kinds of supported websites:
 - meta: a website generated, if requested, by US-Web, to browse conveniently all
 the other hosted websites
 
-- nitrogen: a Nitrogen-based, dynamic website (see <http://nitrogenproject.com>)
+- nitrogen: a Nitrogen-based, dynamic website (see [http://nitrogenproject.com])
 """.
 -type web_kind() :: 'static' | 'meta' | 'nitrogen'.
 
@@ -64,12 +64,12 @@ the other hosted websites
 
 
 
--doc "For example 'awstats'.".
+-doc "For example `awstats`.".
 -type log_analysis_tool_name() :: atom().
 
 
 % For the vhost_config_entry and web_analysis_info records:
--include("class_USWebConfigServer.hrl").
+-include("class_USWebCentralServer.hrl").
 
 
 
@@ -77,18 +77,20 @@ the other hosted websites
 -type general_web_settings() :: #general_web_settings{}.
 
 
-% For default_us_web_config_server_registration_name:
--include("us_web_defines.hrl").
-
+-type web_central_server_pid() :: server_pid().
 
 
 -doc "Information regarding web analysis.".
 -type web_analysis_info() :: #web_analysis_info{}.
 
 
-
 -export_type([ web_kind/0, vhost_id/0, log_analysis_tool_name/0,
-			   general_web_settings/0, web_analysis_info/0 ]).
+			   general_web_settings/0, web_central_server_pid/0,
+               web_analysis_info/0 ]).
+
+
+% For default_us_web_central_server_registration_name:
+-include("us_web_defines.hrl").
 
 
 % Must be kept consistent with the default_us_web_epmd_port variable in
@@ -105,9 +107,9 @@ the other hosted websites
 
 -define( us_web_epmd_port_key, epmd_port ).
 
-% The default registration name of the US-Web configuration server:
--define( us_web_config_server_registration_name_key,
-		 us_web_config_server_registration_name ).
+% The default registration name of the US-Web central server:
+-define( us_web_central_server_registration_name_key,
+		 us_web_central_server_registration_name ).
 
 % The default registration name of the US-Web scheduler:
 -define( us_web_scheduler_registration_name_key,
@@ -128,10 +130,11 @@ the other hosted websites
 -define( routes_key, routes ).
 
 
-
-% All known, licit (top-level) keys for the US-Web configuration file:
--define( known_config_keys, [ ?us_web_epmd_port_key,
-	?us_web_config_server_registration_name_key,
+% All known, licit (top-level) base keys for the US-Web configuration file:
+% (other keys are in their respective server classes)
+%
+-define( known_us_web_central_config_keys, [ ?us_web_epmd_port_key,
+	?us_web_central_server_registration_name_key,
 	?us_web_scheduler_registration_name_key, ?us_web_username_key,
 	?us_web_app_base_dir_key, ?us_web_data_dir_key, ?us_web_log_dir_key,
 	?http_tcp_port_key, ?https_tcp_port_key, ?default_web_root_key,
@@ -171,10 +174,10 @@ the other hosted websites
 
 % Design notes:
 %
-% This US-Web configuration server will ensure that an overall US
-% (i.e. US-Common) configuration server is running, either by fetching its PID
-% if already existing (which is most probably the case), otherwise by launching
-% it accordingly.
+% This US-Web central server will ensure that an overall US (i.e. US-Common)
+% configuration server is running, either by fetching its PID if already
+% existing (which is most probably the case), otherwise by launching it
+% accordingly.
 %
 % In both cases the PID of the overall server will be known, but no link will be
 % created between these two, as their life-cycles are mostly independent.
@@ -226,9 +229,9 @@ the other hosted websites
 % any log analysis tool are finely interleaved, as defining a route requires its
 % logger PID, which requires the corresponding configuration file.
 %
-% The US-Web configuration server creates a scheduler, for its own use (e.g. for
+% The US-Web central server creates a scheduler, for its own use (e.g. for
 % certificate renewal and the task ring regarding web loggers), and possibly for
-% other related services.
+% other related services; so the US general scheduler is not used here.
 
 
 -doc "To identify a domain name (or a catch-all for them).".
@@ -257,7 +260,7 @@ the other hosted websites
 -doc """
 A table, associating to each domain name (e.g. `<<"foo.org">>`), the
 configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
-`<<"bar">>` key would correspond, associated to its vhost_config() value).
+`<<"bar">>` key would correspond, associated to its `vhost_config/0` value).
 """.
 -type domain_config_table() :: table( domain_id(), domain_info() ).
 
@@ -281,7 +284,7 @@ configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
 
 -doc "Tells whether the generation of a log analysis report succeeded.".
 -type report_generation_outcome() :: 'report_generation_success'
-	| { 'report_generation_failed', error_reason() }.
+ | { 'report_generation_failed', error_reason() }.
 
 
 
@@ -316,7 +319,7 @@ configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
 
 
 -doc "A table holding US-Web configuration information.".
--type us_web_config_table() :: table( atom(), term() ).
+-type us_web_config_table() :: config_table().
 
 
 -doc """
@@ -390,11 +393,12 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 
 %-type tcp_port() :: net_utils:tcp_port().
 
--type supervisor_pid() :: otp_utils:supervisor_pid().
 -type application_run_context() :: otp_utils:application_run_context().
 
+-type config_table() :: app_facilities:config_table().
 
-%-type server_pid() :: class_UniversalServer:server_pid().
+
+-type server_pid() :: class_USServer:server_pid().
 
 -type scheduler_pid() :: class_USScheduler:scheduler_pid().
 
@@ -416,14 +420,6 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 % The class-specific attributes:
 -define( class_attributes, [
 
-	{ execution_context, basic_utils:execution_context(),
-	  "tells whether this server is to run in development or production mode" },
-
-	% As it impacts at least various paths:
-	{ app_run_context, application_run_context(),
-	  "tells how US-Web is run, natively (using the Ceylan build/run system) "
-	  "or as an OTP release" },
-
 	{ domain_config_table, domain_config_table(),
 	  "a table containing all configuration information related to all "
 	  "domains, and their virtual hosts in turn" },
@@ -436,8 +432,8 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 	% likely clashes through the code path:
 	%
 	{ nitrogen_roots, [ bin_directory_path() ], "the known content roots of "
-	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, i.e. if
-	  at least one virtual host is of this type" },
+	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, "
+      "i.e. if at least one virtual host is of this type" },
 
 	{ meta_web_settings, option( meta_web_settings() ),
 	  "the domain, virtual host identifiers and web root of the auto-generated "
@@ -451,43 +447,25 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 	  "the TCP port (if any) at which the webserver is to listen for the https "
 	  "scheme" },
 
-	{ us_config_server_pid, server_pid(),
-	  "the PID of the overall US configuration server" },
+	{ scheduler_lookup_info, lookup_info(),
+	  "the look-up information that allows resolving the PID of our private "
+      "scheduler" },
 
-	{ us_web_scheduler_pid, scheduler_pid(),
-	  "the PID of the US-Web dedicated scheduler (at least for certificate
-	  renewal, for task ring or possibly directly for web loggers)" },
+    { us_web_scheduler_pid, scheduler_pid(),
+      "the PID of the US-Web dedicated scheduler (at least for certificate "
+      "renewal, for task ring or possibly directly for web loggers); this PID "
+      "is not resolved through the naming service (as for example the global "
+      "US scheduler), as this instance controls its life-cycle directly" },
 
 	{ logger_task_ring, class_USTaskRing:ring_pid(),
-	  "the PID of the task ring in charge of sequencing the webloggers" },
-
-	{ us_web_supervisor_pid, supervisor_pid(),
-	  "the PID of the OTP supervisor of US-Web, as defined in us_web_sup" },
+	  "the PID of the (private) task ring in charge of sequencing the "
+      "webloggers" },
 
 	{ dispatch_routes, dispatch_routes(), "the dispatch routes to decide "
 	  "by which handler the requested URLs shall be processed" },
 
 	{ dispatch_rules, dispatch_rules(), "the Cowboy dispatch rules (compiled "
 	  "from dispatch routes) corresponding to the configuration" },
-
-	{ config_base_directory, bin_directory_path(),
-	  "the base directory where all US configuration is to be found "
-	  "(not the us_web/priv/conf internal directory)" },
-
-	{ app_base_directory, bin_directory_path(),
-	  "the base directory of the US-Web application (the root where "
-	  "src, priv, ebin, etc. can be found)" },
-
-	{ conf_directory, bin_directory_path(),
-	  "the US-Web internal configuration directory, 'us_web/priv/conf'" },
-
-	{ data_directory, bin_directory_path(),
-	  "the directory where working data (e.g. the database state of a log "
-	  "tool, or temporary TLS keys) is to be stored" },
-
-	{ log_directory, bin_directory_path(), "the directory where (non-VM) US-Web
-	  logs shall be written, notably access and error logs for websites (in its
-	  ?web_log_subdir directory); traces are stored there as well" },
 
 	{ cert_support, cert_support(),
 	  "tells whether the use and possibly generation/renewal of X.509 "
@@ -528,18 +506,12 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 	  "information regarding Server Name Indication, so that virtual hosts "
 	  "can be supported with https" },
 
-	{ scheduler_registration_name, registration_name(),
-	  "the name under which the dedicated scheduler is registered" },
-
-	{ scheduler_registration_scope, registration_scope(),
-	  "the scope under which the dedicated scheduler is registered" },
-
 	{ log_analysis_settings, option( log_analysis_settings() ),
 	  "the settings to use for any analysis of web access logs" } ] ).
 
 
 % Used by the trace_categorize/1 macro to use the right emitter:
--define( trace_emitter_categorization, "US.US-Web.Configuration" ).
+-define( trace_emitter_categorization, "US.US-Web.Central" ).
 
 
 
@@ -565,43 +537,20 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 
 
 -doc """
-Constructs the US-Web configuration server.
+Constructs the US-Web central server.
 
-SupervisorPid is the PID of the main US-Web OTP supervisor, and AppRunContext
-tells how US-Web is being run.
+`AppRunContext` tells how US-Web is being run.
 """.
--spec construct( wooper:state(), supervisor_pid(),
-				 application_run_context() ) -> wooper:state().
-construct( State, SupervisorPid, AppRunContext ) ->
-
-	TraceCateg = ?trace_categorize("Configuration Server"),
+-spec construct( wooper:state(), application_run_context() ) -> wooper:state().
+construct( State, AppRunContext ) ->
 
 	% First the direct mother classes, then this class-specific actions:
-	TraceState = class_USServer:construct( State, _ServerName=TraceCateg,
-										   _TrapExits=true ),
-
-	% Allows functions provided by lower-level libraries (e.g. LEEC) called
-	% directly from this instance process to plug to the same (trace aggregator)
-	% bridge, with the same settings:
-	%
-	class_TraceEmitter:register_bridge( TraceState ),
-
-	?send_info_fmt( TraceState, "Creating a US-Web configuration server, "
-		"running ~ts, in ~ts security mode.",
-		[ otp_utils:application_run_context_to_string( AppRunContext ),
-		  cond_utils:switch_set_to( us_web_security,
-				[ { relaxed, "relaxed" }, { strict, "strict" } ] ) ] ),
-
-	?send_debug_fmt( TraceState, "Running Erlang ~ts, whose ~ts",
-		[ system_utils:get_interpreter_version(),
-		  code_utils:get_code_path_as_string() ] ),
-
-	?send_debug_fmt( TraceState, "System description: ~ts",
-		[ system_utils:get_system_description() ] ),
+	SrvState = class_USCentralServer:construct( State, _USAppShortName="web",
+       _ServerInit=?trace_categorize("Web central server"), AppRunContext ),
 
 	% Should a module be a problem:
 	%Module = cow_http2,
-	%?send_debug_fmt( TraceState, "For module '~ts': ~p",
+	%?send_debug_fmt( SrvState, "For module '~ts': ~p",
 	%    [ Module, code_utils:is_beam_in_path( Module ) ] ),
 
 	% Has been useful to debug a crashing start-up not letting outputs
@@ -610,11 +559,8 @@ construct( State, SupervisorPid, AppRunContext ) ->
 	%io:format( "code: ~ts", [ code_utils:get_code_path_as_string() ] ),
 	%timer:sleep( 1000 ),
 
-
 	% Other attributes set by the next function:
-	SupState = setAttributes( TraceState, [
-		{ app_run_context, AppRunContext },
-		{ us_web_supervisor_pid, SupervisorPid },
+	SetState = setAttributes( SrvState, [
 		{ dispatch_routes, undefined },
 		{ dispatch_rules, undefined },
 		{ credentials_directory, undefined },
@@ -625,25 +571,16 @@ construct( State, SupervisorPid, AppRunContext ) ->
 		{ dh_key_path, undefined },
 		{ ca_cert_key_path, undefined } ] ),
 
-	CfgState = load_and_apply_configuration( SupState ),
+	CfgState = load_and_apply_configuration( SetState ),
 
-	?send_info( CfgState, "Constructed: " ++ to_string( CfgState ) ),
-
-	% Done rather late on purpose, so that the existence of that file can be
-	% seen as a sign that the initialisation went well (used by
+	% Done rather late on purpose, so that the existence of this trace file can
+	% be seen as a sign that the initialisation went well (used by
 	% start-us-web-{native-build,release}.sh).
 	%
-	% Now that the log directory is known, we can properly redirect the traces.
-	% Already a trace emitter:
+	% Now that the log directory is known, we can properly redirect the traces:
+    executeConstOneway( CfgState, finaliseTraceSetup ),
 
-	NewBinTraceFilePath = file_utils:bin_join(
-		getAttribute( CfgState, log_directory ), "us_web.traces" ),
-
-	?send_debug_fmt( CfgState, "Requesting the renaming of trace file "
-					 "to '~ts'.", [ NewBinTraceFilePath ] ),
-
-	getAttribute( CfgState, trace_aggregator_pid ) !
-		{ renameTraceFile, NewBinTraceFilePath },
+	?send_info_fmt( CfgState, "Constructed: ~ts.", [ to_string( CfgState ) ] ),
 
 	CfgState.
 
@@ -668,6 +605,7 @@ destruct( State ) ->
 	[ CMPid ! delete
 		|| CMPid <- get_all_certificate_manager_pids( State ) ],
 
+    % It is our private one:
 	?getAttr(us_web_scheduler_pid) ! delete,
 
 	?info( "Deleted." ),
@@ -680,7 +618,7 @@ destruct( State ) ->
 
 
 -doc """
-Returns basic, general web configuration settings (typically for the us_web
+Returns basic, general web configuration settings (typically for the US-Web
 supervisor).
 """.
 -spec getWebConfigSettings( wooper:state() ) ->
@@ -737,7 +675,7 @@ Triggers and waits for a parallel certificate renewal from all known certificate
 managers (may be done for example at server startup).
 """.
 -spec renewCertificates( wooper:state() ) ->
-					const_request_return( 'certificate_renewals_over' ).
+                            const_request_return( 'certificate_renewals_over' ).
 renewCertificates( State ) ->
 
 	CertManagers = get_all_certificate_manager_pids( State ),
@@ -775,7 +713,7 @@ renewCertificates( State ) ->
 			_TargetInstancePIDs=CertManagers, MaxDurationInMs,
             % Now labelled as a (oneway) method (rather than the previous
             % on_certificate_renewal_over atom), since rescheduled renewals will
-            % sent it as well, and thus it will be then interpreted as a oneway
+            % send it as well, and thus it will be then interpreted as a oneway
             % call:
             %
 			_AckAtom=onCertificateRenewalOver ) of
@@ -813,9 +751,9 @@ of expiration.
 This may also (albeit this would be less likely) correspond, in the context of
 the initial certificate creations, to a late acknowledgement being received if
 ever a certificate manager finished - yet too late for `renewCertificates/1`
-(after it timed-out).
+(i.e. after it timed-out).
 """.
- -spec onCertificateRenewalOver( wooper:state(), pid() ) ->
+-spec onCertificateRenewalOver( wooper:state(), cert_manager_pid() ) ->
                                             const_oneway_return().
 onCertificateRenewalOver( State, CertManagerPid ) ->
 
@@ -839,7 +777,7 @@ renewCertificate( State, DomainId, VHostId ) ->
 	?info_fmt( "Renewal of TLS certification for virtual host '~ts' of "
 			   "domain '~ts' requested.", [ VHostId, DomainId ] ),
 
-	?error( "Not implemented yet." ),
+	?error( "Not implemented yet for a single host." ),
 
 	wooper:const_return().
 
@@ -1022,7 +960,7 @@ state of the tool for log analysis, then the generated of the reports as such.
 activate_loggers( Loggers ) ->
 
 	Results = wooper:send_request_in_turn( _Req=rotateThenGenerateReportSync,
-							_Args=[], _TargetInstancePIDs=Loggers ),
+		_Args=[], _TargetInstancePIDs=Loggers ),
 
 	case list_utils:delete_all_in( _Elem=report_generated, Results ) of
 
@@ -1039,7 +977,7 @@ activate_loggers( Loggers ) ->
 
 -doc "Callback triggered whenever a linked process exits.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-						basic_utils:exit_reason() ) -> const_oneway_return().
+	basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StoppedPid, _ExitType=normal ) ->
 
 	% Not even a trace sent for that, as too many of them.
@@ -1113,27 +1051,26 @@ load_and_apply_configuration( State ) ->
 				{ nitrogen_roots, [] },
 				{ meta_web_settings, undefined },
 				{ config_base_directory, BinCfgDir },
-				{ us_config_server_pid, CfgServerPid },
 				{ log_analysis_settings, undefined } ] ),
 
-			load_web_config( BinCfgDir, MaybeWebCfgFilename, StoreState )
+			load_web_config( BinCfgDir, MaybeWebCfgFilename, CfgServerPid, StoreState )
 
 	end.
 
 
 
 -doc """
-Loads the web configuration information (that is the US-Web configuration file,
-as identified from the US one), notably about virtual hosts.
+Loads the US-Web configuration information (that is the US-Web configuration
+file, as identified from the US one), notably about virtual hosts.
 """.
--spec load_web_config( bin_directory_path(), option( bin_file_path() ),
-			wooper:state() ) -> wooper:state().
-load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
+%-spec load_web_config( bin_directory_path(), option( bin_file_path() ),
+%			wooper:state() ) -> wooper:state().
+load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, CfgServerPid, State ) ->
 
 	DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
 
-	?info_fmt( "No configuration filename known of the overall US configuration"
-		" server (i.e. none defined in its own configuration file), "
+	?info_fmt( "No configuration filename known of the overall US central"
+		"server (i.e. none defined in its own configuration file), "
 		"hence defaulting to '~ts'.", [ DefaultBinWebCfgFilename ] ),
 
 	load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, State );
@@ -1147,7 +1084,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 	case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
 
 		true ->
-			?info_fmt( "Reading web configuration file, found as '~ts'.",
+			?info_fmt( "Reading the US-Web configuration file, found as '~ts'.",
 					   [ WebCfgFilePath ] );
 
 		false ->
@@ -1155,6 +1092,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 			?error_fmt( "No US-Web configuration file found or accessible "
 				"(e.g. symbolic link to an inaccessible file); tried '~ts'.",
 				[ WebCfgFilePath ] ),
+
 			throw( { us_web_config_file_not_found,
 					 text_utils:binary_to_string( WebCfgFilePath ) } )
 
@@ -1164,20 +1102,30 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 	WebCfgTable = table:new_from_unique_entries(
 		file_utils:read_etf_file( WebCfgFilePath ) ),
 
-	?debug_fmt( "Read web configuration ~ts",
+	?debug_fmt( "Read US-Web configuration ~ts",
 				[ table:to_string( WebCfgTable ) ] ),
 
-	EpmdState = manage_epmd_port( WebCfgTable, State ),
+	EpmdState = executeOneway( State, manageEPMDPort,
+        [ WebCfgTable, _PortKey=?us_web_epmd_port_key,
+          _DefPort=?default_us_web_epmd_port ] ),
 
-	RegState = manage_registrations( WebCfgTable, EpmdState ),
+	RegState = executeOneway( EpmdState, manageRegistrations,
+                              [ WebCfgTable ] ),
 
-	UserState = manage_os_user( WebCfgTable, RegState ),
+	UserState = executeOneway( RegState, manageSystemUser,
+        [ WebCfgTable, _UsernameKey=?us_web_username_key ] ),
 
-	AppState = manage_app_base_directories( WebCfgTable, UserState ),
+	AppState = executeOneway( UserState, manageAppBaseDirectories,
+        [ WebCfgTable, _BaseDirKey=?us_web_app_base_dir_key,
+          _BaseDirEnvVarName=?us_web_app_env_variable ] ),
 
-	DataState = manage_data_directory( WebCfgTable, AppState ),
+	DataState = executeOneway( AppState, manageDataDirectory,
+        [ WebCfgTable, _DataDirKey=?us_web_data_dir_key,
+          _DefaultDataBaseDir=?default_data_base_dir ] ),
 
-	LogState = manage_log_directory( WebCfgTable, DataState ),
+	LogState = executeOneway( DataState, manageLogDirectory,
+        [ WebCfgTable, _LogDirKey=?us_web_log_dir_key,
+          _DefaultLogDir=?default_log_base_dir ] ),
 
 	PortState = manage_ports( WebCfgTable, LogState ),
 
@@ -1191,16 +1139,18 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	PostMetaState = manage_post_meta( RouteState ),
 
-	LicitKeys = ?known_config_keys,
+    FinalState = PostMetaState,
+
+	LicitKeys = ?known_us_web_central_config_keys,
 
 	case list_utils:difference( table:keys( WebCfgTable ), LicitKeys ) of
 
 		[] ->
-			PostMetaState;
+			FinalState;
 
 		UnexpectedKeys ->
-
-			?error_fmt( "Unknown key(s) in '~ts': ~ts~nLicit keys: ~ts",
+			?error_fmt( "Unknown configuration key(s) in '~ts': ~ts~n"
+                "Licit ones are: ~ts",
 				[ WebCfgFilePath, text_utils:terms_to_string( UnexpectedKeys ),
 				  text_utils:terms_to_string( LicitKeys ) ] ),
 
@@ -1212,31 +1162,33 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 
 -doc """
-Creates a certificate manager for the specified domain (e.g. foobar.org),
-including for all its virtual hosts (e.g. baz.foobar.org), as SANs (Subject
-Alternative Names), for the specified type of challenge and, if needed (dns-01
-one), DNS provider.
+Creates a certificate manager for the specified domain (e.g. `foobar.org`),
+including for all its virtual hosts (e.g. `baz.foobar.org`), as SANs (*Subject
+Alternative Names*), for the specified type of challenge and, if needed
+(`dns-01` one), DNS provider.
 
-With the http-01 challenge, we used to create one single, standalone certificate
-per virtual host, yet the Let's Encrypt rate limits (see
-<https://letsencrypt.org/docs/rate-limits/>) could quite easily be hit (e.g. if
+With the `http-01` challenge, we used to create one single, standalone
+certificate per virtual host, yet the Let's Encrypt rate limits (see
+[https://letsencrypt.org/docs/rate-limits/]) could quite easily be hit (e.g. if
 having a total of more than 50 virtual hosts and/or domains).
 
-So now we create only certificates at the domain level - hence a certificate
-manager per domain, which lists all its corresponding virtual hosts as SANs;
-however a per-virtual host dedicated dispatch route must still be created
-(pointing to this certificate manager), as the ACME server will validate each of
-these SANs with a dedicated challenge: the corresponding, upcoming ACME http
-access must be intercepted and the corresponding token will have then to be
-returned.
+So instead we created only certificates at the domain level - hence a
+certificate manager per domain, which lists all its corresponding virtual hosts
+as SANs; however a per-virtual host dedicated dispatch route must still be
+created (pointing to this certificate manager), as the ACME server will validate
+each of these SANs with a dedicated challenge: the corresponding, upcoming ACME
+http access must be intercepted and the corresponding token will have then to be
+returned. Now US-Web supports the creation of wildcard certificates, which are a
+lot more convenient.
 
-With the dns-01 challenge, a directory containing the credentials to update
-one's DNS entries and a corresponding DNS provider must be specified.
+With the (now privileged) `dns-01` challenge, a directory containing the
+credentials to update one's DNS entries and a corresponding DNS provider must be
+specified.
 """.
 -spec handle_certificate_manager_for( bin_domain_name(), [ bin_san() ],
-		cert_support(), cert_mode(), challenge_type(), option( dns_provider() ),
-		option( bin_directory_path() ), bin_directory_path(),
-		option( bin_file_path() ), scheduler_pid() ) ->
+	cert_support(), cert_mode(), challenge_type(), option( dns_provider() ),
+	option( bin_directory_path() ), bin_directory_path(),
+	option( bin_file_path() ), scheduler_pid() ) ->
 											option( cert_manager_pid() ).
 % localhost of course invisible from outside the LAN:
 handle_certificate_manager_for( _BinDomainName= <<"localhost">>, _BinSans,
@@ -1367,8 +1319,8 @@ prepare_web_analysis(
 	file_utils:is_existing_file_or_link( ConfTemplatePath ) orelse
 		throw( { awstats_conf_template_not_found, ConfTemplatePath } ),
 
-	LogAnalysisStateDir = file_utils:join( ?getAttr(data_directory),
-										   "log-analysis-state" ),
+	LogAnalysisStateDir =
+        file_utils:join( ?getAttr(data_directory), "log-analysis-state" ),
 
 	file_utils:is_existing_directory_or_link( LogAnalysisStateDir ) orelse
 		begin
@@ -1378,8 +1330,8 @@ prepare_web_analysis(
 		end,
 
 	% Common to all virtual hosts:
-	BaseTranslationTable = table:new(
-		[ { "US_WEB_LOG_ANALYSIS_DATA_DIR", LogAnalysisStateDir } ] ),
+	BaseTranslationTable = table:singleton( _K="US_WEB_LOG_ANALYSIS_DATA_DIR",
+                                            _V=LogAnalysisStateDir ),
 
 	% Quite similar to a collective file_utils:update_with_keywords/3:
 
@@ -1404,7 +1356,6 @@ prepare_web_analysis(
 			throw( { awstats_update_executable_not_found, UpdateToolPath } )
 
 	end,
-
 
 	% Previously the main tool was "awstats.pl" and no helper was used, now
 	% building all report pages in one go with (using the former as its helper):
@@ -1471,8 +1422,8 @@ prepare_web_analysis(
 -doc """
 Determines the (absolute) meta web root to use.
 
-Returns the first found, supposing only one is defined (build_vhost_table/8 will
-perform an exhaustive search thereof).
+Returns the first found, supposing only one is defined (`build_vhost_table/8`
+will perform an exhaustive search thereof).
 """.
 determine_meta_web_root( _UserRoutes=[], _MaybeBinDefaultWebRoot, State ) ->
 
@@ -1521,8 +1472,6 @@ determine_meta_web_root_for( _VHostInfos=[ _ | T ], DomainId,
 -doc """
 Goes through domains then through virtual hosts, notably to prepare routes and
 any certificate management needed.
-
-(helper)
 """.
 -spec process_domain_routes( [ { domain_name(), [ vhost_info() ] } ],
 		bin_directory_path(), option( bin_directory_path() ),
@@ -1618,11 +1567,9 @@ process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
 
 
 -doc """
-Builds a vhost table corresponding to specified domain identifier.
+Builds a vhost table corresponding to the specified domain identifier.
 
 Multiple operations have to be done in one pass as they are quite interlinked.
-
-(helper)
 """.
 -spec build_vhost_table( bin_domain_name(), [ vhost_info() ],
 	option( cert_manager_pid() ), bin_directory_path(),
@@ -1692,10 +1639,10 @@ build_vhost_table( DomainId,
 
 % Meta kind here:
 build_vhost_table( DomainId,
-	   _VHostInfos=[ { VHostId, _ContentRoot, WebKind=meta } | T ],
-	   MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-	   MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport,
-	   State ) ->
+        _VHostInfos=[ { VHostId, _ContentRoot, WebKind=meta } | T ],
+        MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport,
+        State ) ->
 
 	% Quite similar to 'static', even if a logger and a web analysis
 	% organisation are not that useful:
@@ -1796,7 +1743,7 @@ build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
 
 
 -doc """
-Returns the corresponding {VHostEntry, VHostRoute} pair.
+Returns the corresponding `{VHostEntry, VHostRoute}` pair.
 
 (centralising helper)
 """.
@@ -1900,7 +1847,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 		text_utils:update_with_keywords( TemplateContent, TranslationTable ),
 
 	%LogConfFilename = class_USWebLogger:get_file_prefix_for( DomainId, VHostId,
-	%                                   LogAnalysisTool ) ++ ".conf",
+	%   LogAnalysisTool ) ++ ".conf",
 
 	LogConfFilename = class_USWebLogger:get_conf_filename_for( DomainId,
 		VHostId, LogAnalysisTool ),
@@ -1945,7 +1892,7 @@ manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
 
 -doc "Checks and returns an absolute version of the specified content root.".
 -spec get_content_root( directory_path(), option( bin_directory_path() ),
-		vhost_id(), domain_id(), wooper:state() ) -> bin_directory_path().
+	vhost_id(), domain_id(), wooper:state() ) -> bin_directory_path().
 get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
 				  State ) ->
 
@@ -2083,11 +2030,11 @@ describe_host( VHostId, BinDomainName ) ->
 Returns a static dispatch route rule corresponding to the specified virtual host
 identifier, domain identifier and content root.
 
-See <https://ninenines.eu/docs/en/cowboy/2.9/guide/routing/> for more details.
+See [https://ninenines.eu/docs/en/cowboy/2.13/guide/routing/] for more details.
 """.
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
-		logger_pid(), cert_support(), option( cert_manager_pid() ) ) ->
-									route_rule().
+	logger_pid(), cert_support(), option( cert_manager_pid() ) ) ->
+                                                    route_rule().
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 						 CertSupport, MaybeCertManagerPid ) ->
 
@@ -2189,7 +2136,7 @@ get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 Returns a Nitrogen-specific dispatch route rule corresponding to the specified
 virtual host identifier, domain identifier and content root.
 
-See, in simple_bridge, cowboy_simple_bridge_sup.erl for more details.
+See, in `simple_bridge`, `cowboy_simple_bridge_sup.erl` for more details.
 """.
 -spec get_nitrogen_dispatch_for( vhost_id(), domain_id(),
 		bin_directory_path(), logger_pid(), cert_support(),
@@ -2278,7 +2225,7 @@ get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
 		%      InitialNitroHandlerState } ],
 
 	PathMatches = case CertSupport =:= renew_certificates
-						andalso MaybeCertManagerPid =/= undefined of
+			andalso MaybeCertManagerPid =/= undefined of
 
 		true ->
 			 % Be able to answer Let's Encrypt ACME challenges:
@@ -2315,11 +2262,11 @@ get_host_match_for( _DomainId=default_domain_catch_all,
 	text_utils:format( "~ts.:_.:_", [ BinVHostName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=without_vhost )
-			when is_binary( BinDomainName ) ->
+                                        when is_binary( BinDomainName ) ->
 	BinDomainName;
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
-			when is_binary( BinDomainName ) ->
+                                        when is_binary( BinDomainName ) ->
 	% text_utils:format( ":_.~ts", [ BinDomainName ] );
 	%
 	% A little better (more general) than above (which, if
@@ -2414,7 +2361,7 @@ set_as_forward_paths(
 		NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
 	FWPath = { PathMatch, Constraints, NewHandlerModule,
-			   NewHandlerInitialState },
+               NewHandlerInitialState },
 
 	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
 						  [ FWPath | Acc ] ).
@@ -2460,66 +2407,16 @@ check_kind( WebKind, VHost, DomainId, State ) ->
 
 
 
--doc """
-Manages any US-Web level user-configured EPMD port.
-
-The port may be already set at the US overall level, but it can be overridden on
-a per-US application basis, as it may be convenient to share one's us.config
-between multiple applications (e.g. US-Main and US-Web).
-""".
--spec manage_epmd_port( us_web_config_table(), wooper:state() ) ->
-										wooper:state().
-manage_epmd_port( ConfigTable, State ) ->
-
-	% No simple, integrated way of checking the actual port currently in use:
-	{ Port, Origin } = case table:lookup_entry( ?us_web_epmd_port_key,
-												ConfigTable ) of
-
-		key_not_found ->
-			% No US-Web EPMD port defined, so its default will apply unless a
-			% port was explicitly set at the US-level:
-			%
-			DefaultUSWebEpmdPort = ?default_us_web_epmd_port,
-
-			?info_fmt( "No user-configured EPMD TCP port for US-Web, "
-				"proposing its default one, ~B (any port explicitly set "
-				"at the US-level will thus prevail).",
-				[ DefaultUSWebEpmdPort  ] ),
-
-			{ DefaultUSWebEpmdPort, as_default };
-
-
-		{ value, UserEPMDPort } when is_integer( UserEPMDPort ) ->
-			?info_fmt( "Supposing already running using the user-defined "
-					   "US-Web EPMD TCP port #~B.", [ UserEPMDPort ] ),
-
-			{ UserEPMDPort, explicit_set };
-
-
-		{ value, InvalidEPMDPort } ->
-			?error_fmt( "Read invalid user-configured US-Web EPMD port: '~p'.",
-						[ InvalidEPMDPort ] ),
-			throw( { invalid_us_web_epmd_port, InvalidEPMDPort,
-					 ?us_web_epmd_port_key } )
-
-	end,
-
-	% For correct information; available by design:
-	?getAttr(us_config_server_pid) !
-		{ notifyEPMDPort, [ Port, Origin, ?MODULE, self() ] },
-
-	% Const:
-	State.
-
-
 
 -doc """
-Manages any user-configured registration names for this instance, for the US-Web
-server and their related services, which may be created here.
+Manages any application-configured naming registration for this instance, and
+creates its own scheduler.
+
+Different (including w.r.t. arity) from the manageRegistrations/4 method
+inherited from class_USCentralServer.
 """.
--spec manage_registrations( us_web_config_table(), wooper:state() ) ->
-									wooper:state().
-manage_registrations( ConfigTable, State ) ->
+-spec manageRegistrations( wooper:state(), config_table() ) -> oneway_return().
+manageRegistrations( State, ConfigTable ) ->
 
 	{ CfgRegName, CfgRegScope, SchedRegName, SchedRegScope, RegMsg } =
 			case get_registration_info( ConfigTable ) of
@@ -2545,450 +2442,15 @@ manage_registrations( ConfigTable, State ) ->
 		"(scope: ~ts).",
 		[ CfgRegName, CfgRegScope, SchedPid, SchedRegName, SchedRegScope ] ),
 
-	setAttributes( State, [
+	SetState = setAttributes( State, [
 		% Inherited:
 		{ registration_name, CfgRegName },
 		{ registration_scope, CfgRegScope },
 
-		{ scheduler_registration_name, SchedRegName },
-		{ scheduler_registration_scope, SchedRegScope },
-		{ us_web_scheduler_pid, SchedPid } ] ).
+		{ scheduler_registration_lookup_info, { SchedRegName, SchedRegScope } },
+		{ us_web_scheduler_pid, SchedPid } ] ),
 
-
-
--doc """
-Manages any user-configured specification regarding the (operating-system level)
-US-Web user.
-""".
--spec manage_os_user( us_web_config_table(), wooper:state() ) -> wooper:state().
-manage_os_user( ConfigTable, State ) ->
-
-	% Mostly used by start/stop/kill scripts:
-	WebUsername = case table:lookup_entry( ?us_web_username_key,
-										   ConfigTable ) of
-
-		key_not_found ->
-			ActualUsername = system_utils:get_user_name(),
-			?info_fmt( "No user-configured US-Web operating-system username "
-				"set for this server; runtime-detected: '~ts'.",
-				[ ActualUsername ] ),
-			ActualUsername;
-
-		{ value, Username } when is_list( Username ) ->
-
-			% No overriding expected:
-			basic_utils:check_undefined( ?getAttr(username) ),
-
-			case system_utils:get_user_name() of
-
-				Username ->
-					?info_fmt( "Using user-configured US-Web operating-system "
-						"username '~ts' for this server, which matches "
-						"the current runtime user.", [ Username ] ),
-					Username;
-
-				OtherUsername ->
-					?error_fmt( "The user-configured US-Web operating-system "
-						"username '~ts' for this server does not match "
-						"the current runtime user, '~ts'.",
-						[ Username, OtherUsername ] ),
-					throw( { inconsistent_os_us_web_user, OtherUsername,
-							 Username, ?us_web_username_key } )
-
-			end
-
-	end,
-
-	setAttribute( State, username,
-				  text_utils:string_to_binary( WebUsername ) ).
-
-
-
--doc """
-Manages any user-configured application base directory, and sets related
-directories.
-""".
--spec manage_app_base_directories( us_web_config_table(), wooper:state() ) ->
-										wooper:state().
-manage_app_base_directories( ConfigTable, State ) ->
-
-	% As opposed to, say, start/stop script, the Erlang code does not care so
-	% much about these directories, so warnings, not errors, were issued if
-	% not found (the US framework being also launchable thanks to, for example,
-	% 'make debug'). We finally opted for a stricter policy, as errors could be
-	% induced afterwards.
-
-	AppRunContext = ?getAttr(app_run_context),
-
-	MaybeConfBaseDir = case table:lookup_entry( ?us_web_app_base_dir_key,
-												ConfigTable ) of
-
-		key_not_found ->
-			undefined;
-
-		{ value, D } when is_list( D ) ->
-			?info_fmt( "User-configured US-Web application base directory "
-					   "is '~ts'.", [ D ] ),
-			D;
-
-		{ value, InvalidDir }  ->
-			?error_fmt( "Read invalid user-configured US-Web application base "
-						"directory: '~p'.", [ InvalidDir ] ),
-			throw( { invalid_us_web_app_base_directory, InvalidDir,
-					 ?us_web_app_base_dir_key, AppRunContext } )
-
-	end,
-
-	MaybeBaseDir = case MaybeConfBaseDir of
-
-		undefined ->
-			case system_utils:get_environment_variable(
-					?us_web_app_env_variable ) of
-
-				false ->
-					undefined;
-
-				% Might be set, yet to an empty string, typically because of
-				% US_WEB_APP_BASE_DIR="${US_WEB_APP_BASE_DIR}":
-				%
-				"" ->
-					undefined;
-
-				EnvDir ->
-					?info_fmt( "No user-configured US-Web application base "
-						"directory set in configuration file, using the value "
-						"of the '~ts' environment variable: '~ts'.",
-						[ ?us_web_app_env_variable, EnvDir ] ),
-					EnvDir
-
-			end;
-
-		_ ->
-			MaybeConfBaseDir
-
-	end,
-
-	RawBaseDir = case MaybeBaseDir of
-
-		undefined ->
-			guess_app_dir( AppRunContext, State );
-
-		_ ->
-			MaybeBaseDir
-
-	end,
-
-	BaseDir = file_utils:ensure_path_is_absolute( RawBaseDir ),
-
-	% We check not only that this candidate app directory exists, but also that
-	% it is a right one, expecting to have a 'priv' direct subdirectory then:
-
-	MaybeBaseBinDir =
-			case file_utils:is_existing_directory_or_link( BaseDir ) of
-
-		true ->
-			BinBaseDir = text_utils:string_to_binary( BaseDir ),
-			case AppRunContext of
-
-				as_otp_release ->
-					% As, if run as a release, it may end with a version (e.g.
-					% "us_web-0.0.1") or as a "us_web-latest" symlink thereof,
-					% or directly as "us-web":
-					%
-					case filename:basename( BaseDir ) of
-
-						"us_web" ++ _ ->
-							?info_fmt( "US-Web (release) application base "
-								"directory set to '~ts'.", [ BaseDir ] ),
-							BinBaseDir;
-
-						% For a clone made to a default directory (e.g. by CI):
-						"us-web" ++ _ ->
-							?info_fmt( "US-Web (release) application base "
-								"directory set to '~ts'.", [ BaseDir ] ),
-							BinBaseDir;
-
-						_Other ->
-							%?warning_fmt( "The US-Web application base "
-							%  "directory '~ts' does not seem legit (it "
-							%  "should end with 'us_web'), thus considering "
-							%  "knowing none.", [ BaseDir ] ),
-							%undefined
-							throw( { incorrect_us_web_app_base_directory,
-									 BaseDir, ?us_web_app_base_dir_key,
-									 AppRunContext } )
-
-					end;
-
-				as_native ->
-					case file_utils:get_last_path_element( BaseDir ) of
-
-						"us_web" ->
-							?info_fmt( "US-Web (native) application base "
-									   "directory set to '~ts'.", [ BaseDir ] ),
-							BinBaseDir;
-
-						_Other ->
-							throw( { incorrect_us_web_app_base_directory,
-									 BaseDir, ?us_web_app_base_dir_key,
-									 AppRunContext } )
-
-					end
-
-			end,
-
-			% Final paranoid check:
-			PrivDir = file_utils:join( BinBaseDir, "priv" ),
-			case file_utils:is_existing_directory_or_link( PrivDir ) of
-
-				true ->
-					BinBaseDir;
-
-				false ->
-					?error_fmt( "The determined US-Web application base "
-						"directory '~ts' does not have a 'priv' subdirectory.",
-						[ BinBaseDir ] ),
-
-					throw( { no_priv_us_web_app_base_directory, BaseDir,
-							 ?us_web_app_base_dir_key } )
-
-			end;
-
-
-		false ->
-			%?warning_fmt( "The US-Web application base directory '~ts' does "
-			%   "not exist, thus considering knowing none.", [ BaseDir ] ),
-			%undefined
-			throw( { non_existing_us_web_app_base_directory, BaseDir,
-					 ?us_web_app_base_dir_key } )
-
-	end,
-
-	% The internal US-Web directory (see conf_directory) used to be derived from
-	% the app base one (as a 'conf' subdirectory thereof), yet because of that
-	% it was not included in releases. So instead this 'conf' directory is a
-	% subdirectory of 'priv':
-	%
-	% (for some reason, using this module, although it is listed in us_web.app,
-	% results with code:priv_dir/1 in a bad_name exception)
-	%
-	%TargetMod = ?MODULE,
-	%TargetMod = us_web_app,
-	TargetMod = us_web_sup,
-
-	ConfBinDir = file_utils:bin_join(
-		otp_utils:get_priv_root( TargetMod, _BeSilent=true ), "conf" ),
-
-	% Set in all cases:
-	setAttributes( State, [ { app_base_directory, MaybeBaseBinDir },
-							{ conf_directory, ConfBinDir } ] ).
-
-
-
--doc "Tries to guess the US-Web application directory.".
-guess_app_dir( AppRunContext, State ) ->
-
-	CurrentDir = file_utils:get_current_directory(),
-
-	GuessingDir = case AppRunContext of
-
-		as_otp_release ->
-			% In [...]/us_web/_build/default/rel/us_web, and we want the first
-			% us_web, so:
-			%
-			OTPPath = file_utils:normalise_path(
-				file_utils:join( [ CurrentDir, "..", "..", "..", ".." ] ) ),
-
-			case file_utils:get_base_path( OTPPath ) of
-
-				"us_web" ->
-					% Looks good:
-					OTPPath;
-
-				% Not found; another try, if running as a test (from
-				% us_web/test):
-				%
-				_ ->
-					file_utils:get_base_path( CurrentDir )
-
-			end;
-
-		as_native ->
-			% In the case of a native build, running from us_web/src (covers
-			% also the case where a test is being run from us_web/test), so:
-			%
-			file_utils:get_base_path( CurrentDir )
-
-	end,
-
-	% Was a warning:
-	?info_fmt( "No user-configured US-Web application base directory set "
-		"(neither in configuration file nor through the '~ts' environment "
-		"variable), hence trying to guess it, in a ~ts context, as '~ts'.",
-		[ ?us_web_app_env_variable, AppRunContext, GuessingDir ] ),
-
-	GuessingDir.
-
-
-
--doc """
-Manages any user-configured data directory to rely on, creating it if necessary.
-""".
--spec manage_data_directory( us_web_config_table(), wooper:state() ) ->
-									wooper:state().
-manage_data_directory( ConfigTable, State ) ->
-
-	BaseDir = case table:lookup_entry( ?us_web_data_dir_key, ConfigTable ) of
-
-		key_not_found ->
-			file_utils:ensure_path_is_absolute( ?default_data_base_dir,
-									?getAttr(app_base_directory) );
-
-		{ value, D } when is_list( D ) ->
-			file_utils:ensure_path_is_absolute( D,
-												?getAttr(app_base_directory) );
-
-		{ value, InvalidDir }  ->
-			?error_fmt( "Read invalid user-configured data directory: '~p'.",
-						[ InvalidDir ] ),
-			throw( { invalid_data_directory, InvalidDir,
-					 ?us_web_data_dir_key } )
-
-	end,
-
-	file_utils:is_existing_directory( BaseDir ) orelse
-		?warning_fmt( "The base data directory '~ts' does not exist, "
-					  "creating it.", [ BaseDir ] ),
-
-	% Would lead to inconvenient paths, at least if defined as relative:
-	%DataDir = file_utils:join( BaseDir, ?app_subdir ),
-	DataDir = BaseDir,
-
-	try
-
-		file_utils:create_directory_if_not_existing( DataDir, create_parents )
-
-	catch
-
-		{ create_directory_failed, _DataDir, eacces } ->
-
-			% Clearer than system_utils:get_user_name_string/0:
-			Username = system_utils:get_user_name(),
-
-			?error_fmt( "Unable to create the directory for working data "
-				"'~ts': please ensure its parent directory can be written "
-				"by user '~ts', or set it to different path thanks to the "
-				"'~ts' key.", [ DataDir, Username, ?us_web_data_dir_key ] ),
-
-			throw( { data_directory_creation_failed, DataDir, eacces,
-					 Username } );
-
-		E ->
-			throw( { data_directory_creation_failed, DataDir, E } )
-
-	end,
-
-	% Enforce security in all cases ("chmod 700"); if it fails here, the
-	% combined path/user configuration must be incorrect; however we might not
-	% be the owner of that directory (e.g. if the us-web user is different from
-	% the us one). So:
-	%
-	CurrentUserId = system_utils:get_user_id(),
-
-	% If not owned, do nothing:
-	file_utils:get_owner_of( DataDir ) =:= CurrentUserId andalso
-		file_utils:change_permissions( DataDir,
-			[ owner_read, owner_write, owner_execute,
-			  group_read, group_write, group_execute ] ),
-
-	BinDataDir = text_utils:ensure_binary( DataDir ),
-
-	setAttribute( State, data_directory, BinDataDir ).
-
-
-
--doc """
-Manages any user-configured log directory to rely on, creating it if necessary.
-""".
--spec manage_log_directory( us_web_config_table(), wooper:state() ) ->
-								wooper:state().
-manage_log_directory( ConfigTable, State ) ->
-
-	% Longer paths if defined as relative, yet finally preferred as
-	% '/var/log/universal-server/us-web' (rather than
-	% '/var/log/universal-server') as it allows separating US-Web from any other
-	% US-* services:
-	%
-	LogDir = case table:lookup_entry( ?us_web_log_dir_key, ConfigTable ) of
-
-		key_not_found ->
-			% Bound to require special permissions:
-			?default_log_base_dir;
-
-		{ value, D } when is_list( D ) ->
-			file_utils:ensure_path_is_absolute( D,
-												?getAttr(app_base_directory) );
-
-		{ value, InvalidDir }  ->
-			?error_fmt( "Read invalid user-configured log directory: '~p'.",
-						[ InvalidDir ] ),
-			throw( { invalid_log_directory, InvalidDir, ?us_web_log_dir_key } )
-
-	end,
-
-	file_utils:is_existing_directory( LogDir ) orelse
-		begin
-
-			%throw( { non_existing_base_us_web_log_directory, LogDir } )
-
-			?warning_fmt( "The base US-Web log directory '~ts' does not exist, "
-						  "creating it.", [ LogDir ] ),
-
-			% As for example the default path would require to create
-			% /var/log/universal-server/us-web:
-			%
-			file_utils:create_directory_if_not_existing( LogDir,
-														 create_parents )
-
-		end,
-
-	% In addition to this US-Web log directory, we create a subdirectory thereof
-	% to store all web logs (access and error logs):
-	%
-	BinWebLogDir = get_web_log_dir( LogDir ),
-	file_utils:create_directory_if_not_existing( BinWebLogDir ),
-
-	% Enforce security in all cases ("chmod 700"); if it fails here, the
-	% combined path/user configuration must be incorrect; however we might not
-	% be the owner of that directory (e.g. if the us-web user is different from
-	% the US-Common one).
-	%
-	% So:
-	%
-	CurrentUserId = system_utils:get_user_id(),
-
-	% If not owned, do nothing:
-	file_utils:get_owner_of( LogDir ) =:= CurrentUserId andalso
-		begin
-
-			Perms = [ owner_read, owner_write, owner_execute,
-					  group_read, group_write, group_execute ],
-
-			[ file_utils:change_permissions( D, Perms )
-				|| D <- [ LogDir, BinWebLogDir ] ]
-
-		end,
-
-	BinLogDir = text_utils:ensure_binary( LogDir ),
-
-	setAttribute( State, log_directory, BinLogDir ).
-
-
-
--doc "Centralises the definition of the directory where to store all web logs.".
--spec get_web_log_dir( any_directory_path() ) -> bin_directory_path().
-get_web_log_dir( LogDir ) ->
-	text_utils:string_to_binary( file_utils:join( LogDir, ?web_log_subdir ) ).
+    wooper:return_state( SetState ).
 
 
 
@@ -3271,8 +2733,7 @@ manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
 	MaybeDNSProvider = case ChallengeType of
 
 		'dns-01' ->
-			case table:lookup_entry( ?dns_provider_key,
-									 ConfigTable ) of
+			case table:lookup_entry( ?dns_provider_key, ConfigTable ) of
 
 				{ value, AtomProv } ->
 					case leec:is_supported_dns_provider( AtomProv ) of
@@ -3834,27 +3295,56 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 % Static section.
 
 
-% Version-related static methods.
-
-
--doc "Returns the version of the US-Web library being used.".
--spec get_us_web_version() -> static_return( three_digit_version() ).
-get_us_web_version() ->
+-doc "Returns the version of the US application being used.".
+-spec get_us_app_version() -> static_return( three_digit_version() ).
+get_us_app_version() ->
 	wooper:return_static(
-		basic_utils:parse_version( get_us_web_version_string() ) ).
+		basic_utils:parse_version( get_us_app_version_string() ) ).
 
 
 
--doc "Returns the version of the US-Web library being used, as a string.".
--spec get_us_web_version_string() -> static_return( ustring() ).
-get_us_web_version_string() ->
+-doc "Returns the version of the US application being used, as a string.".
+-spec get_us_app_version_string() -> static_return( ustring() ).
+get_us_app_version_string() ->
 	% As defined (uniquely) in GNUmakevars.inc:
-	wooper:return_static( ?us_web_version ).
+	wooper:return_static( ?us_app_version ).
+
+
+-doc "Centralises the definition of the directory where to store all web logs.".
+-spec get_web_log_dir( any_directory_path() ) ->
+                                        static_return( bin_directory_path() ).
+get_web_log_dir( LogDir ) ->
+    wooper:return_static( wooper:retur_static( text_utils:string_to_binary(
+        file_utils:join( LogDir, ?web_log_subdir ) ) ) ).
 
 
 
 -doc """
-Returns, based on the US main configuration table and the US configuration
+Returns the PID of the current, supposedly already-launched, US-Web
+configuration server, waiting (up to a few seconds, as all US-Web server
+processes are bound to be launched mostly simultaneously) if needed.
+
+Possibly useful for any US-Web auxiliary, thematical servers, so that they can
+easily access to their configuration information.
+
+It is better to obtain the PID of a server each time from the naming service
+rather than to resolve and store its PID once for all, as, for an increased
+robustness, servers may be restarted (hence any stored PID may not reference a
+live process anymore).
+""".
+-spec get_server_pid () -> static_return( web_central_server_pid() ).
+get_server_pid() ->
+
+	WebCtrSrvPid = class_USServer:resolve_server_pid(
+        _RegName=?default_us_web_central_server_registration_name,
+        _RegScope=?us_web_central_server_registration_scope ),
+
+	wooper:return_static( WebCtrSrvPid ).
+
+
+
+-doc """
+Returns, based on the US-Web configuration table and the US configuration
 directory, the US-Web configuration table, as read from the US-Web configuration
 file, together with the path of this file.
 
@@ -3923,11 +3413,11 @@ Static for sharing with clients, tests, etc.
 get_registration_info( ConfigTable ) ->
 
 	CfgRegOutcome = case table:lookup_entry(
-			?us_web_config_server_registration_name_key, ConfigTable ) of
+			?us_web_central_server_registration_name_key, ConfigTable ) of
 
 		key_not_found ->
 
-			DefCfgRegName = ?default_us_web_config_server_registration_name,
+			DefCfgRegName = ?default_us_web_central_server_registration_name,
 
 			DefCfgMsg = text_utils:format( "No user-configured registration "
 				"name for the US-Web configuration server, defaulting to '~ts'",
@@ -3951,7 +3441,7 @@ get_registration_info( ConfigTable ) ->
 
 			{ error, _DiagnosedError={ { invalid_web_config_registration_name,
 				InvalidCfgRegName,
-				?us_web_config_server_registration_name_key }, CfgErrorMsg } }
+				?us_web_central_server_registration_name_key }, CfgErrorMsg } }
 
 	end,
 
@@ -3964,7 +3454,7 @@ get_registration_info( ConfigTable ) ->
 		{ ok, CfgRegName, CfgMsg } ->
 
 			% Name can be user-defined, scope is fixed:
-			CfgRegScope = ?us_web_config_server_registration_scope,
+			CfgRegScope = ?us_web_central_server_registration_scope,
 
 			SchedRegScope = ?us_web_scheduler_registration_scope,
 
@@ -4006,7 +3496,7 @@ get_registration_info( ConfigTable ) ->
 
 					{ error, { { invalid_web_scheduler_registration_name,
 								 InvalidScRegName,
-								 ?us_web_config_server_registration_name_key },
+								 ?us_web_central_server_registration_name_key },
 							   SchedErrorMsg } }
 
 		end
@@ -4064,14 +3554,14 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 		[ VHCfgE#vhost_config_entry.logger_pid
 			|| VHCfgE <- table:values( VHCfgTable ) ]
 				|| { _DomainId, _MaybeCertManagerPid, VHCfgTable }
-							<- table:values( DomainCfgTable ) ] ),
+						<- table:values( DomainCfgTable ) ] ),
 	list_utils:filter_out_undefined( MaybePids ).
 
 
 
 -doc "Returns an (unordered) list of all the PIDs of the certificate managers.".
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
-			[ cert_manager_pid() ].
+                                                    [ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->
 	get_all_certificate_manager_pids_from( ?getAttr(domain_config_table) ).
 
@@ -4081,12 +3571,12 @@ get_all_certificate_manager_pids( State ) ->
 get_all_certificate_manager_pids_from( DomainCfgTable ) ->
 	MaybePids = [ MaybeCertManagerPid
 					|| { _DomainId, MaybeCertManagerPid, _VHCfgTable }
-								<- table:values( DomainCfgTable ) ],
+						<- table:values( DomainCfgTable ) ],
 	list_utils:filter_out_undefined( MaybePids ).
 
 
 
--doc "Returns a textual description of this configuration server.".
+-doc "Returns a textual description of this central server.".
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 
@@ -4154,18 +3644,11 @@ to_string( State ) ->
 
 	end,
 
-	text_utils:format( "US-Web configuration ~ts, running ~ts, ~ts, ~ts, ~ts, "
-		"running in the ~ts execution context, ~ts, knowing "
-		"US overall configuration server ~w and "
-		"OTP supervisor ~w, relying on the '~ts' configuration directory and "
-		"on the '~ts' log directory, ~ts.~n~nIn terms of routes, using ~ts~n~n"
-		"Corresponding dispatch rules:~n~p",
-		[ class_USServer:to_string( State ),
-		  otp_utils:application_run_context_to_string(
-			?getAttr(app_run_context) ),
-		  HttpString, HttpsString,
-		  WebRootString, ?getAttr(execution_context), CertString,
-		  ?getAttr(us_config_server_pid), ?getAttr(us_web_supervisor_pid),
-		  ?getAttr(config_base_directory), ?getAttr(log_directory), NitroString,
+	text_utils:format( "~ts, ~ts, ~ts, ~ts, ~ts, ~ts and "
+        "relying on its private scheduler ~w.~n~n"
+        "In terms of routes, using ~ts~n~nCorresponding dispatch rules:~n~p",
+		[ class_USCentralServer:to_string( State ), HttpString, HttpsString,
+		  WebRootString, CertString, NitroString,
+          ?getAttr(us_web_scheduler_pid),
 		  domain_table_to_string( ?getAttr(domain_config_table) ),
 		  ?getAttr(dispatch_rules) ] ).

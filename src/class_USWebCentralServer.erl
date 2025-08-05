@@ -397,6 +397,7 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 
 -type config_table() :: app_facilities:config_table().
 
+-type config_server_pid() :: class_USConfigServer:config_server_pid().
 
 -type server_pid() :: class_USServer:server_pid().
 
@@ -1030,8 +1031,9 @@ load_and_apply_configuration( State ) ->
 	% launched concurrently and US-Web must not trigger a creation whereas the
 	% base, default one is still in progress:
 	%
-	CfgServerPid = class_USConfigServer:get_us_config_server(
-		_CreateIfNeeded=false, State ),
+    { CfgSrvRegName, CfgSrvLookupScope, CfgSrvPid } =
+        class_USConfigServer:get_us_config_registration_info(
+            _CreateIfNeeded=false, State ),
 
 	% This web configuration server is not supposed to read more the US
 	% configuration file; it should request it to the overall configuration
@@ -1039,21 +1041,25 @@ load_and_apply_configuration( State ) ->
 	% possibly inconsistent reading/interpretation (and in order to declare
 	% itself in the same move):
 	%
-	CfgServerPid ! { getUSWebRuntimeSettings, [], self() },
+    CfgSrvPid ! { getUSWebRuntimeSettings, [], self() },
+
+    RegState = setAttribute( State, us_config_lookup_info,
+                             { CfgSrvRegName, CfgSrvLookupScope } ),
 
 	% No possible interleaving:
 	receive
 
 		{ wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename } } ->
 
-			StoreState = setAttributes( State, [
+			StoreState = setAttributes( RegState, [
 				{ execution_context, ExecContext },
 				{ nitrogen_roots, [] },
 				{ meta_web_settings, undefined },
 				{ config_base_directory, BinCfgDir },
 				{ log_analysis_settings, undefined } ] ),
 
-			load_web_config( BinCfgDir, MaybeWebCfgFilename, CfgServerPid, StoreState )
+			load_web_config( BinCfgDir, MaybeWebCfgFilename, CfgSrvPid,
+                             StoreState )
 
 	end.
 
@@ -1063,9 +1069,10 @@ load_and_apply_configuration( State ) ->
 Loads the US-Web configuration information (that is the US-Web configuration
 file, as identified from the US one), notably about virtual hosts.
 """.
-%-spec load_web_config( bin_directory_path(), option( bin_file_path() ),
-%			wooper:state() ) -> wooper:state().
-load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, CfgServerPid, State ) ->
+-spec load_web_config( bin_directory_path(), option( bin_file_path() ),
+	config_server_pid(), wooper:state() ) -> wooper:state().
+load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined,
+                 CfgSrvPid, State ) ->
 
 	DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
 
@@ -1073,10 +1080,11 @@ load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, CfgServerPid,
 		"server (i.e. none defined in its own configuration file), "
 		"hence defaulting to '~ts'.", [ DefaultBinWebCfgFilename ] ),
 
-	load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, State );
+	load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, CfgSrvPid,
+                     State );
 
 
-load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
+load_web_config( BinCfgBaseDir, BinWebCfgFilename, CfgSrvPid, State ) ->
 
 	WebCfgFilePath = file_utils:ensure_path_is_absolute( BinWebCfgFilename,
 		_BasePath=BinCfgBaseDir ),
@@ -1107,7 +1115,7 @@ load_web_config( BinCfgBaseDir, BinWebCfgFilename, State ) ->
 
 	EpmdState = executeOneway( State, manageEPMDPort,
         [ WebCfgTable, _PortKey=?us_web_epmd_port_key,
-          _DefPort=?default_us_web_epmd_port ] ),
+          _DefPort=?default_us_web_epmd_port, CfgSrvPid ] ),
 
 	RegState = executeOneway( EpmdState, manageRegistrations,
                               [ WebCfgTable ] ),

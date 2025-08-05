@@ -151,9 +151,9 @@ main, default hostname, and per-virtual host information.
 
 %-type task_id() :: class_USScheduler:task_id().
 
--type dispatch_routes() :: class_USWebConfigServer:dispatch_routes().
--type cert_mode() :: class_USWebConfigServer:cert_mode().
--type https_transport_info() :: class_USWebConfigServer:https_transport_info().
+-type dispatch_routes() :: class_USWebCentralServer:dispatch_routes().
+-type cert_mode() :: class_USWebCentralServer:cert_mode().
+-type https_transport_info() :: class_USWebCentralServer:https_transport_info().
 
 -type leec_caller_state() :: leec:leec_caller_state().
 -type challenge_type() :: leec:challenge_type().
@@ -348,13 +348,11 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 	% (trapping EXITs, as wanting to detect any crash of a LEEC FSM, calling
 	% then onWOOPERExitReceived/3)
 	%
-	TraceState = class_USServer:construct( State,
+	SrvState = class_USServer:construct( State,
 		?trace_categorize(ServerName), _TrapExits=true ),
 
-	% For example for any stateless helper:
-	class_TraceEmitter:register_bridge( TraceState ),
 
-	%?send_info( TraceState, "Construction started." ),
+	%?send_info( SrvState, "Construction started." ),
 
 	% Just a start thereof (LEEC plus its associated, linked, FSM; no
 	% certificate request issued yet):
@@ -362,12 +360,12 @@ construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
 	{ MaybeLEECCallerState, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
 		init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
 			MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
-			TraceState ),
+			SrvState ),
 
 	% Registration to scheduler to happen in next (first) renewCertificate/1
 	% call.
 
-	ReadyState = setAttributes( TraceState, [
+	ReadyState = setAttributes( SrvState, [
 		{ fqdn, BinFQDN },
 		{ cert_mode, CertMode },
 
@@ -1156,11 +1154,13 @@ server-specified order instead of the client-specified oner, hence enforcing the
 (usually more properly configured) security ordering of the server
 administrator.
 
-Apparently Erlang (i.e. cowboy:start_tls/3, relying on ranch_ssl:opts(), which
-corresponds roughly to ssl:erl_cipher_suite()) relies on cipher suites expressed
+Apparently Erlang (i.e. `cowboy:start_tls/3`, relying on `ranch_ssl:opts()`, which
+corresponds roughly to `ssl:erl_cipher_suite()`) relies on cipher suites expressed
 with IANA conventions, whereas sites such as SSL Labs uses OpenSSL
-conventions. For conversions, see reference table in
-<https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table>.
+conventions.
+
+For conversions, see reference table in
+[https://github.com/erlang/otp/wiki/Cipher-suite-correspondence-table].
 """.
 -spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
 get_recommended_ciphers() ->
@@ -1327,8 +1327,8 @@ get_transport_opts_for( FQDN, BinCertDir ) ->
 
 
 -doc """
-Checks the specified HTTPS transport options regarding the 'certfile' and
-'keyfile' entries; throws an exception if they are not found or not currently
+Checks the specified HTTPS transport options regarding the `certfile` and
+`keyfile` entries; throws an exception if they are not found or not currently
 applicable (no associated file found).
 
 SNI information not checked, as usually deriving from HTTPS transport options.

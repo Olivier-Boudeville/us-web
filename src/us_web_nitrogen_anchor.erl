@@ -5,18 +5,17 @@ This is the US-Web module in charge of **handling requests aimed at
 Nitrogen-based virtual hosts**.
 
 Directly adapted from simple_bridge's
-src/cowboy_bridge_modules/cowboy_simple_bridge_anchor.erl module.
+`src/cowboy_bridge_modules/cowboy_simple_bridge_anchor` module.
 """.
 
 
--export([
-		init/2,
-		handle/2,
-		terminate/2,
-		websocket_init/1,
-		websocket_handle/2,
-		websocket_info/2,
-		websocket_terminate/2 ]).
+-export([ init/2,
+          handle/2,
+          terminate/2,
+          websocket_init/1,
+          websocket_handle/2,
+          websocket_info/2,
+          websocket_terminate/2 ]).
 
 
 -record( ws_state,
@@ -33,7 +32,7 @@ init( Req, State ) ->
 	%trace_utils:debug_fmt( "Initialising US-Web Nitrogen anchor with "
 	%                       "State = ~p (Req not traced)", [ State ] ),
 
-	% Typically set by class_USWebConfigServer:get_nitrogen_dispatch_for/6:
+	% Typically set by class_USWebCentralServer:get_nitrogen_dispatch_for/6:
 	BinContentRoot = State,
 
 	%basic_utils:crash(),
@@ -83,7 +82,7 @@ init( Req, State ) ->
 			% Typically nitrogen:run/1:
 			{ ok, NewReq } = Handler:run( Bridge ),
 
-			trace_utils:debug_fmt( "NewReq = ~p", [ NewReq ] ),
+			%trace_utils:debug_fmt( "NewReq = ~p", [ NewReq ] ),
 
 			{ ok, NewReq, State }
 

@@ -22,11 +22,14 @@
 
 % Common US-Web defines.
 
--define( default_us_web_config_server_registration_name, us_web_config_server ).
--define( default_us_web_scheduler_registration_name, us_web_scheduler ).
+-define( default_us_web_central_server_registration_name,
+         us_web_central_server ).
 
 % Global, as we can configure the corresponding name:
--define( us_web_config_server_registration_scope, global_only ).
+-define( us_web_central_server_registration_scope, global_only ).
+
+
+-define( default_us_web_scheduler_registration_name, us_web_scheduler ).
 
 % Local, as fixed name:
 -define( us_web_scheduler_registration_scope, local_only ).

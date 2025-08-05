@@ -25,7 +25,7 @@
 Actual US-Web trigger logic for the **generation of reports about access logs**,
 as a (Myriad) application.
 
-Typically called through the us_web/priv/bin/generate-us-web-log-report.sh
+Typically called through the `us_web/priv/bin/generate-us-web-log-report.sh`
 script.
 
 Designed to request a US-Web instance to generate log reports, typically from
@@ -38,7 +38,7 @@ Currently this generation is better driven automatically, thanks to a scheduler.
 -export([ exec/0 ]).
 
 
-% For default_us_web_config_server_registration_name:
+% For default_us_web_central_server_registration_name:
 -include("us_web_defines.hrl").
 
 % For update_code_path_for_myriad/0 and all:
@@ -84,8 +84,6 @@ exec() ->
 	% Otherwise the remote node could not be known before use:
 	global:sync(),
 
-	% Note: us_web_config_server_registration_name
-
 	%app_facilities:display( "Globally registered names: ~w.",
 	%                        [ global:registered_names() ] ),
 
@@ -94,7 +92,7 @@ exec() ->
 	%app_facilities:display( "Looking up US-Web config server by name: ~ts.",
 	%                        [ UWCfgRegName ] ),
 
-	UWCfgRegScope = ?us_web_config_server_registration_scope,
+	UWCfgRegScope = ?us_web_central_server_registration_scope,
 
 	UWCfgPid = naming_utils:get_registered_pid_for( UWCfgRegName,
 		naming_utils:registration_to_lookup_scope( UWCfgRegScope ) ),
@@ -259,7 +257,7 @@ get_us_web_cfg_server_name( Cfg ) ->
 
 	% Maybe a specific name is defined in the US-Web configuration file?
 
-	RegNameKey = us_web_config_server_registration_name,
+	RegNameKey = us_web_central_server_registration_name,
 
 	case list_table:has_entry( RegNameKey, Cfg ) of
 
@@ -271,7 +269,7 @@ get_us_web_cfg_server_name( Cfg ) ->
 			RegName;
 
 		false ->
-			DefRegName = ?default_us_web_config_server_registration_name,
+			DefRegName = ?default_us_web_central_server_registration_name,
 			%trace_utils:debug_fmt( "No registration name for the US-Web "
 			%   "configuration found in configuration file, using "
 			%   "default one: '~ts'.", [ DefRegName ] ),

@@ -24,25 +24,25 @@
 -record( general_web_settings, {
 
 	% Rules so that http accesses are managed by the right handlers:
-	http_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
+	http_dispatch_rules :: class_USWebCentralServer:dispatch_rules(),
 
 	% TCP port (e.g. 80) to serve any http content:
 	http_tcp_port :: option( net_utils:tcp_port() ),
 
 
 	% Rules so that https accesses are managed by the right handlers:
-	https_dispatch_rules :: class_USWebConfigServer:dispatch_rules(),
+	https_dispatch_rules :: class_USWebCentralServer:dispatch_rules(),
 
 	% TCP port (e.g. 443) to serve any https content:
 	https_tcp_port :: option( net_utils:tcp_port() ),
 
 
 	% Tells whether certificates shall be used, and how:
-	certificate_support :: class_USWebConfigServer:cert_support(),
+	certificate_support :: class_USWebCentralServer:cert_support(),
 
 	% Including for SNI information:
 	https_transport_info ::
-			option( class_USWebConfigServer:https_transport_info() ),
+		option( class_USWebCentralServer:https_transport_info() ),
 
 	% The absolute path to the Diffie-Helman key file (if any) to ensure a
 	% secure key exchange with Forward Secrecy:
@@ -62,13 +62,13 @@
 -record( vhost_config_entry, {
 
 	% The subdomain (e.g. <<"bar">>) corresponding to this virtual host:
-	virtual_host :: class_USWebConfigServer:vhost_id(),
+	virtual_host :: class_USWebCentralServer:vhost_id(),
 
 	% The parent host (e.g. <<"foo.org">>) of this virtual one:
-	parent_host :: class_USWebConfigServer:domain_id(),
+	parent_host :: class_USWebCentralServer:domain_id(),
 
 	% The kind of virtual host (e.g. 'static'):
-	kind :: class_USWebConfigServer:web_kind(),
+	kind :: class_USWebCentralServer:web_kind(),
 
 	% The content (absolute) directory (as a binary) associated to this virtual
 	% host:
@@ -89,7 +89,7 @@
 -record( web_analysis_info, {
 
 	% For example 'awstats':
-	tool :: class_USWebConfigServer:log_analysis_tool_name(),
+	tool :: class_USWebCentralServer:log_analysis_tool_name(),
 
 
 	% Full path to the main analyzer of access logs, to update the database
@@ -109,7 +109,7 @@
 
 
 	% As read from template configuration file:
-	template_content :: binary(),
+	template_content :: text_utils:bin_string(),
 
 	% Where the configuration file shall be generated:
 	conf_dir :: file_utils:bin_directory_path(),

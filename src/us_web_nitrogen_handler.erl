@@ -25,7 +25,7 @@
 -export([ init/2, init/3, handle/2, terminate/3 ] ).
 
 
-% Should be in an hrl if actually used by class_USWebConfigServer:
+% Should be in an hrl if actually used by class_USWebCentralServer:
 -record( us_web_nitro_handler_state, {
 
 	headers,

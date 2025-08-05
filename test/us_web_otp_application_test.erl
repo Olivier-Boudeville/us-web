@@ -46,8 +46,8 @@ test_us_web_application( OrderedAppNames ) ->
 
 	test_facilities:display( "The version of this currently tested US-Web "
 		"library is ~ts (i.e. ~w).", [
-			class_USWebConfigServer:get_us_web_version_string(),
-			class_USWebConfigServer:get_us_web_version() ] ),
+			class_USWebCentralServer:get_us_app_version_string(),
+			class_USWebCentralServer:get_us_app_version() ] ),
 
 	% We did not trap EXIT messages, as we wanted this test to crash (thanks to
 	% the links below) in case of problem (and not to receive an EXIT message
@@ -77,7 +77,7 @@ test_us_web_application( OrderedAppNames ) ->
 
 	% Now we can take care of the US-Web counterpart configuration file:
 	{ USWebCfgTable, USWebCfgFilePath } = case
-			class_USWebConfigServer:get_configuration_table( USCfgTable,
+			class_USWebCentralServer:get_configuration_table( USCfgTable,
 															 BinCfgDir ) of
 
 		{ ok, P } ->
@@ -93,7 +93,7 @@ test_us_web_application( OrderedAppNames ) ->
 
 	{ USWebCfgRegName, USWebCfgRegScope, USWebSchedRegName, USWebSchedRegScope,
 	  USWebRegMsg } = case
-			class_USWebConfigServer:get_registration_info( USWebCfgTable ) of
+			class_USWebCentralServer:get_registration_info( USWebCfgTable ) of
 
 		{ ok, Q } ->
 			Q;
@@ -266,8 +266,8 @@ test_us_web_application( OrderedAppNames ) ->
 -doc """
 Runs this application test.
 
-Note that the {us_web, us_common, traces, wooper, myriad}.app files will have to
-be found and used for this test to succeed: US-Web, US-Common, Traces, WOOPER
+Note that the `{us_web, us_common, traces, wooper, myriad}.app` files will have
+to be found and used for this test to succeed: US-Web, US-Common, Traces, WOOPER
 and Myriad must be already available as prerequisite, fully-built OTP
 applications.
 """.

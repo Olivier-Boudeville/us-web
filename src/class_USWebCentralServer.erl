@@ -1053,7 +1053,7 @@ load_and_apply_configuration( State ) ->
 				{ config_base_directory, BinCfgDir },
 				{ log_analysis_settings, undefined } ] ),
 
-			load_web_config( BinCfgDir, MaybeWebCfgFilename, StoreState )
+			load_web_config( BinCfgDir, MaybeWebCfgFilename, CfgServerPid, StoreState )
 
 	end.
 
@@ -1063,9 +1063,9 @@ load_and_apply_configuration( State ) ->
 Loads the US-Web configuration information (that is the US-Web configuration
 file, as identified from the US one), notably about virtual hosts.
 """.
--spec load_web_config( bin_directory_path(), option( bin_file_path() ),
-			wooper:state() ) -> wooper:state().
-load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, State ) ->
+%-spec load_web_config( bin_directory_path(), option( bin_file_path() ),
+%			wooper:state() ) -> wooper:state().
+load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined, CfgServerPid, State ) ->
 
 	DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
 

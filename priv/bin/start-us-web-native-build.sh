@@ -300,42 +300,53 @@ if [ ${res} -eq 0 ]; then
 	# If wanting to check logs or have more details:
 	inspect_us_web_launch_outcome
 
-	# Not wanting to diagnose too soon, otherwise we might return a failure code
-	# and trigger the brutal killing by systemd of an otherwise working us_web:
-	#
-	sleep 8
 
-	# Better diagnosis than the previous res code:
-	#
-	# (only renamed once construction is mostly finished; trace_file supposedly
-	# inherited from us-web-common.sh)
-	#
-	if [ -f "${trace_file}" ]; then
+	# Not wanting to diagnose too soon (or to wait too long), otherwise we might
+	# return a failure code and trigger the brutal killing by systemd of an
+	# otherwise working us_web:
 
-		echo "  (success assumed, as '${trace_file}' found)"
-		exit 0
+	max_seconds_waited=8
 
-	else
+	while [ ${max_seconds_waited} -ge 0 ]; do
 
-		if [ -f "${us_web_vm_log_file}" ]; then
+		# Better diagnosis than the previous res code:
+		#
+		# (only renamed once construction is mostly finished; trace_file
+		# supposedly inherited from us-web-common.sh)
 
-			log_hint="; refer to the US-Web log file, '${us_web_vm_log_file}', for more information"
+		if [ -f "${trace_file}" ]; then
+
+			echo "  (success assumed, as '${trace_file}' found)"
+			exit 0
 
 		else
 
-			log_hint=", and no US-Web log file '${us_web_vm_log_file}' found either"
+			max_seconds_waited=$(expr ${max_seconds_waited} - 1)
+			sleep 1
 
 		fi
 
-		# For some unknown reason, if the start fails (e.g. because a web root
-		# does not exist), this script will exit quickly, as expected, yet
-		# 'systemctl start' will wait for a long time (most probably because of
-		# a time-out).
-		#
-		echo "  (failure assumed - or slow start, as '${trace_file}' not found${log_hint})"
-		exit 100
+	done
+
+	# Time-out here.
+
+	if [ -f "${us_web_vm_log_file}" ]; then
+
+		log_hint="; refer to the US-Web log file, '${us_web_vm_log_file}', for more information"
+
+	else
+
+		log_hint=", and no US-Web log file '${us_web_vm_log_file}' found either"
 
 	fi
+
+	# For some unknown reason, if the start fails (e.g. because a web root
+	# does not exist), this script will exit quickly, as expected, yet
+	# 'systemctl start' will wait for a long time (most probably because of
+	# a time-out).
+	#
+	echo "  (failure assumed - or slow start, as '${trace_file}' not found${log_hint})"
+	exit 100
 
 else
 

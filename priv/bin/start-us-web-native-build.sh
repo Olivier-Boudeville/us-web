@@ -317,12 +317,22 @@ if [ ${res} -eq 0 ]; then
 
 	else
 
+		if [ -f "${us_web_vm_log_file}" ]; then
+
+			log_hint="; refer to the US-Web log file, '${us_web_vm_log_file}', for more information"
+
+		else
+
+			log_hint=", and no US-Web log file '${us_web_vm_log_file}' found either"
+
+		fi
+
 		# For some unknown reason, if the start fails (e.g. because a web root
 		# does not exist), this script will exit quickly, as expected, yet
 		# 'systemctl start' will wait for a long time (most probably because of
 		# a time-out).
 		#
-		echo "  (failure assumed - or slow start, as '${trace_file}' not found)"
+		echo "  (failure assumed - or slow start, as '${trace_file}' not found${log_hint})"
 		exit 100
 
 	fi

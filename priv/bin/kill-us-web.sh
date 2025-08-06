@@ -1,6 +1,7 @@
 #!/bin/sh
 
-# A script to kill for sure a local Web instance.
+# A script to kill for sure a local Web instance (and, hopefully, only such
+# an instance).
 #
 # See also the {start,stop,control,monitor}-us-web.sh and get-us-web-status.sh
 # scripts.
@@ -67,7 +68,7 @@ fi
 # variable).
 #
 # For that, we have to determine the path to the various US scripts involved. We
-# do the same as, for example, start-us-web-native-build.sh :
+# do the same as, for example, start-us-web-native-build.sh.
 
 # Getting the real path is useful, as this script may be actually run through a
 # symlink located elsewhere (e.g. in /usr/local/bin):
@@ -93,12 +94,12 @@ fi
 # We need first to locate the us-web-common.sh script:
 
 # Location expected also by us-common.sh afterwards:
-cd "${us_web_install_root}" || exit
+cd "${us_web_install_root}" || exit 40
 
 
 # Will source in turn us-common.sh:
 us_web_common_script_name="us-web-common.sh"
-us_web_common_script="priv/bin/${us_web_common_script_name}"
+us_web_common_script="${us_web_install_root}/priv/bin/${us_web_common_script_name}"
 
 if [ ! -f "${us_web_common_script}" ]; then
 
@@ -121,23 +122,62 @@ read_us_web_config_file 1>/dev/null
 
 
 
-echo "Killing brutally (not stopping gracefully) any US-Web instance(s) found."
+echo "Killing any US-Web instance(s) found."
 
-to_kill="$(ps -edf | grep us_web | grep -v run_erl | grep -v $0 | grep -v grep | grep -v emacs | awk '{ print $2 }')"
+epmd_port_regexp='.*'
+
+# As may not be defined:
+if [ -n "${us_web_epmd_port}" ]; then
+
+	epmd_port_regexp="${us_web_epmd_port}"
+
+fi
+
+# Targeting as precisely as possible the instance:
+# (superfluous now: '| grep -v emacs')
+# (not wanting to catch for example us_web_monitor_app)
+to_kill="$(ps -edf | grep beam.smp | grep us_web_app | grep "${epmd_port_regexp}" | grep -v run_erl | grep -v $0 | grep -v grep | awk '{ print $2 }')"
+
+#to_kill_processes="$(ps -edf | grep beam.smp | grep us_web_app | grep "${epmd_port_regexp}" | grep -v run_erl | grep -v $0 | grep -v grep)"
+
+#echo "Will be killed: ${to_kill_processes}"
 
 
 if [ -n "${to_kill}" ]; then
 
-	echo "Following US-Web processes to kill found, as $(id -un): ${to_kill}."
+	echo "Following US-Web processes to kill (gracefully) found, as $(id -un): ${to_kill}."
 
-	# The signal 9 *is* necessary in some cases:
-	if ! kill -9 ${to_kill}; then  # 2>/dev/null
+	# The signal 9 *is* necessary in some cases (possibly always); however most
+	# probably that a brutal kill (unlike a normal one) prevents the killed VM
+	# to notify its EPMD daemon, which will then prevent any next launching
+	# thereof - unless being killed in turn). Now attempting a normal kill first
+	# (the current user may or may not be able to kill these processes):
 
-		echo "  Error: failed to kill processes of PIDs ${to_kill}." 1>&2
+	if ! kill ${to_kill}; then  # 2>/dev/null
 
-		exit 40
+		echo "  Error: failed to kill gracefully processes of PIDs ${to_kill}." 1>&2
+
+		exit 41
 
 	fi
+
+	# Inspecting again:
+	to_kill="$(ps -edf | grep beam.smp | grep us_web_app | grep "${epmd_port_regexp}" | grep -v run_erl | grep -v $0 | grep -v grep | awk '{ print $2 }')"
+
+	if [ -n "${to_kill}" ]; then
+
+		echo "  Error: having to kill brutally processes of PIDs ${to_kill} (their EPMD daemon will thus not be notified of their termination)." 1>&2
+
+		if ! kill -9 ${to_kill}; then  # 2>/dev/null
+
+			echo "  Error: failed to brutally kill processes of PIDs ${to_kill}." 1>&2
+
+			exit 45
+
+		fi
+
+	fi
+
 
 	# Actually not specifically safer:
 	#for p in ${to_kill}; do
@@ -190,5 +230,5 @@ fi
 sleep 1
 
 # At least this script:
-echo "Resulting US-Web processes found: $(ps -edf | grep us_web | grep -v grep)"
+echo "Resulting US-Web processes found, afterwards: $(ps -edf | grep us_web | grep -v grep)"
 echo "Resulting EPMD entries found: $(${epmd} -names)"

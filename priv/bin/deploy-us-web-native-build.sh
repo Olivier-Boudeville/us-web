@@ -1214,7 +1214,27 @@ if [ $do_launch -eq 0 ]; then
 
 	display_and_log "Deployment done; consider running our 'us_web/priv/bin/monitor-us-web.sh' script if wanting more detailed information regarding that launched instance."
 
-    display_and_log "Consider also executing manually now any certbot deploy hook that would be needed, typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
+	if [ -n "${US_WEB_POST_DEPLOY_CMD}" ]; then
+
+	display_and_log "No US_WEB_POST_DEPLOY_CMD environment variable
+
+    display_and_log "No US_WEB_POST_DEPLOY_CMD environment variable set; if relevant, consider executing manually now any certbot deploy hook that would be needed, typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
+
+	if [ -n "${US_WEB_POST_DEPLOY_CMD}" ]; then
+
+	   display_and_log "US_WEB_POST_DEPLOY_CMD found set to '${US_WEB_POST_DEPLOY_CMD}'; executing this command now."
+
+		if ${US_WEB_POST_DEPLOY_CMD}; then
+
+			echo "Execution of US_WEB_POST_DEPLOY_CMD succeeded."
+
+		else
+
+			echo "  Error, the execution of US_WEB_POST_DEPLOY_CMD failed." 1>&2
+
+        fi
+
+	fi
 
 else
 

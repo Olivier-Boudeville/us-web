@@ -1,6 +1,6 @@
 %% Copyright (c) 2011, Magnus Klaar <magnus.klaar@gmail.com>
 %% Copyright (c) 2013-2017, Loïc Hoguin <essen@ninenines.eu>
-%% Copyright (c) 2019-2024, Olivier Boudeville <olivier.boudeville@esperide.com>
+%% Copyright (c) 2019-2025, Olivier Boudeville <olivier.boudeville@esperide.com>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -21,9 +21,9 @@
 -moduledoc """
 Handler **to manage static content**.
 
-This is a US-Web custom, derived version of cowboy_static.erl, modified (mostly
-stripped-down) in order to comply with the conventions of Universal Server and
-to support 404 errors and logging.
+This is a US-Web custom, derived version of `cowboy_static.erl`, modified
+(mostly stripped-down) in order to comply with the conventions of Universal
+Server and to support 404 errors and logging.
 
 Table-based states could have been used, this could have even been a WOOPER
 instance per request, however we went for the least overhead and for direct map
@@ -149,7 +149,8 @@ handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
 	%trace_utils:debug_fmt( "handle_file_request for file '~ts' (opts: ~p)",
 	%                       [ BinFullFilePath, CowboyOpts ] ),
 
-	case file:read_file_info( BinFullFilePath, [ { time, universal } ] ) of
+    % 'raw' is essential for efficiency:
+	case file:read_file_info( BinFullFilePath, [ raw, { time, universal } ] ) of
 
 		{ ok, FileInfo } ->
 
@@ -199,7 +200,7 @@ handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
 Handles the request for a directory.
 
 The meaning of requesting a directory is unclear; possibly we should just
-translate it to attempting to fetch any "index.html" in that directory.
+translate it to attempting to fetch any `"index.html"` in that directory.
 
 RelContentRoot is the path of the target directory relatively to the absolute
 website root.

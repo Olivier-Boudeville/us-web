@@ -12,7 +12,7 @@
 /* For blocks of code (introduced with '.. code::'): */
 pre.code {
 	margin-left: 3%;
-	background: #e8e8e8;
+	background: #e8e8ff;
 	text-indent: 0%;
 }
 
@@ -20,7 +20,7 @@ pre.code {
 /* For inline (in-text) literals (i.e. surrounded with '``'): */
 .literal {
 	font-family: monospace, serif;
-	background: #e8e8e8;
+	background: #e8e8ff;
 	white-space: pre-wrap;
 	font-size: 90%;
 }
@@ -28,7 +28,7 @@ pre.code {
 
 /* For command printouts (introduced with '::' then a block): */
 .literal-block {
-	background: #e8e8e8;
+	background: #e8e8ff;
 	margin-left: 2%;
 }
 
@@ -378,7 +378,7 @@ th {
 
 /* Notably for footnotes: */
 td {
-	background: #dddddd;
+	background: #e8e8ff;
 	font-size: 14px;
 }
 

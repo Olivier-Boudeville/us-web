@@ -46,60 +46,60 @@ connect to the VM hosting that instance.
 -spec exec() -> no_return().
 exec() ->
 
-	% No app_start here, hence we need the following (see
-	% traces_for_apps:app_start/2 for a detailed explanation):
-	%
-	erlang:process_flag( trap_exit, false ),
+    % No app_start here, hence we need the following (see
+    % traces_for_apps:app_start/2 for a detailed explanation):
+    %
+    erlang:process_flag( trap_exit, false ),
 
-	{ ActualTargetNodeName, IsVerbose, CfgTable, FinalArgTable } =
+    { ActualTargetNodeName, IsVerbose, CfgTable, FinalArgTable } =
         us_client:setup( _ServerPrefix=us_web ),
 
-	list_table:is_empty( FinalArgTable ) orelse
-		throw( { unexpected_arguments,
-				 list_table:enumerate( FinalArgTable ) } ),
+    list_table:is_empty( FinalArgTable ) orelse
+        throw( { unexpected_arguments,
+                 list_table:enumerate( FinalArgTable ) } ),
 
 
-	AggregatorName = ?trace_aggregator_name,
+    AggregatorName = ?trace_aggregator_name,
 
-	%app_facilities:display( "Looking up aggregator by name: ~ts.",
-	%                        [ AggregatorName ] ),
+    %app_facilities:display( "Looking up aggregator by name: ~ts.",
+    %                        [ AggregatorName ] ),
 
-	% The trace aggregator is expected to run in the target node, but to be
-	% registered there only locally, to avoid clashing with any other
-	% aggregator:
-	%
-	AggregatorPid = naming_utils:get_locally_registered_pid_for(
-		AggregatorName, ActualTargetNodeName ),
+    % The trace aggregator is expected to run in the target node, but to be
+    % registered there only locally, to avoid clashing with any other
+    % aggregator:
+    %
+    AggregatorPid = naming_utils:get_locally_registered_pid_for(
+        AggregatorName, ActualTargetNodeName ),
 
-	IsVerbose andalso
+    IsVerbose andalso
         app_facilities:display( "Creating now a local trace listener." ),
 
-	TraceListenerPid = case us_client:get_tcp_port_range( CfgTable ) of
+    TraceListenerPid = case us_client:get_tcp_port_range( CfgTable ) of
 
-		undefined ->
-			class_TraceListener:synchronous_new_link( AggregatorPid,
-				_CloseListenerPid=self() );
+        undefined ->
+            class_TraceListener:synchronous_new_link( AggregatorPid,
+                _CloseListenerPid=self() );
 
-		{ MinTCPPort, MaxTCPPort } ->
-			class_TraceListener:synchronous_new_link( AggregatorPid,
-				MinTCPPort, MaxTCPPort, _CloseListenerPid=self() )
+        { MinTCPPort, MaxTCPPort } ->
+            class_TraceListener:synchronous_new_link( AggregatorPid,
+                MinTCPPort, MaxTCPPort, _CloseListenerPid=self() )
 
-	end,
+    end,
 
-	IsVerbose andalso app_facilities:display(
+    IsVerbose andalso app_facilities:display(
                         "Waiting for the trace listener to be closed." ),
 
-	receive
+    receive
 
-		{ trace_listening_finished, TraceListenerPid } ->
-			IsVerbose andalso app_facilities:display( "Trace listener closed." )
+        { trace_listening_finished, TraceListenerPid } ->
+            IsVerbose andalso app_facilities:display( "Trace listener closed." )
 
-	end,
+    end,
 
-	% ?app_stop should not be used here as its wait_for_any_trace_supervisor
-	% macro would wait for a non-launched supervisor.
-	%
-	% ?app_stop_without_waiting_for_trace_supervisor() is not used either, as
-	% no aggregator was started from that test.
-	%
-	app_facilities:finished().
+    % ?app_stop should not be used here as its wait_for_any_trace_supervisor
+    % macro would wait for a non-launched supervisor.
+    %
+    % ?app_stop_without_waiting_for_trace_supervisor() is not used either, as
+    % no aggregator was started from that test.
+    %
+    app_facilities:finished().

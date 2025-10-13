@@ -28,56 +28,56 @@
 % Should be in an hrl if actually used by class_USWebCentralServer:
 -record( us_web_nitro_handler_state, {
 
-	headers,
-	body
+    headers,
+    body
 
-	% The root of the Nitrogen-based site:
-	%nitro_doc_root :: bin_directory_path()
+    % The root of the Nitrogen-based site:
+    %nitro_doc_root :: bin_directory_path()
 
  } ).
 
 
 init( Req, MaybeHandlerState ) ->
-	%trace_bridge:debug_fmt( "us_web_nitrogen_handler:init/2 called "
-	%   "with ~p and ~p", [ Req, HandlerState ] ),
-	handle( Req, MaybeHandlerState ).
+    %trace_bridge:debug_fmt( "us_web_nitrogen_handler:init/2 called "
+    %   "with ~p and ~p", [ Req, HandlerState ] ),
+    handle( Req, MaybeHandlerState ).
 
 
 % Not called:
 init( _Transport, Req, _Opts ) ->
-	%trace_bridge:debug( "Init/3 for Nitrogen" ),
-	{ ok, Req, #us_web_nitro_handler_state{} }.
+    %trace_bridge:debug( "Init/3 for Nitrogen" ),
+    { ok, Req, #us_web_nitro_handler_state{} }.
 
 
 handle( Req, HandlerState ) ->
 
-	%trace_bridge:debug_fmt( "Handling request ~p ~p", [ Req,
-	% code_utils:is_beam_in_path(simple_bridge) ] ),
+    %trace_bridge:debug_fmt( "Handling request ~p ~p", [ Req,
+    % code_utils:is_beam_in_path(simple_bridge) ] ),
 
-	% Not set ('undefined'):
-	%{ok, DocRoot} = application:get_env(cowboy, document_root),
+    % Not set ('undefined'):
+    %{ok, DocRoot} = application:get_env(cowboy, document_root),
 
-	% Not necessary now that anyway the VM current directory had to be changed
-	% to accommodate templates and al:
-	%
-	%DocRoot = HandlerState#us_web_nitro_handler_state.nitro_doc_root,
+    % Not necessary now that anyway the VM current directory had to be changed
+    % to accommodate templates and al:
+    %
+    %DocRoot = HandlerState#us_web_nitro_handler_state.nitro_doc_root,
 
-	% Sufficient:
-	DocRoot = <<".">>,
+    % Sufficient:
+    DocRoot = <<".">>,
 
-	RequestBridge = simple_bridge:make_request( cowboy_request_bridge,
-												{ Req, DocRoot } ),
+    RequestBridge = simple_bridge:make_request( cowboy_request_bridge,
+                                                { Req, DocRoot } ),
 
-	ResponseBridge = simple_bridge:make_response( cowboy_response_bridge,
-												  RequestBridge ),
+    ResponseBridge = simple_bridge:make_response( cowboy_response_bridge,
+                                                  RequestBridge ),
 
-	nitrogen:init_request( RequestBridge, ResponseBridge ),
+    nitrogen:init_request( RequestBridge, ResponseBridge ),
 
-	{ ok, NewReq } = nitrogen:run(),
+    { ok, NewReq } = nitrogen:run(),
 
-	{ ok, NewReq, HandlerState }.
+    { ok, NewReq, HandlerState }.
 
 
 
 terminate( _Reason, _Req, _State ) ->
-	ok.
+    ok.

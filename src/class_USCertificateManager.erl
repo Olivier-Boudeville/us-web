@@ -28,8 +28,8 @@ for a given domain.
 
 
 -define( class_description,
-		 "Class in charge of managing the generation and renewal of X.509 "
-		 "certificates for a given domain." ).
+         "Class in charge of managing the generation and renewal of X.509 "
+         "certificates for a given domain." ).
 
 
 % Determines what are the direct mother classes of this class (if any):
@@ -132,7 +132,7 @@ main, default hostname, and per-virtual host information.
 
 
 -export_type([ cert_manager_pid/0, ssl_option/0, sni_host_info/0, sni_info/0,
-			   cipher_name/0 ]).
+               cipher_name/0 ]).
 
 
 
@@ -167,55 +167,55 @@ main, default hostname, and per-virtual host information.
 % The class-specific attributes:
 -define( class_attributes, [
 
-	{ fqdn, bin_fqdn(), "the FQDN for which a certificate is to be managed" },
+    { fqdn, bin_fqdn(), "the FQDN for which a certificate is to be managed" },
 
-	{ cert_mode, cert_mode(), "tells whether certificate generation is in "
-	  "staging or production mode" },
+    { cert_mode, cert_mode(), "tells whether certificate generation is in "
+      "staging or production mode" },
 
-	{ challenge_type, challenge_type(),
-	  "the type of ACME challenge to be used in order to generate "
-	  "these certificates" },
+    { challenge_type, challenge_type(),
+      "the type of ACME challenge to be used in order to generate "
+      "these certificates" },
 
-	{ dns_provider, option( dns_provider() ),
-	  "the target DNS provider, to succeed any dns-01 challenge" },
+    { dns_provider, option( dns_provider() ),
+      "the target DNS provider, to succeed any dns-01 challenge" },
 
-	{ credentials_dir, option( bin_directory_path() ),
-	  "the directory where the credentials information will be looked-up, "
-	  "typically to authenticate to one's DNS provider for dns-01 challenges" },
+    { credentials_dir, option( bin_directory_path() ),
+      "the directory where the credentials information will be looked-up, "
+      "typically to authenticate to one's DNS provider for dns-01 challenges" },
 
-	{ cert_dir, bin_directory_path(),
-	  "the directory where certificates shall be written" },
+    { cert_dir, bin_directory_path(),
+      "the directory where certificates shall be written" },
 
-	{ cert_path, option( bin_file_path() ),
-	  "the full path where the final certificate file (if any) is located" },
+    { cert_path, option( bin_file_path() ),
+      "the full path where the final certificate file (if any) is located" },
 
-	{ sans, [ bin_san() ], "the Subject Alternative Names to be included "
-	  "in the generated certificates" },
+    { sans, [ bin_san() ], "the Subject Alternative Names to be included "
+      "in the generated certificates" },
 
-	{ private_key_path, option( bin_file_path() ),
-	  "the (absolute) path to the TLS private key to be used by the LEEC "
-	  "agent driven by this certificate manager (if not using certbot)" },
+    { private_key_path, option( bin_file_path() ),
+      "the (absolute) path to the TLS private key to be used by the LEEC "
+      "agent driven by this certificate manager (if not using certbot)" },
 
-	{ cert_renewal_period, option( seconds() ),
-	  "the base delay between two successful certificate renewals" },
+    { cert_renewal_period, option( seconds() ),
+      "the base delay between two successful certificate renewals" },
 
-	{ renew_listener, option( pid() ),
-	  "the PID of the process (if any) to notify once the next certificate is "
-	  "obtained" },
+    { renew_listener, option( pid() ),
+      "the PID of the process (if any) to notify once the next certificate is "
+      "obtained" },
 
-	{ leec_caller_state, option( leec_caller_state() ),
-	  "the (opaque) caller state for our private LEEC FSM "
-	  "(if any currently exists)" },
+    { leec_caller_state, option( leec_caller_state() ),
+      "the (opaque) caller state for our private LEEC FSM "
+      "(if any currently exists)" },
 
-	{ leec_start_opts, leec_start_options(),
-	  "the start options to be re-used for the next created LEEC instance" },
+    { leec_start_opts, leec_start_options(),
+      "the start options to be re-used for the next created LEEC instance" },
 
-	{ bridge_spec, bridge_spec(),
-	  "the specification of a corresponding trace bridge, typically for "
-	  "the next created LEEC instance" },
+    { bridge_spec, bridge_spec(),
+      "the specification of a corresponding trace bridge, typically for "
+      "the next created LEEC instance" },
 
-	{ task_id, option( task_id() ), "the identifier of the scheduler task "
-	  "(if any) in charge of requesting the certificate renewals" } ] ).
+    { task_id, option( task_id() ), "the identifier of the scheduler task "
+      "(if any) in charge of requesting the certificate renewals" } ] ).
 
 
 
@@ -293,11 +293,11 @@ production mode, using the specified directory to write certificate information.
 No directory for credentials specified.
 """.
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], challenge_type(),
-		option( dns_provider() ), bin_directory_path(),
-		option( bin_file_path() ) ) -> wooper:state().
+        option( dns_provider() ), bin_directory_path(),
+        option( bin_file_path() ) ) -> wooper:state().
 construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider, BinCertDir,
-		   MaybeBinAgentKeyPath ) ->
-	construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider,
+           MaybeBinAgentKeyPath ) ->
+    construct( State, BinFQDN, BinSans, ChalType, MaybeDNSProvider,
         _MaybeBinCredentialsDir=undefined, _CertMode=production, BinCertDir,
         MaybeBinAgentKeyPath, _IsSingleton=false ).
 
@@ -312,213 +312,213 @@ certificate information.
 (most complete constructor)
 """.
 -spec construct( wooper:state(), bin_fqdn(), [ bin_san() ], cert_mode(),
-	challenge_type(), option( dns_provider() ), option( bin_directory_path() ),
-	bin_directory_path(), option( bin_file_path() ), boolean() ) ->
+    challenge_type(), option( dns_provider() ), option( bin_directory_path() ),
+    bin_directory_path(), option( bin_file_path() ), boolean() ) ->
                                                             wooper:state().
 construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
-		MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
+        MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
         _IsSingleton=true ) ->
 
-	% Relies first on the next, main constructor clause:
-	InitState = construct( State, BinFQDN, BinSans, CertMode, ChalType,
-		MaybeDNSProvider, MaybeBinCredentialsDir, BinCertDir,
-		MaybeBinAgentKeyPath, _Sing=false ),
+    % Relies first on the next, main constructor clause:
+    InitState = construct( State, BinFQDN, BinSans, CertMode, ChalType,
+        MaybeDNSProvider, MaybeBinCredentialsDir, BinCertDir,
+        MaybeBinAgentKeyPath, _Sing=false ),
 
-	% Then self-registering:
-	RegName = ?cert_manager_registration_name,
-	RegScope = ?cert_manager_registration_scope,
+    % Then self-registering:
+    RegName = ?cert_manager_registration_name,
+    RegScope = ?cert_manager_registration_scope,
 
-	naming_utils:register_as( RegName, RegScope ),
+    naming_utils:register_as( RegName, RegScope ),
 
-	% Inherited attributes:
-	setAttributes( InitState, [ { registration_name, RegName },
-								{ registration_scope, RegScope } ] );
+    % Inherited attributes:
+    setAttributes( InitState, [ { registration_name, RegName },
+                                { registration_scope, RegScope } ] );
 
 
 % Main constructor; no self-registering here:
 construct( State, BinFQDN, BinSans, CertMode, ChalType, MaybeDNSProvider,
-		   MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
+           MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
            _IsSingleton=false ) ->
 
-	ServerName =
-		text_utils:format( "Certificate manager for ~ts", [ BinFQDN ] ),
+    ServerName =
+        text_utils:format( "Certificate manager for ~ts", [ BinFQDN ] ),
 
-	% First the direct mother classes, then this class-specific actions:
-	%
-	% (trapping EXITs, as wanting to detect any crash of a LEEC FSM, calling
-	% then onWOOPERExitReceived/3)
-	%
-	SrvState = class_USServer:construct( State,
-		?trace_categorize(ServerName), _TrapExits=true ),
+    % First the direct mother classes, then this class-specific actions:
+    %
+    % (trapping EXITs, as wanting to detect any crash of a LEEC FSM, calling
+    % then onWOOPERExitReceived/3)
+    %
+    SrvState = class_USServer:construct( State,
+        ?trace_categorize(ServerName), _TrapExits=true ),
 
 
-	%?send_info( SrvState, "Construction started." ),
+    %?send_info( SrvState, "Construction started." ),
 
-	% Just a start thereof (LEEC plus its associated, linked, FSM; no
-	% certificate request issued yet):
-	%
-	{ MaybeLEECCallerState, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
-		init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
-			MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
-			SrvState ),
+    % Just a start thereof (LEEC plus its associated, linked, FSM; no
+    % certificate request issued yet):
+    %
+    { MaybeLEECCallerState, RenewPeriodSecs, LEECStartOpts, BridgeSpec } =
+        init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
+            MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath,
+            SrvState ),
 
-	% Registration to scheduler to happen in next (first) renewCertificate/1
-	% call.
+    % Registration to scheduler to happen in next (first) renewCertificate/1
+    % call.
 
-	ReadyState = setAttributes( SrvState, [
-		{ fqdn, BinFQDN },
-		{ cert_mode, CertMode },
+    ReadyState = setAttributes( SrvState, [
+        { fqdn, BinFQDN },
+        { cert_mode, CertMode },
 
-		% Will be better checked by LEEC:
-		{ challenge_type, type_utils:check_atom( ChalType ) },
-		{ dns_provider, type_utils:check_atom( MaybeDNSProvider ) },
-		{ credentials_dir, MaybeBinCredentialsDir },
-		{ cert_dir, BinCertDir },
-		{ cert_path, undefined },
-		{ sans, BinSans },
-		{ private_key_path, MaybeBinAgentKeyPath },
-		{ cert_renewal_period, RenewPeriodSecs },
-		{ renew_listener, undefined },
-		{ leec_caller_state, MaybeLEECCallerState },
-		{ leec_start_opts, LEECStartOpts },
-		{ bridge_spec, BridgeSpec },
-		{ task_id, undefined } ] ),
+        % Will be better checked by LEEC:
+        { challenge_type, type_utils:check_atom( ChalType ) },
+        { dns_provider, type_utils:check_atom( MaybeDNSProvider ) },
+        { credentials_dir, MaybeBinCredentialsDir },
+        { cert_dir, BinCertDir },
+        { cert_path, undefined },
+        { sans, BinSans },
+        { private_key_path, MaybeBinAgentKeyPath },
+        { cert_renewal_period, RenewPeriodSecs },
+        { renew_listener, undefined },
+        { leec_caller_state, MaybeLEECCallerState },
+        { leec_start_opts, LEECStartOpts },
+        { bridge_spec, BridgeSpec },
+        { task_id, undefined } ] ),
 
-	?send_info_fmt( ReadyState, "Constructed: ~ts.",
-					[ to_string( ReadyState ) ] ),
+    ?send_info_fmt( ReadyState, "Constructed: ~ts.",
+                    [ to_string( ReadyState ) ] ),
 
-	% Would be too early, as the HTTP webserver, which is needed to validate the
-	% ACME challenges, is not launched yet:
-	%
-	% self() ! renewCertificate,
+    % Would be too early, as the HTTP webserver, which is needed to validate the
+    % ACME challenges, is not launched yet:
+    %
+    % self() ! renewCertificate,
 
-	ReadyState.
+    ReadyState.
 
 
 
 -doc "Initialises our LEEC private instance.".
 -spec init_leec( bin_fqdn(), cert_mode(), challenge_type(),
-		option( dns_provider() ), option( bin_directory_path() ),
-		bin_directory_path(), option( bin_file_path() ), wooper:state() ) ->
-	{ option( leec_caller_state() ), seconds(), leec_start_options(),
-	  bridge_spec() }.
+        option( dns_provider() ), option( bin_directory_path() ),
+        bin_directory_path(), option( bin_file_path() ), wooper:state() ) ->
+    { option( leec_caller_state() ), seconds(), leec_start_options(),
+      bridge_spec() }.
 init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
-		   MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath, State ) ->
+           MaybeBinCredentialsDir, BinCertDir, MaybeBinAgentKeyPath, State ) ->
 
-	file_utils:is_existing_directory( BinCertDir ) orelse
-		throw( { non_existing_certificate_directory,
-				 text_utils:binary_to_string( BinCertDir ) } ),
+    file_utils:is_existing_directory( BinCertDir ) orelse
+        throw( { non_existing_certificate_directory,
+                 text_utils:binary_to_string( BinCertDir ) } ),
 
-	{ BaseRenewPeriodDHMS, JitterMaxDHMS } = case CertMode of
+    { BaseRenewPeriodDHMS, JitterMaxDHMS } = case CertMode of
 
-		% Fake, frequently renewed certificates in staging:
-		development ->
-			{ ?dhms_cert_renewal_period_development,
-			  ?max_dhms_cert_renewal_jitter_development };
+        % Fake, frequently renewed certificates in staging:
+        development ->
+            { ?dhms_cert_renewal_period_development,
+              ?max_dhms_cert_renewal_jitter_development };
 
-		% Renewal must be within ]60,90[ days:
-		production ->
-			{ ?dhms_cert_renewal_period_production,
-			  ?max_dhms_cert_renewal_jitter_production }
+        % Renewal must be within ]60,90[ days:
+        production ->
+            { ?dhms_cert_renewal_period_production,
+              ?max_dhms_cert_renewal_jitter_production }
 
-	end,
+    end,
 
-	BaseRenewPeriodSecs = time_utils:dhms_to_seconds( BaseRenewPeriodDHMS ),
+    BaseRenewPeriodSecs = time_utils:dhms_to_seconds( BaseRenewPeriodDHMS ),
 
-	JitterMaxSecs = time_utils:dhms_to_seconds( JitterMaxDHMS ),
+    JitterMaxSecs = time_utils:dhms_to_seconds( JitterMaxDHMS ),
 
-	% Only positive (delaying) jitter, as random value in [0.0, 1.0[:
-	RenewPeriodSecs = BaseRenewPeriodSecs
-		+ round( JitterMaxSecs * random_utils:get_uniform_value() ),
+    % Only positive (delaying) jitter, as random value in [0.0, 1.0[:
+    RenewPeriodSecs = BaseRenewPeriodSecs
+        + round( JitterMaxSecs * random_utils:get_uniform_value() ),
 
-	% Let's start LEEC now:
+    % Let's start LEEC now:
 
-	% Refer to [https://leec.esperide.org/#usage-example].
+    % Refer to [https://leec.esperide.org/#usage-example].
 
-	% (BinCertDir must be writable by this process)
+    % (BinCertDir must be writable by this process)
 
-	% If no agent_key_file_path is specified, a suitable agent key will be
-	% generated.
-	%
+    % If no agent_key_file_path is specified, a suitable agent key will be
+    % generated.
+    %
 
-	% 8 minutes:
-	HttpQueryTimeoutMs = 8 * 60 * 1000,
+    % 8 minutes:
+    HttpQueryTimeoutMs = 8 * 60 * 1000,
 
-	StartBaseOpts = [ { agent_key_file_path, MaybeBinAgentKeyPath },
-					  { cert_dir_path, BinCertDir },
-					  { http_timeout, HttpQueryTimeoutMs } ],
+    StartBaseOpts = [ { agent_key_file_path, MaybeBinAgentKeyPath },
+                      { cert_dir_path, BinCertDir },
+                      { http_timeout, HttpQueryTimeoutMs } ],
 
-	ACMEEnv = case CertMode of
+    ACMEEnv = case CertMode of
 
-		development ->
-			% For testing only, then based on fake certificates:
-			staging;
+        development ->
+            % For testing only, then based on fake certificates:
+            staging;
 
-		production ->
-			production
+        production ->
+            production
 
-	end,
+    end,
 
-	ChalOpts = case ChalType of
+    ChalOpts = case ChalType of
 
-		'http-01' ->
-			% Slave mode, as we control the webserver for the challenge:
-			% (no TCP port to be specified on slave mode)
-			%
-			[ { interfacing_mode, slave } ];
+        'http-01' ->
+            % Slave mode, as we control the webserver for the challenge:
+            % (no TCP port to be specified on slave mode)
+            %
+            [ { interfacing_mode, slave } ];
 
-		'dns-01' ->
-			MaybeDNSProvider =/= undefined orelse
-				throw( { dns_provider_not_set, ChalType } ),
+        'dns-01' ->
+            MaybeDNSProvider =/= undefined orelse
+                throw( { dns_provider_not_set, ChalType } ),
 
-			MaybeBinCredentialsDir =/= undefined orelse
-				throw( { credentials_directory_not_set, ChalType } ),
+            MaybeBinCredentialsDir =/= undefined orelse
+                throw( { credentials_directory_not_set, ChalType } ),
 
-			[ { dns_provider, MaybeDNSProvider },
-			  { cred_dir_path, MaybeBinCredentialsDir } ]
+            [ { dns_provider, MaybeDNSProvider },
+              { cred_dir_path, MaybeBinCredentialsDir } ]
 
-	end,
+    end,
 
-	StartOpts = [ { environment, ACMEEnv } | ChalOpts ] ++ StartBaseOpts,
+    StartOpts = [ { environment, ACMEEnv } | ChalOpts ] ++ StartBaseOpts,
 
-	% Enabling the integration of its traces:
+    % Enabling the integration of its traces:
 
-	% Otherwise opens subcategories in traces, as an emitter:
-	DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
-	TraceEmitterName = text_utils:format( "LEEC for ~ts", [ DotlessFQDN ] ),
+    % Otherwise opens subcategories in traces, as an emitter:
+    DotlessFQDN = text_utils:substitute( $., $:, BinFQDN ),
+    TraceEmitterName = text_utils:format( "LEEC for ~ts", [ DotlessFQDN ] ),
 
-	BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
-		?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
+    BridgeSpec = trace_bridge:get_bridge_spec( TraceEmitterName,
+        ?trace_emitter_categorization, ?getAttr(trace_aggregator_pid) ),
 
-	% We used to create once for all a LEEC FSM, yet several months may elapse
-	% between two renewals, and keeping around a LEEC instance and its
-	% connection cache has no interest; so now we spawn such an instance for
-	% each need (see request_certificate/1):
+    % We used to create once for all a LEEC FSM, yet several months may elapse
+    % between two renewals, and keeping around a LEEC instance and its
+    % connection cache has no interest; so now we spawn such an instance for
+    % each need (see request_certificate/1):
 
-	% Would be a LCS now:
-	%MaybeLEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
-	%
-	%   { ok, FsmPid } ->
-	%       ?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
-	%           "following start options:~n  ~p", [ FsmPid, StartOpts ] ),
-	%       FsmPid;
-	%
-	%   { error, Reason } ->
-	%       ?error_fmt( "Initialization of LEEC failed: ~p.~n"
-	%           "Start options were:~n  ~p", [ Reason, StartOpts ] ),
-	%       throw( { leec_initialization_failed, Reason } )
-	%
-	%
-	%       catch AnyClass:Exception ->
-	%           ?error_fmt( "Starting failed, with a thrown exception ~p "
-	%                       "(of class: ~p).", [ Exception, AnyClass ] ),
-	%           throw( { leec_initialization_failed, Exception, AnyClass } )
-	%
-	%end,
+    % Would be a LCS now:
+    %MaybeLEECFsmPid = try leec:start( StartOpts, BridgeSpec ) of
+    %
+    %   { ok, FsmPid } ->
+    %       ?debug_fmt( "LEEC initialized, using FSM of PID ~w, based on "
+    %           "following start options:~n  ~p", [ FsmPid, StartOpts ] ),
+    %       FsmPid;
+    %
+    %   { error, Reason } ->
+    %       ?error_fmt( "Initialization of LEEC failed: ~p.~n"
+    %           "Start options were:~n  ~p", [ Reason, StartOpts ] ),
+    %       throw( { leec_initialization_failed, Reason } )
+    %
+    %
+    %       catch AnyClass:Exception ->
+    %           ?error_fmt( "Starting failed, with a thrown exception ~p "
+    %                       "(of class: ~p).", [ Exception, AnyClass ] ),
+    %           throw( { leec_initialization_failed, Exception, AnyClass } )
+    %
+    %end,
 
-	MaybeLEECCallerState = undefined,
+    MaybeLEECCallerState = undefined,
 
-	{ MaybeLEECCallerState, RenewPeriodSecs, StartOpts, BridgeSpec }.
+    { MaybeLEECCallerState, RenewPeriodSecs, StartOpts, BridgeSpec }.
 
 
 
@@ -526,8 +526,8 @@ init_leec( BinFQDN, CertMode, ChalType, MaybeDNSProvider,
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
-	% Unregistering only from any scheduler, not from any task ring, as we
-	% registered to any former and have been registered to any latter.
+    % Unregistering only from any scheduler, not from any task ring, as we
+    % registered to any former and have been registered to any latter.
 
     MaybeCertTaskId = case ?getAttr(task_id) of
 
@@ -535,43 +535,43 @@ destruct( State ) ->
             undefined;
 
         CertTaskId ->
-			?debug( "Being destructed, unregistering from scheduler." ),
+            ?debug( "Being destructed, unregistering from scheduler." ),
 
-			% Any extra schedule trigger sent will be lost; not a problem, as it
-			% is a oneway:
-			%
+            % Any extra schedule trigger sent will be lost; not a problem, as it
+            % is a oneway:
+            %
             class_USScheduler:get_server_pid() !
                 { unregisterTask, [ CertTaskId ], self() },
 
             CertTaskId
 
-	end,
+    end,
 
-	case ?getAttr(leec_caller_state) of
+    case ?getAttr(leec_caller_state) of
 
-		undefined ->
-			ok;
+        undefined ->
+            ok;
 
-		LEECCallerState ->
-			LCSStr = leec:caller_state_to_string( LEECCallerState ),
+        LEECCallerState ->
+            LCSStr = leec:caller_state_to_string( LEECCallerState ),
 
-			?notice_fmt( "Shutting down LEEC (~ts).", [ LCSStr ] ),
-			try
+            ?notice_fmt( "Shutting down LEEC (~ts).", [ LCSStr ] ),
+            try
 
-				leec:terminate( LEECCallerState )
+                leec:terminate( LEECCallerState )
 
-			catch AnyClass:Exception ->
-				?error_fmt( "Final termination failed, with a thrown "
-					"exception ~p (of class: ~p); ~ts.",
-					[ Exception, AnyClass, LCSStr ] )
+            catch AnyClass:Exception ->
+                ?error_fmt( "Final termination failed, with a thrown "
+                    "exception ~p (of class: ~p); ~ts.",
+                    [ Exception, AnyClass, LCSStr ] )
 
-			end,
+            end,
 
-			?notice_fmt( "~ts shut down.", [ LCSStr ] )
+            ?notice_fmt( "~ts shut down.", [ LCSStr ] )
 
-	end,
+    end,
 
-	% End of interleaving:
+    % End of interleaving:
     case MaybeCertTaskId of
 
         undefined ->
@@ -591,15 +591,15 @@ destruct( State ) ->
                         { task_unregistration_failed, Reason,
                           ThisCertTaskId } } ->
                     ?error_fmt( "Unregistration of task #~B failed "
-							"at deletion: ~p.", [ ThisCertTaskId, Reason ] )
+                            "at deletion: ~p.", [ ThisCertTaskId, Reason ] )
 
             end
 
-	end,
+    end,
 
-	?info( "Deleted." ),
+    ?info( "Deleted." ),
 
-	State.
+    State.
 
 
 
@@ -611,13 +611,13 @@ destruct( State ) ->
 -spec renewCertificate( wooper:state() ) -> oneway_return().
 renewCertificate( State ) ->
 
-	?debug( "Requested to renew certificate asynchronously." ),
+    ?debug( "Requested to renew certificate asynchronously." ),
 
-	ReqState = request_certificate( State ),
+    ReqState = request_certificate( State ),
 
-	% onCertificateRequestOutcome/2 callback to be triggered soon.
+    % onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	wooper:return_state( ReqState ).
+    wooper:return_state( ReqState ).
 
 
 
@@ -630,27 +630,27 @@ that no two certificate requests overlap (to avoid hitting a rate limit
 regarding ACME servers or having concurrent certbot instances).
 """.
 -spec renewCertificateSynchronisable( wooper:state(), pid() ) ->
-												oneway_return().
+                                                oneway_return().
 renewCertificateSynchronisable( State, ListenerPid ) ->
 
-	% Note that these managers must not be frozen here in the waiting of a
-	% onCertificateRequestOutcome message, as they have to remain responsive to
-	% branch the US-Web LEEC handler to the corresponding LEEC FSM, so that the
-	% challenges can be returned to the ACME server for this procedure to
-	% complete.
+    % Note that these managers must not be frozen here in the waiting of a
+    % onCertificateRequestOutcome message, as they have to remain responsive to
+    % branch the US-Web LEEC handler to the corresponding LEEC FSM, so that the
+    % challenges can be returned to the ACME server for this procedure to
+    % complete.
 
-	% So that it is visible even in production mode:
-	?notice( "Requested to renew certificate in a synchronisable manner." ),
+    % So that it is visible even in production mode:
+    ?notice( "Requested to renew certificate in a synchronisable manner." ),
 
-	% Also a check:
-	{ ListenState, undefined } =
-		swapInAttribute( State, renew_listener, ListenerPid ),
+    % Also a check:
+    { ListenState, undefined } =
+        swapInAttribute( State, renew_listener, ListenerPid ),
 
-	ReqState = request_certificate( ListenState ),
+    ReqState = request_certificate( ListenState ),
 
-	% onCertificateRequestOutcome/2 callback to be triggered soon.
+    % onCertificateRequestOutcome/2 callback to be triggered soon.
 
-	wooper:return_state( ReqState ).
+    wooper:return_state( ReqState ).
 
 
 
@@ -658,107 +658,107 @@ renewCertificateSynchronisable( State, ListenerPid ) ->
 -spec request_certificate( wooper:state() ) -> wooper:state().
 request_certificate( State ) ->
 
-	% The task_id attribute may or may not be defined.
+    % The task_id attribute may or may not be defined.
 
-	FQDN = ?getAttr(fqdn),
+    FQDN = ?getAttr(fqdn),
 
-	% We used to rely on a synchronous (blocking) call (no callback was used),
-	% which was a mistake (this certificate manager must remain responsive here;
-	% see implementation notes); now using an asynchronous call instead.
+    % We used to rely on a synchronous (blocking) call (no callback was used),
+    % which was a mistake (this certificate manager must remain responsive here;
+    % see implementation notes); now using an asynchronous call instead.
     %
     % Another problem occurred then: certbot checks that only a single instance
     % thereof exists, resulting in all of the mostly parallel certificate
     % requests to fail except the first. Now the (US-Web) configuration server
     % triggers the certificate renewals only in turn.
 
-	% Closure:
-	Self = self(),
+    % Closure:
+    Self = self(),
 
-	Callback = fun( CertObtainedOutcome ) ->
-				Self ! { onCertificateRequestOutcome, [ CertObtainedOutcome ] }
-			   end,
+    Callback = fun( CertObtainedOutcome ) ->
+                Self ! { onCertificateRequestOutcome, [ CertObtainedOutcome ] }
+               end,
 
-	ChallengeType = ?getAttr(challenge_type),
+    ChallengeType = ?getAttr(challenge_type),
 
-	MaybeDNSProvider = ?getAttr(dns_provider),
+    MaybeDNSProvider = ?getAttr(dns_provider),
 
-	ActualSans = case ?getAttr(sans) of
+    ActualSans = case ?getAttr(sans) of
 
-		undefined ->
-			[];
+        undefined ->
+            [];
 
-		S ->
-			% Only wanting to disclose SANs when necessary:
-			case ChallengeType of
+        S ->
+            % Only wanting to disclose SANs when necessary:
+            case ChallengeType of
 
-				'http-01' ->
-					S;
+                'http-01' ->
+                    S;
 
-				_ ->
-					[]
+                _ ->
+                    []
 
-			end
+            end
 
-	end,
+    end,
 
-	% So that it is visible even in production mode:
-	?notice_fmt( "Requesting a ~ts certificate for '~ts', with following SAN "
+    % So that it is visible even in production mode:
+    ?notice_fmt( "Requesting a ~ts certificate for '~ts', with following SAN "
                  "information:~n  ~p.", [ ChallengeType, FQDN, ActualSans ] ),
 
-	% We used to request a certificate directly from the initial LEEC instance,
-	% yet this is not a proper solution, as months are likely elapse between
-	% renewals, and at least the nonce is bound to have expired in the meantime.
-	%
-	% So now we shut down LEEC instances once over, and recreate them at each
-	% renewal.
+    % We used to request a certificate directly from the initial LEEC instance,
+    % yet this is not a proper solution, as months are likely elapse between
+    % renewals, and at least the nonce is bound to have expired in the meantime.
+    %
+    % So now we shut down LEEC instances once over, and recreate them at each
+    % renewal.
 
-	% Check:
-	case ?getAttr(leec_caller_state) of
+    % Check:
+    case ?getAttr(leec_caller_state) of
 
-		undefined ->
-			ok;
+        undefined ->
+            ok;
 
-		CallerState ->
-			?error_fmt( "Ignoring unexpected former ~ts.",
-						[ leec:caller_state_to_string( CallerState ) ] )
+        CallerState ->
+            ?error_fmt( "Ignoring unexpected former ~ts.",
+                        [ leec:caller_state_to_string( CallerState ) ] )
 
-	end,
+    end,
 
     % Creates a linked, bridged instance of the LEEC service FSM:
-	case leec:start( ChallengeType, ?getAttr(leec_start_opts),
-					 ?getAttr(bridge_spec) ) of
+    case leec:start( ChallengeType, ?getAttr(leec_start_opts),
+                     ?getAttr(bridge_spec) ) of
 
-		{ ok, LEECCallerState } ->
+        { ok, LEECCallerState } ->
 
-			LCSStr = leec:caller_state_to_string( LEECCallerState ),
-			?notice_fmt( "New ~ts created for '~ts'.", [ LCSStr, FQDN ] ),
+            LCSStr = leec:caller_state_to_string( LEECCallerState ),
+            ?notice_fmt( "New ~ts created for '~ts'.", [ LCSStr, FQDN ] ),
 
-			try
+            try
 
                 % Should result in onCertificateRequestOutcome/2 being called:
-				async = leec:obtain_certificate_for( FQDN, LEECCallerState,
-					% An 'email' entry could be added:
-					_CertReqOptionMap=#{ async => true,
-										 callback => Callback,
-										 sans => ActualSans,
-										 dns_provider => MaybeDNSProvider } ),
-				?notice( "Certificate creation request initiated." ),
-				setAttribute( State, leec_caller_state, LEECCallerState )
+                async = leec:obtain_certificate_for( FQDN, LEECCallerState,
+                    % An 'email' entry could be added:
+                    _CertReqOptionMap=#{ async => true,
+                                         callback => Callback,
+                                         sans => ActualSans,
+                                         dns_provider => MaybeDNSProvider } ),
+                ?notice( "Certificate creation request initiated." ),
+                setAttribute( State, leec_caller_state, LEECCallerState )
 
-			catch AnyClass:Exception ->
-				?error_fmt( "Certificate request failed, with a thrown "
-					"exception ~p (of class: ~p); ~ts.",
-					[ Exception, AnyClass, LCSStr ] ),
-				State
+            catch AnyClass:Exception ->
+                ?error_fmt( "Certificate request failed, with a thrown "
+                    "exception ~p (of class: ~p); ~ts.",
+                    [ Exception, AnyClass, LCSStr ] ),
+                State
 
-			end;
+            end;
 
-		Error ->
-			?critical_fmt( "Error when (re)starting LEEC: ~p, "
-						   "no certificate recreation triggered.", [ Error ] ),
-			State
+        Error ->
+            ?critical_fmt( "Error when (re)starting LEEC: ~p, "
+                           "no certificate recreation triggered.", [ Error ] ),
+            State
 
-	end.
+    end.
 
 
 
@@ -767,104 +767,104 @@ Oneway called back whenever the outcome of a certificate request is known, in
 response to `request_certificate/1`.
 """.
 -spec onCertificateRequestOutcome( wooper:state(),
-			leec:obtained_outcome() ) -> oneway_return().
+            leec:obtained_outcome() ) -> oneway_return().
 % Success case:
 onCertificateRequestOutcome( State,
-		_CertObtainedOutcome={ certificate_generation_success, BinCertFilePath,
-							   BinPrivKeyFilePath } ) ->
+        _CertObtainedOutcome={ certificate_generation_success, BinCertFilePath,
+                               BinPrivKeyFilePath } ) ->
 
-	FQDN = ?getAttr(fqdn),
+    FQDN = ?getAttr(fqdn),
 
-	?notice_fmt( "Certificate generation success for '~ts', "
-		"certificate stored in '~ts' (private key in '~ts').",
-		[ FQDN, BinCertFilePath, BinPrivKeyFilePath ] ),
+    ?notice_fmt( "Certificate generation success for '~ts', "
+        "certificate stored in '~ts' (private key in '~ts').",
+        [ FQDN, BinCertFilePath, BinPrivKeyFilePath ] ),
 
-	% Useful, as otherwise startup is so long that the user may believe it is
-	% failing:
-	%
-	trace_utils:notice_fmt( "Certificate generation success for domain '~ts'.",
-							[ FQDN ] ),
+    % Useful, as otherwise startup is so long that the user may believe it is
+    % failing:
+    %
+    trace_utils:notice_fmt( "Certificate generation success for domain '~ts'.",
+                            [ FQDN ] ),
 
-	% The US-Web server expects the certificate and its private key directly in
-	% cert_dir and as foobar.org.{crt,key}, whereas certbot put them in
-	% leec-certbot-internal-state/live/foobar.org/{fullchain,privkey}.pem, so we
-	% symlink them:
+    % The US-Web server expects the certificate and its private key directly in
+    % cert_dir and as foobar.org.{crt,key}, whereas certbot put them in
+    % leec-certbot-internal-state/live/foobar.org/{fullchain,privkey}.pem, so we
+    % symlink them:
 
-	BinCertDir = ?getAttr(cert_dir),
-	FQDN = ?getAttr(fqdn),
+    BinCertDir = ?getAttr(cert_dir),
+    FQDN = ?getAttr(fqdn),
 
-	% First the certificate:
-	ExpectedCertLinkName = text_utils:format( "~ts.crt", [ FQDN ] ),
-	NewCertLinkPath = file_utils:bin_join( BinCertDir, ExpectedCertLinkName ),
+    % First the certificate:
+    ExpectedCertLinkName = text_utils:format( "~ts.crt", [ FQDN ] ),
+    NewCertLinkPath = file_utils:bin_join( BinCertDir, ExpectedCertLinkName ),
 
-	file_utils:remove_file_or_link_if_existing( NewCertLinkPath ),
-	file_utils:create_link( _TargetPath=BinCertFilePath, NewCertLinkPath ),
+    file_utils:remove_file_or_link_if_existing( NewCertLinkPath ),
+    file_utils:create_link( _TargetPath=BinCertFilePath, NewCertLinkPath ),
 
 
-	% Then its associated private key:
-	ExpectedPrivKeyLinkName = text_utils:format( "~ts.key", [ FQDN ] ),
-	NewPrivKeyLinkPath =
-		file_utils:bin_join( BinCertDir, ExpectedPrivKeyLinkName ),
+    % Then its associated private key:
+    ExpectedPrivKeyLinkName = text_utils:format( "~ts.key", [ FQDN ] ),
+    NewPrivKeyLinkPath =
+        file_utils:bin_join( BinCertDir, ExpectedPrivKeyLinkName ),
 
-	file_utils:remove_file_or_link_if_existing( NewPrivKeyLinkPath ),
-	file_utils:create_link( BinPrivKeyFilePath, NewPrivKeyLinkPath ),
+    file_utils:remove_file_or_link_if_existing( NewPrivKeyLinkPath ),
+    file_utils:create_link( BinPrivKeyFilePath, NewPrivKeyLinkPath ),
 
-	SetState = case ?getAttr(renew_listener) of
+    SetState = case ?getAttr(renew_listener) of
 
-		undefined ->
-			State;
+        undefined ->
+            State;
 
-		ListenerPid ->
-			% Most probably the US-Web server, either waiting for a
-			% acknowledgement atom in renewCertificates/1 in the case of the
-			% initial certificate creations, or to be interpreted as an actual
-			% oneway call for the later, next renewals:
+        ListenerPid ->
+            % Most probably the US-Web server, either waiting for a
+            % acknowledgement atom in renewCertificates/1 in the case of the
+            % initial certificate creations, or to be interpreted as an actual
+            % oneway call for the later, next renewals:
             %
-			ListenerPid ! { onCertificateRenewalOver, self() },
-			setAttribute( State, renew_listener, undefined )
+            ListenerPid ! { onCertificateRenewalOver, self() },
+            setAttribute( State, renew_listener, undefined )
 
-	end,
+    end,
 
-	NewState = manage_renewal( _RenewDelay=?getAttr(cert_renewal_period),
-							   BinCertFilePath, SetState ),
+    NewState = manage_renewal( _RenewDelay=?getAttr(cert_renewal_period),
+                               BinCertFilePath, SetState ),
 
-	wooper:return_state( NewState );
+    wooper:return_state( NewState );
 
 
 % Failure case:
 onCertificateRequestOutcome( State,
-		_CertObtainedOutcome={ certificate_generation_failure, ErrorTerm } ) ->
+        _CertObtainedOutcome={ certificate_generation_failure, ErrorTerm } ) ->
 
-	FQDN = ?getAttr(fqdn),
+    FQDN = ?getAttr(fqdn),
 
-	?error_fmt( "Certificate generation failed for '~ts': ~p.",
-				[ FQDN, ErrorTerm ] ),
+    ?error_fmt( "Certificate generation failed for '~ts': ~p.",
+                [ FQDN, ErrorTerm ] ),
 
-	% Reasonable offset for next attempt:
-	FailureRenewDelay = case ?getAttr(cert_mode) of
+    % Reasonable offset for next attempt:
+    FailureRenewDelay = case ?getAttr(cert_mode) of
 
-		development ->
-			time_utils:dhms_to_seconds(
-				?dhms_cert_renewal_delay_after_failure_development );
+        development ->
+            time_utils:dhms_to_seconds(
+                ?dhms_cert_renewal_delay_after_failure_development );
 
-		production ->
-			time_utils:dhms_to_seconds(
-				?dhms_cert_renewal_delay_after_failure_production )
+        production ->
+            time_utils:dhms_to_seconds(
+                ?dhms_cert_renewal_delay_after_failure_production )
 
-	end,
+    end,
 
-	MaybeBinCertFilePath = undefined,
+    MaybeBinCertFilePath = undefined,
 
-	NewState = manage_renewal( FailureRenewDelay, MaybeBinCertFilePath, State ),
+    NewState = manage_renewal( FailureRenewDelay, MaybeBinCertFilePath, State ),
 
-	wooper:return_state( NewState );
+    wooper:return_state( NewState );
 
 onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 
-	?error_fmt( "Unexpected certificate creation error: ~p.",
-				[ UnexpectedError ] ),
+    ?error_fmt( "Unexpected certificate creation error: ~p.",
+                [ UnexpectedError ] ),
 
-	throw( { unexpected_cert_creation_error, UnexpectedError } ).
+    throw( { unexpected_cert_creation_error, UnexpectedError } ).
 
 
 
@@ -875,44 +875,44 @@ onCertificateRequestOutcome( State, _CertCreationOutcome=UnexpectedError ) ->
 %
 % (helper)
 -spec manage_renewal( option( seconds() ), option( bin_file_path() ),
-					  wooper:state() ) -> wooper:state().
+                      wooper:state() ) -> wooper:state().
 manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 
-	%?notice_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
-	%             [ MaybeRenewDelay ] ),
+    %?notice_fmt( "Entering manage_renewal/1 (MaybeRenewDelay=~p)",
+    %             [ MaybeRenewDelay ] ),
 
-	% In all cases we shut down our LEEC instance, as it cannot linger between
-	% longer renewals:
-	%
-	ShutState = case ?getAttr(leec_caller_state) of
+    % In all cases we shut down our LEEC instance, as it cannot linger between
+    % longer renewals:
+    %
+    ShutState = case ?getAttr(leec_caller_state) of
 
-		undefined ->
-			% Surprising:
-			?error( "No LEEC PID was available when managing a possible "
-					"renewal." ),
-			State;
+        undefined ->
+            % Surprising:
+            ?error( "No LEEC PID was available when managing a possible "
+                    "renewal." ),
+            State;
 
-		LEECCallerState ->
-			% Not just stopping it:
-			try
+        LEECCallerState ->
+            % Not just stopping it:
+            try
 
-				leec:terminate( LEECCallerState )
+                leec:terminate( LEECCallerState )
 
-			catch AnyClass:Exception ->
-				?error_fmt( "Termination after renewal failed, "
-					"with a thrown exception ~p (of class: ~p); ~ts",
-					[ Exception, AnyClass,
-					  leec:caller_state_to_string( LEECCallerState ) ] )
+            catch AnyClass:Exception ->
+                ?error_fmt( "Termination after renewal failed, "
+                    "with a thrown exception ~p (of class: ~p); ~ts",
+                    [ Exception, AnyClass,
+                      leec:caller_state_to_string( LEECCallerState ) ] )
 
-			end,
+            end,
 
-			% No more reuse between renewals:
-			setAttribute( State, leec_caller_state, undefined )
+            % No more reuse between renewals:
+            setAttribute( State, leec_caller_state, undefined )
 
-	end,
+    end,
 
-	% Switching to notice to remain available in production mode:
-	%?notice( "Continuing in manage_renewal/1" ),
+    % Switching to notice to remain available in production mode:
+    %?notice( "Continuing in manage_renewal/1" ),
 
     RenewState = case MaybeRenewDelay of
 
@@ -922,37 +922,37 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
             ShutState;
 
         RenewDelay ->
-			%?notice( "Preparing task"),
+            %?notice( "Preparing task"),
 
-			% A bit of interleaving:
+            % A bit of interleaving:
 
             RenewCmd = renewCertificate,
 
-			class_USScheduler:get_server_pid() ! { registerOneshotTask,
+            class_USScheduler:get_server_pid() ! { registerOneshotTask,
                 [ RenewCmd, _Delay=RenewDelay, _ActPid=self() ], self() },
 
-			NextTimestamp = time_utils:offset_timestamp(
-				time_utils:get_timestamp(), RenewDelay ),
+            NextTimestamp = time_utils:offset_timestamp(
+                time_utils:get_timestamp(), RenewDelay ),
 
-			?notice_fmt( "Next attempt of certificate renewal to "
-				"take place in ~ts, i.e. at ~ts.",
-				[ time_utils:duration_to_string( 1000 * RenewDelay ),
-				  time_utils:timestamp_to_string( NextTimestamp ) ] ),
+            ?notice_fmt( "Next attempt of certificate renewal to "
+                "take place in ~ts, i.e. at ~ts.",
+                [ time_utils:duration_to_string( 1000 * RenewDelay ),
+                  time_utils:timestamp_to_string( NextTimestamp ) ] ),
 
-			receive
+            receive
 
-				{ wooper_result, { task_registered, TaskId } } ->
-					setAttribute( ShutState, task_id, TaskId );
+                { wooper_result, { task_registered, TaskId } } ->
+                    setAttribute( ShutState, task_id, TaskId );
 
-				% Quite unlikely, yet possible:
-				{ wooper_result, task_done } ->
-					ShutState
+                % Quite unlikely, yet possible:
+                { wooper_result, task_done } ->
+                    ShutState
 
-			end
+            end
 
-	end,
+    end,
 
-	setAttribute( RenewState, cert_path, MaybeBinCertFilePath ).
+    setAttribute( RenewState, cert_path, MaybeBinCertFilePath ).
 
 
 
@@ -967,31 +967,31 @@ check that the returned challenges match the expected ones.
 -spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
 getChallenge( State, TargetPid ) ->
 
-	% Opaque:
-	LCS = ?getAttr(leec_caller_state),
+    % Opaque:
+    LCS = ?getAttr(leec_caller_state),
 
-	LCSStr = leec:maybe_caller_state_to_string( LCS ),
+    LCSStr = leec:maybe_caller_state_to_string( LCS ),
 
-	?notice_fmt( "Requested to return the current thumbprint challenges "
-		"with ~ts, on behalf of (and to) ~w.", [ LCSStr, TargetPid ] ),
+    ?notice_fmt( "Requested to return the current thumbprint challenges "
+        "with ~ts, on behalf of (and to) ~w.", [ LCSStr, TargetPid ] ),
 
-	try
+    try
 
-		leec:send_ongoing_challenges( LCS, TargetPid )
+        leec:send_ongoing_challenges( LCS, TargetPid )
 
-	catch AnyClass:Exception:StackTrace ->
+    catch AnyClass:Exception:StackTrace ->
 
         % Then probably that the target process will never receive these
         % challenges, so it should time-out:
 
-		?error_fmt( "Sending of challenges failed, with a thrown "
-			"exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
-			[ Exception, AnyClass,
-			  code_utils:interpret_stacktrace( StackTrace ), LCSStr ] )
+        ?error_fmt( "Sending of challenges failed, with a thrown "
+            "exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
+            [ Exception, AnyClass,
+              code_utils:interpret_stacktrace( StackTrace ), LCSStr ] )
 
-	end,
+    end,
 
-	wooper:const_return().
+    wooper:const_return().
 
 
 
@@ -1000,19 +1000,19 @@ Callback triggered, as we trap exits, whenever a linked process stops (typically
 should the LEEC FSM crash).
 """.
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-							basic_utils:exit_reason() ) -> oneway_return().
+                            basic_utils:exit_reason() ) -> oneway_return().
 onWOOPERExitReceived( State, _StopPid, _ExitType=normal ) ->
 
-	% Executables triggering useless messages:
-	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
+    % Executables triggering useless messages:
+    %?notice_fmt( "Ignoring normal exit from process ~w.", [ StopPid ] ),
 
-	wooper:const_return();
+    wooper:const_return();
 
 onWOOPERExitReceived( State, CrashPid, ExitType ) ->
 
-	% Typically: "Received exit message '{{nocatch,
-	%   {wooper_oneway_failed,<0.44.0>,class_XXX,
-	%       FunName,Arity,Args,AtomCause}}, [...]}"
+    % Typically: "Received exit message '{{nocatch,
+    %   {wooper_oneway_failed,<0.44.0>,class_XXX,
+    %       FunName,Arity,Args,AtomCause}}, [...]}"
 
     % We would like to restart LEEC iff the crashed process is its FSM, yet we
     % do not know its PID, so:
@@ -1088,11 +1088,11 @@ live process anymore).
 -spec get_server_pid () -> static_return( cert_manager_pid() ).
 get_server_pid() ->
 
-	CertManPid = class_USServer:resolve_server_pid(
+    CertManPid = class_USServer:resolve_server_pid(
         _RegName=?cert_manager_registration_name,
         _RegScope=?cert_manager_registration_scope ),
 
-	wooper:return_static( CertManPid ).
+    wooper:return_static( CertManPid ).
 
 
 -doc """
@@ -1110,39 +1110,39 @@ Note: we rely on the user routes rather than on the domain table as we need to
 determine the first hots listed as the main one.
 """.
 -spec get_https_transport_info( dispatch_routes(), bin_directory_path() ) ->
-		static_return( https_transport_info() ).
+        static_return( https_transport_info() ).
 get_https_transport_info( _, _BinCertDir=undefined ) ->
-	throw( no_certificate_directory_for_sni );
+    throw( no_certificate_directory_for_sni );
 
 get_https_transport_info( _UserRoutes=[], _BinCertDir ) ->
-	throw( no_hostname_for_sni );
+    throw( no_hostname_for_sni );
 
 get_https_transport_info( UserRoutes=[ { FirstHostname, _VirtualHosts } | _T ],
-						  BinCertDir ) ->
+                          BinCertDir ) ->
 
-	% For https with SNI, a default host must be defined, distinct from the SNI
-	% ones; by convention it is the first one found in the user-defined dispatch
-	% routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
-	% not something.foobar.org); a plain string is required, apparently.
-	%
-	MainTranspOpts = get_transport_opts_for( FirstHostname, BinCertDir ),
+    % For https with SNI, a default host must be defined, distinct from the SNI
+    % ones; by convention it is the first one found in the user-defined dispatch
+    % routes (with no sub-domain/virtual host considered here, i.e. foobar.org,
+    % not something.foobar.org); a plain string is required, apparently.
+    %
+    MainTranspOpts = get_transport_opts_for( FirstHostname, BinCertDir ),
 
-	% Options to apply for the host that matches what the client requested with
-	% Server Name Indication (going through *all* the hosts listed by the user),
-	% now that virtual hosts are listed as SANs in a single host-level
-	% certificate:
-	%
-	SNIHostInfos = list_utils:flatten_once(
-		[ get_virtual_host_sni_infos( H, VH, BinCertDir )
-			|| { H, VH } <- UserRoutes ] ),
+    % Options to apply for the host that matches what the client requested with
+    % Server Name Indication (going through *all* the hosts listed by the user),
+    % now that virtual hosts are listed as SANs in a single host-level
+    % certificate:
+    %
+    SNIHostInfos = list_utils:flatten_once(
+        [ get_virtual_host_sni_infos( H, VH, BinCertDir )
+            || { H, VH } <- UserRoutes ] ),
 
-	% Redundant:
-	%cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
-	%   "SNI information: transport options for the default "
-	%   "hostname are: ~p.~nVirtual host options are:~n~p",
-	%   [ MainTranspOpts, SNIHostInfos ] ) ),
+    % Redundant:
+    %cond_utils:if_defined( us_web_debug_sni, trace_utils:debug_fmt(
+    %   "SNI information: transport options for the default "
+    %   "hostname are: ~p.~nVirtual host options are:~n~p",
+    %   [ MainTranspOpts, SNIHostInfos ] ) ),
 
-	wooper:return_static( { MainTranspOpts, SNIHostInfos } ).
+    wooper:return_static( { MainTranspOpts, SNIHostInfos } ).
 
 
 
@@ -1165,75 +1165,75 @@ For conversions, see reference table in
 -spec get_recommended_ciphers() -> static_return( [ cipher_name() ] ).
 get_recommended_ciphers() ->
 
-	% Recommended ciphers for TLS v.3 (source:
-	% [https://wiki.mozilla.org/Security/Server_Side_TLS]), only modern settings
-	% apply, namely, with OpenSSL conventions:
-	%
-	% - TLS_AES_128_GCM_SHA256
-	% - TLS_AES_256_GCM_SHA384
-	% - TLS_CHACHA20_POLY1305_SHA256
-	%
-	% We now use only ciphers designated with the OpenSSL conventions, that can
-	% be translated in their Erlang counterpart with the (unofficial)
-	% ssl:str_to_suite/1 function, like in:
-	%
-	% ssl:str_to_suite("TLS_AES_128_GCM_SHA256") =
-	%  #{cipher => aes_128_gcm,key_exchange => any,mac => aead,
-	%    prf => sha256}
+    % Recommended ciphers for TLS v.3 (source:
+    % [https://wiki.mozilla.org/Security/Server_Side_TLS]), only modern settings
+    % apply, namely, with OpenSSL conventions:
+    %
+    % - TLS_AES_128_GCM_SHA256
+    % - TLS_AES_256_GCM_SHA384
+    % - TLS_CHACHA20_POLY1305_SHA256
+    %
+    % We now use only ciphers designated with the OpenSSL conventions, that can
+    % be translated in their Erlang counterpart with the (unofficial)
+    % ssl:str_to_suite/1 function, like in:
+    %
+    % ssl:str_to_suite("TLS_AES_128_GCM_SHA256") =
+    %  #{cipher => aes_128_gcm,key_exchange => any,mac => aead,
+    %    prf => sha256}
 
-	BaseV1dot3Ciphers = [ "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384",
-						  "TLS_CHACHA20_POLY1305_SHA256" ],
+    BaseV1dot3Ciphers = [ "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384",
+                          "TLS_CHACHA20_POLY1305_SHA256" ],
 
-	% A priori non-TLV 1.3 recommended ciphers (source:
-	% [https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices]):
-	%
-	BaseOtherCiphers = [ "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-						 "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-						 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-						 "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-						 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-						 "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-						 "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-						 "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-						 "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-						 "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" ],
+    % A priori non-TLV 1.3 recommended ciphers (source:
+    % [https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices]):
+    %
+    BaseOtherCiphers = [ "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                         "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                         "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+                         "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+                         "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+                         "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+                         "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                         "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                         "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+                         "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" ],
 
-	% To increase accessibility/client support:
-	WeakerCiphers = [ "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-					  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-					  "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-					  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-					  "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-					  "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-					  "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-					  "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256" ],
+    % To increase accessibility/client support:
+    WeakerCiphers = [ "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+                      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+                      "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                      "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                      "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+                      "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+                      "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+                      "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256" ],
 
 
-	% No default token value to force a choice:
-	AllCiphers = cond_utils:switch_set_to( us_web_security,
-		[ { relaxed, BaseV1dot3Ciphers ++ BaseOtherCiphers ++ WeakerCiphers },
-		  { strict, begin
-						basic_utils:ignore_unused( WeakerCiphers ),
-						BaseV1dot3Ciphers ++ BaseOtherCiphers
-					end } ] ),
+    % No default token value to force a choice:
+    AllCiphers = cond_utils:switch_set_to( us_web_security,
+        [ { relaxed, BaseV1dot3Ciphers ++ BaseOtherCiphers ++ WeakerCiphers },
+          { strict, begin
+                        basic_utils:ignore_unused( WeakerCiphers ),
+                        BaseV1dot3Ciphers ++ BaseOtherCiphers
+                    end } ] ),
 
-	ErlCiphers = lists:foldl(
-		fun( C, Acc ) ->
-			case ssl:str_to_suite( C ) of
+    ErlCiphers = lists:foldl(
+        fun( C, Acc ) ->
+            case ssl:str_to_suite( C ) of
 
-				{ error, { not_recognized, _C } } ->
-					Acc;
+                { error, { not_recognized, _C } } ->
+                    Acc;
 
-				CSuite ->
-					[ CSuite | Acc ]
+                CSuite ->
+                    [ CSuite | Acc ]
 
-			end
+            end
 
-		end,
-		_Acc0=[],
-		AllCiphers ),
+        end,
+        _Acc0=[],
+        AllCiphers ),
 
-	wooper:return_static( ErlCiphers ).
+    wooper:return_static( ErlCiphers ).
 
 
 
@@ -1243,66 +1243,66 @@ get_recommended_ciphers() ->
 -doc "Returns SNI information regarding specified virtual host.".
 % No domain-level wildcard certificate:
 get_virtual_host_sni_infos( _Hostname=default_domain_catch_all,
-							_VHostInfos, _BinCertDir ) ->
-	[];
+                            _VHostInfos, _BinCertDir ) ->
+    [];
 
 % Not visible outside of the LAN:
 get_virtual_host_sni_infos( _Hostname="localhost", _VHostInfos, _BinCertDir ) ->
-	[];
+    [];
 
 get_virtual_host_sni_infos( Hostname, VHostInfos, BinCertDir ) ->
-	get_vh_sni_infos_for( Hostname, VHostInfos, BinCertDir, _Acc=[] ).
+    get_vh_sni_infos_for( Hostname, VHostInfos, BinCertDir, _Acc=[] ).
 
 
 
 % (helper)
 get_vh_sni_infos_for( _Hostname, _VHostInfos=[], _BinCertDir, Acc ) ->
-	% Preferring to respect the order from the user rules:
-	lists:reverse( Acc );
+    % Preferring to respect the order from the user rules:
+    lists:reverse( Acc );
 
 % See next clause (may result in having that hostname referenced twice):
 get_vh_sni_infos_for( Hostname,
-		_VHostInfos=[ { _VH=without_vhost, _ContentRoot } | T ],
-		BinCertDir, Acc ) ->
-	HPair = { Hostname, get_transport_opts_for( Hostname, BinCertDir ) },
-	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ HPair | Acc ] );
+        _VHostInfos=[ { _VH=without_vhost, _ContentRoot } | T ],
+        BinCertDir, Acc ) ->
+    HPair = { Hostname, get_transport_opts_for( Hostname, BinCertDir ) },
+    get_vh_sni_infos_for( Hostname, T, BinCertDir, [ HPair | Acc ] );
 
 % No host-level wildcard certificate, yet we list it as a SNI option (multiple
 % hostnames can be managed by a single server):
 %
 get_vh_sni_infos_for( Hostname,
-		_VHostInfos=[ { _VH=default_vhost_catch_all, _ContentRoot } | T ],
-		BinCertDir, Acc ) ->
-	HPair = { Hostname, get_transport_opts_for( Hostname, BinCertDir ) },
-	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ HPair | Acc ] );
+        _VHostInfos=[ { _VH=default_vhost_catch_all, _ContentRoot } | T ],
+        BinCertDir, Acc ) ->
+    HPair = { Hostname, get_transport_opts_for( Hostname, BinCertDir ) },
+    get_vh_sni_infos_for( Hostname, T, BinCertDir, [ HPair | Acc ] );
 
 get_vh_sni_infos_for( Hostname,
-		_VHostInfos=[ { VHostname, _ContentRoot } | T ], BinCertDir, Acc ) ->
-	VHPair = get_vh_pair( Hostname, VHostname, BinCertDir ),
-	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
+        _VHostInfos=[ { VHostname, _ContentRoot } | T ], BinCertDir, Acc ) ->
+    VHPair = get_vh_pair( Hostname, VHostname, BinCertDir ),
+    get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
 
 get_vh_sni_infos_for( Hostname,
-		_VHostInfos=[ { VHostname, _ContentRoot, _WebKind } | T ], BinCertDir,
-		Acc ) ->
-	VHPair = get_vh_pair( Hostname, VHostname, BinCertDir ),
-	get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
+        _VHostInfos=[ { VHostname, _ContentRoot, _WebKind } | T ], BinCertDir,
+        Acc ) ->
+    VHPair = get_vh_pair( Hostname, VHostname, BinCertDir ),
+    get_vh_sni_infos_for( Hostname, T, BinCertDir, [ VHPair | Acc ] );
 
 get_vh_sni_infos_for( Hostname, [ Unexpected | _T ], _BinCertDir, _Acc ) ->
-	throw( { unexpected_vhost_info_for_snis, Unexpected, Hostname } ).
+    throw( { unexpected_vhost_info_for_snis, Unexpected, Hostname } ).
 
 
 
 % (helper)
 get_vh_pair( Hostname, VHostname, BinCertDir ) ->
-	FQDN = VHostname ++ [ $. | Hostname ],
+    FQDN = VHostname ++ [ $. | Hostname ],
 
-	% Now that SANs are used, we point to the corresponding global, host-level
-	% certificate information:
-	%
-	%TranspOpts = get_transport_opts_for( FQDN, BinCertDir ),
-	TranspOpts = get_transport_opts_for( Hostname, BinCertDir ),
+    % Now that SANs are used, we point to the corresponding global, host-level
+    % certificate information:
+    %
+    %TranspOpts = get_transport_opts_for( FQDN, BinCertDir ),
+    TranspOpts = get_transport_opts_for( Hostname, BinCertDir ),
 
-	{ FQDN, TranspOpts }.
+    { FQDN, TranspOpts }.
 
 
 
@@ -1312,17 +1312,17 @@ Returns transport options suitable for specified FQDN.
 Their existing is not tested, as they may be expected to be generated later.
 """.
 -spec get_transport_opts_for( net_utils:string_fqdn(), bin_directory_path() ) ->
-								static_return( [ ssl_option() ] ).
+                                static_return( [ ssl_option() ] ).
 get_transport_opts_for( FQDN, BinCertDir ) ->
 
-	CertFilename = FQDN ++ ?cert_extension,
-	CertFilePath = file_utils:join( BinCertDir, CertFilename ),
+    CertFilename = FQDN ++ ?cert_extension,
+    CertFilePath = file_utils:join( BinCertDir, CertFilename ),
 
-	PrivKeyFilename = FQDN ++ ?priv_key_extension,
-	PrivKeyFilePath = file_utils:join( BinCertDir, PrivKeyFilename ),
+    PrivKeyFilename = FQDN ++ ?priv_key_extension,
+    PrivKeyFilePath = file_utils:join( BinCertDir, PrivKeyFilename ),
 
-	wooper:return_static(
-		[ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
+    wooper:return_static(
+        [ { certfile, CertFilePath }, { keyfile, PrivKeyFilePath } ] ).
 
 
 
@@ -1334,43 +1334,43 @@ applicable (no associated file found).
 SNI information not checked, as usually deriving from HTTPS transport options.
 """.
 -spec check_https_transport_options( https_transport_info() ) ->
-												static_void_return().
+                                                static_void_return().
 check_https_transport_options( _MaybeHttpsTranspInfo=undefined ) ->
-	wooper:return_static_void();
+    wooper:return_static_void();
 
 check_https_transport_options(
-		_HttpsTranspInfo={ HttpTranspOpts, _SniInfo } ) ->
+        _HttpsTranspInfo={ HttpTranspOpts, _SniInfo } ) ->
 
-	ReqKeysWithDefs = [ { certfile, undefined }, { keyfile, undefined } ],
+    ReqKeysWithDefs = [ { certfile, undefined }, { keyfile, undefined } ],
 
-	{ [ MaybeCertFile, MaybeKeyFile ], OtherOpts } =
-		list_table:extract_entries_with_defaults( ReqKeysWithDefs,
-												  HttpTranspOpts ),
+    { [ MaybeCertFile, MaybeKeyFile ], OtherOpts } =
+        list_table:extract_entries_with_defaults( ReqKeysWithDefs,
+                                                  HttpTranspOpts ),
 
-	case MaybeCertFile of
+    case MaybeCertFile of
 
-		undefined ->
-			throw( { no_certfile, HttpTranspOpts } );
+        undefined ->
+            throw( { no_certfile, HttpTranspOpts } );
 
-		CertFile ->
-			file_utils:is_existing_file_or_link( CertFile ) orelse
-				throw( { non_existing_certfile, CertFile } )
+        CertFile ->
+            file_utils:is_existing_file_or_link( CertFile ) orelse
+                throw( { non_existing_certfile, CertFile } )
 
-	end,
+    end,
 
-	case MaybeKeyFile of
+    case MaybeKeyFile of
 
-		undefined ->
-			throw( { no_keyfile, HttpTranspOpts } );
+        undefined ->
+            throw( { no_keyfile, HttpTranspOpts } );
 
-		KeyFile ->
-			file_utils:is_existing_file_or_link( KeyFile ) orelse
-				throw( { non_existing_keyfile, KeyFile } )
+        KeyFile ->
+            file_utils:is_existing_file_or_link( KeyFile ) orelse
+                throw( { non_existing_keyfile, KeyFile } )
 
-	end,
+    end,
 
-	OtherOpts =:= [] orelse
-		throw( { unexpected_extra_https_transport_options, OtherOpts } ).
+    OtherOpts =:= [] orelse
+        throw( { unexpected_extra_https_transport_options, OtherOpts } ).
 
 
 
@@ -1378,44 +1378,44 @@ check_https_transport_options(
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 
-	PeriodStr = case ?getAttr(cert_renewal_period) of
+    PeriodStr = case ?getAttr(cert_renewal_period) of
 
-		undefined ->
-			"no periodic renewal";
+        undefined ->
+            "no periodic renewal";
 
-		PeriodSecs ->
-			text_utils:format( "a renewal every ~ts",
-				[ time_utils:duration_to_string( 1000 * PeriodSecs ) ] )
+        PeriodSecs ->
+            text_utils:format( "a renewal every ~ts",
+                [ time_utils:duration_to_string( 1000 * PeriodSecs ) ] )
 
-	end,
+    end,
 
-	FSMStr = leec:maybe_caller_state_to_string( ?getAttr(leec_caller_state) ),
+    FSMStr = leec:maybe_caller_state_to_string( ?getAttr(leec_caller_state) ),
 
-	CertStr = case ?getAttr(cert_path) of
+    CertStr = case ?getAttr(cert_path) of
 
-		undefined ->
-			"not having generated a certificate yet";
+        undefined ->
+            "not having generated a certificate yet";
 
-		CertPath ->
-			text_utils:format( "having generated a certificate in '~ts'",
-							   [ CertPath ] )
+        CertPath ->
+            text_utils:format( "having generated a certificate in '~ts'",
+                               [ CertPath ] )
 
-	end,
+    end,
 
-	SansStr = case ?getAttr(sans) of
+    SansStr = case ?getAttr(sans) of
 
-		[] ->
-			"no Subject Alternative Names";
+        [] ->
+            "no Subject Alternative Names";
 
-		Sans ->
-			text_utils:format( "~B Subject Alternative Names: ~ts",
-				[ length( Sans ),
-				  text_utils:binaries_to_listed_string( Sans ) ] )
+        Sans ->
+            text_utils:format( "~B Subject Alternative Names: ~ts",
+                [ length( Sans ),
+                  text_utils:binaries_to_listed_string( Sans ) ] )
 
-	end,
+    end,
 
-	text_utils:format( "US certificate manager for '~ts' in ~ts mode, "
-		"using certificate directory '~ts', with ~ts, using ~ts, ~ts; "
-		"it is to specify ~ts",
-		[ ?getAttr(fqdn), ?getAttr(cert_mode), ?getAttr(cert_dir), PeriodStr,
-		  FSMStr, CertStr, SansStr ] ).
+    text_utils:format( "US certificate manager for '~ts' in ~ts mode, "
+        "using certificate directory '~ts', with ~ts, using ~ts, ~ts; "
+        "it is to specify ~ts",
+        [ ?getAttr(fqdn), ?getAttr(cert_mode), ?getAttr(cert_dir), PeriodStr,
+          FSMStr, CertStr, SansStr ] ).

@@ -34,26 +34,26 @@ As done by Cowboy, exactly one process is spawned per request.
 
 
 -export([ init/2, malformed_request/2, forbidden/2, content_types_provided/2,
-		  charsets_provided/2, ranges_provided/2, resource_exists/2,
-		  last_modified/2, generate_etag/2, get_file/2 ]).
+          charsets_provided/2, ranges_provided/2, resource_exists/2,
+          last_modified/2, generate_etag/2, get_file/2 ]).
 
 
 -type extra_charset() :: { charset, module(), function() }
-					   | { charset, binary() }.
+                       | { charset, binary() }.
 
 -type extra_etag() :: { etag, module(), function() } | { etag, false }.
 
 -type extra_mimetypes() ::
-	{ mimetypes, module(), function() }
+    { mimetypes, module(), function() }
   | { mimetypes, binary()
-		| { binary(), binary(), [ { binary(), binary() } ] } }.
+        | { binary(), binary(), [ { binary(), binary() } ] } }.
 
 -type extra() :: [ extra_charset() | extra_etag() | extra_mimetypes() ].
 
 -type opts() :: { file | dir, ustring() | binary() }
-	| { file | dir, ustring() | binary(), extra() }
-	| { priv_file | priv_dir, atom(), ustring() | binary() }
-	| { priv_file | priv_dir, atom(), ustring() | binary(), extra() }.
+    | { file | dir, ustring() | binary(), extra() }
+    | { priv_file | priv_dir, atom(), ustring() | binary() }
+    | { priv_file | priv_dir, atom(), ustring() | binary(), extra() }.
 
 -export_type([ opts/0 ]).
 
@@ -80,7 +80,7 @@ As done by Cowboy, exactly one process is spawned per request.
 
 -doc "State for the cowboy_rest handler.".
 -type rest_handler_state() :: { bin_content_path(),
-		{ access_type(), file_info() } | basic_utils:error_term(), extra() }.
+        { access_type(), file_info() } | basic_utils:error_term(), extra() }.
 
 
 % See our web_utils module:
@@ -105,94 +105,94 @@ file is inside the configured directory.
 %init( Req, HState=#{ type := Type } ) ->
 init( Req, HState ) ->
 
-	BinPath = maps:get( path, HState ),
+    BinPath = maps:get( path, HState ),
 
-	cond_utils:if_defined( us_web_debug_handlers,
-		class_TraceEmitter:register_as_bridge(
-			_Name=text_utils:format( "Static handler for path '~ts'",
-									 [ BinPath ] ),
-			_Categ="US.US-Web.Static Handler" ) ),
+    cond_utils:if_defined( us_web_debug_handlers,
+        class_TraceEmitter:register_as_bridge(
+            _Name=text_utils:format( "Static handler for path '~ts'",
+                                     [ BinPath ] ),
+            _Categ="US.US-Web.Static Handler" ) ),
 
-	%trace_utils:debug_fmt(
-	%  "[~ts:~w] Serving request as a ~ts~nInitial handler state being ~ts",
-	%  [ ?MODULE, self(), table:to_string( Req ), table:to_string( HState ) ] ),
+    %trace_utils:debug_fmt(
+    %  "[~ts:~w] Serving request as a ~ts~nInitial handler state being ~ts",
+    %  [ ?MODULE, self(), table:to_string( Req ), table:to_string( HState ) ] ),
 
-	CowboyOpts = maps:get( cowboy_opts, HState ),
+    CowboyOpts = maps:get( cowboy_opts, HState ),
 
-	% To return such information (atom, not binary):
-	SpoofedReq = Req#{ server => ?server_req_id },
+    % To return such information (atom, not binary):
+    SpoofedReq = Req#{ server => ?server_req_id },
 
-	HReturn = case maps:get( _Key=type, HState ) of
+    HReturn = case maps:get( _Key=type, HState ) of
 
-		file ->
-			handle_file_request( SpoofedReq, _BinIndex=BinPath, CowboyOpts,
-								 HState );
+        file ->
+            handle_file_request( SpoofedReq, _BinIndex=BinPath, CowboyOpts,
+                                 HState );
 
-		directory ->
-			handle_dir_request( SpoofedReq, _BinContentRoot=BinPath, CowboyOpts,
-								HState )
+        directory ->
+            handle_dir_request( SpoofedReq, _BinContentRoot=BinPath, CowboyOpts,
+                                HState )
 
-	end,
+    end,
 
-	% Logging already done in the handle_* functions above.
+    % Logging already done in the handle_* functions above.
 
-	%trace_utils:debug_fmt( "[~ts:~w] Returning:~n~p",
-	%                       [ ?MODULE, self(), HReturn ] ),
+    %trace_utils:debug_fmt( "[~ts:~w] Returning:~n~p",
+    %                       [ ?MODULE, self(), HReturn ] ),
 
-	HReturn.
+    HReturn.
 
 
 
 -doc "Handles the request for a file.".
 handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
 
-	%trace_utils:debug_fmt( "handle_file_request for file '~ts' (opts: ~p)",
-	%                       [ BinFullFilePath, CowboyOpts ] ),
+    %trace_utils:debug_fmt( "handle_file_request for file '~ts' (opts: ~p)",
+    %                       [ BinFullFilePath, CowboyOpts ] ),
 
     % 'raw' is essential for efficiency:
-	case file:read_file_info( BinFullFilePath, [ raw, { time, universal } ] ) of
+    case file:read_file_info( BinFullFilePath, [ raw, { time, universal } ] ) of
 
-		{ ok, FileInfo } ->
+        { ok, FileInfo } ->
 
-			RestHandlerState =
-				{ BinFullFilePath, { direct, FileInfo }, CowboyOpts },
+            RestHandlerState =
+                { BinFullFilePath, { direct, FileInfo }, CowboyOpts },
 
-			HReturn = { cowboy_rest, Req, RestHandlerState },
+            HReturn = { cowboy_rest, Req, RestHandlerState },
 
-			% We now take advantage of this process to perform logging:
-			us_web_handler:manage_access_log( HReturn,
-				_HttpSuccessStatusCode=200, HState ),
+            % We now take advantage of this process to perform logging:
+            us_web_handler:manage_access_log( HReturn,
+                _HttpSuccessStatusCode=200, HState ),
 
-			HReturn;
+            HReturn;
 
-		{ error, enoent } ->
-			% Performs logging as well:
-			us_web_handler:return_404( Req, BinFullFilePath, HState );
+        { error, enoent } ->
+            % Performs logging as well:
+            us_web_handler:return_404( Req, BinFullFilePath, HState );
 
-		% Happens whenever a request to an existing page yet designated as a
-		% directory (e.g. "foobar.org/index.html/") is done; without this
-		% clause, the root index.html was returned, as if read from this
-		% pseudo-directory.
-		%
-		{ error, enotdir } ->
-			us_web_handler:return_404( Req, BinFullFilePath, HState );
+        % Happens whenever a request to an existing page yet designated as a
+        % directory (e.g. "foobar.org/index.html/") is done; without this
+        % clause, the root index.html was returned, as if read from this
+        % pseudo-directory.
+        %
+        { error, enotdir } ->
+            us_web_handler:return_404( Req, BinFullFilePath, HState );
 
-		{ error, Error } ->
-			us_web_handler:manage_error_log( Error, Req, BinFullFilePath,
-											 HState ),
-			% Supposedly better (no ranch crash report); wget reports "ERROR
-			% 500: Internal Server Error." as intented, yet a browser just
-			% displays a blank page; a nice "Internal server error" page could
-			% be generated and returned instead.
-			%
-			% Possible return:
-			{ ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
-			  error }
+        { error, Error } ->
+            us_web_handler:manage_error_log( Error, Req, BinFullFilePath,
+                                             HState ),
+            % Supposedly better (no ranch crash report); wget reports "ERROR
+            % 500: Internal Server Error." as intented, yet a browser just
+            % displays a blank page; a nice "Internal server error" page could
+            % be generated and returned instead.
+            %
+            % Possible return:
+            { ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
+              error }
 
-			% Or:
-			%{ cowboy_rest, Req, error }
+            % Or:
+            %{ cowboy_rest, Req, error }
 
-	end.
+    end.
 
 
 
@@ -206,104 +206,104 @@ RelContentRoot is the path of the target directory relatively to the absolute
 website root.
 """.
 handle_dir_request( Req, RelContentRoot, CowboyOpts, HState )
-										when is_list( RelContentRoot ) ->
-	BinRelContentRoot = text_utils:string_to_binary( RelContentRoot ),
-	handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState );
+                                        when is_list( RelContentRoot ) ->
+    BinRelContentRoot = text_utils:string_to_binary( RelContentRoot ),
+    handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState );
 
 handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState ) ->
 
-	%trace_utils:debug_fmt( "us_web_static:handle_dir_request/4 for:~n"
-	%   " - Req = ~p~n - BinRelContentRoot = ~p~n"
-	%   " - CowboyOpts = ~p~n - HState = ~p~n",
-	%   [ Req, BinRelContentRoot, CowboyOpts, HState ] ),
+    %trace_utils:debug_fmt( "us_web_static:handle_dir_request/4 for:~n"
+    %   " - Req = ~p~n - BinRelContentRoot = ~p~n"
+    %   " - CowboyOpts = ~p~n - HState = ~p~n",
+    %   [ Req, BinRelContentRoot, CowboyOpts, HState ] ),
 
-	case cowboy_req:path_info( Req ) of
+    case cowboy_req:path_info( Req ) of
 
-		% When dir/priv_dir are used, and there is no path_info, this is a
-		% configuration error and we abort immediately:
-		%
-		undefined ->
-			us_web_handler:manage_error_log( _Error=no_path_info_for_dir, Req,
-											 BinRelContentRoot, HState ),
-			{ ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
-			  error };
+        % When dir/priv_dir are used, and there is no path_info, this is a
+        % configuration error and we abort immediately:
+        %
+        undefined ->
+            us_web_handler:manage_error_log( _Error=no_path_info_for_dir, Req,
+                                             BinRelContentRoot, HState ),
+            { ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
+              error };
 
-		PathInfo ->
-			case validate_reserved( PathInfo ) of
+        PathInfo ->
+            case validate_reserved( PathInfo ) of
 
-				ok ->
-					% The absolute root of the website of interest:
-					BinAbsWebsiteRoot = maps:get( content_root, HState ),
+                ok ->
+                    % The absolute root of the website of interest:
+                    BinAbsWebsiteRoot = maps:get( content_root, HState ),
 
-					BinBasePath =
-						filename:join( BinAbsWebsiteRoot, BinRelContentRoot ),
+                    BinBasePath =
+                        filename:join( BinAbsWebsiteRoot, BinRelContentRoot ),
 
-					BaseLen = byte_size( BinBasePath ),
+                    BaseLen = byte_size( BinBasePath ),
 
-					BinFullFilepath =
-						filename:join( [ BinBasePath | PathInfo ] ),
+                    BinFullFilepath =
+                        filename:join( [ BinBasePath | PathInfo ] ),
 
-					% Checks that we serve indeed a content from the root
-					% directory assigned to this handler (not escaping from it):
-					%
-					case normalise_path( BinFullFilepath ) of
+                    % Checks that we serve indeed a content from the root
+                    % directory assigned to this handler (not escaping from it):
+                    %
+                    case normalise_path( BinFullFilepath ) of
 
-						<< BinBasePath:BaseLen/binary, $/, _/binary >> ->
-							%trace_utils:debug( "handle_dir_request: case A." ),
-							handle_file_request( Req, BinFullFilepath,
-												 CowboyOpts, HState );
+                        << BinBasePath:BaseLen/binary, $/, _/binary >> ->
+                            %trace_utils:debug( "handle_dir_request: case A." ),
+                            handle_file_request( Req, BinFullFilepath,
+                                                 CowboyOpts, HState );
 
-						<< BinBasePath:BaseLen/binary >> ->
-							%trace_utils:debug( "handle_dir_request: case B." ),
-							handle_file_request( Req, BinFullFilepath,
-												 CowboyOpts, HState );
+                        << BinBasePath:BaseLen/binary >> ->
+                            %trace_utils:debug( "handle_dir_request: case B." ),
+                            handle_file_request( Req, BinFullFilepath,
+                                                 CowboyOpts, HState );
 
-						Other ->
-							%trace_utils:debug( "handle_dir_request: case C." ),
-							us_web_handler:manage_error_log(
-								_Error={ invalid_path_for, PathInfo,
-										 Other, BinFullFilepath },
-								Req, BinRelContentRoot, HState ),
-							{ cowboy_rest, Req, error }
+                        Other ->
+                            %trace_utils:debug( "handle_dir_request: case C." ),
+                            us_web_handler:manage_error_log(
+                                _Error={ invalid_path_for, PathInfo,
+                                         Other, BinFullFilepath },
+                                Req, BinRelContentRoot, HState ),
+                            { cowboy_rest, Req, error }
 
-					end;
-
-
-				error ->
-					%trace_utils:debug( "handle_dir_request: case D." ),
-
-					% Often attacks like:
-					% <<"chkisg.htm?Sip=1.1.1.1 | cat /etc/passwd">>
-					%
-					us_web_handler:manage_error_log(
-						_Error={ invalid_path_info, PathInfo }, Req,
-						BinRelContentRoot, HState ),
-					{ cowboy_rest, Req, error }
+                    end;
 
 
-			end
+                error ->
+                    %trace_utils:debug( "handle_dir_request: case D." ),
+
+                    % Often attacks like:
+                    % <<"chkisg.htm?Sip=1.1.1.1 | cat /etc/passwd">>
+                    %
+                    us_web_handler:manage_error_log(
+                        _Error={ invalid_path_info, PathInfo }, Req,
+                        BinRelContentRoot, HState ),
+                    { cowboy_rest, Req, error }
 
 
-	end.
+            end
+
+
+    end.
 
 
 
 -doc "Validates the specified path information.".
 -spec validate_reserved( path_info() ) -> 'ok' | 'error'.
 validate_reserved( _PathInfo=[] ) ->
-	ok;
+    ok;
 
 validate_reserved( _PathInfo=[ Path | T ] ) ->
 
-	case validate_reserved_helper( Path ) of
+    case validate_reserved_helper( Path ) of
 
-		ok ->
-			validate_reserved( T );
+        ok ->
+            validate_reserved( T );
 
-		error ->
-			error
+        error ->
+            error
 
-	end.
+    end.
 
 
 
@@ -314,42 +314,42 @@ validate_reserved( _PathInfo=[ Path | T ] ) ->
 % consistency and simplicity we do not.
 %
 validate_reserved_helper( <<>> ) ->
-	ok;
+    ok;
 
 validate_reserved_helper( <<$/, _/bits>> ) ->
-	error;
+    error;
 
 validate_reserved_helper( <<$\\, _/bits>> ) ->
-	error;
+    error;
 
 validate_reserved_helper( <<0, _/bits>> ) ->
-	error;
+    error;
 
 validate_reserved_helper( <<_, Rest/bits>> ) ->
-	validate_reserved_helper( Rest ).
+    validate_reserved_helper( Rest ).
 
 
 
 -doc "Normalises the specified path.".
 normalise_path( Path ) ->
-	normalise_path( filename:split( Path ), _Acc=[] ).
+    normalise_path( filename:split( Path ), _Acc=[] ).
 
 
 % (helper)
 normalise_path( [], Acc ) ->
-	filename:join( lists:reverse( Acc ) );
+    filename:join( lists:reverse( Acc ) );
 
 normalise_path( [ <<".">> | T ], Acc ) ->
-	normalise_path( T, Acc );
+    normalise_path( T, Acc );
 
 normalise_path( [ <<"..">> | T ], Acc=[ _ ] ) ->
-	normalise_path( T, Acc );
+    normalise_path( T, Acc );
 
 normalise_path( [ <<"..">> | T ], [ _ | Acc ] ) ->
-	normalise_path( T, Acc );
+    normalise_path( T, Acc );
 
 normalise_path( [ Segment | T ], Acc ) ->
-	normalise_path( T, [ Segment | Acc ] ).
+    normalise_path( T, [ Segment | Acc ] ).
 
 
 
@@ -359,7 +359,7 @@ used reserved characters.
 """.
 -spec malformed_request( Req, State ) -> { boolean(), Req, State }.
 malformed_request( Req, State ) ->
-	{ State =:= error, Req, State }.
+    { State =:= error, Req, State }.
 
 
 
@@ -370,130 +370,130 @@ Directories, files that cannot be accessed at all, and files with no read flag
 are forbidden.
 """.
 -spec forbidden( Req, State  ) -> { boolean( ), Req, State  }
-	when State::rest_handler_state(  ).
+    when State::rest_handler_state(  ).
 forbidden( Req, State={ _, { _, #file_info{ type=directory } }, _ } ) ->
-	{ true, Req, State };
+    { true, Req, State };
 
 forbidden( Req, State={ _, { error, eacces }, _ } ) ->
-	{ true, Req, State };
+    { true, Req, State };
 
 forbidden( Req, State={ _, { _, #file_info{ access=Access } }, _ } )
-		when Access =:= write orelse Access =:= none ->
-	{ true, Req, State };
+        when Access =:= write orelse Access =:= none ->
+    { true, Req, State };
 
 forbidden( Req, State ) ->
-	{ false, Req, State }.
+    { false, Req, State }.
 
 
 
 
 -doc "Detects the mimetype of the file.".
 -spec content_types_provided( Req, State ) ->
-							{ [ { binary(), get_file } ], Req, State }
-								when State::rest_handler_state().
+                            { [ { binary(), get_file } ], Req, State }
+                                when State::rest_handler_state().
 content_types_provided( Req, State={ Path, _, Extra } ) when is_list( Extra ) ->
 
-	case lists:keyfind( mimetypes, 1, Extra ) of
+    case lists:keyfind( mimetypes, 1, Extra ) of
 
-		false ->
-			{ [ { cow_mimetypes:web( Path ), get_file } ], Req, State };
+        false ->
+            { [ { cow_mimetypes:web( Path ), get_file } ], Req, State };
 
-		{ mimetypes, Module, Function } ->
-			{ [ { Module:Function( Path ), get_file } ], Req, State };
+        { mimetypes, Module, Function } ->
+            { [ { Module:Function( Path ), get_file } ], Req, State };
 
-		{ mimetypes, Type } ->
-			{ [ { Type, get_file } ], Req, State }
+        { mimetypes, Type } ->
+            { [ { Type, get_file } ], Req, State }
 
-	end.
+    end.
 
 
 
 -doc "Detects the charset of the file.".
 -spec charsets_provided( Req, State ) -> { [ binary() ], Req, State }
-								when State::rest_handler_state().
+                                when State::rest_handler_state().
 charsets_provided( Req, State={ Path, _, Extra } ) ->
 
-	case lists:keyfind( charset, 1, Extra ) of
+    case lists:keyfind( charset, 1, Extra ) of
 
-		% We simulate the callback not being exported:
-		false ->
-			no_call;
+        % We simulate the callback not being exported:
+        false ->
+            no_call;
 
-		{ charset, Module, Function } ->
-			{ [ Module:Function( Path ) ], Req, State };
+        { charset, Module, Function } ->
+            { [ Module:Function( Path ) ], Req, State };
 
-		{ charset, Charset } when is_binary( Charset ) ->
-			{ [ Charset ], Req, State }
+        { charset, Charset } when is_binary( Charset ) ->
+            { [ Charset ], Req, State }
 
-	end.
+    end.
 
 
 
 -doc "Enables support for range requests.".
 -spec ranges_provided( Req, State ) -> { [ { binary(), auto } ], Req, State }
-								when State::rest_handler_state().
+                                when State::rest_handler_state().
 ranges_provided( Req, State ) ->
-	{ [ { <<"bytes">>, auto } ], Req, State }.
+    { [ { <<"bytes">>, auto } ], Req, State }.
 
 
 
 -doc "Assumes the resource does not exist if it is not a regular file.".
 -spec resource_exists( Req, State ) -> { boolean(), Req, State }
-								when State::rest_handler_state().
+                                when State::rest_handler_state().
 resource_exists( Req, State={ _, { _, #file_info{ type=regular } }, _ } ) ->
-	{ true, Req, State };
+    { true, Req, State };
 
 resource_exists( Req, State ) ->
-	{ false, Req, State }.
+    { false, Req, State }.
 
 
 
 -doc "Generates an etag for the handler-referenced file.".
 -spec generate_etag( Req, State ) -> { { strong | weak, binary() }, Req, State }
-								when State::rest_handler_state().
+                                when State::rest_handler_state().
 generate_etag( Req, State={ Path, { _, #file_info{ size=Size, mtime=Mtime } },
-							Extra } ) ->
+                            Extra } ) ->
 
-	case lists:keyfind( etag, 1, Extra ) of
+    case lists:keyfind( etag, 1, Extra ) of
 
-		false ->
-			{ generate_default_etag( Size, Mtime ), Req, State };
+        false ->
+            { generate_default_etag( Size, Mtime ), Req, State };
 
-		{ etag, Module, Function } ->
-			{ Module:Function( Path, Size, Mtime ), Req, State };
+        { etag, Module, Function } ->
+            { Module:Function( Path, Size, Mtime ), Req, State };
 
-		{ etag, false } ->
-			{ undefined, Req, State }
+        { etag, false } ->
+            { undefined, Req, State }
 
-	end.
+    end.
 
 
 
 -doc "Generates a default etag.".
 generate_default_etag( Size, Mtime ) ->
-	{ strong, integer_to_binary( erlang:phash2( { Size, Mtime },
-												16#ffffffff ) ) }.
+    { strong, integer_to_binary( erlang:phash2( { Size, Mtime },
+                                                16#ffffffff ) ) }.
 
 
 
 -doc "Returns the time of last modification of the handler-referenced file.".
 -spec last_modified( cowboy_req:req(), rest_handler_state() ) ->
-		{ calendar:datetime(), cowboy_req:req(), rest_handler_state() }.
+        { calendar:datetime(), cowboy_req:req(), rest_handler_state() }.
 last_modified( Req, HState={ _BinContenPath,
-		{ _AccessType, #file_info{ mtime=ModifiedTime } }, _Extra } ) ->
-	{ ModifiedTime, Req, HState }.
+        { _AccessType, #file_info{ mtime=ModifiedTime } }, _Extra } ) ->
+    { ModifiedTime, Req, HState }.
 
 
 
 -doc "Streams the handler-referenced file.".
 -spec get_file( cowboy_req:req(), rest_handler_state() ) ->
-			{ { 'sendfile', 0, non_neg_integer(), binary() }, cowboy_req:req(),
-			  rest_handler_state() }.
+            { { 'sendfile', 0, non_neg_integer(), binary() }, cowboy_req:req(),
+              rest_handler_state() }.
 get_file( Req, HState={ BinPath, { direct, #file_info{ size=Size } },
-						_Extra } ) ->
-	{ { sendfile, 0, Size, BinPath }, Req, HState };
+                        _Extra } ) ->
+    { { sendfile, 0, Size, BinPath }, Req, HState };
 
 get_file( Req, HState={ BinPath, { archive, _FileInfo}, _Extra } ) ->
-	FilePath = binary_to_list( BinPath ),
-	{ ok, FileBin, _ } = erl_prim_loader:get_file( FilePath ),
-	{ FileBin, Req, HState }.
+    FilePath = binary_to_list( BinPath ),
+    { ok, FileBin, _ } = erl_prim_loader:get_file( FilePath ),
+    { FileBin, Req, HState }.

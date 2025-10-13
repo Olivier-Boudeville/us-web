@@ -28,7 +28,7 @@ automated actions, etc. for the **US-Web** framework.
 
 
 -define( class_description,
-		 "Singleton central server holding the configuration information, "
+         "Singleton central server holding the configuration information, "
          "managing the automated actions, etc. for the US-Web framework" ).
 
 
@@ -53,14 +53,14 @@ the other hosted websites
 -doc "Identifier of a virtual host.".
 -type vhost_id() ::
 
-	% For example <<"bar">>:
-	bin_host_name()
+    % For example <<"bar">>:
+    bin_host_name()
 
-	% To designate directly "foobar.org", not any "XXX.foobar.org":
-	| 'without_vhost'
+    % To designate directly "foobar.org", not any "XXX.foobar.org":
+    | 'without_vhost'
 
-	% To match any non-explicitly matched "XXX.foobar.org":
-	|'default_vhost_catch_all'.
+    % To match any non-explicitly matched "XXX.foobar.org":
+    |'default_vhost_catch_all'.
 
 
 
@@ -85,7 +85,7 @@ the other hosted websites
 
 
 -export_type([ web_kind/0, vhost_id/0, log_analysis_tool_name/0,
-			   general_web_settings/0, web_central_server_pid/0,
+               general_web_settings/0, web_central_server_pid/0,
                web_analysis_info/0 ]).
 
 
@@ -109,11 +109,11 @@ the other hosted websites
 
 % The default registration name of the US-Web central server:
 -define( us_web_central_server_registration_name_key,
-		 us_web_central_server_registration_name ).
+         us_web_central_server_registration_name ).
 
 % The default registration name of the US-Web scheduler:
 -define( us_web_scheduler_registration_name_key,
-		 us_web_scheduler_registration_name ).
+         us_web_scheduler_registration_name ).
 
 -define( us_web_username_key, us_web_username ).
 -define( us_web_app_base_dir_key, us_web_app_base_dir ).
@@ -134,12 +134,12 @@ the other hosted websites
 % (other keys are in their respective server classes)
 %
 -define( known_us_web_central_config_keys, [ ?us_web_epmd_port_key,
-	?us_web_central_server_registration_name_key,
-	?us_web_scheduler_registration_name_key, ?us_web_username_key,
-	?us_web_app_base_dir_key, ?us_web_data_dir_key, ?us_web_log_dir_key,
-	?http_tcp_port_key, ?https_tcp_port_key, ?default_web_root_key,
-	?log_analysis_key, ?certificate_support_key, ?certificate_mode_key,
-	?challenge_type_key, ?dns_provider_key, ?routes_key ] ).
+    ?us_web_central_server_registration_name_key,
+    ?us_web_scheduler_registration_name_key, ?us_web_username_key,
+    ?us_web_app_base_dir_key, ?us_web_data_dir_key, ?us_web_log_dir_key,
+    ?http_tcp_port_key, ?https_tcp_port_key, ?default_web_root_key,
+    ?log_analysis_key, ?certificate_support_key, ?certificate_mode_key,
+    ?challenge_type_key, ?dns_provider_key, ?routes_key ] ).
 
 
 % The last-resort environment variable:
@@ -242,18 +242,18 @@ the other hosted websites
 -doc "The domain-specific information kept by this server.".
 -type domain_info() :: {
 
-	% The identifier of this domain (intentional duplicate):
-	domain_id(),
+    % The identifier of this domain (intentional duplicate):
+    domain_id(),
 
-	% The certificate manager (if any) corresponding to this
-	% domain:
-	%
-	option( cert_manager_pid() ),
+    % The certificate manager (if any) corresponding to this
+    % domain:
+    %
+    option( cert_manager_pid() ),
 
-	% The table storing the configuration of the virtual hosts
-	% within this domain:
-	%
-	vhost_config_table() }.
+    % The table storing the configuration of the virtual hosts
+    % within this domain:
+    %
+    vhost_config_table() }.
 
 
 
@@ -278,7 +278,7 @@ configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
 
 -doc "Settings about the meta website.".
 -type meta_web_settings() ::
-	option( { domain_id(), vhost_id(), bin_directory_path() } ).
+    option( { domain_id(), vhost_id(), bin_directory_path() } ).
 
 
 
@@ -290,8 +290,8 @@ configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
 
 % Notably for us_web_meta:
 -export_type([ domain_id/0, domain_info/0, domain_config_table/0,
-			   vhost_config_table/0, vhost_config_entry/0, meta_web_settings/0,
-			   report_generation_outcome/0 ]).
+               vhost_config_table/0, vhost_config_entry/0, meta_web_settings/0,
+               report_generation_outcome/0 ]).
 
 
 % Is '_' | iodata() (hence includes binary()):
@@ -303,7 +303,7 @@ configuration table regarding its virtual hosts (e.g. regarding "bar.foo.org", a
 
 -doc "See cowboy:route_match().".
 -type path_match() :: { Path :: route_match(), HandlerMod :: module_name(),
-						HandlerOpts :: term() }.
+                        HandlerOpts :: term() }.
 
 
 % As not exported:
@@ -328,19 +328,19 @@ analysis tool, its (main) root directory and the directory of this helper (if
 any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 """.
 -type log_analysis_settings() :: { log_analysis_tool_name(),
-	option( bin_directory_path() ), option( bin_directory_path() ) }.
+    option( bin_directory_path() ), option( bin_directory_path() ) }.
 
 
 -doc "Tells whether certificates shall be used, and how.".
 -type cert_support() ::
 
-	% Hence no https:
-	'no_certificates'
+    % Hence no https:
+    'no_certificates'
 
-	% Hence use, but no renewal:
+    % Hence use, but no renewal:
   | 'use_existing_certificates'
 
-	% Hence use, generate and renew:
+    % Hence use, generate and renew:
   | 'renew_certificates'.
 
 
@@ -353,20 +353,20 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 
 
 -type https_transport_info() ::
-			option( { https_transport_options(), sni_info() } ).
+            option( { https_transport_options(), sni_info() } ).
 
 
 % To silence attribute-only types:
 -export_type([ host_match/0, path_match/0, route_rule/0, dispatch_routes/0,
-			   dispatch_rules/0, log_analysis_settings/0,
-			   cert_support/0, cert_mode/0,
-			   https_transport_options/0, https_transport_info/0 ]).
+               dispatch_rules/0, log_analysis_settings/0,
+               cert_support/0, cert_mode/0,
+               https_transport_options/0, https_transport_info/0 ]).
 
 
 
 -doc "User-specified tuple for a virtual host in the context of a domain.".
 -type vhost_info() :: { vhost_id(), directory_path() }
-					| { vhost_id(), directory_path(), web_kind() }.
+                    | { vhost_id(), directory_path(), web_kind() }.
 
 
 % Type shorthands:
@@ -421,35 +421,35 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
 % The class-specific attributes:
 -define( class_attributes, [
 
-	{ domain_config_table, domain_config_table(),
-	  "a table containing all configuration information related to all "
-	  "domains, and their virtual hosts in turn" },
+    { domain_config_table, domain_config_table(),
+      "a table containing all configuration information related to all "
+      "domains, and their virtual hosts in turn" },
 
-	{ default_web_root, option( bin_directory_path() ),
-	  "the default root (if any) for the website trees" },
+    { default_web_root, option( bin_directory_path() ),
+      "the default root (if any) for the website trees" },
 
-	% Note that it is strongly recommended to have only up to one Nitrogen
-	% instance, as to each of their pages a module shall correspond, leading to
-	% likely clashes through the code path:
-	%
-	{ nitrogen_roots, [ bin_directory_path() ], "the known content roots of "
-	  "Nitrogen-based websites; tells also whether Nitrogen is enabled, "
+    % Note that it is strongly recommended to have only up to one Nitrogen
+    % instance, as to each of their pages a module shall correspond, leading to
+    % likely clashes through the code path:
+    %
+    { nitrogen_roots, [ bin_directory_path() ], "the known content roots of "
+      "Nitrogen-based websites; tells also whether Nitrogen is enabled, "
       "i.e. if at least one virtual host is of this type" },
 
-	{ meta_web_settings, option( meta_web_settings() ),
-	  "the domain, virtual host identifiers and web root of the auto-generated "
-	  "meta website (if any)" },
+    { meta_web_settings, option( meta_web_settings() ),
+      "the domain, virtual host identifiers and web root of the auto-generated "
+      "meta website (if any)" },
 
-	{ http_tcp_port, option( tcp_port() ),
-	  "the TCP port (if any) at which the webserver is to listen for the http "
-	  "scheme" },
+    { http_tcp_port, option( tcp_port() ),
+      "the TCP port (if any) at which the webserver is to listen for the http "
+      "scheme" },
 
-	{ https_tcp_port, option( tcp_port() ),
-	  "the TCP port (if any) at which the webserver is to listen for the https "
-	  "scheme" },
+    { https_tcp_port, option( tcp_port() ),
+      "the TCP port (if any) at which the webserver is to listen for the https "
+      "scheme" },
 
-	{ scheduler_lookup_info, lookup_info(),
-	  "the look-up information that allows resolving the PID of our private "
+    { scheduler_lookup_info, lookup_info(),
+      "the look-up information that allows resolving the PID of our private "
       "scheduler" },
 
     { us_web_scheduler_pid, scheduler_pid(),
@@ -458,57 +458,57 @@ any were specified): {ToolName, MaybeAnalysisToolRoot, MaybeAnalysisHelperRoot}.
       "is not resolved through the naming service (as for example the global "
       "US scheduler), as this instance controls its life-cycle directly" },
 
-	{ logger_task_ring, class_USTaskRing:ring_pid(),
-	  "the PID of the (private) task ring in charge of sequencing the "
+    { logger_task_ring, class_USTaskRing:ring_pid(),
+      "the PID of the (private) task ring in charge of sequencing the "
       "webloggers" },
 
-	{ dispatch_routes, dispatch_routes(), "the dispatch routes to decide "
-	  "by which handler the requested URLs shall be processed" },
+    { dispatch_routes, dispatch_routes(), "the dispatch routes to decide "
+      "by which handler the requested URLs shall be processed" },
 
-	{ dispatch_rules, dispatch_rules(), "the Cowboy dispatch rules (compiled "
-	  "from dispatch routes) corresponding to the configuration" },
+    { dispatch_rules, dispatch_rules(), "the Cowboy dispatch rules (compiled "
+      "from dispatch routes) corresponding to the configuration" },
 
-	{ cert_support, cert_support(),
-	  "tells whether the use and possibly generation/renewal of X.509 "
-	  "certificates is requested" },
+    { cert_support, cert_support(),
+      "tells whether the use and possibly generation/renewal of X.509 "
+      "certificates is requested" },
 
-	{ cert_mode, option( cert_mode() ),
-	  "tells whether certificates (if any) are in staging or production mode" },
+    { cert_mode, option( cert_mode() ),
+      "tells whether certificates (if any) are in staging or production mode" },
 
-	{ credentials_directory, option( bin_directory_path() ),
-	  "the directory where the credentials information will be looked-up, "
-	  "typically to authenticate to one's DNS provider for dns-01 challenges" },
+    { credentials_directory, option( bin_directory_path() ),
+      "the directory where the credentials information will be looked-up, "
+      "typically to authenticate to one's DNS provider for dns-01 challenges" },
 
-	{ cert_directory, option( bin_directory_path() ),
-	  "the directory where the certificate information will be written" },
+    { cert_directory, option( bin_directory_path() ),
+      "the directory where the certificate information will be written" },
 
-	{ challenge_type, option( challenge_type() ),
-	  "the type of ACME challenge to be used in order to generate "
-	  "certificates" },
+    { challenge_type, option( challenge_type() ),
+      "the type of ACME challenge to be used in order to generate "
+      "certificates" },
 
-	{ dns_provider, option( dns_provider() ),
-	  "the DNS provider with which DNS updates for the dns-01 challenge "
-	  "are to be made" },
+    { dns_provider, option( dns_provider() ),
+      "the DNS provider with which DNS updates for the dns-01 challenge "
+      "are to be made" },
 
-	{ leec_agents_key_path, option( bin_file_path() ),
-	  "the absolute path to the common TLS private key file (if any) bound to "
-	  "the common ACME account to be used by all the LEEC agents driven by "
-	  "the certificate managers" },
+    { leec_agents_key_path, option( bin_file_path() ),
+      "the absolute path to the common TLS private key file (if any) bound to "
+      "the common ACME account to be used by all the LEEC agents driven by "
+      "the certificate managers" },
 
-	{ dh_key_path, option( bin_file_path() ),
-	  "the absolute path to the Diffie-Helman key file (if any) to ensure "
-	  "a secure key exchange with Forward Secrecy" },
+    { dh_key_path, option( bin_file_path() ),
+      "the absolute path to the Diffie-Helman key file (if any) to ensure "
+      "a secure key exchange with Forward Secrecy" },
 
-	{ ca_cert_key_path, option( bin_file_path() ),
-	  "the absolute path to the certificate authority PEM file (if any) "
-	  "for the chain of trust" },
+    { ca_cert_key_path, option( bin_file_path() ),
+      "the absolute path to the certificate authority PEM file (if any) "
+      "for the chain of trust" },
 
-	{ https_transp_info, option( https_transport_options() ),
-	  "information regarding Server Name Indication, so that virtual hosts "
-	  "can be supported with https" },
+    { https_transp_info, option( https_transport_options() ),
+      "information regarding Server Name Indication, so that virtual hosts "
+      "can be supported with https" },
 
-	{ log_analysis_settings, option( log_analysis_settings() ),
-	  "the settings to use for any analysis of web access logs" } ] ).
+    { log_analysis_settings, option( log_analysis_settings() ),
+      "the settings to use for any analysis of web access logs" } ] ).
 
 
 % Used by the trace_categorize/1 macro to use the right emitter:
@@ -545,45 +545,45 @@ Constructs the US-Web central server.
 -spec construct( wooper:state(), application_run_context() ) -> wooper:state().
 construct( State, AppRunContext ) ->
 
-	% First the direct mother classes, then this class-specific actions:
-	SrvState = class_USCentralServer:construct( State, _USAppShortName="web",
+    % First the direct mother classes, then this class-specific actions:
+    SrvState = class_USCentralServer:construct( State, _USAppShortName="web",
        _ServerInit=?trace_categorize("Web central server"), AppRunContext ),
 
-	% Should a module be a problem:
-	%Module = cow_http2,
-	%?send_debug_fmt( SrvState, "For module '~ts': ~p",
-	%    [ Module, code_utils:is_beam_in_path( Module ) ] ),
+    % Should a module be a problem:
+    %Module = cow_http2,
+    %?send_debug_fmt( SrvState, "For module '~ts': ~p",
+    %    [ Module, code_utils:is_beam_in_path( Module ) ] ),
 
-	% Has been useful to debug a crashing start-up not letting outputs
-	% displayed:
-	%
-	%io:format( "code: ~ts", [ code_utils:get_code_path_as_string() ] ),
-	%timer:sleep( 1000 ),
+    % Has been useful to debug a crashing start-up not letting outputs
+    % displayed:
+    %
+    %io:format( "code: ~ts", [ code_utils:get_code_path_as_string() ] ),
+    %timer:sleep( 1000 ),
 
-	% Other attributes set by the next function:
-	SetState = setAttributes( SrvState, [
-		{ dispatch_routes, undefined },
-		{ dispatch_rules, undefined },
-		{ credentials_directory, undefined },
-		{ cert_directory, undefined },
-		{ challenge_type, undefined },
-		{ dns_provider, undefined },
-		{ leec_agents_key_path, undefined },
-		{ dh_key_path, undefined },
-		{ ca_cert_key_path, undefined } ] ),
+    % Other attributes set by the next function:
+    SetState = setAttributes( SrvState, [
+        { dispatch_routes, undefined },
+        { dispatch_rules, undefined },
+        { credentials_directory, undefined },
+        { cert_directory, undefined },
+        { challenge_type, undefined },
+        { dns_provider, undefined },
+        { leec_agents_key_path, undefined },
+        { dh_key_path, undefined },
+        { ca_cert_key_path, undefined } ] ),
 
-	CfgState = load_and_apply_configuration( SetState ),
+    CfgState = load_and_apply_configuration( SetState ),
 
-	% Done rather late on purpose, so that the existence of this trace file can
-	% be seen as a sign that the initialisation went well (used by
-	% start-us-web-{native-build,release}.sh).
-	%
-	% Now that the log directory is known, we can properly redirect the traces:
+    % Done rather late on purpose, so that the existence of this trace file can
+    % be seen as a sign that the initialisation went well (used by
+    % start-us-web-{native-build,release}.sh).
+    %
+    % Now that the log directory is known, we can properly redirect the traces:
     executeConstOneway( CfgState, finaliseTraceSetup ),
 
-	?send_info_fmt( CfgState, "Constructed: ~ts.", [ to_string( CfgState ) ] ),
+    ?send_info_fmt( CfgState, "Constructed: ~ts.", [ to_string( CfgState ) ] ),
 
-	CfgState.
+    CfgState.
 
 
 
@@ -591,26 +591,26 @@ construct( State, AppRunContext ) ->
 -spec destruct( wooper:state() ) -> wooper:state().
 destruct( State ) ->
 
-	?debug( "Deletion initiated." ),
+    ?debug( "Deletion initiated." ),
 
-	% Now web loggers are not registered directly to the scheduler, so we just
-	% have to take care of the task ring:
-	%
-	% (no synchronicity needed)
-	%
-	?getAttr(logger_task_ring) ! delete,
+    % Now web loggers are not registered directly to the scheduler, so we just
+    % have to take care of the task ring:
+    %
+    % (no synchronicity needed)
+    %
+    ?getAttr(logger_task_ring) ! delete,
 
-	[ LPid ! delete || LPid <- get_all_logger_pids( State ) ],
+    [ LPid ! delete || LPid <- get_all_logger_pids( State ) ],
 
-	% Includes the LEEC FSM shutdown:
-	[ CMPid ! delete
-		|| CMPid <- get_all_certificate_manager_pids( State ) ],
+    % Includes the LEEC FSM shutdown:
+    [ CMPid ! delete
+        || CMPid <- get_all_certificate_manager_pids( State ) ],
 
     % It is our private one:
-	?getAttr(us_web_scheduler_pid) ! delete,
+    ?getAttr(us_web_scheduler_pid) ! delete,
 
-	?info( "Deleted." ),
-	State.
+    ?info( "Deleted." ),
+    State.
 
 
 
@@ -623,51 +623,51 @@ Returns basic, general web configuration settings (typically for the US-Web
 supervisor).
 """.
 -spec getWebConfigSettings( wooper:state() ) ->
-								const_request_return( general_web_settings() ).
+                                const_request_return( general_web_settings() ).
 getWebConfigSettings( State ) ->
 
-	CertSupport = ?getAttr(cert_support),
+    CertSupport = ?getAttr(cert_support),
 
-	BaseDispatchRules = ?getAttr(dispatch_rules),
+    BaseDispatchRules = ?getAttr(dispatch_rules),
 
-	% HTTPS port only returned if https enabled; if only in HTTP mode (no
-	% HTTPS), then we use the obtained dispatch rules as they are; if using
-	% HTTPS, then these dispatch rules will be used for it, whereas HTTP rules
-	% will consist only on forwarding the requests from HTTP to said HTTPS:
-	%
-	{ HttpDispatchRules, MaybeHttpsDispatchRules, MaybeHttpsTCPPort } =
-			case CertSupport of
+    % HTTPS port only returned if https enabled; if only in HTTP mode (no
+    % HTTPS), then we use the obtained dispatch rules as they are; if using
+    % HTTPS, then these dispatch rules will be used for it, whereas HTTP rules
+    % will consist only on forwarding the requests from HTTP to said HTTPS:
+    %
+    { HttpDispatchRules, MaybeHttpsDispatchRules, MaybeHttpsTCPPort } =
+            case CertSupport of
 
-		no_certificates ->
-			{ BaseDispatchRules, undefined, undefined };
+        no_certificates ->
+            { BaseDispatchRules, undefined, undefined };
 
-		_ ->
-			HttpsPort = ?getAttr(https_tcp_port),
+        _ ->
+            HttpsPort = ?getAttr(https_tcp_port),
 
-			ForwardingDispatchRules = transform_handler_in_routes(
-				?getAttr(dispatch_routes),
-				_NewHandlerModule=us_web_port_forwarder,
-				_NewHandlerInitialState=HttpsPort ),
+            ForwardingDispatchRules = transform_handler_in_routes(
+                ?getAttr(dispatch_routes),
+                _NewHandlerModule=us_web_port_forwarder,
+                _NewHandlerInitialState=HttpsPort ),
 
-			% Port maybe still undefined:
-			{ ForwardingDispatchRules, BaseDispatchRules, HttpsPort }
+            % Port maybe still undefined:
+            { ForwardingDispatchRules, BaseDispatchRules, HttpsPort }
 
-	end,
+    end,
 
-	GenWebSettings = #general_web_settings{
-		http_dispatch_rules=HttpDispatchRules,
-		http_tcp_port=?getAttr(http_tcp_port),
-		https_dispatch_rules=MaybeHttpsDispatchRules,
-		https_tcp_port=MaybeHttpsTCPPort,
-		certificate_support=CertSupport,
-		https_transport_info=?getAttr(https_transp_info),
-		dh_key_path=?getAttr(dh_key_path),
-		ca_cert_key_path=?getAttr(ca_cert_key_path) },
+    GenWebSettings = #general_web_settings{
+        http_dispatch_rules=HttpDispatchRules,
+        http_tcp_port=?getAttr(http_tcp_port),
+        https_dispatch_rules=MaybeHttpsDispatchRules,
+        https_tcp_port=MaybeHttpsTCPPort,
+        certificate_support=CertSupport,
+        https_transport_info=?getAttr(https_transp_info),
+        dh_key_path=?getAttr(dh_key_path),
+        ca_cert_key_path=?getAttr(ca_cert_key_path) },
 
-	?debug_fmt( "Returning the general web configuration settings:~n  ~p",
-				[ GenWebSettings ] ),
+    ?debug_fmt( "Returning the general web configuration settings:~n  ~p",
+                [ GenWebSettings ] ),
 
-	wooper:const_return_result( GenWebSettings ).
+    wooper:const_return_result( GenWebSettings ).
 
 
 
@@ -679,61 +679,61 @@ managers (may be done for example at server startup).
                             const_request_return( 'certificate_renewals_over' ).
 renewCertificates( State ) ->
 
-	CertManagers = get_all_certificate_manager_pids( State ),
+    CertManagers = get_all_certificate_manager_pids( State ),
 
-	CertManagerCount = length( CertManagers ),
+    CertManagerCount = length( CertManagers ),
 
-	MaxDurationInMs = case ?getAttr(challenge_type) of
+    MaxDurationInMs = case ?getAttr(challenge_type) of
 
-		'dns-01' ->
-			% 4 minutes (extended for DNS propagation):
-			240*1000;
+        'dns-01' ->
+            % 4 minutes (extended for DNS propagation):
+            240*1000;
 
-		_ ->
-			% 1 minute and 30 seconds per certificate manager:
-			90*1000
+        _ ->
+            % 1 minute and 30 seconds per certificate manager:
+            90*1000
 
-	end,
+    end,
 
-	% So that it is visible even in production mode:
-	?notice_fmt( "Renewing all certificates, through their ~B managers (~w); "
-		"setting a (large) ~ts for each of them.", [ CertManagerCount,
-		CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
+    % So that it is visible even in production mode:
+    ?notice_fmt( "Renewing all certificates, through their ~B managers (~w); "
+        "setting a (large) ~ts for each of them.", [ CertManagerCount,
+        CertManagers, time_utils:time_out_to_string( MaxDurationInMs ) ] ),
 
-	% We should not trigger all managers in parallel for a certificate renewal,
-	% lest we hit another Letsencrypt rate limit (see in
-	% https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit') or
-	% have more than one certbot instance at a time (as it does not support it).
-	%
-	% So we iterate on certificate managers and to each of them in turn we send
-	% the following oneway and wait for its synchronisation ack before
-	% proceeding to the next one:
-	%
-	case wooper:send_acknowledged_oneway_in_turn(
-			_OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
-			_TargetInstancePIDs=CertManagers, MaxDurationInMs,
+    % We should not trigger all managers in parallel for a certificate renewal,
+    % lest we hit another Letsencrypt rate limit (see in
+    % https://letsencrypt.org/docs/rate-limits/ the 'Overall Requests limit') or
+    % have more than one certbot instance at a time (as it does not support it).
+    %
+    % So we iterate on certificate managers and to each of them in turn we send
+    % the following oneway and wait for its synchronisation ack before
+    % proceeding to the next one:
+    %
+    case wooper:send_acknowledged_oneway_in_turn(
+            _OnwName=renewCertificateSynchronisable, _OnwArgs=[ self() ],
+            _TargetInstancePIDs=CertManagers, MaxDurationInMs,
             % Now labelled as a (oneway) method (rather than the previous
             % on_certificate_renewal_over atom), since rescheduled renewals will
             % send it as well, and thus it will be then interpreted as a oneway
             % call:
             %
-			_AckAtom=onCertificateRenewalOver ) of
+            _AckAtom=onCertificateRenewalOver ) of
 
-		[] ->
-			?notice_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
+        [] ->
+            ?notice_fmt( "All ~B certificates ready.", [ CertManagerCount ] );
 
-		FailedCertPids ->
-			?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
-				"obtained (at least on time) by their respective managers: ~w.",
-				[ length( FailedCertPids ), CertManagerCount, FailedCertPids ] )
+        FailedCertPids ->
+            ?error_fmt( "~B certificate(s) (on a total of ~B) could not be "
+                "obtained (at least on time) by their respective managers: ~w.",
+                [ length( FailedCertPids ), CertManagerCount, FailedCertPids ] )
 
-	end,
+    end,
 
-	% Next improvement is to record the expected certificates and private keys,
-	% and to ensure that all of them are indeed available afterwards.
+    % Next improvement is to record the expected certificates and private keys,
+    % and to ensure that all of them are indeed available afterwards.
 
-	% Note the plural in atom:
-	wooper:const_return_result( certificate_renewals_over ).
+    % Note the plural in atom:
+    wooper:const_return_result( certificate_renewals_over ).
 
 
 
@@ -772,15 +772,15 @@ onCertificateRenewalOver( State, CertManagerPid ) ->
 Requests the TLS certificate of the specified virtual host to be renewed.
 """.
 -spec renewCertificate( wooper:state(), domain_id(), vhost_id() ) ->
-							const_oneway_return().
+                            const_oneway_return().
 renewCertificate( State, DomainId, VHostId ) ->
 
-	?info_fmt( "Renewal of TLS certification for virtual host '~ts' of "
-			   "domain '~ts' requested.", [ VHostId, DomainId ] ),
+    ?info_fmt( "Renewal of TLS certification for virtual host '~ts' of "
+               "domain '~ts' requested.", [ VHostId, DomainId ] ),
 
-	?error( "Not implemented yet for a single host." ),
+    ?error( "Not implemented yet for a single host." ),
 
-	wooper:const_return().
+    wooper:const_return().
 
 
 
@@ -789,165 +789,165 @@ Requests the access log analysis reports to be generated for the specified
 domain(s) / virtual host(s).
 """.
 -spec generateLogAnalysisReports( wooper:state(), option( bin_domain_name() ),
-								  option( bin_host_name() ) ) ->
-							const_request_return( report_generation_outcome() ).
+                                  option( bin_host_name() ) ) ->
+                            const_request_return( report_generation_outcome() ).
 generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
-							_MaybeBinHostName=undefined ) ->
+                            _MaybeBinHostName=undefined ) ->
 
-	Res = case ?getAttr(meta_web_settings) of
+    Res = case ?getAttr(meta_web_settings) of
 
-		undefined ->
-			?error( "Generation of log analysis reports requested "
-					"whereas no (meta) web analysis is enabled." ),
-			{ report_generation_failed, web_analysis_not_enabled };
+        undefined ->
+            ?error( "Generation of log analysis reports requested "
+                    "whereas no (meta) web analysis is enabled." ),
+            { report_generation_failed, web_analysis_not_enabled };
 
-		_ ->
+        _ ->
 
-			?debug( "Generation of all access log analysis reports "
-					"requested." ),
+            ?debug( "Generation of all access log analysis reports "
+                    "requested." ),
 
-			DomainCfgTable = ?getAttr(domain_config_table),
+            DomainCfgTable = ?getAttr(domain_config_table),
 
-			AllDomainInfos = table:values( DomainCfgTable ),
+            AllDomainInfos = table:values( DomainCfgTable ),
 
-			AllVhCfgEntries = list_utils:flatten_once(
-				[ table:values( VhCfgTable )
-					|| { _DomId, _Cert, VhCfgTable } <- AllDomainInfos ] ),
+            AllVhCfgEntries = list_utils:flatten_once(
+                [ table:values( VhCfgTable )
+                    || { _DomId, _Cert, VhCfgTable } <- AllDomainInfos ] ),
 
-			case [ E#vhost_config_entry.logger_pid || E <-AllVhCfgEntries ] of
+            case [ E#vhost_config_entry.logger_pid || E <-AllVhCfgEntries ] of
 
-				[] ->
-					?warning_fmt( "All access log analysis reports requested "
-						"for all domains (~p), yet no virtual host was found.",
-						[ table:keys( DomainCfgTable ) ] ),
+                [] ->
+                    ?warning_fmt( "All access log analysis reports requested "
+                        "for all domains (~p), yet no virtual host was found.",
+                        [ table:keys( DomainCfgTable ) ] ),
 
-					% Not a failure per se:
-					report_generation_success;
+                    % Not a failure per se:
+                    report_generation_success;
 
-				AllLoggers ->
-					activate_loggers( AllLoggers )
+                AllLoggers ->
+                    activate_loggers( AllLoggers )
 
-			end
+            end
 
-	end,
+    end,
 
-	wooper:const_return_result( Res );
+    wooper:const_return_result( Res );
 
 
 generateLogAnalysisReports( State, _MaybeBinDomainName=undefined,
-							BinHostname ) ->
+                            BinHostname ) ->
 
-	% A single hostname cannot be specified if all domains are targeted:
-	wooper:const_return_result( { report_generation_failed,
-								  hostname_whereas_all_domains, BinHostname } );
+    % A single hostname cannot be specified if all domains are targeted:
+    wooper:const_return_result( { report_generation_failed,
+                                  hostname_whereas_all_domains, BinHostname } );
 
 
 generateLogAnalysisReports( State, BinDomainName,
-							_MaybeBinHostName=undefined ) ->
+                            _MaybeBinHostName=undefined ) ->
 
-	Res = case ?getAttr(meta_web_settings) of
+    Res = case ?getAttr(meta_web_settings) of
 
-		undefined ->
-			?error( "Generation of log analysis reports requested "
-					"whereas no (meta) web analysis is enabled." ),
-			{ report_generation_failed, web_analysis_not_enabled };
+        undefined ->
+            ?error( "Generation of log analysis reports requested "
+                    "whereas no (meta) web analysis is enabled." ),
+            { report_generation_failed, web_analysis_not_enabled };
 
-		_ ->
-			?debug_fmt( "Generation of access log analysis reports requested "
-				"for all virtual hosts of domain '~ts'.", [ BinDomainName ] ),
+        _ ->
+            ?debug_fmt( "Generation of access log analysis reports requested "
+                "for all virtual hosts of domain '~ts'.", [ BinDomainName ] ),
 
-			case table:lookup_entry( BinDomainName,
-									 ?getAttr(domain_config_table) ) of
+            case table:lookup_entry( BinDomainName,
+                                     ?getAttr(domain_config_table) ) of
 
-				{ value,
-				  _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
+                { value,
+                  _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
 
-					case table:values( VHostCfgTable ) of
+                    case table:values( VHostCfgTable ) of
 
-						[] ->
-							?warning_fmt( "Access log analysis reports "
-								"requested for all virtual hosts of domain "
-								"'~ts', yet none was found.",
-								[ BinDomainName ] ),
-								% Not a failure per se:
-								report_generation_success;
+                        [] ->
+                            ?warning_fmt( "Access log analysis reports "
+                                "requested for all virtual hosts of domain "
+                                "'~ts', yet none was found.",
+                                [ BinDomainName ] ),
+                                % Not a failure per se:
+                                report_generation_success;
 
-						VhCfgEntries ->
-							AllLoggers = [ VCE#vhost_config_entry.logger_pid
-											|| VCE <- VhCfgEntries ],
-							activate_loggers( AllLoggers )
+                        VhCfgEntries ->
+                            AllLoggers = [ VCE#vhost_config_entry.logger_pid
+                                            || VCE <- VhCfgEntries ],
+                            activate_loggers( AllLoggers )
 
-					end;
+                    end;
 
-				key_not_found ->
-					?error_fmt( "No entry found for domain '~ts', no report "
-								"generated.", [ BinDomainName ] ),
+                key_not_found ->
+                    ?error_fmt( "No entry found for domain '~ts', no report "
+                                "generated.", [ BinDomainName ] ),
 
-					Domain = text_utils:binary_to_string( BinDomainName ),
+                    Domain = text_utils:binary_to_string( BinDomainName ),
 
-					{ report_generation_failed, { domain_not_found, Domain } }
+                    { report_generation_failed, { domain_not_found, Domain } }
 
-			end
+            end
 
-	end,
+    end,
 
-	wooper:const_return_result( Res );
+    wooper:const_return_result( Res );
 
 generateLogAnalysisReports( State, BinDomainName, BinHostName ) ->
 
-	Res = case ?getAttr(meta_web_settings) of
+    Res = case ?getAttr(meta_web_settings) of
 
-		undefined ->
-			?error( "Generation of log analysis report requested "
-					"whereas no (meta) web analysis is enabled." ),
-			{ report_generation_failed, web_analysis_not_enabled };
+        undefined ->
+            ?error( "Generation of log analysis report requested "
+                    "whereas no (meta) web analysis is enabled." ),
+            { report_generation_failed, web_analysis_not_enabled };
 
-		_ ->
-			?debug_fmt( "Generation of access log analysis reports requested "
-				"for virtual host '~ts' of domain '~ts'.",
-				[ BinHostName, BinDomainName ] ),
+        _ ->
+            ?debug_fmt( "Generation of access log analysis reports requested "
+                "for virtual host '~ts' of domain '~ts'.",
+                [ BinHostName, BinDomainName ] ),
 
-			case table:lookup_entry( BinDomainName,
-									 ?getAttr(domain_config_table) ) of
+            case table:lookup_entry( BinDomainName,
+                                     ?getAttr(domain_config_table) ) of
 
-				{ value,
-				  _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
+                { value,
+                  _DomInfo={ _DomId, _MayberCertManagerPid, VHostCfgTable } } ->
 
-					case table:lookup_entry( BinHostName, VHostCfgTable ) of
+                    case table:lookup_entry( BinHostName, VHostCfgTable ) of
 
-						{ value, VCE } ->
-							% Feeling lazy tonite:
-							activate_loggers(
-								[ VCE#vhost_config_entry.logger_pid ] );
+                        { value, VCE } ->
+                            % Feeling lazy tonite:
+                            activate_loggers(
+                                [ VCE#vhost_config_entry.logger_pid ] );
 
-						key_not_found ->
-							?error_fmt( "No entry found for virtual host '~ts' "
-								"in domain '~ts', no report generated.",
-								[ BinHostName, BinDomainName ] ),
-							Host = text_utils:binary_to_string( BinHostName ),
-							Domain =
-								text_utils:binary_to_string( BinDomainName ),
-							{ report_generation_failed, {
-								{ host_not_found, Host }, { domain, Domain } } }
+                        key_not_found ->
+                            ?error_fmt( "No entry found for virtual host '~ts' "
+                                "in domain '~ts', no report generated.",
+                                [ BinHostName, BinDomainName ] ),
+                            Host = text_utils:binary_to_string( BinHostName ),
+                            Domain =
+                                text_utils:binary_to_string( BinDomainName ),
+                            { report_generation_failed, {
+                                { host_not_found, Host }, { domain, Domain } } }
 
-					end;
+                    end;
 
-				key_not_found ->
-					?error_fmt( "No entry found for domain '~ts' (requested "
-						"for virtual host '~ts'), no report generated.",
-						[ BinDomainName, BinHostName ] ),
+                key_not_found ->
+                    ?error_fmt( "No entry found for domain '~ts' (requested "
+                        "for virtual host '~ts'), no report generated.",
+                        [ BinDomainName, BinHostName ] ),
 
-					Host = text_utils:binary_to_string( BinHostName ),
-					Domain = text_utils:binary_to_string( BinDomainName ),
+                    Host = text_utils:binary_to_string( BinHostName ),
+                    Domain = text_utils:binary_to_string( BinDomainName ),
 
-					{ report_generation_failed, { domain_not_found, Domain },
-					  { host, Host } }
+                    { report_generation_failed, { domain_not_found, Domain },
+                      { host, Host } }
 
-			end
+            end
 
-	end,
+    end,
 
-	wooper:const_return_result( Res ).
+    wooper:const_return_result( Res ).
 
 
 
@@ -960,53 +960,53 @@ state of the tool for log analysis, then the generated of the reports as such.
 -spec activate_loggers( [ logger_pid() ] ) -> report_generation_outcome().
 activate_loggers( Loggers ) ->
 
-	Results = wooper:send_request_in_turn( _Req=rotateThenGenerateReportSync,
-		_Args=[], _TargetInstancePIDs=Loggers ),
+    Results = wooper:send_request_in_turn( _Req=rotateThenGenerateReportSync,
+        _Args=[], _TargetInstancePIDs=Loggers ),
 
-	case list_utils:delete_all_in( _Elem=report_generated, Results ) of
+    case list_utils:delete_all_in( _Elem=report_generated, Results ) of
 
-		% Alles gut then:
-		[] ->
-			report_generation_success;
+        % Alles gut then:
+        [] ->
+            report_generation_success;
 
-		Errors ->
-			{ report_generation_failed, Errors }
+        Errors ->
+            { report_generation_failed, Errors }
 
-	end.
+    end.
 
 
 
 -doc "Callback triggered whenever a linked process exits.".
 -spec onWOOPERExitReceived( wooper:state(), pid(),
-	basic_utils:exit_reason() ) -> const_oneway_return().
+    basic_utils:exit_reason() ) -> const_oneway_return().
 onWOOPERExitReceived( State, _StoppedPid, _ExitType=normal ) ->
 
-	% Not even a trace sent for that, as too many of them.
-	%
-	%?notice_fmt( "Ignoring normal exit from process ~w.", [ StoppedPid ] ),
+    % Not even a trace sent for that, as too many of them.
+    %
+    %?notice_fmt( "Ignoring normal exit from process ~w.", [ StoppedPid ] ),
 
-	wooper:const_return();
+    wooper:const_return();
 
 
 onWOOPERExitReceived( State, _StoppedPid, _ExitType=shutdown ) ->
 
-	% Typically from the supervisor:
-	%
-	%?notice_fmt( "Ignoring shutdown exit from process ~w.", [ StoppedPid ] ),
+    % Typically from the supervisor:
+    %
+    %?notice_fmt( "Ignoring shutdown exit from process ~w.", [ StoppedPid ] ),
 
-	wooper:const_return();
+    wooper:const_return();
 
 
 onWOOPERExitReceived( State, CrashedPid, ExitType ) ->
 
-	% Typically: "Received exit message '{ { nocatch,
-	%   { wooper_oneway_failed, <0.44.0>, class_XXX,
-	%       FunName, Arity, Args, AtomCause } }, [...] }"
+    % Typically: "Received exit message '{ { nocatch,
+    %   { wooper_oneway_failed, <0.44.0>, class_XXX,
+    %       FunName, Arity, Args, AtomCause } }, [...] }"
 
-	?error_fmt( "Received and ignored an exit message from ~w:~n  ~p",
-				[ CrashedPid, ExitType ] ),
+    ?error_fmt( "Received and ignored an exit message from ~w:~n  ~p",
+                [ CrashedPid, ExitType ] ),
 
-	wooper:const_return().
+    wooper:const_return().
 
 
 
@@ -1027,41 +1027,41 @@ information from it.
 -spec load_and_apply_configuration( wooper:state() ) -> wooper:state().
 load_and_apply_configuration( State ) ->
 
-	% The US config server shall not be launched by US-Web, as US and US-Web are
-	% launched concurrently and US-Web must not trigger a creation whereas the
-	% base, default one is still in progress:
-	%
+    % The US config server shall not be launched by US-Web, as US and US-Web are
+    % launched concurrently and US-Web must not trigger a creation whereas the
+    % base, default one is still in progress:
+    %
     { CfgSrvRegName, CfgSrvLookupScope, CfgSrvPid } =
         class_USConfigServer:get_us_config_registration_info(
             _CreateIfNeeded=false, State ),
 
-	% This web configuration server is not supposed to read more the US
-	% configuration file; it should request it to the overall configuration
-	% server, about all the extra information it needs, to avoid duplicated,
-	% possibly inconsistent reading/interpretation (and in order to declare
-	% itself in the same move):
-	%
+    % This web configuration server is not supposed to read more the US
+    % configuration file; it should request it to the overall configuration
+    % server, about all the extra information it needs, to avoid duplicated,
+    % possibly inconsistent reading/interpretation (and in order to declare
+    % itself in the same move):
+    %
     CfgSrvPid ! { getUSWebRuntimeSettings, [], self() },
 
     RegState = setAttribute( State, us_config_lookup_info,
                              { CfgSrvRegName, CfgSrvLookupScope } ),
 
-	% No possible interleaving:
-	receive
+    % No possible interleaving:
+    receive
 
-		{ wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename } } ->
+        { wooper_result, { BinCfgDir, ExecContext, MaybeWebCfgFilename } } ->
 
-			StoreState = setAttributes( RegState, [
-				{ execution_context, ExecContext },
-				{ nitrogen_roots, [] },
-				{ meta_web_settings, undefined },
-				{ config_base_directory, BinCfgDir },
-				{ log_analysis_settings, undefined } ] ),
+            StoreState = setAttributes( RegState, [
+                { execution_context, ExecContext },
+                { nitrogen_roots, [] },
+                { meta_web_settings, undefined },
+                { config_base_directory, BinCfgDir },
+                { log_analysis_settings, undefined } ] ),
 
-			load_web_config( BinCfgDir, MaybeWebCfgFilename, CfgSrvPid,
+            load_web_config( BinCfgDir, MaybeWebCfgFilename, CfgSrvPid,
                              StoreState )
 
-	end.
+    end.
 
 
 
@@ -1070,102 +1070,102 @@ Loads the US-Web configuration information (that is the US-Web configuration
 file, as identified from the US one), notably about virtual hosts.
 """.
 -spec load_web_config( bin_directory_path(), option( bin_file_path() ),
-	config_server_pid(), wooper:state() ) -> wooper:state().
+    config_server_pid(), wooper:state() ) -> wooper:state().
 load_web_config( BinCfgBaseDir, _MaybeBinWebCfgFilename=undefined,
                  CfgSrvPid, State ) ->
 
-	DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
+    DefaultBinWebCfgFilename = ?default_us_web_cfg_filename,
 
-	?info_fmt( "No configuration filename known of the overall US central"
-		"server (i.e. none defined in its own configuration file), "
-		"hence defaulting to '~ts'.", [ DefaultBinWebCfgFilename ] ),
+    ?info_fmt( "No configuration filename known of the overall US central"
+        "server (i.e. none defined in its own configuration file), "
+        "hence defaulting to '~ts'.", [ DefaultBinWebCfgFilename ] ),
 
-	load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, CfgSrvPid,
+    load_web_config( BinCfgBaseDir, DefaultBinWebCfgFilename, CfgSrvPid,
                      State );
 
 
 load_web_config( BinCfgBaseDir, BinWebCfgFilename, CfgSrvPid, State ) ->
 
-	WebCfgFilePath = file_utils:ensure_path_is_absolute( BinWebCfgFilename,
-		_BasePath=BinCfgBaseDir ),
+    WebCfgFilePath = file_utils:ensure_path_is_absolute( BinWebCfgFilename,
+        _BasePath=BinCfgBaseDir ),
 
-	case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
+    case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
 
-		true ->
-			?info_fmt( "Reading the US-Web configuration file, found as '~ts'.",
-					   [ WebCfgFilePath ] );
+        true ->
+            ?info_fmt( "Reading the US-Web configuration file, found as '~ts'.",
+                       [ WebCfgFilePath ] );
 
-		false ->
-			% Possibly user/group permission issue:
-			?error_fmt( "No US-Web configuration file found or accessible "
-				"(e.g. symbolic link to an inaccessible file); tried '~ts'.",
-				[ WebCfgFilePath ] ),
+        false ->
+            % Possibly user/group permission issue:
+            ?error_fmt( "No US-Web configuration file found or accessible "
+                "(e.g. symbolic link to an inaccessible file); tried '~ts'.",
+                [ WebCfgFilePath ] ),
 
-			throw( { us_web_config_file_not_found,
-					 text_utils:binary_to_string( WebCfgFilePath ) } )
+            throw( { us_web_config_file_not_found,
+                     text_utils:binary_to_string( WebCfgFilePath ) } )
 
-	end,
+    end,
 
-	% Checks that only pairs are found:
-	WebCfgTable = table:new_from_unique_entries(
-		file_utils:read_etf_file( WebCfgFilePath ) ),
+    % Checks that only pairs are found:
+    WebCfgTable = table:new_from_unique_entries(
+        file_utils:read_etf_file( WebCfgFilePath ) ),
 
-	?debug_fmt( "Read US-Web configuration ~ts",
-				[ table:to_string( WebCfgTable ) ] ),
+    ?debug_fmt( "Read US-Web configuration ~ts",
+                [ table:to_string( WebCfgTable ) ] ),
 
-	EpmdState = executeOneway( State, manageEPMDPort,
+    EpmdState = executeOneway( State, manageEPMDPort,
         [ WebCfgTable, _PortKey=?us_web_epmd_port_key,
           _DefPort=?default_us_web_epmd_port, CfgSrvPid ] ),
 
-	RegState = executeOneway( EpmdState, manageRegistrations,
+    RegState = executeOneway( EpmdState, manageRegistrations,
                               [ WebCfgTable ] ),
 
-	UserState = executeOneway( RegState, manageSystemUser,
+    UserState = executeOneway( RegState, manageSystemUser,
         [ WebCfgTable, _UsernameKey=?us_web_username_key ] ),
 
-	AppState = executeOneway( UserState, manageAppBaseDirectories,
+    AppState = executeOneway( UserState, manageAppBaseDirectories,
         [ WebCfgTable, _BaseDirKey=?us_web_app_base_dir_key,
           _BaseDirEnvVarName=?us_web_app_env_variable ] ),
 
-	DataState = executeOneway( AppState, manageDataDirectory,
+    DataState = executeOneway( AppState, manageDataDirectory,
         [ WebCfgTable, _DataDirKey=?us_web_data_dir_key,
           _DefaultDataBaseDir=?default_data_base_dir ] ),
 
-	LogState = executeOneway( DataState, manageLogDirectory,
+    LogState = executeOneway( DataState, manageLogDirectory,
         [ WebCfgTable, _LogDirKey=?us_web_log_dir_key,
           _DefaultLogDir=?default_log_base_dir ] ),
 
-	PortState = manage_ports( WebCfgTable, LogState ),
+    PortState = manage_ports( WebCfgTable, LogState ),
 
-	RootState = manage_web_root( WebCfgTable, PortState ),
+    RootState = manage_web_root( WebCfgTable, PortState ),
 
-	PreMetaState = manage_pre_meta( WebCfgTable, RootState ),
+    PreMetaState = manage_pre_meta( WebCfgTable, RootState ),
 
-	CertState = manage_certificates( BinCfgBaseDir, WebCfgTable, PreMetaState ),
+    CertState = manage_certificates( BinCfgBaseDir, WebCfgTable, PreMetaState ),
 
-	RouteState = manage_routes( WebCfgTable, CertState ),
+    RouteState = manage_routes( WebCfgTable, CertState ),
 
-	PostMetaState = manage_post_meta( RouteState ),
+    PostMetaState = manage_post_meta( RouteState ),
 
     FinalState = PostMetaState,
 
-	LicitKeys = ?known_us_web_central_config_keys,
+    LicitKeys = ?known_us_web_central_config_keys,
 
-	case list_utils:difference( table:keys( WebCfgTable ), LicitKeys ) of
+    case list_utils:difference( table:keys( WebCfgTable ), LicitKeys ) of
 
-		[] ->
-			FinalState;
+        [] ->
+            FinalState;
 
-		UnexpectedKeys ->
-			?error_fmt( "Unknown configuration key(s) in '~ts': ~ts~n"
+        UnexpectedKeys ->
+            ?error_fmt( "Unknown configuration key(s) in '~ts': ~ts~n"
                 "Licit ones are: ~ts",
-				[ WebCfgFilePath, text_utils:terms_to_string( UnexpectedKeys ),
-				  text_utils:terms_to_string( LicitKeys ) ] ),
+                [ WebCfgFilePath, text_utils:terms_to_string( UnexpectedKeys ),
+                  text_utils:terms_to_string( LicitKeys ) ] ),
 
-			throw( { invalid_configuration_keys, UnexpectedKeys,
-					 text_utils:binary_to_string( WebCfgFilePath ) } )
+            throw( { invalid_configuration_keys, UnexpectedKeys,
+                     text_utils:binary_to_string( WebCfgFilePath ) } )
 
-	end.
+    end.
 
 
 
@@ -1194,68 +1194,68 @@ credentials to update one's DNS entries and a corresponding DNS provider must be
 specified.
 """.
 -spec handle_certificate_manager_for( bin_domain_name(), [ bin_san() ],
-	cert_support(), cert_mode(), challenge_type(), option( dns_provider() ),
-	option( bin_directory_path() ), bin_directory_path(),
-	option( bin_file_path() ), scheduler_pid() ) ->
-											option( cert_manager_pid() ).
+    cert_support(), cert_mode(), challenge_type(), option( dns_provider() ),
+    option( bin_directory_path() ), bin_directory_path(),
+    option( bin_file_path() ), scheduler_pid() ) ->
+                                            option( cert_manager_pid() ).
 % localhost of course invisible from outside the LAN:
 handle_certificate_manager_for( _BinDomainName= <<"localhost">>, _BinSans,
-		_CertSupport, _CertMode, _ChalType, _MaybeDNSProvider,
-		_MaybeBinCredDir, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid ) ->
-	undefined;
+        _CertSupport, _CertMode, _ChalType, _MaybeDNSProvider,
+        _MaybeBinCredDir, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid ) ->
+    undefined;
 
 
 handle_certificate_manager_for( BinDomainName, BinSans,
-		_CertSupport=renew_certificates, CertMode, ChalType, MaybeDNSProvider,
-		MaybeBinCredDir, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ) ->
+        _CertSupport=renew_certificates, CertMode, ChalType, MaybeDNSProvider,
+        MaybeBinCredDir, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ) ->
 
-	{ MaybeBinAgentKPath, MaybeDNSProv, MaybeBinCredentialsDir } =
-			case ChalType of
+    { MaybeBinAgentKPath, MaybeDNSProv, MaybeBinCredentialsDir } =
+            case ChalType of
 
-		'http-01' ->
-			case MaybeBinAgentKeyPath of
+        'http-01' ->
+            case MaybeBinAgentKeyPath of
 
-				undefined ->
-					throw( no_leec_agents_key_file );
+                undefined ->
+                    throw( no_leec_agents_key_file );
 
-				KP ->
-					% No credentials needed:
-					{ KP, undefined, undefined }
+                KP ->
+                    % No credentials needed:
+                    { KP, undefined, undefined }
 
-			end;
+            end;
 
-		% At least currently, for 'dns-01', LEEC uses certbot and thus does not
-		% require its own key; of course credentials regarding the DNS provider
-		% will be needed:
-		%
-		%'dns-01' ->
-		_ ->
-			{ MaybeBinAgentKeyPath, MaybeDNSProvider, MaybeBinCredDir }
+        % At least currently, for 'dns-01', LEEC uses certbot and thus does not
+        % require its own key; of course credentials regarding the DNS provider
+        % will be needed:
+        %
+        %'dns-01' ->
+        _ ->
+            { MaybeBinAgentKeyPath, MaybeDNSProvider, MaybeBinCredDir }
 
-	end,
+    end,
 
-	% Initially, the certification generation was asynchronous (thus expected to
-	% trigger a onCertificateReady/2 method - counterpart of the on_complete/1
-	% function of Let's Encrypt, when obtained), but now that concurrent FSMs
-	% can be managed thanks to our LEEC fork, it can be fully synchronous, which
-	% is better.
-	%
-	% A synchronous creation is now used, otherwise even these parallel
-	% creations could lead (through the initialisation of the LEEC FSM already
-	% interacting with the ACME server) in hitting rate limits:
-	%
-	class_USCertificateManager:synchronous_new_link( BinDomainName, BinSans,
-		CertMode, ChalType, MaybeDNSProv, MaybeBinCredentialsDir, BinCertDir,
-		MaybeBinAgentKPath, SchedulerPid, _IsSingleton=false );
+    % Initially, the certification generation was asynchronous (thus expected to
+    % trigger a onCertificateReady/2 method - counterpart of the on_complete/1
+    % function of Let's Encrypt, when obtained), but now that concurrent FSMs
+    % can be managed thanks to our LEEC fork, it can be fully synchronous, which
+    % is better.
+    %
+    % A synchronous creation is now used, otherwise even these parallel
+    % creations could lead (through the initialisation of the LEEC FSM already
+    % interacting with the ACME server) in hitting rate limits:
+    %
+    class_USCertificateManager:synchronous_new_link( BinDomainName, BinSans,
+        CertMode, ChalType, MaybeDNSProv, MaybeBinCredentialsDir, BinCertDir,
+        MaybeBinAgentKPath, SchedulerPid, _IsSingleton=false );
 
 
 % For CertSupport, either no_certificates or use_existing_certificates here, so
 % no certificate manager to create:
 %
 handle_certificate_manager_for( _BinDomainName, _BinSans, _OtherCertSupport,
-		_CertMode, _ChalType, _MaybeDNSProvider, _MaybeBinCredDir, _BinCertDir,
-		_MaybeBinAgentKeyPath, _SchedulerPid ) ->
-	undefined.
+        _CertMode, _ChalType, _MaybeDNSProvider, _MaybeBinCredDir, _BinCertDir,
+        _MaybeBinAgentKeyPath, _SchedulerPid ) ->
+    undefined.
 
 
 
@@ -1267,27 +1267,27 @@ Returns a domain table and dispatch routes corresponding to the specified domain
 information list, and a possibly updated state.
 """.
 -spec process_domain_info( [ { domain_name(), [ vhost_info() ] } ],
-	bin_directory_path(), option( bin_directory_path() ),
-	option( web_analysis_info() ), cert_support(), cert_mode(),
-	bin_directory_path(), option( bin_file_path() ), scheduler_pid(),
-	wooper:state() ) ->
-		{ domain_config_table(), dispatch_routes(), wooper:state() }.
+    bin_directory_path(), option( bin_directory_path() ),
+    option( web_analysis_info() ), cert_support(), cert_mode(),
+    bin_directory_path(), option( bin_file_path() ), scheduler_pid(),
+    wooper:state() ) ->
+        { domain_config_table(), dispatch_routes(), wooper:state() }.
 process_domain_info( UserRoutes, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeLogAnalysisSettings, CertSupport, CertMode, BinCertDir,
-		MaybeBinAgentKeyPath, SchedulerPid, State ) ->
+        MaybeLogAnalysisSettings, CertSupport, CertMode, BinCertDir,
+        MaybeBinAgentKeyPath, SchedulerPid, State ) ->
 
-	%trace_utils:debug_fmt( "Domain list: ~p", [ UserRoutes ] ),
+    %trace_utils:debug_fmt( "Domain list: ~p", [ UserRoutes ] ),
 
-	MaybeWebAnalysisInfo = prepare_web_analysis( MaybeLogAnalysisSettings,
-		UserRoutes, MaybeBinDefaultWebRoot, State ),
+    MaybeWebAnalysisInfo = prepare_web_analysis( MaybeLogAnalysisSettings,
+        UserRoutes, MaybeBinDefaultWebRoot, State ),
 
-	% The user-specified route order is respected, and any host catch-all must
-	% come last:
-	%
-	process_domain_routes( lists:reverse( UserRoutes ), BinLogDir,
-		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVTable=table:new(),
-		_AccRoutes=[], CertSupport, CertMode, BinCertDir, MaybeBinAgentKeyPath,
-		SchedulerPid, State ).
+    % The user-specified route order is respected, and any host catch-all must
+    % come last:
+    %
+    process_domain_routes( lists:reverse( UserRoutes ), BinLogDir,
+        MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVTable=table:new(),
+        _AccRoutes=[], CertSupport, CertMode, BinCertDir, MaybeBinAgentKeyPath,
+        SchedulerPid, State ).
 
 
 
@@ -1297,133 +1297,133 @@ Returns the web analysis information, if needed, to be able to generate on the
 fly the web analysis configuration files afterwards.
 """.
 -spec prepare_web_analysis( option( log_analysis_settings() ), list(),
-							option( bin_directory_path() ), wooper:state() ) ->
-									option( web_analysis_info() ).
+                            option( bin_directory_path() ), wooper:state() ) ->
+                                    option( web_analysis_info() ).
 prepare_web_analysis( _MaybeLogAnalysisSettings=undefined, _UserRoutes,
-					  _MaybeBinDefaultWebRoot, _State ) ->
-	undefined;
+                      _MaybeBinDefaultWebRoot, _State ) ->
+    undefined;
 
 prepare_web_analysis(
   _MaybeLogAnalysisSettings={ _ToolName=awstats, BinAnalysisUpdateToolRoot,
-							  BinAnalysisReportToolRoot },
+                              BinAnalysisReportToolRoot },
   UserRoutes, MaybeBinDefaultWebRoot, State ) ->
 
-	% First verifications done in manage_pre_meta/2.
+    % First verifications done in manage_pre_meta/2.
 
-	% When web analysis is enabled like here, the logger instances must be
-	% created while already knowing in which directory the HTML reports shall be
-	% generated, i.e. the meta web root must be determined beforehand:
-	%
-	BinMetaWebRoot =
-		determine_meta_web_root( UserRoutes, MaybeBinDefaultWebRoot, State ),
+    % When web analysis is enabled like here, the logger instances must be
+    % created while already knowing in which directory the HTML reports shall be
+    % generated, i.e. the meta web root must be determined beforehand:
+    %
+    BinMetaWebRoot =
+        determine_meta_web_root( UserRoutes, MaybeBinDefaultWebRoot, State ),
 
-	% The directory in which the source template for the web log tool (Awstats
-	% here) already lies:
-	%
-	BinAwConfDir = ?getAttr(conf_directory),
+    % The directory in which the source template for the web log tool (Awstats
+    % here) already lies:
+    %
+    BinAwConfDir = ?getAttr(conf_directory),
 
-	ConfTemplatePath = file_utils:join( BinAwConfDir, "awstats.template.conf" ),
+    ConfTemplatePath = file_utils:join( BinAwConfDir, "awstats.template.conf" ),
 
-	file_utils:is_existing_file_or_link( ConfTemplatePath ) orelse
-		throw( { awstats_conf_template_not_found, ConfTemplatePath } ),
+    file_utils:is_existing_file_or_link( ConfTemplatePath ) orelse
+        throw( { awstats_conf_template_not_found, ConfTemplatePath } ),
 
-	LogAnalysisStateDir =
+    LogAnalysisStateDir =
         file_utils:join( ?getAttr(data_directory), "log-analysis-state" ),
 
-	file_utils:is_existing_directory_or_link( LogAnalysisStateDir ) orelse
-		begin
-			?debug_fmt( "Creating the directory to store the state of "
-				"the log analysis tool, '~ts'.", [ LogAnalysisStateDir ] ),
-			file_utils:create_directory( LogAnalysisStateDir )
-		end,
+    file_utils:is_existing_directory_or_link( LogAnalysisStateDir ) orelse
+        begin
+            ?debug_fmt( "Creating the directory to store the state of "
+                "the log analysis tool, '~ts'.", [ LogAnalysisStateDir ] ),
+            file_utils:create_directory( LogAnalysisStateDir )
+        end,
 
-	% Common to all virtual hosts:
-	BaseTranslationTable = table:singleton( _K="US_WEB_LOG_ANALYSIS_DATA_DIR",
+    % Common to all virtual hosts:
+    BaseTranslationTable = table:singleton( _K="US_WEB_LOG_ANALYSIS_DATA_DIR",
                                             _V=LogAnalysisStateDir ),
 
-	% Quite similar to a collective file_utils:update_with_keywords/3:
+    % Quite similar to a collective file_utils:update_with_keywords/3:
 
-	TemplateBaseContent = file_utils:read_whole( ConfTemplatePath ),
+    TemplateBaseContent = file_utils:read_whole( ConfTemplatePath ),
 
-	% Done once, for all virtual hosts:
-	TemplateContent = text_utils:update_with_keywords( TemplateBaseContent,
-													   BaseTranslationTable ),
+    % Done once, for all virtual hosts:
+    TemplateContent = text_utils:update_with_keywords( TemplateBaseContent,
+                                                       BaseTranslationTable ),
 
-	% Validates the target Awstats scripts:
+    % Validates the target Awstats scripts:
 
-	% A binary better made later:
-	UpdateToolPath = file_utils:join(
-		[ BinAnalysisUpdateToolRoot, "cgi-bin", "awstats.pl" ] ),
+    % A binary better made later:
+    UpdateToolPath = file_utils:join(
+        [ BinAnalysisUpdateToolRoot, "cgi-bin", "awstats.pl" ] ),
 
-	BinUpdateToolPath = case file_utils:is_user_executable( UpdateToolPath ) of
+    BinUpdateToolPath = case file_utils:is_user_executable( UpdateToolPath ) of
 
-		true ->
-			text_utils:string_to_binary( UpdateToolPath );
+        true ->
+            text_utils:string_to_binary( UpdateToolPath );
 
-		false ->
-			throw( { awstats_update_executable_not_found, UpdateToolPath } )
+        false ->
+            throw( { awstats_update_executable_not_found, UpdateToolPath } )
 
-	end,
+    end,
 
-	% Previously the main tool was "awstats.pl" and no helper was used, now
-	% building all report pages in one go with (using the former as its helper):
+    % Previously the main tool was "awstats.pl" and no helper was used, now
+    % building all report pages in one go with (using the former as its helper):
 
-	ReportToolPath = file_utils:join(
-		[ BinAnalysisReportToolRoot, "awstats_buildstaticpages.pl" ] ),
+    ReportToolPath = file_utils:join(
+        [ BinAnalysisReportToolRoot, "awstats_buildstaticpages.pl" ] ),
 
-	BinReportToolPath = case file_utils:is_user_executable( ReportToolPath ) of
+    BinReportToolPath = case file_utils:is_user_executable( ReportToolPath ) of
 
-		true ->
-			text_utils:string_to_binary( ReportToolPath );
+        true ->
+            text_utils:string_to_binary( ReportToolPath );
 
-		false ->
-			throw( { awstats_report_executable_not_found, ReportToolPath } )
+        false ->
+            throw( { awstats_report_executable_not_found, ReportToolPath } )
 
-	end,
+    end,
 
 
-	% The directory in which the per-vhost configuration files for the web log
-	% tool (Awstats here) will be generated:
-	%
-	% It was previously in a directory of our own, yet since version 7.8
-	% Awstasts insists on having these configuration files lie in a standard
-	% one:
+    % The directory in which the per-vhost configuration files for the web log
+    % tool (Awstats here) will be generated:
+    %
+    % It was previously in a directory of our own, yet since version 7.8
+    % Awstasts insists on having these configuration files lie in a standard
+    % one:
 
-	%GenAwCfgDir = file_utils:join( ?getAttr(data_directory),
-	%                               "awstats-vhost-configs" ),
+    %GenAwCfgDir = file_utils:join( ?getAttr(data_directory),
+    %                               "awstats-vhost-configs" ),
 
-	%file_utils:create_directory_if_not_existing( GenAwCfgDir ),
+    %file_utils:create_directory_if_not_existing( GenAwCfgDir ),
 
-	GenAwCfgDir = "/usr/local/etc/awstats",
+    GenAwCfgDir = "/usr/local/etc/awstats",
 
-	% Let's attempt any creation, even if it may fail because of user
-	% permissions:
-	%
-	try
+    % Let's attempt any creation, even if it may fail because of user
+    % permissions:
+    %
+    try
 
-		file_utils:create_directory_if_not_existing( GenAwCfgDir,
-													 create_parents )
+        file_utils:create_directory_if_not_existing( GenAwCfgDir,
+                                                     create_parents )
 
-	catch
+    catch
 
-		_AnyClass:Exception ->
-			?error_fmt( "The attempt to create the '~ts' directory (and "
-				"possibly its parents) as user '~ts' failed: ~p.",
-				[ GenAwCfgDir, system_utils:get_user_name_safe(), Exception ] )
+        _AnyClass:Exception ->
+            ?error_fmt( "The attempt to create the '~ts' directory (and "
+                "possibly its parents) as user '~ts' failed: ~p.",
+                [ GenAwCfgDir, system_utils:get_user_name_safe(), Exception ] )
 
-	end,
+    end,
 
-	% Expanded from log_analysis_settings and returned;
-	#web_analysis_info{
-		tool=awstats,
-		update_tool_path=BinUpdateToolPath,
-		report_tool_path=BinReportToolPath,
-		template_content=TemplateContent,
+    % Expanded from log_analysis_settings and returned;
+    #web_analysis_info{
+        tool=awstats,
+        update_tool_path=BinUpdateToolPath,
+        report_tool_path=BinReportToolPath,
+        template_content=TemplateContent,
 
-		% Where per-vhost configuration files shall be generated:
-		conf_dir=text_utils:string_to_binary( GenAwCfgDir ),
-		state_dir=text_utils:string_to_binary( LogAnalysisStateDir ),
-		web_content_dir=BinMetaWebRoot }.
+        % Where per-vhost configuration files shall be generated:
+        conf_dir=text_utils:string_to_binary( GenAwCfgDir ),
+        state_dir=text_utils:string_to_binary( LogAnalysisStateDir ),
+        web_content_dir=BinMetaWebRoot }.
 
 
 
@@ -1435,45 +1435,45 @@ will perform an exhaustive search thereof).
 """.
 determine_meta_web_root( _UserRoutes=[], _MaybeBinDefaultWebRoot, State ) ->
 
-	?error( "Unable to determine the meta web root to use. Was a 'meta' "
-			"virtual host defined through the routes in "
-			"the US-Web configuration file?" ),
+    ?error( "Unable to determine the meta web root to use. Was a 'meta' "
+            "virtual host defined through the routes in "
+            "the US-Web configuration file?" ),
 
-	throw( no_meta_web_root_found );
+    throw( no_meta_web_root_found );
 
 % Per-domain first:
 determine_meta_web_root( _UserRoutes=[ { DomainId, VHostInfos } | T ],
-						 MaybeBinDefaultWebRoot, State ) ->
-	% Meta web root found for current domain?
-	case determine_meta_web_root_for( VHostInfos, DomainId,
-									  MaybeBinDefaultWebRoot, State ) of
+                         MaybeBinDefaultWebRoot, State ) ->
+    % Meta web root found for current domain?
+    case determine_meta_web_root_for( VHostInfos, DomainId,
+                                      MaybeBinDefaultWebRoot, State ) of
 
-		false ->
-			determine_meta_web_root( T, MaybeBinDefaultWebRoot, State );
+        false ->
+            determine_meta_web_root( T, MaybeBinDefaultWebRoot, State );
 
-		BinMetaWebRoot ->
-			BinMetaWebRoot
+        BinMetaWebRoot ->
+            BinMetaWebRoot
 
-	end.
+    end.
 
 
 
 % Per-vhost now:
 % (helper)
 determine_meta_web_root_for( _VHostInfos=[], _DomainId, _MaybeBinDefaultWebRoot,
-							 _State ) ->
-	false;
+                             _State ) ->
+    false;
 
 % Meta found:
 determine_meta_web_root_for(
-		_VHostInfos=[ { VHostId, ContentRoot, _WebKind=meta } | _T ],
-		DomainId, MaybeBinDefaultWebRoot, State ) ->
-	ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot,
-									 VHostId, DomainId, State );
+        _VHostInfos=[ { VHostId, ContentRoot, _WebKind=meta } | _T ],
+        DomainId, MaybeBinDefaultWebRoot, State ) ->
+    ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot,
+                                     VHostId, DomainId, State );
 
 determine_meta_web_root_for( _VHostInfos=[ _ | T ], DomainId,
-							 MaybeBinDefaultWebRoot, State ) ->
-	determine_meta_web_root_for( T, DomainId, MaybeBinDefaultWebRoot, State ).
+                             MaybeBinDefaultWebRoot, State ) ->
+    determine_meta_web_root_for( T, DomainId, MaybeBinDefaultWebRoot, State ).
 
 
 
@@ -1482,16 +1482,16 @@ Goes through domains then through virtual hosts, notably to prepare routes and
 any certificate management needed.
 """.
 -spec process_domain_routes( [ { domain_name(), [ vhost_info() ] } ],
-		bin_directory_path(), option( bin_directory_path() ),
-		option( web_analysis_info() ), domain_config_table(), dispatch_routes(),
-		cert_support(), cert_mode(), bin_directory_path(),
-		option( bin_file_path() ), scheduler_pid(), wooper:state() ) ->
-			{ domain_config_table(), dispatch_routes(), wooper:state() }.
+        bin_directory_path(), option( bin_directory_path() ),
+        option( web_analysis_info() ), domain_config_table(), dispatch_routes(),
+        cert_support(), cert_mode(), bin_directory_path(),
+        option( bin_file_path() ), scheduler_pid(), wooper:state() ) ->
+            { domain_config_table(), dispatch_routes(), wooper:state() }.
 process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
-		_MaybeWebAnalysisInfo, AccVTable, AccRoutes, _CertSupport,
-		_CertMode, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid, State ) ->
-	%trace_utils:debug_fmt( "Resulting routes:~n~p", [ AccRoutes ] ),
-	{ AccVTable, AccRoutes, State };
+        _MaybeWebAnalysisInfo, AccVTable, AccRoutes, _CertSupport,
+        _CertMode, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid, State ) ->
+    %trace_utils:debug_fmt( "Resulting routes:~n~p", [ AccRoutes ] ),
+    { AccVTable, AccRoutes, State };
 
 
 % Explicit domain (not a catch-all); we create now a domain-level certificate
@@ -1500,35 +1500,35 @@ process_domain_routes( _UserRoutes=[], _BinLogDir, _MaybeBinDefaultWebRoot,
 % rate limits would be too easily reached otherwise.
 %
 process_domain_routes( _UserRoutes=[ { DomainName, VHostInfos } | T ],
-		BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
-		AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinAgentKeyPath,
-		SchedulerPid, State ) when is_list( DomainName ) ->
+        BinLogDir, MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, AccVTable,
+        AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinAgentKeyPath,
+        SchedulerPid, State ) when is_list( DomainName ) ->
 
-	BinDomainName = text_utils:string_to_binary( DomainName ),
+    BinDomainName = text_utils:string_to_binary( DomainName ),
 
-	BinSans = get_san_list( VHostInfos, DomainName ),
+    BinSans = get_san_list( VHostInfos, DomainName ),
 
-	MaybeCertManagerPid = handle_certificate_manager_for( BinDomainName,
-		BinSans, CertSupport, CertMode, ?getAttr(challenge_type),
-		?getAttr(dns_provider), ?getAttr(credentials_directory),
-		BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ),
+    MaybeCertManagerPid = handle_certificate_manager_for( BinDomainName,
+        BinSans, CertSupport, CertMode, ?getAttr(challenge_type),
+        ?getAttr(dns_provider), ?getAttr(credentials_directory),
+        BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ),
 
-	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
-		VHostInfos, MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, _AccVtable=table:new(), _AccRoutes=[],
-		CertSupport, State ),
+    { VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
+        VHostInfos, MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, _AccVtable=table:new(), _AccRoutes=[],
+        CertSupport, State ),
 
-	DomainInfo = { BinDomainName, MaybeCertManagerPid, VHostTable },
+    DomainInfo = { BinDomainName, MaybeCertManagerPid, VHostTable },
 
-	NewAccVTable =
-		table:add_new_entry( _K=BinDomainName, _V=DomainInfo, AccVTable ),
+    NewAccVTable =
+        table:add_new_entry( _K=BinDomainName, _V=DomainInfo, AccVTable ),
 
-	% Order matters:
-	NewAccRoutes = VHostRoutes ++ AccRoutes,
+    % Order matters:
+    NewAccRoutes = VHostRoutes ++ AccRoutes,
 
-	process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertSupport,
-		CertMode, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid, BuildState );
+    process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertSupport,
+        CertMode, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid, BuildState );
 
 
 % Domain catch-all:
@@ -1538,38 +1538,38 @@ process_domain_routes(
   AccRoutes, CertSupport, CertMode, BinCertDir, MaybeBinAgentKeyPath,
   SchedulerPid, State ) ->
 
-	% We cannot create a wildcard certificate for any domain, so here no https
-	% to expect, and no certificate manager.
+    % We cannot create a wildcard certificate for any domain, so here no https
+    % to expect, and no certificate manager.
 
-	MaybeCertManagerPid = undefined,
+    MaybeCertManagerPid = undefined,
 
-	{ VHostTable, VHostRoutes, BuildState } = build_vhost_table(
-		CatchAllDomainId, VHostInfos, MaybeCertManagerPid, BinLogDir,
-		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVtable=table:new(),
-		_AccRoutes=[], CertSupport, State ),
+    { VHostTable, VHostRoutes, BuildState } = build_vhost_table(
+        CatchAllDomainId, VHostInfos, MaybeCertManagerPid, BinLogDir,
+        MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, _AccVtable=table:new(),
+        _AccRoutes=[], CertSupport, State ),
 
-	DomainInfo = { CatchAllDomainId, MaybeCertManagerPid, VHostTable },
+    DomainInfo = { CatchAllDomainId, MaybeCertManagerPid, VHostTable },
 
-	NewAccVTable =
-		table:add_new_entry( _K=CatchAllDomainId, _V=DomainInfo, AccVTable ),
+    NewAccVTable =
+        table:add_new_entry( _K=CatchAllDomainId, _V=DomainInfo, AccVTable ),
 
-	% Order matters:
-	NewAccRoutes = VHostRoutes ++ AccRoutes,
+    % Order matters:
+    NewAccRoutes = VHostRoutes ++ AccRoutes,
 
-	process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertSupport,
-		CertMode, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid, BuildState );
+    process_domain_routes( T, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, NewAccVTable, NewAccRoutes, CertSupport,
+        CertMode, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid, BuildState );
 
 
 process_domain_routes( _UserRoutes=[ InvalidEntry | _T ], _BinLogDir,
-		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes,
-		_CertSupport, _CertMode, _BinCertDir, _MaybeBinAgentKeyPath,
-		_SchedulerPid, State ) ->
+        _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes,
+        _CertSupport, _CertMode, _BinCertDir, _MaybeBinAgentKeyPath,
+        _SchedulerPid, State ) ->
 
-	?error_fmt( "Invalid entry in virtual host configuration:~n~p",
-				[ InvalidEntry ] ),
+    ?error_fmt( "Invalid entry in virtual host configuration:~n~p",
+                [ InvalidEntry ] ),
 
-	throw( { invalid_vhost_entry, InvalidEntry } ).
+    throw( { invalid_vhost_entry, InvalidEntry } ).
 
 
 
@@ -1580,69 +1580,69 @@ Builds a vhost table corresponding to the specified domain identifier.
 Multiple operations have to be done in one pass as they are quite interlinked.
 """.
 -spec build_vhost_table( bin_domain_name(), [ vhost_info() ],
-	option( cert_manager_pid() ), bin_directory_path(),
-	option( bin_directory_path() ), option( web_analysis_info() ),
-	vhost_config_table(), dispatch_routes(), cert_support(), wooper:state() ) ->
-			{ vhost_config_table(), dispatch_routes(), wooper:state() }.
+    option( cert_manager_pid() ), bin_directory_path(),
+    option( bin_directory_path() ), option( web_analysis_info() ),
+    vhost_config_table(), dispatch_routes(), cert_support(), wooper:state() ) ->
+            { vhost_config_table(), dispatch_routes(), wooper:state() }.
 build_vhost_table( _DomainId, _VHostInfos=[], _MaybeCertManagerPid, _BinLogDir,
-		_MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
-		_CertSupport, State ) ->
+        _MaybeBinDefaultWebRoot, _MaybeWebAnalysisInfo, AccVTable, AccRoutes,
+        _CertSupport, State ) ->
 
-	% Restores user-defined order (e.g. default route to come last):
-	{ AccVTable, lists:reverse( AccRoutes ), State };
+    % Restores user-defined order (e.g. default route to come last):
+    { AccVTable, lists:reverse( AccRoutes ), State };
 
 
 % No kind specified, upgrading to the default: static.
 build_vhost_table( DomainId, _VHostInfos=[ { VHostId, ContentRoot } | T ],
-		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
+        MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
 
-	build_vhost_table( DomainId,
-		_FullVHostInfos=[ { VHostId, ContentRoot, _DefaultKind=static } | T ],
-		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State );
+    build_vhost_table( DomainId,
+        _FullVHostInfos=[ { VHostId, ContentRoot, _DefaultKind=static } | T ],
+        MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State );
 
 
 % Static - actual or catch-all - vhost specified here:
 build_vhost_table( DomainId,
-		_VHostInfos=[ { VHostId, ContentRoot, WebKind=static } | T ],
-		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
+        _VHostInfos=[ { VHostId, ContentRoot, WebKind=static } | T ],
+        MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
 
-	?debug_fmt( "Managing static configuration for virtual host '~ts' in "
-				"domain '~ts'.", [ VHostId, DomainId ] ),
+    ?debug_fmt( "Managing static configuration for virtual host '~ts' in "
+                "domain '~ts'.", [ VHostId, DomainId ] ),
 
-	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
-									   VHostId, DomainId, State ),
+    BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
+                                       VHostId, DomainId, State ),
 
-	ActualKind = check_kind( WebKind, VHostId, DomainId, State ),
+    ActualKind = check_kind( WebKind, VHostId, DomainId, State ),
 
-	BinVHostId = case VHostId of
+    BinVHostId = case VHostId of
 
-		without_vhost ->
-			without_vhost;
+        without_vhost ->
+            without_vhost;
 
-		default_vhost_catch_all ->
-			default_vhost_catch_all;
+        default_vhost_catch_all ->
+            default_vhost_catch_all;
 
-		_ ->
-			text_utils:string_to_binary( VHostId )
+        _ ->
+            text_utils:string_to_binary( VHostId )
 
-	end,
+    end,
 
-	% We do not generate certificates for individual virtual hosts anymore (too
-	% many of them), we rely on SANs instead; so managing here only any web
-	% logger, and static dispatch:
-	%
-	{ VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
-		DomainId, BinVHostId, MaybeCertManagerPid, BinLogDir, CertSupport,
-		MaybeWebAnalysisInfo ),
+    % We do not generate certificates for individual virtual hosts anymore (too
+    % many of them), we rely on SANs instead; so managing here only any web
+    % logger, and static dispatch:
+    %
+    { VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
+        DomainId, BinVHostId, MaybeCertManagerPid, BinLogDir, CertSupport,
+        MaybeWebAnalysisInfo ),
 
-	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
+    NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
 
-	build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
-		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
-		[ VHostRoute | AccRoutes ], CertSupport, State );
+    build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
+        MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
+        [ VHostRoute | AccRoutes ], CertSupport, State );
 
 
 % Meta kind here:
@@ -1652,100 +1652,100 @@ build_vhost_table( DomainId,
         MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport,
         State ) ->
 
-	% Quite similar to 'static', even if a logger and a web analysis
-	% organisation are not that useful:
+    % Quite similar to 'static', even if a logger and a web analysis
+    % organisation are not that useful:
 
-	% Not expected to be 'without_vhost' or 'default_vhost_catch_all':
-	BinVHost = text_utils:string_to_binary( VHostId ),
+    % Not expected to be 'without_vhost' or 'default_vhost_catch_all':
+    BinVHost = text_utils:string_to_binary( VHostId ),
 
-	BinMetaContentRoot = case MaybeWebAnalysisInfo of
+    BinMetaContentRoot = case MaybeWebAnalysisInfo of
 
-		undefined ->
-			?error_fmt( "A meta website (vhost '~ts' for domain '~ts') was "
-				"requested, yet no web analysis information is available. "
-				"No 'log_analysis' entry defined in US-Web configuration file?",
-				[ VHostId, DomainId ] ),
-			throw( { no_web_analysis_info, VHostId, DomainId } );
+        undefined ->
+            ?error_fmt( "A meta website (vhost '~ts' for domain '~ts') was "
+                "requested, yet no web analysis information is available. "
+                "No 'log_analysis' entry defined in US-Web configuration file?",
+                [ VHostId, DomainId ] ),
+            throw( { no_web_analysis_info, VHostId, DomainId } );
 
-		#web_analysis_info{ web_content_dir=BinWebContentDir } ->
-			% Full path, unlike ContentRoot:
-			BinWebContentDir
+        #web_analysis_info{ web_content_dir=BinWebContentDir } ->
+            % Full path, unlike ContentRoot:
+            BinWebContentDir
 
-	end,
+    end,
 
-	% Check, as only up to one meta wanted:
-	undefined = ?getAttr(meta_web_settings),
+    % Check, as only up to one meta wanted:
+    undefined = ?getAttr(meta_web_settings),
 
-	SetState = setAttribute( State, meta_web_settings,
-							 { DomainId, BinVHost, BinMetaContentRoot } ),
+    SetState = setAttribute( State, meta_web_settings,
+                             { DomainId, BinVHost, BinMetaContentRoot } ),
 
-	{ VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
-		DomainId, BinVHost, MaybeCertManagerPid, BinLogDir, CertSupport,
-		MaybeWebAnalysisInfo ),
+    { VHostEntry, VHostRoute } = manage_vhost( BinMetaContentRoot, WebKind,
+        DomainId, BinVHost, MaybeCertManagerPid, BinLogDir, CertSupport,
+        MaybeWebAnalysisInfo ),
 
-	NewAccVTable = table:add_entry( _K=BinVHost, VHostEntry, AccVTable ),
+    NewAccVTable = table:add_entry( _K=BinVHost, VHostEntry, AccVTable ),
 
-	% Certificate setting used here as well:
-	build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
-		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
-		[ VHostRoute | AccRoutes ], CertSupport, SetState );
+    % Certificate setting used here as well:
+    build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
+        MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
+        [ VHostRoute | AccRoutes ], CertSupport, SetState );
 
 
 % Nitrogen kind here:
 build_vhost_table( DomainId,
-		_VHostInfos=[ { VHostId, ContentRoot, WebKind=nitrogen } | T ],
-		MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
-		MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
+        _VHostInfos=[ { VHostId, ContentRoot, WebKind=nitrogen } | T ],
+        MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,
+        MaybeWebAnalysisInfo, AccVTable, AccRoutes, CertSupport, State ) ->
 
-	?debug_fmt( "Managing Nitrogen configuration for virtual host '~ts' in "
-				"domain '~ts'.", [ VHostId, DomainId ] ),
+    ?debug_fmt( "Managing Nitrogen configuration for virtual host '~ts' in "
+                "domain '~ts'.", [ VHostId, DomainId ] ),
 
-	BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
-									   VHostId, DomainId, State ),
+    BinContentRoot = get_content_root( ContentRoot, MaybeBinDefaultWebRoot,
+                                       VHostId, DomainId, State ),
 
-	ActualKind = check_kind( WebKind, VHostId, DomainId, State ),
+    ActualKind = check_kind( WebKind, VHostId, DomainId, State ),
 
-	BinVHostId = case VHostId of
+    BinVHostId = case VHostId of
 
-		without_vhost ->
-			without_vhost;
+        without_vhost ->
+            without_vhost;
 
-		default_vhost_catch_all ->
-			default_vhost_catch_all;
+        default_vhost_catch_all ->
+            default_vhost_catch_all;
 
-		_ ->
-			text_utils:string_to_binary( VHostId )
+        _ ->
+            text_utils:string_to_binary( VHostId )
 
-	end,
+    end,
 
-	% We do not generate certificates for individual virtual hosts anymore (too
-	% many of them), we rely on SANs instead; so managing here only any web
-	% logger, and static dispatch:
-	%
-	{ VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
-		DomainId, BinVHostId, MaybeCertManagerPid, BinLogDir, CertSupport,
-		MaybeWebAnalysisInfo ),
+    % We do not generate certificates for individual virtual hosts anymore (too
+    % many of them), we rely on SANs instead; so managing here only any web
+    % logger, and static dispatch:
+    %
+    { VHostEntry, VHostRoute } = manage_vhost( BinContentRoot, ActualKind,
+        DomainId, BinVHostId, MaybeCertManagerPid, BinLogDir, CertSupport,
+        MaybeWebAnalysisInfo ),
 
-	NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
+    NewAccVTable = table:add_entry( _K=BinVHostId, VHostEntry, AccVTable ),
 
-	SetState = appendToAttribute( State, nitrogen_roots, BinContentRoot ),
+    SetState = appendToAttribute( State, nitrogen_roots, BinContentRoot ),
 
-	build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
-		MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
-		[ VHostRoute | AccRoutes ], CertSupport, SetState );
+    build_vhost_table( DomainId, T, MaybeCertManagerPid, BinLogDir,
+        MaybeBinDefaultWebRoot, MaybeWebAnalysisInfo, NewAccVTable,
+        [ VHostRoute | AccRoutes ], CertSupport, SetState );
 
 
 % Unknown kind:
 build_vhost_table( _DomainId,
-		_VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
-		_MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
-		_MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
-	throw( { unknown_web_kind, UnknownWebKind } );
+        _VHostInfos=[ { _VHost, _ContentRoot, UnknownWebKind } | _T ],
+        _MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
+        _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
+    throw( { unknown_web_kind, UnknownWebKind } );
 
 build_vhost_table( DomainId, _VHostInfos=[ InvalidVHostConfig | _T ],
-		_MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
-		_MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
-	throw( { invalid_virtual_host_config, InvalidVHostConfig, DomainId } ).
+        _MaybeCertManagerPid, _BinLogDir, _MaybeBinDefaultWebRoot,
+        _MaybeWebAnalysisInfo, _AccVTable, _AccRoutes, _CertSupport, _State ) ->
+    throw( { invalid_virtual_host_config, InvalidVHostConfig, DomainId } ).
 
 
 
@@ -1757,192 +1757,192 @@ Returns the corresponding `{VHostEntry, VHostRoute}` pair.
 """.
 % Here no web analysis is requested (yet log rotation is still useful):
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
-		MaybeCertManagerPid, BinLogDir, CertSupport,
-		_MaybeWebAnalysisInfo=undefined ) ->
+        MaybeCertManagerPid, BinLogDir, CertSupport,
+        _MaybeWebAnalysisInfo=undefined ) ->
 
-	BinWebLogDir = get_web_log_dir( BinLogDir ),
+    BinWebLogDir = get_web_log_dir( BinLogDir ),
 
-	% Now, we do not use anymore a scheduler for web logging, we prefer a task
-	% ring, as it is safer in terms of concurrent accesses to the database
-	% maintained by any analysis tool, and it balances better the load.
-	%
-	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
-		_MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
+    % Now, we do not use anymore a scheduler for web logging, we prefer a task
+    % ring, as it is safer in terms of concurrent accesses to the database
+    % maintained by any analysis tool, and it balances better the load.
+    %
+    LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
+        _MaybeSchedulerPid=undefined, _MaybeWebGenSettings=undefined ),
 
-	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
-									  parent_host=DomainId,
-									  kind=ActualKind,
-									  content_root=BinContentRoot,
-									  logger_pid=LoggerPid,
-									  cert_manager_pid=MaybeCertManagerPid },
+    VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
+                                      parent_host=DomainId,
+                                      kind=ActualKind,
+                                      content_root=BinContentRoot,
+                                      logger_pid=LoggerPid,
+                                      cert_manager_pid=MaybeCertManagerPid },
 
-	VHostRoute = case ActualKind of
+    VHostRoute = case ActualKind of
 
-		K when K =:= static orelse K =:= meta ->
-			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-				LoggerPid, CertSupport, MaybeCertManagerPid );
+        K when K =:= static orelse K =:= meta ->
+            get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
+                LoggerPid, CertSupport, MaybeCertManagerPid );
 
-		nitrogen ->
-			get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
-				LoggerPid, CertSupport, MaybeCertManagerPid )
+        nitrogen ->
+            get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
+                LoggerPid, CertSupport, MaybeCertManagerPid )
 
-	end,
+    end,
 
-	{ VHostEntry, VHostRoute };
+    { VHostEntry, VHostRoute };
 
 
 % The same, except that here web analysis is requested:
 manage_vhost( BinContentRoot, ActualKind, DomainId, VHostId,
-		MaybeCertManagerPid, BinLogDir, CertSupport,
-		WebAnalysisInfo=#web_analysis_info{ tool=LogAnalysisTool,
-											template_content=TemplateContent,
-											conf_dir=BinConfDir } ) ->
+        MaybeCertManagerPid, BinLogDir, CertSupport,
+        WebAnalysisInfo=#web_analysis_info{ tool=LogAnalysisTool,
+                                            template_content=TemplateContent,
+                                            conf_dir=BinConfDir } ) ->
 
-	% Preparing for the requested web analysis: before spawning a corresponding
-	% logger, generating its related configuration file.
+    % Preparing for the requested web analysis: before spawning a corresponding
+    % logger, generating its related configuration file.
 
-	CfgDomainStr = case DomainId of
+    CfgDomainStr = case DomainId of
 
-		default_domain_catch_all ->
-			% Just use the "intranet" naming then (see SiteDomain comments in
-			% the awstats template):
-			%
-			net_utils:localhost();
+        default_domain_catch_all ->
+            % Just use the "intranet" naming then (see SiteDomain comments in
+            % the awstats template):
+            %
+            net_utils:localhost();
 
-		_ ->
-			text_utils:binary_to_string( DomainId )
+        _ ->
+            text_utils:binary_to_string( DomainId )
 
-	end,
+    end,
 
-	BinWebLogDir = get_web_log_dir( BinLogDir ),
+    BinWebLogDir = get_web_log_dir( BinLogDir ),
 
-	{ BinAccessLogFilename, _BinErrorLogFilename } =
-		class_USWebLogger:get_log_paths( VHostId, DomainId ),
+    { BinAccessLogFilename, _BinErrorLogFilename } =
+        class_USWebLogger:get_log_paths( VHostId, DomainId ),
 
-	AccessLogFilePath = file_utils:join( BinWebLogDir, BinAccessLogFilename ),
+    AccessLogFilePath = file_utils:join( BinWebLogDir, BinAccessLogFilename ),
 
-	BaseAlias = "localhost 127.0.0.1",
+    BaseAlias = "localhost 127.0.0.1",
 
-	{ CfgFullVHostStr, AliasStr } = case VHostId of
+    { CfgFullVHostStr, AliasStr } = case VHostId of
 
-		% The same rule is applied for both special cases:
-		SpecialVHostId when SpecialVHostId =:= without_vhost
-							orelse SpecialVHostId =:= default_vhost_catch_all ->
+        % The same rule is applied for both special cases:
+        SpecialVHostId when SpecialVHostId =:= without_vhost
+                            orelse SpecialVHostId =:= default_vhost_catch_all ->
 
-			% No relevant "X.foobar.org" to specify here, so just relying on
-			% "foobar.org" for the domain, and a relevant regex for the alias to
-			% catch all:
-			%
-			RegexStr = text_utils:format( " REGEX[~ts$]", [
-				% So that "baz.foobar.org" becomes "baz\.foobar\.org":
-				text_utils:escape_with( CfgDomainStr, _CharsToEscape=[ $. ],
-										_EscapingChar=$\\ ) ] ),
+            % No relevant "X.foobar.org" to specify here, so just relying on
+            % "foobar.org" for the domain, and a relevant regex for the alias to
+            % catch all:
+            %
+            RegexStr = text_utils:format( " REGEX[~ts$]", [
+                % So that "baz.foobar.org" becomes "baz\.foobar\.org":
+                text_utils:escape_with( CfgDomainStr, _CharsToEscape=[ $. ],
+                                        _EscapingChar=$\\ ) ] ),
 
-			{ CfgDomainStr, BaseAlias ++ RegexStr };
+            { CfgDomainStr, BaseAlias ++ RegexStr };
 
-		_ ->
-			{ text_utils:binary_to_string( VHostId ) ++ [ $. | CfgDomainStr ],
-			  BaseAlias }
+        _ ->
+            { text_utils:binary_to_string( VHostId ) ++ [ $. | CfgDomainStr ],
+              BaseAlias }
 
-	end,
+    end,
 
-	TranslationTable = table:new( [
-		{ "US_WEB_VHOST_LOG_FILE", AccessLogFilePath },
-		{ "US_WEB_VHOST_DOMAIN", CfgFullVHostStr },
-		{ "US_WEB_HOST_ALIASES", AliasStr } ] ),
+    TranslationTable = table:new( [
+        { "US_WEB_VHOST_LOG_FILE", AccessLogFilePath },
+        { "US_WEB_VHOST_DOMAIN", CfgFullVHostStr },
+        { "US_WEB_HOST_ALIASES", AliasStr } ] ),
 
-	VHostContent =
-		text_utils:update_with_keywords( TemplateContent, TranslationTable ),
+    VHostContent =
+        text_utils:update_with_keywords( TemplateContent, TranslationTable ),
 
-	%LogConfFilename = class_USWebLogger:get_file_prefix_for( DomainId, VHostId,
-	%   LogAnalysisTool ) ++ ".conf",
+    %LogConfFilename = class_USWebLogger:get_file_prefix_for( DomainId, VHostId,
+    %   LogAnalysisTool ) ++ ".conf",
 
-	LogConfFilename = class_USWebLogger:get_conf_filename_for( DomainId,
-		VHostId, LogAnalysisTool ),
+    LogConfFilename = class_USWebLogger:get_conf_filename_for( DomainId,
+        VHostId, LogAnalysisTool ),
 
-	TargetConfFilePath = file_utils:join( BinConfDir, LogConfFilename ),
+    TargetConfFilePath = file_utils:join( BinConfDir, LogConfFilename ),
 
-	file_utils:remove_file_if_existing( TargetConfFilePath ),
+    file_utils:remove_file_if_existing( TargetConfFilePath ),
 
-	file_utils:write_whole( TargetConfFilePath, VHostContent ),
+    file_utils:write_whole( TargetConfFilePath, VHostContent ),
 
-	%trace_utils:debug_fmt( "Wrote '~ts', creating corresponding logger.",
-	%                       [ TargetConfFilePath ] ),
+    %trace_utils:debug_fmt( "Wrote '~ts', creating corresponding logger.",
+    %                       [ TargetConfFilePath ] ),
 
-	% As we must create that logger *after* the configuration file it relies on:
-	% (see previous clause about scheduler)
-	%
-	LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
-		_MaybeSchedulerPid=undefined, WebAnalysisInfo ),
+    % As we must create that logger *after* the configuration file it relies on:
+    % (see previous clause about scheduler)
+    %
+    LoggerPid = class_USWebLogger:new_link( VHostId, DomainId, BinWebLogDir,
+        _MaybeSchedulerPid=undefined, WebAnalysisInfo ),
 
-	VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
-									  parent_host=DomainId,
-									  kind=ActualKind,
-									  content_root=BinContentRoot,
-									  logger_pid=LoggerPid,
-									  cert_manager_pid=MaybeCertManagerPid },
+    VHostEntry = #vhost_config_entry{ virtual_host=VHostId,
+                                      parent_host=DomainId,
+                                      kind=ActualKind,
+                                      content_root=BinContentRoot,
+                                      logger_pid=LoggerPid,
+                                      cert_manager_pid=MaybeCertManagerPid },
 
-	VHostRoute = case ActualKind of
+    VHostRoute = case ActualKind of
 
-		K when K =:= static orelse K =:= meta ->
-			get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
-				LoggerPid, CertSupport, MaybeCertManagerPid );
+        K when K =:= static orelse K =:= meta ->
+            get_static_dispatch_for( VHostId, DomainId, BinContentRoot,
+                LoggerPid, CertSupport, MaybeCertManagerPid );
 
-		nitrogen ->
-			get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
-				LoggerPid, CertSupport, MaybeCertManagerPid )
+        nitrogen ->
+            get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot,
+                LoggerPid, CertSupport, MaybeCertManagerPid )
 
-	end,
+    end,
 
-	{ VHostEntry, VHostRoute }.
+    { VHostEntry, VHostRoute }.
 
 
 
 -doc "Checks and returns an absolute version of the specified content root.".
 -spec get_content_root( directory_path(), option( bin_directory_path() ),
-	vhost_id(), domain_id(), wooper:state() ) -> bin_directory_path().
+    vhost_id(), domain_id(), wooper:state() ) -> bin_directory_path().
 get_content_root( ContentRoot, MaybeBinDefaultWebRoot, VHostId, DomainId,
-				  State ) ->
+                  State ) ->
 
-	ActualContentRoot = case file_utils:is_absolute_path( ContentRoot ) of
+    ActualContentRoot = case file_utils:is_absolute_path( ContentRoot ) of
 
-		true ->
-			ContentRoot;
+        true ->
+            ContentRoot;
 
-		false ->
-			% Must be relative to the default web root then:
-			case MaybeBinDefaultWebRoot of
+        false ->
+            % Must be relative to the default web root then:
+            case MaybeBinDefaultWebRoot of
 
-				undefined ->
-					?error_fmt( "For the ~ts, a relative content root was "
-						"specified ('~ts') whereas no default web root was "
-						"defined.",
-						[ describe_host( VHostId, DomainId ), ContentRoot ] ),
-					throw( { relative_to_undefined_web_root, ContentRoot,
-							 { DomainId, VHostId } } );
+                undefined ->
+                    ?error_fmt( "For the ~ts, a relative content root was "
+                        "specified ('~ts') whereas no default web root was "
+                        "defined.",
+                        [ describe_host( VHostId, DomainId ), ContentRoot ] ),
+                    throw( { relative_to_undefined_web_root, ContentRoot,
+                             { DomainId, VHostId } } );
 
-				_ ->
-					file_utils:join( MaybeBinDefaultWebRoot, ContentRoot )
+                _ ->
+                    file_utils:join( MaybeBinDefaultWebRoot, ContentRoot )
 
-			end
+            end
 
-	end,
+    end,
 
-	NormContentRoot = file_utils:normalise_path( ActualContentRoot ),
+    NormContentRoot = file_utils:normalise_path( ActualContentRoot ),
 
-	case file_utils:is_existing_directory_or_link( NormContentRoot ) of
+    case file_utils:is_existing_directory_or_link( NormContentRoot ) of
 
-		true ->
-			text_utils:string_to_binary( NormContentRoot );
+        true ->
+            text_utils:string_to_binary( NormContentRoot );
 
-		false ->
-			HostDesc = describe_host( VHostId, DomainId ),
-			?error_fmt( "For the ~ts, the specified content root ('~ts') "
-						"does not exist.", [ HostDesc, NormContentRoot ] ),
-			throw( { non_existing_content_root, NormContentRoot,
-					 { DomainId, VHostId } } )
+        false ->
+            HostDesc = describe_host( VHostId, DomainId ),
+            ?error_fmt( "For the ~ts, the specified content root ('~ts') "
+                        "does not exist.", [ HostDesc, NormContentRoot ] ),
+            throw( { non_existing_content_root, NormContentRoot,
+                     { DomainId, VHostId } } )
 
-	end.
+    end.
 
 
 
@@ -1951,86 +1951,86 @@ Returns an absolute version of the corresponding meta content root, creating it
 if necessary.
 """.
 -spec ensure_meta_content_root_exists( directory_path(),
-	option( bin_directory_path() ), vhost_id(), domain_id(), wooper:state() ) ->
-											bin_directory_path().
+    option( bin_directory_path() ), vhost_id(), domain_id(), wooper:state() ) ->
+                                            bin_directory_path().
 ensure_meta_content_root_exists( ContentRoot, MaybeBinDefaultWebRoot, VHostId,
-								 DomainId, State ) ->
+                                 DomainId, State ) ->
 
-	ActualContentRoot = case file_utils:is_absolute_path( ContentRoot ) of
+    ActualContentRoot = case file_utils:is_absolute_path( ContentRoot ) of
 
-		true ->
-			ContentRoot;
+        true ->
+            ContentRoot;
 
-		false ->
-			% Must be relative to the default web root then:
-			case MaybeBinDefaultWebRoot of
+        false ->
+            % Must be relative to the default web root then:
+            case MaybeBinDefaultWebRoot of
 
-				undefined ->
-					?error_fmt( "For the meta ~ts, a relative content root was "
-						"specified ('~ts') whereas no default web root was "
-						"defined.",
-						[ describe_host( VHostId, DomainId ), ContentRoot ] ),
-					throw( { meta_relative_to_undefined_web_root, ContentRoot,
-							 { DomainId, VHostId } } );
+                undefined ->
+                    ?error_fmt( "For the meta ~ts, a relative content root was "
+                        "specified ('~ts') whereas no default web root was "
+                        "defined.",
+                        [ describe_host( VHostId, DomainId ), ContentRoot ] ),
+                    throw( { meta_relative_to_undefined_web_root, ContentRoot,
+                             { DomainId, VHostId } } );
 
-				_ ->
-					file_utils:join( MaybeBinDefaultWebRoot, ContentRoot )
+                _ ->
+                    file_utils:join( MaybeBinDefaultWebRoot, ContentRoot )
 
-			end
+            end
 
-	end,
+    end,
 
-	NormContentRoot = file_utils:normalise_path( ActualContentRoot ),
+    NormContentRoot = file_utils:normalise_path( ActualContentRoot ),
 
-	file_utils:is_existing_directory_or_link( NormContentRoot ) orelse
-		begin
-			HostDesc = describe_host( VHostId, DomainId ),
-			?warning_fmt( "For the ~ts, the specified meta content root "
-				"('~ts') does not exist, creating it.",
-				[ HostDesc, NormContentRoot ] ),
-			file_utils:create_directory( NormContentRoot )
-		end,
+    file_utils:is_existing_directory_or_link( NormContentRoot ) orelse
+        begin
+            HostDesc = describe_host( VHostId, DomainId ),
+            ?warning_fmt( "For the ~ts, the specified meta content root "
+                "('~ts') does not exist, creating it.",
+                [ HostDesc, NormContentRoot ] ),
+            file_utils:create_directory( NormContentRoot )
+        end,
 
-	text_utils:string_to_binary( NormContentRoot ).
+    text_utils:string_to_binary( NormContentRoot ).
 
 
 
 -doc "Returns a description of the specified vhost spec.".
 describe_host( _VHostId=without_vhost, DomainId ) ->
 
-	DomainString = case DomainId of
+    DomainString = case DomainId of
 
-		default_domain_catch_all ->
-			"the domain catch-all";
+        default_domain_catch_all ->
+            "the domain catch-all";
 
-		BinDomainName ->
-			text_utils:format( "domain '~ts'", [ BinDomainName ] )
+        BinDomainName ->
+            text_utils:format( "domain '~ts'", [ BinDomainName ] )
 
-	end,
+    end,
 
-	text_utils:format( "~ts itself", [ DomainString ] );
+    text_utils:format( "~ts itself", [ DomainString ] );
 
 describe_host( _VHostId=default_vhost_catch_all, DomainId ) ->
 
-	DomainString = case DomainId of
+    DomainString = case DomainId of
 
-		default_domain_catch_all ->
-			"the domain catch-all";
+        default_domain_catch_all ->
+            "the domain catch-all";
 
-		BinDomainName ->
-			text_utils:format( "domain '~ts'", [ BinDomainName ] )
+        BinDomainName ->
+            text_utils:format( "domain '~ts'", [ BinDomainName ] )
 
-	end,
+    end,
 
-	text_utils:format( "catch-all for all virtual hosts under ~ts",
-					   [ DomainString ] );
+    text_utils:format( "catch-all for all virtual hosts under ~ts",
+                       [ DomainString ] );
 
 describe_host( VHostId, _DomainId=default_domain_catch_all ) ->
-	text_utils:format( "virtual host '~ts' for the domain catch-all",
-					   [ VHostId ] );
+    text_utils:format( "virtual host '~ts' for the domain catch-all",
+                       [ VHostId ] );
 
 describe_host( VHostId, BinDomainName ) ->
-	text_utils:format( "virtual host '~ts.~ts'", [ VHostId, BinDomainName ] ).
+    text_utils:format( "virtual host '~ts.~ts'", [ VHostId, BinDomainName ] ).
 
 
 
@@ -2041,102 +2041,102 @@ identifier, domain identifier and content root.
 See [https://ninenines.eu/docs/en/cowboy/2.13/guide/routing/] for more details.
 """.
 -spec get_static_dispatch_for( vhost_id(), domain_id(), bin_directory_path(),
-	logger_pid(), cert_support(), option( cert_manager_pid() ) ) ->
+    logger_pid(), cert_support(), option( cert_manager_pid() ) ) ->
                                                     route_rule().
 get_static_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
-						 CertSupport, MaybeCertManagerPid ) ->
+                         CertSupport, MaybeCertManagerPid ) ->
 
-	% We prepare, once for all, all settings for a given static (virtual) host.
+    % We prepare, once for all, all settings for a given static (virtual) host.
 
-	% Refer to https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/
-	% and https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/:
+    % Refer to https://ninenines.eu/docs/en/cowboy/2.8/manual/cowboy_static/
+    % and https://ninenines.eu/docs/en/cowboy/2.8/guide/static_files/:
 
-	% Plain strings wanted, if not catch-alls:
-	HostMatch = get_host_match_for( DomainId, VHostId ),
+    % Plain strings wanted, if not catch-alls:
+    HostMatch = get_host_match_for( DomainId, VHostId ),
 
-	CssPath = file_utils:join( [ BinContentRoot, "common", "default.css" ] ),
+    CssPath = file_utils:join( [ BinContentRoot, "common", "default.css" ] ),
 
-	MaybeBinCssFile = case file_utils:is_existing_file_or_link( CssPath ) of
+    MaybeBinCssFile = case file_utils:is_existing_file_or_link( CssPath ) of
 
-		true ->
-			text_utils:string_to_binary( "common/default.css" );
+        true ->
+            text_utils:string_to_binary( "common/default.css" );
 
-		false ->
-			undefined
+        false ->
+            undefined
 
-	end,
+    end,
 
-	IconPath =
-		file_utils:join( [ BinContentRoot, "images", "default-icon.png" ] ),
+    IconPath =
+        file_utils:join( [ BinContentRoot, "images", "default-icon.png" ] ),
 
-	MaybeBinIconFile = case file_utils:is_existing_file_or_link( IconPath ) of
+    MaybeBinIconFile = case file_utils:is_existing_file_or_link( IconPath ) of
 
-		true ->
-			text_utils:string_to_binary( "images/default-icon.png" );
+        true ->
+            text_utils:string_to_binary( "images/default-icon.png" );
 
-		false ->
-			undefined
+        false ->
+            undefined
 
-	end,
+    end,
 
-	Image404Path = file_utils:join( [ BinContentRoot, "images", "404.png" ] ),
+    Image404Path = file_utils:join( [ BinContentRoot, "images", "404.png" ] ),
 
-	MaybeBin404 = case file_utils:is_existing_file_or_link( Image404Path ) of
+    MaybeBin404 = case file_utils:is_existing_file_or_link( Image404Path ) of
 
-		true ->
-			text_utils:string_to_binary( "images/404.png" );
+        true ->
+            text_utils:string_to_binary( "images/404.png" );
 
-		false ->
-			undefined
+        false ->
+            undefined
 
-	end,
+    end,
 
-	% No charset or etag enforced here, just the default:
-	CowboyOpts = [ { mimetypes, cow_mimetypes, web } ],
+    % No charset or etag enforced here, just the default:
+    CowboyOpts = [ { mimetypes, cow_mimetypes, web } ],
 
-	% Full map-based state, as rich as needed:
-	InitialState = #{ content_root => BinContentRoot,
-					  css_path => MaybeBinCssFile,
-					  icon_path => MaybeBinIconFile,
-					  image_404 => MaybeBin404,
-					  cowboy_opts => CowboyOpts,
-					  logger_pid => LoggerPid },
+    % Full map-based state, as rich as needed:
+    InitialState = #{ content_root => BinContentRoot,
+                      css_path => MaybeBinCssFile,
+                      icon_path => MaybeBinIconFile,
+                      image_404 => MaybeBin404,
+                      cowboy_opts => CowboyOpts,
+                      logger_pid => LoggerPid },
 
-	BinIndex = text_utils:bin_format( "~ts/index.html", [ BinContentRoot ] ),
+    BinIndex = text_utils:bin_format( "~ts/index.html", [ BinContentRoot ] ),
 
-	% Allows to expand a requested 'http://foobar.org' into
-	% 'http://foobar.org/index.html':
-	%
-	% (a more general rule could be applied, based on a path match of "PATH/"
-	% being rewritten into "PATH/index.html" for any PATH - not only PATH="", so
-	% that http://foobar.org/some-dir results in
-	% http://foobar.org/some-dir/index.html being fetched)
-	%
-	NoPagePathMatch = { "/", us_web_static, InitialState#{ type => file,
-														   path => BinIndex } },
+    % Allows to expand a requested 'http://foobar.org' into
+    % 'http://foobar.org/index.html':
+    %
+    % (a more general rule could be applied, based on a path match of "PATH/"
+    % being rewritten into "PATH/index.html" for any PATH - not only PATH="", so
+    % that http://foobar.org/some-dir results in
+    % http://foobar.org/some-dir/index.html being fetched)
+    %
+    NoPagePathMatch = { "/", us_web_static, InitialState#{ type => file,
+                                                           path => BinIndex } },
 
-	% Allows to serve all files (e.g. HTML, images, CSS, etc.) from the
-	% specified tree:
-	%
-	OtherPathsMatch ={ "/[...]", us_web_static,
-					   InitialState#{ type => directory,
-									  path => BinContentRoot } },
+    % Allows to serve all files (e.g. HTML, images, CSS, etc.) from the
+    % specified tree:
+    %
+    OtherPathsMatch ={ "/[...]", us_web_static,
+                       InitialState#{ type => directory,
+                                      path => BinContentRoot } },
 
-	% MaybeCertManagerPid is undefined in the case of a catch-all:
-	PathMatches = case CertSupport =:= renew_certificates
-			andalso MaybeCertManagerPid =/= undefined of
+    % MaybeCertManagerPid is undefined in the case of a catch-all:
+    PathMatches = case CertSupport =:= renew_certificates
+            andalso MaybeCertManagerPid =/= undefined of
 
-		true ->
-			% Be able to answer Let's Encrypt ACME challenges:
-			[ NoPagePathMatch, get_challenge_path_match( MaybeCertManagerPid ),
-			  OtherPathsMatch ];
+        true ->
+            % Be able to answer Let's Encrypt ACME challenges:
+            [ NoPagePathMatch, get_challenge_path_match( MaybeCertManagerPid ),
+              OtherPathsMatch ];
 
-		false ->
-			[ NoPagePathMatch, OtherPathsMatch ]
+        false ->
+            [ NoPagePathMatch, OtherPathsMatch ]
 
-	end,
+    end,
 
-	{ HostMatch, PathMatches }.
+    { HostMatch, PathMatches }.
 
 
 
@@ -2147,105 +2147,105 @@ virtual host identifier, domain identifier and content root.
 See, in `simple_bridge`, `cowboy_simple_bridge_sup.erl` for more details.
 """.
 -spec get_nitrogen_dispatch_for( vhost_id(), domain_id(),
-		bin_directory_path(), logger_pid(), cert_support(),
-		option( cert_manager_pid() ) ) -> route_rule().
+        bin_directory_path(), logger_pid(), cert_support(),
+        option( cert_manager_pid() ) ) -> route_rule().
 get_nitrogen_dispatch_for( VHostId, DomainId, BinContentRoot, LoggerPid,
-						   CertSupport, MaybeCertManagerPid ) ->
+                           CertSupport, MaybeCertManagerPid ) ->
 
-	% We prepare, once for all, all settings for a given Nitrogen-based
-	% (virtual) host; see get_static_dispatch_for/6 for more details.
+    % We prepare, once for all, all settings for a given Nitrogen-based
+    % (virtual) host; see get_static_dispatch_for/6 for more details.
 
-	HostMatch = get_host_match_for( DomainId, VHostId ),
+    HostMatch = get_host_match_for( DomainId, VHostId ),
 
-	% These static paths were obtained from a live Nitrogen 2.4.1 site example
-	% (e.g. the default, base, generated site obtained with 'make rel_cowboy
-	% PROJECT=my_test').
-	%
-	% To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
-	%
-	%io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n"
-	%   "Resulting in: BaseDispatch = ~p~n",
-	%   [ StaticDispatches, HandlerModule, HandlerOpts, BaseDispatch ] ),
-	%
-	% Then 'make all', 'bin/nitrogen restart' and
-	% 'grep StaticDispatches log/erlang.log.*'.
+    % These static paths were obtained from a live Nitrogen 2.4.1 site example
+    % (e.g. the default, base, generated site obtained with 'make rel_cowboy
+    % PROJECT=my_test').
+    %
+    % To establish them, just add in cowboy_simple_bridge_sup:build_dispatch/2:
+    %
+    %io:format( "StaticDispatches = ~p~nHandlerModule = ~p~nHandlerOpts = ~p~n"
+    %   "Resulting in: BaseDispatch = ~p~n",
+    %   [ StaticDispatches, HandlerModule, HandlerOpts, BaseDispatch ] ),
+    %
+    % Then 'make all', 'bin/nitrogen restart' and
+    % 'grep StaticDispatches log/erlang.log.*'.
 
-	StaticHandlerModule = us_web_static,
+    StaticHandlerModule = us_web_static,
 
-	% 'all' rather than 'web' here, apparently:
-	StaticCowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
+    % 'all' rather than 'web' here, apparently:
+    StaticCowboyOpts = [ { mimetypes, cow_mimetypes, all } ],
 
-	BaseStaticHandlerState = #{ content_root => BinContentRoot,
-								%css_path => MaybeBinCssFile,
-								%icon_path => MaybeBinIconFile,
-								%image_404 => MaybeBin404,
-								cowboy_opts => StaticCowboyOpts,
-								logger_pid => LoggerPid },
+    BaseStaticHandlerState = #{ content_root => BinContentRoot,
+                                %css_path => MaybeBinCssFile,
+                                %icon_path => MaybeBinIconFile,
+                                %image_404 => MaybeBin404,
+                                cowboy_opts => StaticCowboyOpts,
+                                logger_pid => LoggerPid },
 
-	StaticDirs = [ "js", "css", "images", "nitrogen" ],
+    StaticDirs = [ "js", "css", "images", "nitrogen" ],
 
-	StaticDirDispatches = [ { text_utils:format( "/~ts/[...]", [ D ] ),
-		StaticHandlerModule, BaseStaticHandlerState#{
-			type => directory,
-			path => text_utils:format( "site/static/~ts/", [ D ] ) } }
-							|| D <- StaticDirs ],
+    StaticDirDispatches = [ { text_utils:format( "/~ts/[...]", [ D ] ),
+        StaticHandlerModule, BaseStaticHandlerState#{
+            type => directory,
+            path => text_utils:format( "site/static/~ts/", [ D ] ) } }
+                            || D <- StaticDirs ],
 
-	% So that templates (e.g. "bare.html" can be found without changing the VM
-	% current directory); yet does not work as it is no a web lookup but one
-	% done by nitro_cache with only relative paths:
-	%
-	%TemplateDirDispatch = { "/templates/[...]",
-	%   StaticHandlerModule, BaseStaticHandlerState#{
-	%       type => directory,
-	%       path => "site/templates/" } },
+    % So that templates (e.g. "bare.html" can be found without changing the VM
+    % current directory); yet does not work as it is no a web lookup but one
+    % done by nitro_cache with only relative paths:
+    %
+    %TemplateDirDispatch = { "/templates/[...]",
+    %   StaticHandlerModule, BaseStaticHandlerState#{
+    %       type => directory,
+    %       path => "site/templates/" } },
 
-	StaticFiles = [ "favicon.ico" ],
+    StaticFiles = [ "favicon.ico" ],
 
-	StaticFileDispatches = [ { text_utils:format( "/~ts", [ F ] ),
-		StaticHandlerModule, BaseStaticHandlerState#{
-			type => file,
-			path => text_utils:format( "site/static/~ts", [ F ] ) } }
-							|| F <- StaticFiles ],
+    StaticFileDispatches = [ { text_utils:format( "/~ts", [ F ] ),
+        StaticHandlerModule, BaseStaticHandlerState#{
+            type => file,
+            path => text_utils:format( "site/static/~ts", [ F ] ) } }
+                            || F <- StaticFiles ],
 
-	%StaticMatches = [ TemplateDirDispatch | StaticDirDispatches ]
-	%   ++ StaticFileDispatches,
-	StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
+    %StaticMatches = [ TemplateDirDispatch | StaticDirDispatches ]
+    %   ++ StaticFileDispatches,
+    StaticMatches = StaticDirDispatches ++ StaticFileDispatches,
 
-	% To be used if needing to transmit information to these handlers.
-	%
-	% Could be useful so that the Nitrogen cache can know where to look for
-	% elements (such as templates) that are defined as paths that are relative
-	% to the content root at hand; basic Nitrogen places its current directory
-	% at this content root, but the current directory of US-Web VM might be set
-	% elsewhere (e.g. if multiple Nitrogen-based websites had to be served same
-	% day), so US-Web would need to locate easily where the served contents
-	% shall be found.
-	%
-	%InitialNitroHandlerState= #us_web_nitro_handler_state{
-	%   nitro_doc_root=BinContentRoot },
+    % To be used if needing to transmit information to these handlers.
+    %
+    % Could be useful so that the Nitrogen cache can know where to look for
+    % elements (such as templates) that are defined as paths that are relative
+    % to the content root at hand; basic Nitrogen places its current directory
+    % at this content root, but the current directory of US-Web VM might be set
+    % elsewhere (e.g. if multiple Nitrogen-based websites had to be served same
+    % day), so US-Web would need to locate easily where the served contents
+    % shall be found.
+    %
+    %InitialNitroHandlerState= #us_web_nitro_handler_state{
+    %   nitro_doc_root=BinContentRoot },
 
-	InitialNitroHandlerState = undefined,
+    InitialNitroHandlerState = undefined,
 
-	AllNitroMatches = StaticMatches
-		++ [ { '_', [], _NitroHandler=us_web_nitrogen_handler,
-			   InitialNitroHandlerState } ],
-		%++ [ { '_', [], _NitroHandler=us_web_nitrogen_anchor,
-		%      InitialNitroHandlerState } ],
+    AllNitroMatches = StaticMatches
+        ++ [ { '_', [], _NitroHandler=us_web_nitrogen_handler,
+               InitialNitroHandlerState } ],
+        %++ [ { '_', [], _NitroHandler=us_web_nitrogen_anchor,
+        %      InitialNitroHandlerState } ],
 
-	PathMatches = case CertSupport =:= renew_certificates
-			andalso MaybeCertManagerPid =/= undefined of
+    PathMatches = case CertSupport =:= renew_certificates
+            andalso MaybeCertManagerPid =/= undefined of
 
-		true ->
-			 % Be able to answer Let's Encrypt ACME challenges:
-			[ get_challenge_path_match( MaybeCertManagerPid )
-					| AllNitroMatches ];
+        true ->
+             % Be able to answer Let's Encrypt ACME challenges:
+            [ get_challenge_path_match( MaybeCertManagerPid )
+                    | AllNitroMatches ];
 
-		false ->
-			AllNitroMatches
+        false ->
+            AllNitroMatches
 
-	end,
+    end,
 
-	{ HostMatch, PathMatches }.
+    { HostMatch, PathMatches }.
 
 
 
@@ -2254,38 +2254,38 @@ Returns the host match corresponding to specified domain and virtual host.
 """.
 -spec get_host_match_for( domain_id(), vhost_id() ) -> host_match().
 get_host_match_for( _DomainId=default_domain_catch_all,
-					_VHostId=without_vhost ) ->
-	<<":_.:_">>;
+                    _VHostId=without_vhost ) ->
+    <<":_.:_">>;
 
 get_host_match_for( _DomainId=default_domain_catch_all,
-					_VHostId=default_vhost_catch_all ) ->
-	% Yes, an atom:
-	'_';
+                    _VHostId=default_vhost_catch_all ) ->
+    % Yes, an atom:
+    '_';
 
 % For example if BinVHostName="baz", "baz.foobar.org" is matching
 % (i.e. "baz.*.*"):
 %
 get_host_match_for( _DomainId=default_domain_catch_all,
-					_VHostId=BinVHostName ) when is_binary( BinVHostName )->
-	text_utils:format( "~ts.:_.:_", [ BinVHostName ] );
+                    _VHostId=BinVHostName ) when is_binary( BinVHostName )->
+    text_utils:format( "~ts.:_.:_", [ BinVHostName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=without_vhost )
                                         when is_binary( BinDomainName ) ->
-	BinDomainName;
+    BinDomainName;
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=default_vhost_catch_all )
                                         when is_binary( BinDomainName ) ->
-	% text_utils:format( ":_.~ts", [ BinDomainName ] );
-	%
-	% A little better (more general) than above (which, if
-	% BinDomainName="foobar.org", matches only "*.foobar.org"), as below is
-	% matching any number of subdomains (e.g. "*.*.*.foobar.org"):
-	%
-	text_utils:format( "[...].~ts", [ BinDomainName ] );
+    % text_utils:format( ":_.~ts", [ BinDomainName ] );
+    %
+    % A little better (more general) than above (which, if
+    % BinDomainName="foobar.org", matches only "*.foobar.org"), as below is
+    % matching any number of subdomains (e.g. "*.*.*.foobar.org"):
+    %
+    text_utils:format( "[...].~ts", [ BinDomainName ] );
 
 get_host_match_for( _DomainId=BinDomainName, _VHostId=BinVHostName )
-			when is_binary( BinDomainName ) andalso is_binary( BinVHostName ) ->
-	text_utils:format( "~ts.~ts", [ BinVHostName, BinDomainName ] ).
+            when is_binary( BinDomainName ) andalso is_binary( BinVHostName ) ->
+    text_utils:format( "~ts.~ts", [ BinVHostName, BinDomainName ] ).
 
 
 
@@ -2303,76 +2303,76 @@ succeed in an (http) ACME challenge (if starting from scratch, with no valid
 certificate yet).
 """.
 -spec transform_handler_in_routes( dispatch_routes(), handler_module(),
-								   handler_state() ) -> dispatch_rules().
+                                   handler_state() ) -> dispatch_rules().
 transform_handler_in_routes( DispatchRoutes, NewHandlerModule,
-							 NewHandlerInitialState ) ->
+                             NewHandlerInitialState ) ->
 
-	FwRoutes = set_as_forward_host( DispatchRoutes, NewHandlerModule,
-									NewHandlerInitialState, _Acc=[] ),
+    FwRoutes = set_as_forward_host( DispatchRoutes, NewHandlerModule,
+                                    NewHandlerInitialState, _Acc=[] ),
 
-	% Returning FWDispatchRules:
-	cowboy_router:compile( FwRoutes ).
+    % Returning FWDispatchRules:
+    cowboy_router:compile( FwRoutes ).
 
 
 
 % (helper, for all routes)
 set_as_forward_host( _DispatchRoutes=[], _NewHandlerModule,
-					 _NewHandlerInitialState, Acc ) ->
-	lists:reverse( Acc );
+                     _NewHandlerInitialState, Acc ) ->
+    lists:reverse( Acc );
 
 set_as_forward_host( _DispatchRoutes=[ { HostMatch, PathsList } | T ],
-					 NewHandlerModule, NewHandlerInitialState, Acc ) ->
+                     NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
-	FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
-										NewHandlerInitialState, _PAcc=[] ),
+    FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
+                                        NewHandlerInitialState, _PAcc=[] ),
 
-	set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
-						 [ { HostMatch, FWPathsList } | Acc ] );
+    set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
+                         [ { HostMatch, FWPathsList } | Acc ] );
 
 set_as_forward_host(
-		_DispatchRoutes=[ { HostMatch, Constraints, PathsList } | T ],
-		NewHandlerModule, NewHandlerInitialState, Acc ) ->
+        _DispatchRoutes=[ { HostMatch, Constraints, PathsList } | T ],
+        NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
-	FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
-										NewHandlerInitialState, _PAcc=[] ),
+    FWPathsList = set_as_forward_paths( PathsList, NewHandlerModule,
+                                        NewHandlerInitialState, _PAcc=[] ),
 
-	set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
-						 [ { HostMatch, Constraints, FWPathsList } | Acc ] ).
+    set_as_forward_host( T, NewHandlerModule, NewHandlerInitialState,
+                         [ { HostMatch, Constraints, FWPathsList } | Acc ] ).
 
 
 
 % (helper, relative to a given host)
 set_as_forward_paths( _PathsList=[], _NewHandlerModule, _NewHandlerInitialState,
-					  Acc ) ->
-	lists:reverse( Acc );
+                      Acc ) ->
+    lists:reverse( Acc );
 
 % Preserving any Let's Encrypt handler:
 set_as_forward_paths( _PathsList=[ LEMatch={ _PathMatch,
-		us_web_leec_handler, _InitialState } | T ], NewHandlerModule,
-		NewHandlerInitialState, Acc ) ->
-	% Unchanged, including regarding order:
-	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
-						  [ LEMatch | Acc ] );
+        us_web_leec_handler, _InitialState } | T ], NewHandlerModule,
+        NewHandlerInitialState, Acc ) ->
+    % Unchanged, including regarding order:
+    set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
+                          [ LEMatch | Acc ] );
 
 % Dropping/replacing current handler and its state:
 set_as_forward_paths(
-		_PathsList=[ { PathMatch, _Handler, _InitialState } | T ],
-		NewHandlerModule, NewHandlerInitialState, Acc ) ->
+        _PathsList=[ { PathMatch, _Handler, _InitialState } | T ],
+        NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
-	FWPath = { PathMatch, NewHandlerModule, NewHandlerInitialState },
+    FWPath = { PathMatch, NewHandlerModule, NewHandlerInitialState },
 
-	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
-						  [ FWPath | Acc ] );
+    set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
+                          [ FWPath | Acc ] );
 
 set_as_forward_paths(
-		_PathsList=[ { PathMatch, Constraints, _Handler, _InitialState } | T ],
-		NewHandlerModule, NewHandlerInitialState, Acc ) ->
+        _PathsList=[ { PathMatch, Constraints, _Handler, _InitialState } | T ],
+        NewHandlerModule, NewHandlerInitialState, Acc ) ->
 
-	FWPath = { PathMatch, Constraints, NewHandlerModule,
+    FWPath = { PathMatch, Constraints, NewHandlerModule,
                NewHandlerInitialState },
 
-	set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
-						  [ FWPath | Acc ] ).
+    set_as_forward_paths( T, NewHandlerModule, NewHandlerInitialState,
+                          [ FWPath | Acc ] ).
 
 
 
@@ -2384,34 +2384,34 @@ See [https://leec.esperide.org/#usage-example].
 """.
 -spec get_challenge_path_match( cert_manager_pid() ) -> path_match().
 get_challenge_path_match( CertManagerPid ) when is_pid( CertManagerPid ) ->
-	{ _BinPath= <<"/.well-known/acme-challenge/:token">>,
-	  _Mod=us_web_leec_handler, _HandlerOpts=CertManagerPid };
+    { _BinPath= <<"/.well-known/acme-challenge/:token">>,
+      _Mod=us_web_leec_handler, _HandlerOpts=CertManagerPid };
 
 get_challenge_path_match( Unexpected ) ->
-	throw( { invalid_certificate_manager, Unexpected } ).
+    throw( { invalid_certificate_manager, Unexpected } ).
 
 
 
 -doc "Checks the specified web kind.".
 check_kind( _WebKind=static, _VHost, _DomainId, _State ) ->
-	static;
+    static;
 
 check_kind( _WebKind=nitrogen, _VHost, _DomainId, _State ) ->
-	nitrogen;
+    nitrogen;
 
 check_kind( WebKind, VHost, DomainId, State ) when is_atom( WebKind ) ->
 
-	?error_fmt( "Unknown web kind '~ts' specified for virtual host '~ts' for "
-				"domain '~ts'.", [ WebKind, VHost, DomainId ] ),
+    ?error_fmt( "Unknown web kind '~ts' specified for virtual host '~ts' for "
+                "domain '~ts'.", [ WebKind, VHost, DomainId ] ),
 
-	throw( { unknown_web_kind, WebKind, { VHost, DomainId } } );
+    throw( { unknown_web_kind, WebKind, { VHost, DomainId } } );
 
 check_kind( WebKind, VHost, DomainId, State ) ->
 
-	?error_fmt( "Invalid web kind '~p' specified for virtual host '~ts' for "
-				"domain '~ts'.", [ WebKind, VHost, DomainId ] ),
+    ?error_fmt( "Invalid web kind '~p' specified for virtual host '~ts' for "
+                "domain '~ts'.", [ WebKind, VHost, DomainId ] ),
 
-	throw( { invalid_web_kind_term, WebKind, { VHost, DomainId } } ).
+    throw( { invalid_web_kind_term, WebKind, { VHost, DomainId } } ).
 
 
 
@@ -2426,37 +2426,37 @@ inherited from class_USCentralServer.
 -spec manageRegistrations( wooper:state(), config_table() ) -> oneway_return().
 manageRegistrations( State, ConfigTable ) ->
 
-	{ CfgRegName, CfgRegScope, SchedRegName, SchedRegScope, RegMsg } =
-			case get_registration_info( ConfigTable ) of
+    { CfgRegName, CfgRegScope, SchedRegName, SchedRegScope, RegMsg } =
+            case get_registration_info( ConfigTable ) of
 
-		{ ok, Q } ->
-			Q;
+        { ok, Q } ->
+            Q;
 
-		{ error, DiagnosedError } ->
-			basic_utils:throw_diagnosed( DiagnosedError )
+        { error, DiagnosedError } ->
+            basic_utils:throw_diagnosed( DiagnosedError )
 
-	end,
+    end,
 
-	?info( RegMsg ),
+    ?info( RegMsg ),
 
-	naming_utils:register_as( CfgRegName, CfgRegScope ),
+    naming_utils:register_as( CfgRegName, CfgRegScope ),
 
-	% Relatively private to this node:
-	SchedPid = class_USScheduler:new_link( "US-Web Scheduler", SchedRegName,
-										   SchedRegScope ),
+    % Relatively private to this node:
+    SchedPid = class_USScheduler:new_link( "US-Web Scheduler", SchedRegName,
+                                           SchedRegScope ),
 
-	?info_fmt( "This US-Web configuration server was registered as '~ts' "
-		"(scope: ~ts), and will be using scheduler ~w (registered as '~ts', "
-		"(scope: ~ts).",
-		[ CfgRegName, CfgRegScope, SchedPid, SchedRegName, SchedRegScope ] ),
+    ?info_fmt( "This US-Web configuration server was registered as '~ts' "
+        "(scope: ~ts), and will be using scheduler ~w (registered as '~ts', "
+        "(scope: ~ts).",
+        [ CfgRegName, CfgRegScope, SchedPid, SchedRegName, SchedRegScope ] ),
 
-	SetState = setAttributes( State, [
-		% Inherited:
-		{ registration_name, CfgRegName },
-		{ registration_scope, CfgRegScope },
+    SetState = setAttributes( State, [
+        % Inherited:
+        { registration_name, CfgRegName },
+        { registration_scope, CfgRegScope },
 
-		{ scheduler_registration_lookup_info, { SchedRegName, SchedRegScope } },
-		{ us_web_scheduler_pid, SchedPid } ] ),
+        { scheduler_registration_lookup_info, { SchedRegName, SchedRegScope } },
+        { us_web_scheduler_pid, SchedPid } ] ),
 
     wooper:return_state( SetState ).
 
@@ -2464,44 +2464,44 @@ manageRegistrations( State, ConfigTable ) ->
 
 -doc "Manages any user-configured default web root.".
 -spec manage_web_root( us_web_config_table(), wooper:state() ) ->
-			wooper:state().
+            wooper:state().
 manage_web_root( ConfigTable, State ) ->
 
-	MaybeBinDefWebRoot = case table:lookup_entry( ?default_web_root_key,
-												  ConfigTable ) of
+    MaybeBinDefWebRoot = case table:lookup_entry( ?default_web_root_key,
+                                                  ConfigTable ) of
 
-		key_not_found ->
-			?info( "No default web root defined." ),
-			undefined;
+        key_not_found ->
+            ?info( "No default web root defined." ),
+            undefined;
 
-		{ value, DefWebRoot } ->
+        { value, DefWebRoot } ->
 
-			AbsDefaultWebRoot = file_utils:ensure_path_is_absolute(
-				DefWebRoot,
-				otp_utils:get_priv_root( ?MODULE, _BeSilent=true ) ),
+            AbsDefaultWebRoot = file_utils:ensure_path_is_absolute(
+                DefWebRoot,
+                otp_utils:get_priv_root( ?MODULE, _BeSilent=true ) ),
 
-			case file_utils:is_existing_directory( AbsDefaultWebRoot ) of
+            case file_utils:is_existing_directory( AbsDefaultWebRoot ) of
 
-				true ->
-					?info_fmt( "Default web root set to '~ts'.",
-							   [ AbsDefaultWebRoot ] ),
+                true ->
+                    ?info_fmt( "Default web root set to '~ts'.",
+                               [ AbsDefaultWebRoot ] ),
 
-					text_utils:string_to_binary( AbsDefaultWebRoot );
+                    text_utils:string_to_binary( AbsDefaultWebRoot );
 
-				false ->
-					?error_fmt( "The user-specified default web root "
-						"(obtained from the 'default_web_root' key), "
-						"'~ts', is not an existing directory.",
-						[ AbsDefaultWebRoot ] ),
+                false ->
+                    ?error_fmt( "The user-specified default web root "
+                        "(obtained from the 'default_web_root' key), "
+                        "'~ts', is not an existing directory.",
+                        [ AbsDefaultWebRoot ] ),
 
-					throw( { non_existing_default_web_root,
-							 AbsDefaultWebRoot } )
+                    throw( { non_existing_default_web_root,
+                             AbsDefaultWebRoot } )
 
-			end
+            end
 
-	end,
+    end,
 
-	setAttribute( State, default_web_root, MaybeBinDefWebRoot ).
+    setAttribute( State, default_web_root, MaybeBinDefWebRoot ).
 
 
 
@@ -2509,360 +2509,360 @@ manage_web_root( ConfigTable, State ) ->
 -spec manage_ports( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_ports( ConfigTable, State ) ->
 
-	HttpPort = case table:lookup_entry( ?http_tcp_port_key, ConfigTable ) of
+    HttpPort = case table:lookup_entry( ?http_tcp_port_key, ConfigTable ) of
 
-		key_not_found ->
-			DefaultHttpPort = 80,
-			?info_fmt( "No user-specified HTTP TCP port, defaulting to #~B.",
-					   [ DefaultHttpPort ] ),
-			DefaultHttpPort;
+        key_not_found ->
+            DefaultHttpPort = 80,
+            ?info_fmt( "No user-specified HTTP TCP port, defaulting to #~B.",
+                       [ DefaultHttpPort ] ),
+            DefaultHttpPort;
 
-		{ value, ClearPort } when is_integer( ClearPort ) ->
-			?info_fmt( "The user-specified HTTP TCP port is #~B.",
-					   [ ClearPort ] ),
-			ClearPort;
+        { value, ClearPort } when is_integer( ClearPort ) ->
+            ?info_fmt( "The user-specified HTTP TCP port is #~B.",
+                       [ ClearPort ] ),
+            ClearPort;
 
-		{ value, undefined } ->
-			?info( "Use of any HTTP TCP port explicitly disabled "
-				   "by the user." ),
-			undefined;
+        { value, undefined } ->
+            ?info( "Use of any HTTP TCP port explicitly disabled "
+                   "by the user." ),
+            undefined;
 
-		{ value, InvalidClearPort } ->
-			?error_fmt( "Invalid user-specified HTTP TCP port: '~p'.",
-						[ InvalidClearPort ] ),
-			throw( { invalid_http_port, InvalidClearPort, http_tcp_port } )
+        { value, InvalidClearPort } ->
+            ?error_fmt( "Invalid user-specified HTTP TCP port: '~p'.",
+                        [ InvalidClearPort ] ),
+            throw( { invalid_http_port, InvalidClearPort, http_tcp_port } )
 
-	end,
+    end,
 
-	HttpsPort = case table:lookup_entry( ?https_tcp_port_key, ConfigTable ) of
+    HttpsPort = case table:lookup_entry( ?https_tcp_port_key, ConfigTable ) of
 
-		key_not_found ->
-			DefaultHttpsPort = 443,
-			?info_fmt( "No user-specified HTTPS TCP port, defaulting to #~B.",
-					   [ DefaultHttpsPort ] ),
-			DefaultHttpsPort;
+        key_not_found ->
+            DefaultHttpsPort = 443,
+            ?info_fmt( "No user-specified HTTPS TCP port, defaulting to #~B.",
+                       [ DefaultHttpsPort ] ),
+            DefaultHttpsPort;
 
-		{ value, TLSPort } when is_integer( TLSPort ) ->
-			?info_fmt( "The user-specified HTTPS TCP port is #~B.",
-					   [ TLSPort ] ),
-			TLSPort;
+        { value, TLSPort } when is_integer( TLSPort ) ->
+            ?info_fmt( "The user-specified HTTPS TCP port is #~B.",
+                       [ TLSPort ] ),
+            TLSPort;
 
-		{ value, undefined } ->
-			?info( "Use of any HTTPS TCP port explicitly disabled "
-				   "by the user." ),
-			undefined;
+        { value, undefined } ->
+            ?info( "Use of any HTTPS TCP port explicitly disabled "
+                   "by the user." ),
+            undefined;
 
-		{ value, InvalidTLSPort } ->
-			?error_fmt( "Invalid user-specified HTTPS TCP port: '~p'.",
-						[ InvalidTLSPort ] ),
-			throw( { invalid_https_port, InvalidTLSPort, https_tcp_port } )
+        { value, InvalidTLSPort } ->
+            ?error_fmt( "Invalid user-specified HTTPS TCP port: '~p'.",
+                        [ InvalidTLSPort ] ),
+            throw( { invalid_https_port, InvalidTLSPort, https_tcp_port } )
 
-	end,
+    end,
 
-	setAttributes( State, [ { http_tcp_port, HttpPort },
-							{ https_tcp_port, HttpsPort } ] ).
+    setAttributes( State, [ { http_tcp_port, HttpPort },
+                            { https_tcp_port, HttpsPort } ] ).
 
 
 
 -doc "Prepares the meta support.".
 -spec manage_pre_meta( us_web_config_table(), wooper:state() ) ->
-							wooper:state().
+                            wooper:state().
 manage_pre_meta( ConfigTable, State ) ->
 
-	case table:lookup_entry( ?log_analysis_key, ConfigTable ) of
+    case table:lookup_entry( ?log_analysis_key, ConfigTable ) of
 
-		key_not_found ->
-			?info( "No analysis of web access logs requested." ),
-			State;
+        key_not_found ->
+            ?info( "No analysis of web access logs requested." ),
+            State;
 
-		{ value, LogSettings } ->
-			% To have the 'log_analysis_settings' attribute ready:
-			set_log_tool_settings( LogSettings, State )
+        { value, LogSettings } ->
+            % To have the 'log_analysis_settings' attribute ready:
+            set_log_tool_settings( LogSettings, State )
 
-	end.
+    end.
 
 
 
 -doc "Determines the settings of the web log analysis tool.".
 set_log_tool_settings( undefined, State ) ->
-	set_log_tool_settings( _DefaultToolName=awstats, State );
+    set_log_tool_settings( _DefaultToolName=awstats, State );
 
 set_log_tool_settings( ToolName, State ) when is_atom( ToolName ) ->
-	set_log_tool_settings( { ToolName, _DefaultAnalysisUpdateToolRoot=undefined,
-							 _DefaultAnalysisReportToolRoot=undefined },
-						   State );
+    set_log_tool_settings( { ToolName, _DefaultAnalysisUpdateToolRoot=undefined,
+                             _DefaultAnalysisReportToolRoot=undefined },
+                           State );
 
 % At least Arch Linux defaults:
 set_log_tool_settings( { awstats, _MaybeAnalysisUpdateToolRoot=undefined,
-					   _MaybeAnalysisReportToolRoot=undefined }, State ) ->
-	set_log_tool_settings( { awstats,
-		_UpdateToolRoot="/usr/share/webapps/awstats",
-		_ReportToolRoot="/usr/share/awstats/tools" }, State );
+                       _MaybeAnalysisReportToolRoot=undefined }, State ) ->
+    set_log_tool_settings( { awstats,
+        _UpdateToolRoot="/usr/share/webapps/awstats",
+        _ReportToolRoot="/usr/share/awstats/tools" }, State );
 
 % Supposing both are defined or neither:
 set_log_tool_settings( { ToolName, AnalysisUpdateToolRoot,
-						 AnalysisReportToolRoot }, State )
-			when is_list( AnalysisUpdateToolRoot )
-				 andalso is_list( AnalysisReportToolRoot ) ->
+                         AnalysisReportToolRoot }, State )
+            when is_list( AnalysisUpdateToolRoot )
+                 andalso is_list( AnalysisReportToolRoot ) ->
 
-	BinUpdateToolRoot =
-			case file_utils:is_existing_directory_or_link(
-				AnalysisUpdateToolRoot ) of
+    BinUpdateToolRoot =
+            case file_utils:is_existing_directory_or_link(
+                AnalysisUpdateToolRoot ) of
 
-		true ->
-			text_utils:string_to_binary( AnalysisUpdateToolRoot );
+        true ->
+            text_utils:string_to_binary( AnalysisUpdateToolRoot );
 
-		false ->
-			?error_fmt( "Root directory '~ts' for web log analysis update "
-				"tool ('~ts') not found.",
-				[ AnalysisUpdateToolRoot, ToolName ] ),
-			throw( { root_of_log_update_tool_not_found, ToolName,
-					 AnalysisUpdateToolRoot } )
+        false ->
+            ?error_fmt( "Root directory '~ts' for web log analysis update "
+                "tool ('~ts') not found.",
+                [ AnalysisUpdateToolRoot, ToolName ] ),
+            throw( { root_of_log_update_tool_not_found, ToolName,
+                     AnalysisUpdateToolRoot } )
 
-	end,
+    end,
 
-	BinReportToolRoot = case file_utils:is_existing_directory_or_link(
-			AnalysisReportToolRoot ) of
+    BinReportToolRoot = case file_utils:is_existing_directory_or_link(
+            AnalysisReportToolRoot ) of
 
-		true ->
-			text_utils:string_to_binary( AnalysisReportToolRoot );
+        true ->
+            text_utils:string_to_binary( AnalysisReportToolRoot );
 
-		false ->
-			?error_fmt( "Root directory '~ts' for web log analysis report "
-				"tool ('~ts') not found.",
-				[ AnalysisReportToolRoot, ToolName ] ),
-			throw( { root_of_log_report_tool_not_found, ToolName,
-					 AnalysisReportToolRoot } )
+        false ->
+            ?error_fmt( "Root directory '~ts' for web log analysis report "
+                "tool ('~ts') not found.",
+                [ AnalysisReportToolRoot, ToolName ] ),
+            throw( { root_of_log_report_tool_not_found, ToolName,
+                     AnalysisReportToolRoot } )
 
-	end,
+    end,
 
-	setAttribute( State, log_analysis_settings,
-				  { ToolName, BinUpdateToolRoot, BinReportToolRoot } );
+    setAttribute( State, log_analysis_settings,
+                  { ToolName, BinUpdateToolRoot, BinReportToolRoot } );
 
 
 set_log_tool_settings( Unexpected, State ) ->
-	?error_fmt( "Unexpected settings for the web log analysis tool: ~p.",
-				[ Unexpected ] ),
-	throw( { unexpected_log_tool_settings, Unexpected } ).
+    ?error_fmt( "Unexpected settings for the web log analysis tool: ~p.",
+                [ Unexpected ] ),
+    throw( { unexpected_log_tool_settings, Unexpected } ).
 
 
 
 
 -doc "Manages how X.509 certificates shall be handled.".
 -spec manage_certificates( bin_directory_path(), us_web_config_table(),
-						   wooper:state() ) -> wooper:state().
+                           wooper:state() ) -> wooper:state().
 manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
 
-	CertSupport = case table:lookup_entry( ?certificate_support_key,
-										   ConfigTable ) of
+    CertSupport = case table:lookup_entry( ?certificate_support_key,
+                                           ConfigTable ) of
 
-		key_not_found ->
-			?info( "No certificate support specified, defaulting to none." ),
-			no_certificates;
+        key_not_found ->
+            ?info( "No certificate support specified, defaulting to none." ),
+            no_certificates;
 
-		{ value, no_certificates } ->
-			?info( "Certificate support disabled." ),
-			no_certificates;
+        { value, no_certificates } ->
+            ?info( "Certificate support disabled." ),
+            no_certificates;
 
-		{ value, use_existing_certificates } ->
-			?info( "Certificate support enabled, based only on existing ones "
-				   "(no renewal)." ),
-			use_existing_certificates;
+        { value, use_existing_certificates } ->
+            ?info( "Certificate support enabled, based only on existing ones "
+                   "(no renewal)." ),
+            use_existing_certificates;
 
-		{ value, renew_certificates } ->
-			?info( "Certificate generation, use and renewal enabled." ),
-			renew_certificates;
+        { value, renew_certificates } ->
+            ?info( "Certificate generation, use and renewal enabled." ),
+            renew_certificates;
 
-		{ value, OtherSupport } ->
-			?error_fmt( "Invalid certificate support setting: '~p'.",
-						[ OtherSupport ] ),
-			throw( { invalid_certificate_mode, OtherSupport } )
+        { value, OtherSupport } ->
+            ?error_fmt( "Invalid certificate support setting: '~p'.",
+                        [ OtherSupport ] ),
+            throw( { invalid_certificate_mode, OtherSupport } )
 
-	end,
+    end,
 
-	BinCertDir =
-		file_utils:bin_join( ?getAttr(data_directory), "certificates" ),
+    BinCertDir =
+        file_utils:bin_join( ?getAttr(data_directory), "certificates" ),
 
-	CertMode = case table:lookup_entry( ?certificate_mode_key, ConfigTable ) of
+    CertMode = case table:lookup_entry( ?certificate_mode_key, ConfigTable ) of
 
-		key_not_found ->
-			% Default:
-			?info( "Certificate mode set by default to production." ),
-			production;
+        key_not_found ->
+            % Default:
+            ?info( "Certificate mode set by default to production." ),
+            production;
 
-		{ value, development } ->
-			?info( "Certificate mode set to development." ),
-			development;
+        { value, development } ->
+            ?info( "Certificate mode set to development." ),
+            development;
 
-		{ value, production } ->
-			?info( "Certificate mode set to production." ),
-			production
+        { value, production } ->
+            ?info( "Certificate mode set to production." ),
+            production
 
-	end,
+    end,
 
-	% As of mid-May 2023, regarding the US-Web use of LEEC, we chose to switch
-	% the default from the (perfectly working) http-01 challenge to the dns-01
-	% one (stronger elliptic-curve certificates, smaller and, more importantly,
-	% wildcard certificates):
-	%
-	ChallengeType = case table:lookup_entry( ?challenge_type_key,
-											 ConfigTable ) of
+    % As of mid-May 2023, regarding the US-Web use of LEEC, we chose to switch
+    % the default from the (perfectly working) http-01 challenge to the dns-01
+    % one (stronger elliptic-curve certificates, smaller and, more importantly,
+    % wildcard certificates):
+    %
+    ChallengeType = case table:lookup_entry( ?challenge_type_key,
+                                             ConfigTable ) of
 
-		key_not_found ->
-			?info( "Challenge type set by default to dns-01." ),
-			'dns-01';
+        key_not_found ->
+            ?info( "Challenge type set by default to dns-01." ),
+            'dns-01';
 
-		{ value, 'dns-01' } ->
-			?info( "Challenge type set to dns-01 "
-				   "(hence wildcard certificates will be available)." ),
-			'dns-01';
+        { value, 'dns-01' } ->
+            ?info( "Challenge type set to dns-01 "
+                   "(hence wildcard certificates will be available)." ),
+            'dns-01';
 
-		{ value, 'http-01' } ->
-			?info( "Challenge type set to http-01 "
-				   "(hence no wildcard certificate will be available)." ),
-			'http-01';
+        { value, 'http-01' } ->
+            ?info( "Challenge type set to http-01 "
+                   "(hence no wildcard certificate will be available)." ),
+            'http-01';
 
-		% Includes at least 'dns-01':
-		{ value, OtherChalType } ->
-			case leec:is_known_challenge_type( OtherChalType ) of
+        % Includes at least 'dns-01':
+        { value, OtherChalType } ->
+            case leec:is_known_challenge_type( OtherChalType ) of
 
-				true ->
-					?info_fmt( "Challenge type set to '~ts'.",
-							   [ OtherChalType ] ),
-					OtherChalType;
+                true ->
+                    ?info_fmt( "Challenge type set to '~ts'.",
+                               [ OtherChalType ] ),
+                    OtherChalType;
 
-				false ->
-					throw( { unknown_challenge_type, OtherChalType } )
+                false ->
+                    throw( { unknown_challenge_type, OtherChalType } )
 
-			end
+            end
 
-	end,
+    end,
 
-	MaybeDNSProvider = case ChallengeType of
+    MaybeDNSProvider = case ChallengeType of
 
-		'dns-01' ->
-			case table:lookup_entry( ?dns_provider_key, ConfigTable ) of
+        'dns-01' ->
+            case table:lookup_entry( ?dns_provider_key, ConfigTable ) of
 
-				{ value, AtomProv } ->
-					case leec:is_supported_dns_provider( AtomProv ) of
+                { value, AtomProv } ->
+                    case leec:is_supported_dns_provider( AtomProv ) of
 
-						true ->
-							AtomProv;
+                        true ->
+                            AtomProv;
 
-						false ->
-							throw( { unsupported_dns_provider, AtomProv } )
+                        false ->
+                            throw( { unsupported_dns_provider, AtomProv } )
 
-					end;
+                    end;
 
-				key_not_found ->
-					undefined
+                key_not_found ->
+                    undefined
 
-			end;
+            end;
 
-		_ ->
-			undefined
+        _ ->
+            undefined
 
-	end,
+    end,
 
-	{ MaybeBinKeyPath, MaybeDHKeyPath, MaybeBinCaKeyPath } = case CertSupport of
+    { MaybeBinKeyPath, MaybeDHKeyPath, MaybeBinCaKeyPath } = case CertSupport of
 
-		renew_certificates when ChallengeType =:= 'http-01' ->
+        renew_certificates when ChallengeType =:= 'http-01' ->
 
-			file_utils:create_directory_if_not_existing( BinCertDir,
-				_ParentCreation=create_parents ),
+            file_utils:create_directory_if_not_existing( BinCertDir,
+                _ParentCreation=create_parents ),
 
-			?debug_fmt( "Certificates are to be generated in '~ts'.",
-						[ BinCertDir ] ),
+            ?debug_fmt( "Certificates are to be generated in '~ts'.",
+                        [ BinCertDir ] ),
 
-			% A LEEC instance will be started by each (independent) certificate
-			% manager, yet to avoid hitting the Let's Encrypt rate limits, they
-			% will all rely on a single ACME account, whose TLS private key is
-			% created once for all - unless it already exists:
+            % A LEEC instance will be started by each (independent) certificate
+            % manager, yet to avoid hitting the Let's Encrypt rate limits, they
+            % will all rely on a single ACME account, whose TLS private key is
+            % created once for all - unless it already exists:
 
-			BinTargetKeyPath =
-				file_utils:bin_join( BinCertDir, ?leec_key_filename ),
+            BinTargetKeyPath =
+                file_utils:bin_join( BinCertDir, ?leec_key_filename ),
 
-			BinKeyPath = case file_utils:is_existing_file_or_link(
-					BinTargetKeyPath ) of
+            BinKeyPath = case file_utils:is_existing_file_or_link(
+                    BinTargetKeyPath ) of
 
-				true ->
-					?debug_fmt( "A pre-existing TLS private key for the US-Web "
-						"LEEC agent has been found (as '~ts'), it will be "
-						"re-used.", [ BinTargetKeyPath ] ),
-					BinTargetKeyPath;
+                true ->
+                    ?debug_fmt( "A pre-existing TLS private key for the US-Web "
+                        "LEEC agent has been found (as '~ts'), it will be "
+                        "re-used.", [ BinTargetKeyPath ] ),
+                    BinTargetKeyPath;
 
-				false ->
+                false ->
 
-					?debug_fmt( "No pre-existing TLS private key for the US-Web"
-						" LEEC agent has been found (searched for '~ts'), "
-						"generating it now.", [ BinTargetKeyPath ] ),
+                    ?debug_fmt( "No pre-existing TLS private key for the US-Web"
+                        " LEEC agent has been found (searched for '~ts'), "
+                        "generating it now.", [ BinTargetKeyPath ] ),
 
-					PrivKey = leec_tls:obtain_private_key(
-						{ new, ?leec_key_filename }, BinCertDir ),
+                    PrivKey = leec_tls:obtain_private_key(
+                        { new, ?leec_key_filename }, BinCertDir ),
 
-					PrivKey#tls_private_key.file_path
+                    PrivKey#tls_private_key.file_path
 
-			end,
+            end,
 
-			BinDHKeyPath = leec_tls:obtain_dh_key( BinCertDir ),
+            BinDHKeyPath = leec_tls:obtain_dh_key( BinCertDir ),
 
-			BinCAKeyPath = leec_tls:obtain_ca_cert_file( BinCertDir,
-														 get_http_options() ),
+            BinCAKeyPath = leec_tls:obtain_ca_cert_file( BinCertDir,
+                                                         get_http_options() ),
 
-			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
-				"CA (Certificate Authority) key path is '~ts'.",
-				[ BinDHKeyPath, BinCAKeyPath ] ),
+            ?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
+                "CA (Certificate Authority) key path is '~ts'.",
+                [ BinDHKeyPath, BinCAKeyPath ] ),
 
-			{ BinKeyPath, BinDHKeyPath, BinCAKeyPath };
-
-
-		% Typically ChallengeType is 'dns-01' (hence certbot):
-		renew_certificates -> % when ChallengeType =:= 'http-01' ->
-			{ undefined, undefined, undefined };
+            { BinKeyPath, BinDHKeyPath, BinCAKeyPath };
 
 
-		use_existing_certificates ->
-
-			% A DH file would be still needed, for key exchanges if wanting
-			% later to have these updated:
-			%
-			%BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
-			BinDHKeyPath = undefined,
-
-			% Not sure relevant here (probably depending on certificate being
-			% full-chain ones):
-			%
-			%BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
-			%                                             get_http_options() ),
-			BinCAKeyPath = undefined,
-
-			?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
-				"CA (Certificate Authority) key path is '~ts'.",
-				[ BinDHKeyPath, BinCAKeyPath ] ),
-
-			{ undefined, BinDHKeyPath, BinCAKeyPath };
+        % Typically ChallengeType is 'dns-01' (hence certbot):
+        renew_certificates -> % when ChallengeType =:= 'http-01' ->
+            { undefined, undefined, undefined };
 
 
-		no_certificates ->
-			{ undefined, undefined, undefined }
+        use_existing_certificates ->
 
-	end,
+            % A DH file would be still needed, for key exchanges if wanting
+            % later to have these updated:
+            %
+            %BinDHKeyPath = leec_tls:obtain_dh_key( CertDir ),
+            BinDHKeyPath = undefined,
 
-	% Especially useful with a certbot-based dns-01 challenge to correctly
-	% manage expiration times and schedule renewals:
-	%
-	CertSupport =:= renew_certificates andalso
-		leec:reset_state( ChallengeType, BinCertDir ),
+            % Not sure relevant here (probably depending on certificate being
+            % full-chain ones):
+            %
+            %BinCAKeyPath = leec_tls:obtain_ca_cert_file( CertDir,
+            %                                             get_http_options() ),
+            BinCAKeyPath = undefined,
 
-	setAttributes( State, [ { cert_support, CertSupport },
-							{ cert_mode, CertMode },
-							{ challenge_type, ChallengeType },
-							{ dns_provider, MaybeDNSProvider },
-							{ credentials_directory, BinCfgBaseDir },
-							{ cert_directory, BinCertDir },
-							{ leec_agents_key_path, MaybeBinKeyPath },
-							{ dh_key_path, MaybeDHKeyPath },
-							{ ca_cert_key_path, MaybeBinCaKeyPath } ] ).
+            ?debug_fmt( "DH (Diffie-Helman) key path is '~ts', "
+                "CA (Certificate Authority) key path is '~ts'.",
+                [ BinDHKeyPath, BinCAKeyPath ] ),
+
+            { undefined, BinDHKeyPath, BinCAKeyPath };
+
+
+        no_certificates ->
+            { undefined, undefined, undefined }
+
+    end,
+
+    % Especially useful with a certbot-based dns-01 challenge to correctly
+    % manage expiration times and schedule renewals:
+    %
+    CertSupport =:= renew_certificates andalso
+        leec:reset_state( ChallengeType, BinCertDir ),
+
+    setAttributes( State, [ { cert_support, CertSupport },
+                            { cert_mode, CertMode },
+                            { challenge_type, ChallengeType },
+                            { dns_provider, MaybeDNSProvider },
+                            { credentials_directory, BinCfgBaseDir },
+                            { cert_directory, BinCertDir },
+                            { leec_agents_key_path, MaybeBinKeyPath },
+                            { dh_key_path, MaybeDHKeyPath },
+                            { ca_cert_key_path, MaybeBinCaKeyPath } ] ).
 
 
 
@@ -2870,288 +2870,288 @@ manage_certificates( BinCfgBaseDir, ConfigTable, State ) ->
 -spec manage_routes( us_web_config_table(), wooper:state() ) -> wooper:state().
 manage_routes( ConfigTable, State ) ->
 
-	BinLogDir = ?getAttr(log_directory),
+    BinLogDir = ?getAttr(log_directory),
 
-	UserRoutes = case table:lookup_entry( ?routes_key, ConfigTable ) of
+    UserRoutes = case table:lookup_entry( ?routes_key, ConfigTable ) of
 
-		key_not_found ->
-			?warning( "No user-specified dispatch route, defaulting to "
-					  "none specific (probably useless then)." ),
-			[];
+        key_not_found ->
+            ?warning( "No user-specified dispatch route, defaulting to "
+                      "none specific (probably useless then)." ),
+            [];
 
-		{ value, Routes } when is_list( Routes ) ->
-			?info_fmt( "Using user-specified dispatch routes:~n~p",
-					   [ Routes ] ),
-			Routes;
+        { value, Routes } when is_list( Routes ) ->
+            ?info_fmt( "Using user-specified dispatch routes:~n~p",
+                       [ Routes ] ),
+            Routes;
 
-		{ value, InvalidRoutes } ->
-			?error_fmt( "Invalid (non-list) user-specified dispatch routes:"
-						"~n~p", [ InvalidRoutes ] ),
-			throw( { invalid_dispatch_routes, InvalidRoutes, routes } )
+        { value, InvalidRoutes } ->
+            ?error_fmt( "Invalid (non-list) user-specified dispatch routes:"
+                        "~n~p", [ InvalidRoutes ] ),
+            throw( { invalid_dispatch_routes, InvalidRoutes, routes } )
 
-	end,
+    end,
 
-	SchedulerPid = ?getAttr(us_web_scheduler_pid),
+    SchedulerPid = ?getAttr(us_web_scheduler_pid),
 
-	CertSupport = ?getAttr(cert_support),
+    CertSupport = ?getAttr(cert_support),
 
-	CertDir = ?getAttr(cert_directory),
+    CertDir = ?getAttr(cert_directory),
 
-	% Only routes expected to remain (so we check that no extraneous entry
-	% remains, see end of load_web_config/3):
-	%
-	{ DomainCfgTable, DispatchRoutes, ProcessState } = process_domain_info(
-		UserRoutes, BinLogDir, ?getAttr(default_web_root),
-		?getAttr(log_analysis_settings), CertSupport,
-		?getAttr(cert_mode), CertDir, ?getAttr(leec_agents_key_path),
-		SchedulerPid, State ),
+    % Only routes expected to remain (so we check that no extraneous entry
+    % remains, see end of load_web_config/3):
+    %
+    { DomainCfgTable, DispatchRoutes, ProcessState } = process_domain_info(
+        UserRoutes, BinLogDir, ?getAttr(default_web_root),
+        ?getAttr(log_analysis_settings), CertSupport,
+        ?getAttr(cert_mode), CertDir, ?getAttr(leec_agents_key_path),
+        SchedulerPid, State ),
 
-	case getAttribute( ProcessState, nitrogen_roots ) of
+    case getAttribute( ProcessState, nitrogen_roots ) of
 
-		[] ->
-			?debug( "Nitrogen not enabled, hence not initialised." );
+        [] ->
+            ?debug( "Nitrogen not enabled, hence not initialised." );
 
-		NitroRoots ->
-			?info_fmt( "Initializing Nitrogen for the following corresponding "
-				"content-root: ~ts",
-				[ text_utils:binaries_to_binary( NitroRoots ) ] ),
+        NitroRoots ->
+            ?info_fmt( "Initializing Nitrogen for the following corresponding "
+                "content-root: ~ts",
+                [ text_utils:binaries_to_binary( NitroRoots ) ] ),
 
-			initialise_nitrogen_for_contents( NitroRoots, State )
+            initialise_nitrogen_for_contents( NitroRoots, State )
 
-	end,
+    end,
 
-	% TLS configuration for any https support:
-	MaybeHttpsTranspInfo = case CertSupport of
+    % TLS configuration for any https support:
+    MaybeHttpsTranspInfo = case CertSupport of
 
-		no_certificates ->
-			undefined;
+        no_certificates ->
+            undefined;
 
-		_ ->
-			TranspInfos = class_USCertificateManager:get_https_transport_info(
-				UserRoutes, CertDir ),
+        _ ->
+            TranspInfos = class_USCertificateManager:get_https_transport_info(
+                UserRoutes, CertDir ),
 
-			?debug_fmt( "HTTPS transport information are:~n  ~p.",
-						[ TranspInfos ] ),
+            ?debug_fmt( "HTTPS transport information are:~n  ~p.",
+                        [ TranspInfos ] ),
 
-			TranspInfos
+            TranspInfos
 
-	end,
+    end,
 
-	% Now that all loggers are created, we gather their PID so that they are
-	% managed by a task ring, in order to synchronise them properly:
-	%
-	AllLoggerPids = get_all_logger_pids_from( DomainCfgTable ),
+    % Now that all loggers are created, we gather their PID so that they are
+    % managed by a task ring, in order to synchronise them properly:
+    %
+    AllLoggerPids = get_all_logger_pids_from( DomainCfgTable ),
 
-	basic_utils:check_all_defined( AllLoggerPids ),
+    basic_utils:check_all_defined( AllLoggerPids ),
 
-	TaskPeriod = class_USWebLogger:get_default_log_rotation_period(),
+    TaskPeriod = class_USWebLogger:get_default_log_rotation_period(),
 
-	TaskRingPid = class_USTaskRing:new_link( _RingName="US-Web Logger Ring",
-		_Actuators=AllLoggerPids, _TaskRequestName=rotateLogsAltSync,
-		_TaskRequestArgs=[], TaskPeriod, _ScheduleCount=unlimited,
-		SchedulerPid ),
+    TaskRingPid = class_USTaskRing:new_link( _RingName="US-Web Logger Ring",
+        _Actuators=AllLoggerPids, _TaskRequestName=rotateLogsAltSync,
+        _TaskRequestArgs=[], TaskPeriod, _ScheduleCount=unlimited,
+        SchedulerPid ),
 
-	DispatchRules = cowboy_router:compile( DispatchRoutes ),
+    DispatchRules = cowboy_router:compile( DispatchRoutes ),
 
-	?debug_fmt( "The US-Web specified base dispatch routes are:~n  ~p.~n~n~n"
-		"They correspond, once compiled, to the following dispatch "
-		"rules:~n  ~p.", [ DispatchRoutes, DispatchRules ] ),
+    ?debug_fmt( "The US-Web specified base dispatch routes are:~n  ~p.~n~n~n"
+        "They correspond, once compiled, to the following dispatch "
+        "rules:~n  ~p.", [ DispatchRoutes, DispatchRules ] ),
 
-	setAttributes( ProcessState, [
-		{ domain_config_table, DomainCfgTable },
-		{ dispatch_routes, DispatchRoutes },
-		{ dispatch_rules, DispatchRules },
-		{ logger_task_ring, TaskRingPid },
-		{ https_transp_info, MaybeHttpsTranspInfo } ] ).
+    setAttributes( ProcessState, [
+        { domain_config_table, DomainCfgTable },
+        { dispatch_routes, DispatchRoutes },
+        { dispatch_rules, DispatchRules },
+        { logger_task_ring, TaskRingPid },
+        { https_transp_info, MaybeHttpsTranspInfo } ] ).
 
 
 
 -doc "Initialises Nitrogen for the specified content roots.".
 -spec initialise_nitrogen_for_contents( [ bin_directory_path() ],
-										wooper:state() ) -> void().
+                                        wooper:state() ) -> void().
 initialise_nitrogen_for_contents( _ContentRoots=[], _State ) ->
-	% Weird but ok:
-	ok;
+    % Weird but ok:
+    ok;
 
 initialise_nitrogen_for_contents( _Single=[ BinContentRoot ], State ) ->
 
-	% Taking care first of that target Nitrogen-based site:
+    % Taking care first of that target Nitrogen-based site:
 
-	% Conventional layout:
-	NitroContentEbin =
-		file_utils:bin_join( [ BinContentRoot, "site", "ebin" ] ),
+    % Conventional layout:
+    NitroContentEbin =
+        file_utils:bin_join( [ BinContentRoot, "site", "ebin" ] ),
 
-	case file_utils:is_existing_directory_or_link( NitroContentEbin ) of
+    case file_utils:is_existing_directory_or_link( NitroContentEbin ) of
 
-		true ->
-			code_utils:declare_beam_directory( NitroContentEbin );
+        true ->
+            code_utils:declare_beam_directory( NitroContentEbin );
 
-		false ->
-			?error_fmt( "Unable to find the ebin directory for the Nitrogen "
-						"content root '~ts'.", [ BinContentRoot ] ),
-			throw( { no_ebin, text_utils:binary_to_string( BinContentRoot ) } )
+        false ->
+            ?error_fmt( "Unable to find the ebin directory for the Nitrogen "
+                        "content root '~ts'.", [ BinContentRoot ] ),
+            throw( { no_ebin, text_utils:binary_to_string( BinContentRoot ) } )
 
-	end,
+    end,
 
-	% At its core (logic, cache, through all relative paths), Nitrogen always
-	% considers that the current directory of the VM matches the root directory
-	% of the (single) web application (the one that contains the 'site'
-	% subtree); so we have to change the US-Web current directory accordingly:
-	% (otherwise: template_not_found for <<"./site/templates/bare.html">>, etc.)
-	%
-	file_utils:set_current_directory( BinContentRoot ),
+    % At its core (logic, cache, through all relative paths), Nitrogen always
+    % considers that the current directory of the VM matches the root directory
+    % of the (single) web application (the one that contains the 'site'
+    % subtree); so we have to change the US-Web current directory accordingly:
+    % (otherwise: template_not_found for <<"./site/templates/bare.html">>, etc.)
+    %
+    file_utils:set_current_directory( BinContentRoot ),
 
-	% Now, general initialisation for Nitrogen:
+    % Now, general initialisation for Nitrogen:
 
-	% Something akin to MY_SITE/etc/simple_bridge.config should be
-	% probably set, otherwise:
+    % Something akin to MY_SITE/etc/simple_bridge.config should be
+    % probably set, otherwise:
 
-	%[error][erlang_logger]     label: {proc_lib,crash}
-	%    report: [[{initial_call,
-	%                  {cowboy_stream_h,request_process,
-	%                    ['Argument__1','Argument__2','Argument__3']}},
-	%              {pid,<0.218.0>},
-	%              {registered_name,[]},
-	%              {error_info,
-	%                  {error,undef,
-	%                      [{undefined,run,
-	%                           [{sbw,cowboy_simple_bridge,
-	%                               {cowboy_bridge,
+    %[error][erlang_logger]     label: {proc_lib,crash}
+    %    report: [[{initial_call,
+    %                  {cowboy_stream_h,request_process,
+    %                    ['Argument__1','Argument__2','Argument__3']}},
+    %              {pid,<0.218.0>},
+    %              {registered_name,[]},
+    %              {error_info,
+    %                  {error,undef,
+    %                      [{undefined,run,
+    %                           [{sbw,cowboy_simple_bridge,
+    %                               {cowboy_bridge,
 
-	Settings = [ { handler, nitrogen }, { backend, cowboy },
-				 { max_post_size, 10 }, { max_file_size, 10 },
-				 { max_file_in_memory_size, 0 },
-				 { scratch_dir, "./scratch" } ],
+    Settings = [ { handler, nitrogen }, { backend, cowboy },
+                 { max_post_size, 10 }, { max_file_size, 10 },
+                 { max_file_in_memory_size, 0 },
+                 { scratch_dir, "./scratch" } ],
 
-	[ ok = application:set_env( _App=simple_bridge, Param, Value,
-								_Opts=[ { persistent, true } ] )
-				|| { Param, Value } <- Settings ],
+    [ ok = application:set_env( _App=simple_bridge, Param, Value,
+                                _Opts=[ { persistent, true } ] )
+                || { Param, Value } <- Settings ],
 
-	%[notice][erlang_logger]     args: [{throw,
-	%               {handler_not_found_in_context,crash_handler,
-	%     {handler_context,config_handler,default_config_handler,
-	%                        undefined,[]},
-	%              {handler_context,log_handler,default_log_handler,
-	%                        undefined,[]},
-	%                    {handler_context,process_registry_handler,
-	%                        nprocreg_registry_handler,undefined,[]}]},
-	%               [{wf_handler,get_handler,1,
-	%                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
+    %[notice][erlang_logger]     args: [{throw,
+    %               {handler_not_found_in_context,crash_handler,
+    %     {handler_context,config_handler,default_config_handler,
+    %                        undefined,[]},
+    %              {handler_context,log_handler,default_log_handler,
+    %                        undefined,[]},
+    %                    {handler_context,process_registry_handler,
+    %                        nprocreg_registry_handler,undefined,[]}]},
+    %               [{wf_handler,get_handler,1,
+    %                    [{file,"src/lib/wf_handler.erl"},{line,92}]},
 
-	% We take care explicitly of the Nitrogen-related dependencies, as they are
-	% optional (US-Web may not host a Nitrogen-based website) and would be
-	% difficult to integrate on the general scheme implemented by otp_utils
-	% (that for example would have to locate
-	% nitrogen_core/deps/nprocreg/ebin/nprocreg.app).
-	% So:
+    % We take care explicitly of the Nitrogen-related dependencies, as they are
+    % optional (US-Web may not host a Nitrogen-based website) and would be
+    % difficult to integrate on the general scheme implemented by otp_utils
+    % (that for example would have to locate
+    % nitrogen_core/deps/nprocreg/ebin/nprocreg.app).
+    % So:
 
-	%OtherPrereqApps = otp_utils:prepare_for_execution( nitrogen_core,
-	%                                                   BinContentRoot ),
+    %OtherPrereqApps = otp_utils:prepare_for_execution( nitrogen_core,
+    %                                                   BinContentRoot ),
 
-	%?debug_fmt( "Other prerequisite applications: ~p.",
-	%            [ OtherPrereqApps ] ),
+    %?debug_fmt( "Other prerequisite applications: ~p.",
+    %            [ OtherPrereqApps ] ),
 
-	UsWebBaseDir = ?getAttr(app_base_directory),
-
-
-	% Parent directory ("..")of us_web specifically useful for nitrogen_core,
-	% typically deployed as a sibling clone (whereas other Nitrogen-related
-	% dependencies are in nitrogen_core/deps).
-	%
-	% Order matters, checkouts are prioritary; :
-	BaseDepsDirs = [ file_utils:join( UsWebBaseDir, Subdir )
-		|| Subdir <- [ "_checkouts", "_build/default/lib", ".." ] ],
-
-	% Needed early, as its dependencies are located inside its own build tree,
-	% in its 'deps' directory:
-	%
-	NitrogenCoreBaseDir = file_utils:get_first_existing_directory_in(
-		[ file_utils:join( BaseDir, "nitrogen_core" )
-				|| BaseDir <- BaseDepsDirs ] ),
-
-	NitrogenCoreDepsDir = file_utils:join( NitrogenCoreBaseDir, "deps" ),
-
-	AllBaseDepsDirs= [ NitrogenCoreDepsDir | BaseDepsDirs ],
-
-	% So that at least nitro_cache.app can be found:
-	NitroCacheDir = file_utils:get_first_existing_directory_in(
-		[ file_utils:join( BaseDir, "nitro_cache/ebin" )
-				|| BaseDir <- AllBaseDepsDirs ] ),
-
-	code_utils:declare_beam_directory( NitroCacheDir ),
-
-	?debug_fmt( "Starting nitro_cache (whose selected ebin is '~ts').",
-				[ NitroCacheDir ] ),
-
-	otp_utils:start_application( nitro_cache ),
+    UsWebBaseDir = ?getAttr(app_base_directory),
 
 
-	% Same for nprocreg:
-	NprocregDir = file_utils:get_first_existing_directory_in(
-		[ file_utils:join( BaseDir, "nprocreg/ebin" )
-				|| BaseDir <- AllBaseDepsDirs ] ),
+    % Parent directory ("..")of us_web specifically useful for nitrogen_core,
+    % typically deployed as a sibling clone (whereas other Nitrogen-related
+    % dependencies are in nitrogen_core/deps).
+    %
+    % Order matters, checkouts are prioritary; :
+    BaseDepsDirs = [ file_utils:join( UsWebBaseDir, Subdir )
+        || Subdir <- [ "_checkouts", "_build/default/lib", ".." ] ],
 
-	code_utils:declare_beam_directory( NprocregDir ),
+    % Needed early, as its dependencies are located inside its own build tree,
+    % in its 'deps' directory:
+    %
+    NitrogenCoreBaseDir = file_utils:get_first_existing_directory_in(
+        [ file_utils:join( BaseDir, "nitrogen_core" )
+                || BaseDir <- BaseDepsDirs ] ),
 
-	?debug_fmt( "Starting nprocreg (whose selected ebin is '~ts').",
-				[ NprocregDir ] ),
+    NitrogenCoreDepsDir = file_utils:join( NitrogenCoreBaseDir, "deps" ),
 
-	otp_utils:start_application( nprocreg ),
+    AllBaseDepsDirs= [ NitrogenCoreDepsDir | BaseDepsDirs ],
 
-	% Same for nitrogen_core:
-	NitrogenCoreDir = file_utils:join( NitrogenCoreBaseDir, "ebin" ),
+    % So that at least nitro_cache.app can be found:
+    NitroCacheDir = file_utils:get_first_existing_directory_in(
+        [ file_utils:join( BaseDir, "nitro_cache/ebin" )
+                || BaseDir <- AllBaseDepsDirs ] ),
 
-	code_utils:declare_beam_directory( NitrogenCoreDir ),
+    code_utils:declare_beam_directory( NitroCacheDir ),
 
-	?debug_fmt( "Starting nitrogen_core (whose selected ebin is '~ts').",
-				[ NitrogenCoreDir ] ),
+    ?debug_fmt( "Starting nitro_cache (whose selected ebin is '~ts').",
+                [ NitroCacheDir ] ),
 
-	otp_utils:start_application( nitrogen_core ),
-
-
-	% Same for simple_bridge (which requires nitrogen.beam, found in
-	% nitrogen_core):
-	%
-	SimpleBridgeDir = file_utils:get_first_existing_directory_in(
-		[ file_utils:join( BaseDir, "simple_bridge/ebin" )
-				|| BaseDir <- AllBaseDepsDirs ] ),
-
-	code_utils:declare_beam_directory( SimpleBridgeDir ),
-
-	?debug_fmt( "Starting simple_bridge (whose selected ebin is '~ts').",
-				[ SimpleBridgeDir ] ),
-
-	otp_utils:start_application( simple_bridge ),
+    otp_utils:start_application( nitro_cache ),
 
 
-	% Same for Nitrogen itself (which we believe is not needed here):
-	%NitrogenDir = file_utils:get_first_existing_directory_in(
-	%   [ file_utils:join( BaseDir, "nitrogen/ebin" )
-	%           || BaseDir <- AllBaseDepsDirs ] ),
+    % Same for nprocreg:
+    NprocregDir = file_utils:get_first_existing_directory_in(
+        [ file_utils:join( BaseDir, "nprocreg/ebin" )
+                || BaseDir <- AllBaseDepsDirs ] ),
 
-	%code_utils:declare_beam_directory( NitrogenDir ),
+    code_utils:declare_beam_directory( NprocregDir ),
 
-	%?debug_fmt( "Starting nitrogen (whose selected ebin is '~ts').",
-	%            [ NitrogenDir ] ),
+    ?debug_fmt( "Starting nprocreg (whose selected ebin is '~ts').",
+                [ NprocregDir ] ),
 
-	%otp_utils:start_application( nitrogen ),
+    otp_utils:start_application( nprocreg ),
+
+    % Same for nitrogen_core:
+    NitrogenCoreDir = file_utils:join( NitrogenCoreBaseDir, "ebin" ),
+
+    code_utils:declare_beam_directory( NitrogenCoreDir ),
+
+    ?debug_fmt( "Starting nitrogen_core (whose selected ebin is '~ts').",
+                [ NitrogenCoreDir ] ),
+
+    otp_utils:start_application( nitrogen_core ),
 
 
-	% As suggested by Nitrogen's 'embed' script:
-	%nitrogen_sup:start_link(),
+    % Same for simple_bridge (which requires nitrogen.beam, found in
+    % nitrogen_core):
+    %
+    SimpleBridgeDir = file_utils:get_first_existing_directory_in(
+        [ file_utils:join( BaseDir, "simple_bridge/ebin" )
+                || BaseDir <- AllBaseDepsDirs ] ),
 
-	ok;
+    code_utils:declare_beam_directory( SimpleBridgeDir ),
+
+    ?debug_fmt( "Starting simple_bridge (whose selected ebin is '~ts').",
+                [ SimpleBridgeDir ] ),
+
+    otp_utils:start_application( simple_bridge ),
+
+
+    % Same for Nitrogen itself (which we believe is not needed here):
+    %NitrogenDir = file_utils:get_first_existing_directory_in(
+    %   [ file_utils:join( BaseDir, "nitrogen/ebin" )
+    %           || BaseDir <- AllBaseDepsDirs ] ),
+
+    %code_utils:declare_beam_directory( NitrogenDir ),
+
+    %?debug_fmt( "Starting nitrogen (whose selected ebin is '~ts').",
+    %            [ NitrogenDir ] ),
+
+    %otp_utils:start_application( nitrogen ),
+
+
+    % As suggested by Nitrogen's 'embed' script:
+    %nitrogen_sup:start_link(),
+
+    ok;
 
 
 initialise_nitrogen_for_contents( ContentRoots, State ) ->
 
-	?error_fmt( "Multiple Nitrogen content roots have been specified (~ts), "
-		"whereas at least currenly only a single one can be supported "
-		"(otherwise the BEAM of the various page modules will clash "
-		"in the code path).",
-		[ text_utils:strings_to_listed_string( ContentRoots ) ] ),
+    ?error_fmt( "Multiple Nitrogen content roots have been specified (~ts), "
+        "whereas at least currenly only a single one can be supported "
+        "(otherwise the BEAM of the various page modules will clash "
+        "in the code path).",
+        [ text_utils:strings_to_listed_string( ContentRoots ) ] ),
 
-	throw( { multiple_nitrogen_roots, ContentRoots } ).
+    throw( { multiple_nitrogen_roots, ContentRoots } ).
 
 
 
@@ -3159,89 +3159,89 @@ initialise_nitrogen_for_contents( ContentRoots, State ) ->
 -spec manage_post_meta( wooper:state() ) -> wooper:state().
 manage_post_meta( State ) ->
 
-	% Is meta enabled?
-	case ?getAttr(meta_web_settings) of
+    % Is meta enabled?
+    case ?getAttr(meta_web_settings) of
 
-		undefined ->
-			State;
+        undefined ->
+            State;
 
-		MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot } ->
+        MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot } ->
 
-			% Is web analysis enabled?
-			LogAnalysisEnabled = case ?getAttr(log_analysis_settings) of
+            % Is web analysis enabled?
+            LogAnalysisEnabled = case ?getAttr(log_analysis_settings) of
 
-				undefined ->
-					false;
+                undefined ->
+                    false;
 
-				{ _ToolName=awstats, BinAnalysisToolRoot,
-				  _BinAnalysisHelperRoot } ->
+                { _ToolName=awstats, BinAnalysisToolRoot,
+                  _BinAnalysisHelperRoot } ->
 
-					% Copies first, in meta web root (now known), the icons to
-					% be used by the generated pages:
-					%
-					IconDir = file_utils:join( BinAnalysisToolRoot, "icon" ),
+                    % Copies first, in meta web root (now known), the icons to
+                    % be used by the generated pages:
+                    %
+                    IconDir = file_utils:join( BinAnalysisToolRoot, "icon" ),
 
-					true = file_utils:is_existing_directory_or_link( IconDir ),
+                    true = file_utils:is_existing_directory_or_link( IconDir ),
 
-					% BinMetaContentRoot already known to exist:
-					try
+                    % BinMetaContentRoot already known to exist:
+                    try
 
-						file_utils:copy_tree( IconDir, BinMetaContentRoot )
+                        file_utils:copy_tree( IconDir, BinMetaContentRoot )
 
-					catch
+                    catch
 
-						E={ copy_tree_failed, _PathPair, _ExitCode=1,
-							ErrorOutput } ->
-							trace_utils:error_fmt(
-								"Unable to copy Awstats icons: "
-								"one may try \"chmod -R +r '~ts'\" to fix "
-								"permissions.~nError message was: ~ts.",
-								[ IconDir, ErrorOutput ] ),
-							throw( E )
+                        E={ copy_tree_failed, _PathPair, _ExitCode=1,
+                            ErrorOutput } ->
+                            trace_utils:error_fmt(
+                                "Unable to copy Awstats icons: "
+                                "one may try \"chmod -R +r '~ts'\" to fix "
+                                "permissions.~nError message was: ~ts.",
+                                [ IconDir, ErrorOutput ] ),
+                            throw( E )
 
-					end,
-					true
+                    end,
+                    true
 
-			end,
+            end,
 
-			generate_meta( MetaWebSettings, LogAnalysisEnabled,
-						   ?getAttr(domain_config_table), State )
+            generate_meta( MetaWebSettings, LogAnalysisEnabled,
+                           ?getAttr(domain_config_table), State )
 
-	end.
+    end.
 
 
 
 -doc "Generates the meta website.".
 -spec generate_meta( meta_web_settings(), boolean(), domain_config_table(),
-					 wooper:state() ) -> wooper:state().
+                     wooper:state() ) -> wooper:state().
 generate_meta( MetaWebSettings={ _DomainId, _BinVHost, BinMetaContentRoot },
-			   LogAnalysisEnabled, DomainCfgTable, State ) ->
+               LogAnalysisEnabled, DomainCfgTable, State ) ->
 
-	?debug_fmt( "Generating meta website in '~ts'.", [ BinMetaContentRoot ] ),
+    ?debug_fmt( "Generating meta website in '~ts'.", [ BinMetaContentRoot ] ),
 
-	IndexPath = file_utils:join( BinMetaContentRoot, "index.html" ),
+    IndexPath = file_utils:join( BinMetaContentRoot, "index.html" ),
 
-	{ Scheme, WebPort } = case ?getAttr(cert_support) of
+    { Scheme, WebPort } = case ?getAttr(cert_support) of
 
-		no_certificates ->
-			{ http, ?getAttr(http_tcp_port) };
+        no_certificates ->
+            { http, ?getAttr(http_tcp_port) };
 
-		_ ->
-			{ https, ?getAttr(https_tcp_port) }
+        _ ->
+            { https, ?getAttr(https_tcp_port) }
 
-	end,
+    end,
 
-	StartTimestamp = time_utils:gregorian_ms_to_timestamp(
-		?getAttr(server_gregorian_start) ),
+    StartTimestamp = time_utils:gregorian_ms_to_timestamp(
+        ?getAttr(server_gregorian_start) ),
 
-	IndexContent = us_web_meta:get_page_header()
-		++ us_web_meta:get_page_body( Scheme, WebPort, DomainCfgTable,
-			StartTimestamp, MetaWebSettings, LogAnalysisEnabled )
-		++ us_web_meta:get_page_footer(),
+    IndexContent = us_web_meta:get_page_header()
+        ++ us_web_meta:get_page_body( Scheme, WebPort, DomainCfgTable,
+            StartTimestamp, MetaWebSettings, LogAnalysisEnabled )
+        ++ us_web_meta:get_page_footer(),
 
-	file_utils:write_whole( IndexPath, IndexContent ),
+    file_utils:write_whole( IndexPath, IndexContent ),
 
-	State.
+    State.
 
 
 
@@ -3255,47 +3255,47 @@ Encrypt based on a DNS challenge, which is not supported by LEEC.
 """.
 -spec get_san_list( [ vhost_info() ], domain_name() ) -> [ bin_san() ].
 get_san_list( VHostInfos, DomainName ) ->
-	% Now we pre-collect the names of all virtual hosts (e.g. the *.foobar.org),
-	% so that the certificate for the corresponding domain (the vhost catch-all,
-	% e.g. for foobar.org) can list them as SANs (Subject Alternative Names):
-	%
-	get_san_list( VHostInfos, DomainName, _Acc=[] ).
+    % Now we pre-collect the names of all virtual hosts (e.g. the *.foobar.org),
+    % so that the certificate for the corresponding domain (the vhost catch-all,
+    % e.g. for foobar.org) can list them as SANs (Subject Alternative Names):
+    %
+    get_san_list( VHostInfos, DomainName, _Acc=[] ).
 
 
 % (helper)
 get_san_list( _VHostInfos=[], _DomainName, Acc ) ->
-	% Preferred order:
-	lists:reverse( Acc );
+    % Preferred order:
+    lists:reverse( Acc );
 
 get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 
-	% All virtual hosts are tuples whose first element is their identifier,
-	% either a plain string or default_vhost_catch_all:
-	%
-	VHostId = element( 1, VHInfo ),
+    % All virtual hosts are tuples whose first element is their identifier,
+    % either a plain string or default_vhost_catch_all:
+    %
+    VHostId = element( 1, VHInfo ),
 
-	case VHostId of
+    case VHostId of
 
-		without_vhost ->
-			% See comment of next clause:
-			get_san_list( T, DomainName, Acc );
+        without_vhost ->
+            % See comment of next clause:
+            get_san_list( T, DomainName, Acc );
 
-		default_vhost_catch_all ->
-			% We used to include the root domain by itself among the SANs as
-			% others do, although it shall be the reference name of the
-			% certificate, hence not a SAN; anyway if this operation is useful,
-			% it shall be done directly in LEEC, not here, so:
-			%
-			%BinSan = text_utils:string_to_binary( DomainName ),
-			%get_san_list( T, DomainName, [ BinSan | Acc ] );
-			get_san_list( T, DomainName, Acc );
+        default_vhost_catch_all ->
+            % We used to include the root domain by itself among the SANs as
+            % others do, although it shall be the reference name of the
+            % certificate, hence not a SAN; anyway if this operation is useful,
+            % it shall be done directly in LEEC, not here, so:
+            %
+            %BinSan = text_utils:string_to_binary( DomainName ),
+            %get_san_list( T, DomainName, [ BinSan | Acc ] );
+            get_san_list( T, DomainName, Acc );
 
-		VHostname ->
-			BinSan = text_utils:bin_format( "~ts.~ts",
-											[ VHostname, DomainName ] ),
-			get_san_list( T, DomainName, [ BinSan | Acc ] )
+        VHostname ->
+            BinSan = text_utils:bin_format( "~ts.~ts",
+                                            [ VHostname, DomainName ] ),
+            get_san_list( T, DomainName, [ BinSan | Acc ] )
 
-	end.
+    end.
 
 
 
@@ -3306,16 +3306,16 @@ get_san_list( _VHostInfos=[ VHInfo | T ], DomainName, Acc ) ->
 -doc "Returns the version of the US application being used.".
 -spec get_us_app_version() -> static_return( three_digit_version() ).
 get_us_app_version() ->
-	wooper:return_static(
-		basic_utils:parse_version( get_us_app_version_string() ) ).
+    wooper:return_static(
+        basic_utils:parse_version( get_us_app_version_string() ) ).
 
 
 
 -doc "Returns the version of the US application being used, as a string.".
 -spec get_us_app_version_string() -> static_return( ustring() ).
 get_us_app_version_string() ->
-	% As defined (uniquely) in GNUmakevars.inc:
-	wooper:return_static( ?us_app_version ).
+    % As defined (uniquely) in GNUmakevars.inc:
+    wooper:return_static( ?us_app_version ).
 
 
 -doc "Centralises the definition of the directory where to store all web logs.".
@@ -3343,11 +3343,11 @@ live process anymore).
 -spec get_server_pid () -> static_return( web_central_server_pid() ).
 get_server_pid() ->
 
-	WebCtrSrvPid = class_USServer:resolve_server_pid(
+    WebCtrSrvPid = class_USServer:resolve_server_pid(
         _RegName=?default_us_web_central_server_registration_name,
         _RegScope=?us_web_central_server_registration_scope ),
 
-	wooper:return_static( WebCtrSrvPid ).
+    wooper:return_static( WebCtrSrvPid ).
 
 
 
@@ -3359,54 +3359,54 @@ file, together with the path of this file.
 Static method, to be available from external code such as clients or tests.
 """.
 -spec get_configuration_table( class_USConfigServer:us_config_table(),
-							   bin_directory_path() ) ->
+                               bin_directory_path() ) ->
   static_return( diagnosed_fallible( { us_web_config_table(), file_path() } ) ).
 get_configuration_table( USCfgTable, BinCfgDir ) ->
 
-	% First, let's determine the name of the US-Web configuration file:
+    % First, let's determine the name of the US-Web configuration file:
 
-	% (lighter diagnose for checks as we are just in a client/test logic, not in
-	% the US-Web main one)
+    % (lighter diagnose for checks as we are just in a client/test logic, not in
+    % the US-Web main one)
 
-	Res = case class_USConfigServer:get_us_web_configuration_filename(
-			USCfgTable ) of
+    Res = case class_USConfigServer:get_us_web_configuration_filename(
+            USCfgTable ) of
 
-		{ ok, undefined } ->
-			ErrorMsg = "No US-Web configuration filename (for webservers and "
-				"virtual hosting) defined in US configuration",
-			{ error, { no_us_web_config_defined, ErrorMsg } };
+        { ok, undefined } ->
+            ErrorMsg = "No US-Web configuration filename (for webservers and "
+                "virtual hosting) defined in US configuration",
+            { error, { no_us_web_config_defined, ErrorMsg } };
 
-		{ ok, WebCfgFilename } ->
-			WebCfgFilePath = file_utils:join( BinCfgDir, WebCfgFilename ),
-			case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
+        { ok, WebCfgFilename } ->
+            WebCfgFilePath = file_utils:join( BinCfgDir, WebCfgFilename ),
+            case file_utils:is_existing_file_or_link( WebCfgFilePath ) of
 
-				true ->
-					%trace_bridge:info_fmt( "Reading the US-Web configuration "
-					%    "from '~ts'.", [ WebCfgFilePath ] ),
+                true ->
+                    %trace_bridge:info_fmt( "Reading the US-Web configuration "
+                    %    "from '~ts'.", [ WebCfgFilePath ] ),
 
-					% Ensures as well that all top-level terms are pairs indeed:
-					ConfigTable = table:new_from_unique_entries(
-						file_utils:read_etf_file( WebCfgFilePath ) ),
+                    % Ensures as well that all top-level terms are pairs indeed:
+                    ConfigTable = table:new_from_unique_entries(
+                        file_utils:read_etf_file( WebCfgFilePath ) ),
 
-					{ ok, { ConfigTable, WebCfgFilePath } };
+                    { ok, { ConfigTable, WebCfgFilePath } };
 
-				false ->
-					ErrorMsg = text_utils:format( "US-Web configuration "
-						"filename was defined in US configuration as '~ts', "
-						"resulting in path '~ts', which was found not existing",
-						[ WebCfgFilename, WebCfgFilePath ] ),
+                false ->
+                    ErrorMsg = text_utils:format( "US-Web configuration "
+                        "filename was defined in US configuration as '~ts', "
+                        "resulting in path '~ts', which was found not existing",
+                        [ WebCfgFilename, WebCfgFilePath ] ),
 
-					{ error, { { non_existing_us_web_config_file,
-								 WebCfgFilePath }, ErrorMsg } }
+                    { error, { { non_existing_us_web_config_file,
+                                 WebCfgFilePath }, ErrorMsg } }
 
-			end;
+            end;
 
-			E -> %{ error, _P } ->
-				E
+            E -> %{ error, _P } ->
+                E
 
-	end,
+    end,
 
-	wooper:return_static( Res ).
+    wooper:return_static( Res ).
 
 
 
@@ -3416,102 +3416,102 @@ Returns information about the naming registration of various US-Web servers.
 Static for sharing with clients, tests, etc.
 """.
 -spec get_registration_info( us_web_config_table() ) -> static_return(
-		fallible( { registration_name(), registration_scope(),
-					registration_name(), registration_scope(), ustring() } ) ).
+        fallible( { registration_name(), registration_scope(),
+                    registration_name(), registration_scope(), ustring() } ) ).
 get_registration_info( ConfigTable ) ->
 
-	CfgRegOutcome = case table:lookup_entry(
-			?us_web_central_server_registration_name_key, ConfigTable ) of
+    CfgRegOutcome = case table:lookup_entry(
+            ?us_web_central_server_registration_name_key, ConfigTable ) of
 
-		key_not_found ->
+        key_not_found ->
 
-			DefCfgRegName = ?default_us_web_central_server_registration_name,
+            DefCfgRegName = ?default_us_web_central_server_registration_name,
 
-			DefCfgMsg = text_utils:format( "No user-configured registration "
-				"name for the US-Web configuration server, defaulting to '~ts'",
-				[ DefCfgRegName ] ),
+            DefCfgMsg = text_utils:format( "No user-configured registration "
+                "name for the US-Web configuration server, defaulting to '~ts'",
+                [ DefCfgRegName ] ),
 
-			{ ok, DefCfgRegName, DefCfgMsg };
+            { ok, DefCfgRegName, DefCfgMsg };
 
-		{ value, UserCfgRegName } when is_atom( UserCfgRegName ) ->
+        { value, UserCfgRegName } when is_atom( UserCfgRegName ) ->
 
-			UserCfgMsg = text_utils:format( "Using user-configured "
-				"registration name for the US-Web configuration server, '~ts'",
-				[ UserCfgRegName ] ),
+            UserCfgMsg = text_utils:format( "Using user-configured "
+                "registration name for the US-Web configuration server, '~ts'",
+                [ UserCfgRegName ] ),
 
-			{ ok, UserCfgRegName, UserCfgMsg };
+            { ok, UserCfgRegName, UserCfgMsg };
 
-		{ value, InvalidCfgRegName } ->
+        { value, InvalidCfgRegName } ->
 
-			CfgErrorMsg = text_utils:format( "Invalid user-specified "
-				"registration name for the US-Web configuration server: '~p'.",
-				[ InvalidCfgRegName ] ),
+            CfgErrorMsg = text_utils:format( "Invalid user-specified "
+                "registration name for the US-Web configuration server: '~p'.",
+                [ InvalidCfgRegName ] ),
 
-			{ error, _DiagnosedError={ { invalid_web_config_registration_name,
-				InvalidCfgRegName,
-				?us_web_central_server_registration_name_key }, CfgErrorMsg } }
+            { error, _DiagnosedError={ { invalid_web_config_registration_name,
+                InvalidCfgRegName,
+                ?us_web_central_server_registration_name_key }, CfgErrorMsg } }
 
-	end,
+    end,
 
-	Res = case CfgRegOutcome of
+    Res = case CfgRegOutcome of
 
-		% No need to go further:
-		P={ error, _DiagnosedErr } ->
-			P;
+        % No need to go further:
+        P={ error, _DiagnosedErr } ->
+            P;
 
-		{ ok, CfgRegName, CfgMsg } ->
+        { ok, CfgRegName, CfgMsg } ->
 
-			% Name can be user-defined, scope is fixed:
-			CfgRegScope = ?us_web_central_server_registration_scope,
+            % Name can be user-defined, scope is fixed:
+            CfgRegScope = ?us_web_central_server_registration_scope,
 
-			SchedRegScope = ?us_web_scheduler_registration_scope,
+            SchedRegScope = ?us_web_scheduler_registration_scope,
 
-			case table:lookup_entry( ?us_web_scheduler_registration_name_key,
-									 ConfigTable ) of
+            case table:lookup_entry( ?us_web_scheduler_registration_name_key,
+                                     ConfigTable ) of
 
-				key_not_found ->
+                key_not_found ->
 
-					DefSchedRegName =
-						?default_us_web_scheduler_registration_name,
+                    DefSchedRegName =
+                        ?default_us_web_scheduler_registration_name,
 
-					FullMsg = text_utils:format( "~ts; no user-configured "
-						"registration name for the US-Web scheduler, "
-						"defaulting to '~ts'.", [ CfgMsg, DefSchedRegName ] ),
+                    FullMsg = text_utils:format( "~ts; no user-configured "
+                        "registration name for the US-Web scheduler, "
+                        "defaulting to '~ts'.", [ CfgMsg, DefSchedRegName ] ),
 
-					Info = { CfgRegName, CfgRegScope, DefSchedRegName,
-							 SchedRegScope, FullMsg },
+                    Info = { CfgRegName, CfgRegScope, DefSchedRegName,
+                             SchedRegScope, FullMsg },
 
-					{ ok, Info };
-
-
-				{ value, SchedRegName } when is_atom( SchedRegName ) ->
-
-					FullMsg = text_utils:format( "~ts; using user-configured "
-						"registration name for the US-Web scheduler, '~ts'.",
-						[ CfgMsg, SchedRegName ] ),
-
-					Info = { CfgRegName, CfgRegScope, SchedRegName,
-							 SchedRegScope, FullMsg },
-
-					{ ok, Info };
+                    { ok, Info };
 
 
-				{ value, InvalidScRegName } ->
+                { value, SchedRegName } when is_atom( SchedRegName ) ->
 
-					SchedErrorMsg = text_utils:format( "Invalid user-specified "
-						"registration name for the US-Web scheduler: '~p'.",
-						[ InvalidScRegName ] ),
+                    FullMsg = text_utils:format( "~ts; using user-configured "
+                        "registration name for the US-Web scheduler, '~ts'.",
+                        [ CfgMsg, SchedRegName ] ),
 
-					{ error, { { invalid_web_scheduler_registration_name,
-								 InvalidScRegName,
-								 ?us_web_central_server_registration_name_key },
-							   SchedErrorMsg } }
+                    Info = { CfgRegName, CfgRegScope, SchedRegName,
+                             SchedRegScope, FullMsg },
 
-		end
+                    { ok, Info };
 
-	end,
 
-	wooper:return_static( Res ).
+                { value, InvalidScRegName } ->
+
+                    SchedErrorMsg = text_utils:format( "Invalid user-specified "
+                        "registration name for the US-Web scheduler: '~p'.",
+                        [ InvalidScRegName ] ),
+
+                    { error, { { invalid_web_scheduler_registration_name,
+                                 InvalidScRegName,
+                                 ?us_web_central_server_registration_name_key },
+                               SchedErrorMsg } }
+
+        end
+
+    end,
+
+    wooper:return_static( Res ).
 
 
 
@@ -3519,12 +3519,12 @@ get_registration_info( ConfigTable ) ->
 -spec get_protocol_versions() -> static_return( [ ssl:protocol_version() ] ).
 get_protocol_versions() ->
 
-	% No order in versions matters apparently.
-	% No default token value considered, to force an explicit choice:
-	%
-	wooper:return_static( cond_utils:switch_set_to( us_web_security,
-		[ { relaxed, [ 'tlsv1.3', 'tlsv1.2', 'tlsv1.1', 'tlsv1' ] },
-		  { strict,  [ 'tlsv1.3', 'tlsv1.2' ] } ] ) ).
+    % No order in versions matters apparently.
+    % No default token value considered, to force an explicit choice:
+    %
+    wooper:return_static( cond_utils:switch_set_to( us_web_security,
+        [ { relaxed, [ 'tlsv1.3', 'tlsv1.2', 'tlsv1.1', 'tlsv1' ] },
+          { strict,  [ 'tlsv1.3', 'tlsv1.2' ] } ] ) ).
 
 
 
@@ -3535,35 +3535,35 @@ CA certificates.
 -spec get_http_options() -> static_return( web_utils:http_options() ).
 get_http_options() ->
 
-	HttpOptions=[ { ssl, web_utils:get_ssl_verify_options() } ],
+    HttpOptions=[ { ssl, web_utils:get_ssl_verify_options() } ],
 
-	wooper:return_static( HttpOptions ).
+    wooper:return_static( HttpOptions ).
 
 
 
 -doc "Returns a textual description of this domain table.".
 -spec domain_table_to_string( domain_config_table() ) -> ustring().
 domain_table_to_string( DomainTable ) ->
-	% No ellipsing wanted:
-	"domain configuration "
-		++ table:to_string( DomainTable, _DescriptionType=full ).
+    % No ellipsing wanted:
+    "domain configuration "
+        ++ table:to_string( DomainTable, _DescriptionType=full ).
 
 
 
 -doc "Returns a list of all the PIDs of the webloggers.".
 -spec get_all_logger_pids( wooper:state() ) -> [ logger_pid() ].
 get_all_logger_pids( State ) ->
-	get_all_logger_pids_from( ?getAttr(domain_config_table) ).
+    get_all_logger_pids_from( ?getAttr(domain_config_table) ).
 
 
 % (helper)
 get_all_logger_pids_from( DomainCfgTable ) ->
-	MaybePids = list_utils:flatten_once( [
-		[ VHCfgE#vhost_config_entry.logger_pid
-			|| VHCfgE <- table:values( VHCfgTable ) ]
-				|| { _DomainId, _MaybeCertManagerPid, VHCfgTable }
-						<- table:values( DomainCfgTable ) ] ),
-	list_utils:filter_out_undefined( MaybePids ).
+    MaybePids = list_utils:flatten_once( [
+        [ VHCfgE#vhost_config_entry.logger_pid
+            || VHCfgE <- table:values( VHCfgTable ) ]
+                || { _DomainId, _MaybeCertManagerPid, VHCfgTable }
+                        <- table:values( DomainCfgTable ) ] ),
+    list_utils:filter_out_undefined( MaybePids ).
 
 
 
@@ -3571,16 +3571,16 @@ get_all_logger_pids_from( DomainCfgTable ) ->
 -spec get_all_certificate_manager_pids( wooper:state() ) ->
                                                     [ cert_manager_pid() ].
 get_all_certificate_manager_pids( State ) ->
-	get_all_certificate_manager_pids_from( ?getAttr(domain_config_table) ).
+    get_all_certificate_manager_pids_from( ?getAttr(domain_config_table) ).
 
 
 
 % (helper)
 get_all_certificate_manager_pids_from( DomainCfgTable ) ->
-	MaybePids = [ MaybeCertManagerPid
-					|| { _DomainId, MaybeCertManagerPid, _VHCfgTable }
-						<- table:values( DomainCfgTable ) ],
-	list_utils:filter_out_undefined( MaybePids ).
+    MaybePids = [ MaybeCertManagerPid
+                    || { _DomainId, MaybeCertManagerPid, _VHCfgTable }
+                        <- table:values( DomainCfgTable ) ],
+    list_utils:filter_out_undefined( MaybePids ).
 
 
 
@@ -3588,75 +3588,75 @@ get_all_certificate_manager_pids_from( DomainCfgTable ) ->
 -spec to_string( wooper:state() ) -> ustring().
 to_string( State ) ->
 
-	HttpString = case ?getAttr(http_tcp_port) of
+    HttpString = case ?getAttr(http_tcp_port) of
 
-		undefined ->
-			"with no http scheme enabled";
+        undefined ->
+            "with no http scheme enabled";
 
-		HttpTCPPort ->
-			text_utils:format( "using for the http scheme "
-				"the TCP port #~B", [ HttpTCPPort ] )
+        HttpTCPPort ->
+            text_utils:format( "using for the http scheme "
+                "the TCP port #~B", [ HttpTCPPort ] )
 
-	end,
+    end,
 
-	HttpsString = case ?getAttr(https_tcp_port) of
+    HttpsString = case ?getAttr(https_tcp_port) of
 
-		undefined ->
-			"with no https scheme enabled";
+        undefined ->
+            "with no https scheme enabled";
 
-		HttpsTCPPort ->
-			text_utils:format( "using for the https scheme "
-				"the TCP port #~B", [ HttpsTCPPort ] )
+        HttpsTCPPort ->
+            text_utils:format( "using for the https scheme "
+                "the TCP port #~B", [ HttpsTCPPort ] )
 
-	end,
+    end,
 
-	WebRootString = case ?getAttr(default_web_root) of
+    WebRootString = case ?getAttr(default_web_root) of
 
-		undefined ->
-			"not using a default web root";
+        undefined ->
+            "not using a default web root";
 
-		WebRoot ->
-			text_utils:format( "using default web root '~ts'", [ WebRoot ] )
+        WebRoot ->
+            text_utils:format( "using default web root '~ts'", [ WebRoot ] )
 
-	end,
+    end,
 
-	CertString = case ?getAttr(cert_support) of
+    CertString = case ?getAttr(cert_support) of
 
-		no_certificates ->
-			"with no certificate management enabled";
+        no_certificates ->
+            "with no certificate management enabled";
 
-		use_existing_certificates ->
-			"using existing certificates";
+        use_existing_certificates ->
+            "using existing certificates";
 
-		renew_certificates ->
-			text_utils:format( "relying on auto-renewed certificates "
-				"(mode: ~ts)", [ ?getAttr(cert_mode) ] )
+        renew_certificates ->
+            text_utils:format( "relying on auto-renewed certificates "
+                "(mode: ~ts)", [ ?getAttr(cert_mode) ] )
 
-	end ++ ", with " ++ case ?getAttr(challenge_type) of
+    end ++ ", with " ++ case ?getAttr(challenge_type) of
 
-		undefined ->
-			"no challenge type set";
+        undefined ->
+            "no challenge type set";
 
-		ChalType ->
-			text_utils:format( "challenge type '~ts'", [ ChalType ] )
+        ChalType ->
+            text_utils:format( "challenge type '~ts'", [ ChalType ] )
 
-						end,
+                        end,
 
-	NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_roots) of
+    NitroString = "with Nitrogen support " ++ case ?getAttr(nitrogen_roots) of
 
-		[] ->
-			"disabled";
+        [] ->
+            "disabled";
 
-		_ ->
-			"enabled"
+        _ ->
+            "enabled"
 
-	end,
+    end,
 
-	text_utils:format( "~ts, ~ts, ~ts, ~ts, ~ts, ~ts and "
+    text_utils:format( "~ts, ~ts, ~ts, ~ts, ~ts, ~ts and "
         "relying on its private scheduler ~w.~n~n"
         "In terms of routes, using ~ts~n~nCorresponding dispatch rules:~n~p",
-		[ class_USCentralServer:to_string( State ), HttpString, HttpsString,
-		  WebRootString, CertString, NitroString,
+        [ class_USCentralServer:to_string( State ), HttpString, HttpsString,
+          WebRootString, CertString, NitroString,
           ?getAttr(us_web_scheduler_pid),
-		  domain_table_to_string( ?getAttr(domain_config_table) ),
-		  ?getAttr(dispatch_rules) ] ).
+          domain_table_to_string( ?getAttr(domain_config_table) ),
+          ?getAttr(dispatch_rules) ] ).

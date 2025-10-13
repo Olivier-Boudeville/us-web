@@ -52,17 +52,17 @@ requesting http client (supposed to be an ACME server currently trying to read
 the thumbprints from the well-known ACME URL).
 """.
 -spec init( cowboy_req:req(), handler_state() ) ->
-									us_web_handler:handler_return().
+                                    us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
 
-	cond_utils:if_defined( us_web_debug_handlers,
-		class_TraceEmitter:register_as_bridge(
-			_Name=text_utils:format( "LEEC handler corresponding to "
-				"certificate manager ~w", [ CertManagerPid ] ),
-				_Categ="LEEC handler" ) ),
+    cond_utils:if_defined( us_web_debug_handlers,
+        class_TraceEmitter:register_as_bridge(
+            _Name=text_utils:format( "LEEC handler corresponding to "
+                "certificate manager ~w", [ CertManagerPid ] ),
+                _Categ="LEEC handler" ) ),
 
     % Force-enabled to investigate why so many challenges are requested:
-	%cond_utils:if_defined( us_web_debug_handlers,
+    %cond_utils:if_defined( us_web_debug_handlers,
         trace_bridge:debug_fmt(
             "Request ~p to be handled on behalf of LEEC, while "
             "handler state is the PID of the associated certificate "
@@ -72,104 +72,104 @@ init( Req, _HandlerState=CertManagerPid ) ->
     % (through an access to the ACME URL for tokens) whereas they should not
     % (just roughly one week after the certificate generation).
 
-	% We request the corresponding challenge to the associated (stable, fixed)
-	% certificate manager, which will send in turn a corresponding request to
-	% the (current, possibly respawning) LEEC FSM that will answer directly to
-	% this handler (rather than to the certification manager) to avoid useless
-	% message exchanges.
-	%
-	% A bit of interleaving (note that it is a oneway, not a request, as the
-	% answer will come directly from the corresponding LEEC FSM):
-	%
-	CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
+    % We request the corresponding challenge to the associated (stable, fixed)
+    % certificate manager, which will send in turn a corresponding request to
+    % the (current, possibly respawning) LEEC FSM that will answer directly to
+    % this handler (rather than to the certification manager) to avoid useless
+    % message exchanges.
+    %
+    % A bit of interleaving (note that it is a oneway, not a request, as the
+    % answer will come directly from the corresponding LEEC FSM):
+    %
+    CertManagerPid ! { getChallenge, [ _TargetPid=self() ] },
 
     % Suspected to be sometimes killed before reaching further.
 
-	BinHost = cowboy_req:host( Req ),
+    BinHost = cowboy_req:host( Req ),
 
-	%trace_bridge:debug_fmt( "BinHost: ~p.", [ BinHost ] ),
+    %trace_bridge:debug_fmt( "BinHost: ~p.", [ BinHost ] ),
 
-	% Corresponds to "/.well-known/acme-challenge/:token":
-	% (returns undefined is token not set in URI)
-	%
-	Token = case cowboy_req:binding( _BindingName=token, Req ) of
+    % Corresponds to "/.well-known/acme-challenge/:token":
+    % (returns undefined is token not set in URI)
+    %
+    Token = case cowboy_req:binding( _BindingName=token, Req ) of
 
-		undefined ->
-			trace_bridge:error_fmt( "No ACME token set in: ~p.", [ Req ] ),
-			throw( { no_token_defined, Req } );
+        undefined ->
+            trace_bridge:error_fmt( "No ACME token set in: ~p.", [ Req ] ),
+            throw( { no_token_defined, Req } );
 
-		Tk ->
-			%trace_bridge:debug_fmt( "Token: ~p.", [ Tk ] ),
-			Tk
+        Tk ->
+            %trace_bridge:debug_fmt( "Token: ~p.", [ Tk ] ),
+            Tk
 
-	end,
+    end,
 
-	ChallengeTimeoutMs = 30000,
+    ChallengeTimeoutMs = 30000,
 
-	% Returns 'error' if token+thumbprint are not available, or 'no_challenge'
-	% if being in 'idle' state:
-	%
-	Thumbprints = receive
+    % Returns 'error' if token+thumbprint are not available, or 'no_challenge'
+    % if being in 'idle' state:
+    %
+    Thumbprints = receive
 
-		{ leec_result, Thmbprnts } ->
-			%cond_utils:if_defined( us_web_debug_handlers,
-				trace_bridge:debug_fmt( "Received thumbprints: ~p.",
-										[ Thmbprnts ] ), % ),
-			Thmbprnts
+        { leec_result, Thmbprnts } ->
+            %cond_utils:if_defined( us_web_debug_handlers,
+                trace_bridge:debug_fmt( "Received thumbprints: ~p.",
+                                        [ Thmbprnts ] ), % ),
+            Thmbprnts
 
-		% Just for debugging:
-		%Other ->
-		%   trace_bridge:error_fmt( "Unexpected answer while waiting for "
-		%       "thumbprints: ~p.", [ Other ] ),
-		%   throw( { unexpected_thumbprint_answer, Other } )
+        % Just for debugging:
+        %Other ->
+        %   trace_bridge:error_fmt( "Unexpected answer while waiting for "
+        %       "thumbprints: ~p.", [ Other ] ),
+        %   throw( { unexpected_thumbprint_answer, Other } )
 
-	after ChallengeTimeoutMs ->
-		trace_bridge:error_fmt( "Time-out, no challenge received "
-			"for host '~ts' after ~ts.",
-			[ BinHost, time_utils:duration_to_string( ChallengeTimeoutMs ) ] ),
+    after ChallengeTimeoutMs ->
+        trace_bridge:error_fmt( "Time-out, no challenge received "
+            "for host '~ts' after ~ts.",
+            [ BinHost, time_utils:duration_to_string( ChallengeTimeoutMs ) ] ),
 
-		throw( { challenge_timeout_for, BinHost, ChallengeTimeoutMs } )
+        throw( { challenge_timeout_for, BinHost, ChallengeTimeoutMs } )
 
-	end,
+    end,
 
-	Reply = case maps:get( Token, Thumbprints, _Default=undefined ) of
+    Reply = case maps:get( Token, Thumbprints, _Default=undefined ) of
 
-		undefined ->
-			trace_bridge:error_fmt( "For host '~ts', token '~p' not found "
-				"among thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
-			cowboy_req:reply( 404, Req#{ server => ?server_req_id } );
+        undefined ->
+            trace_bridge:error_fmt( "For host '~ts', token '~p' not found "
+                "among thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
+            cowboy_req:reply( 404, Req#{ server => ?server_req_id } );
 
-		TokenThumbprint ->
+        TokenThumbprint ->
 
-			cond_utils:if_defined( us_web_debug_handlers,
-				trace_bridge:debug_fmt( "For host '~ts', token '~p' found "
-					"associated to '~p', among thumbprints '~p'.",
-					[ BinHost, Token, TokenThumbprint, Thumbprints ] ) ),
+            cond_utils:if_defined( us_web_debug_handlers,
+                trace_bridge:debug_fmt( "For host '~ts', token '~p' found "
+                    "associated to '~p', among thumbprints '~p'.",
+                    [ BinHost, Token, TokenThumbprint, Thumbprints ] ) ),
 
-			cowboy_req:reply( 200,
-				#{ <<"content-type">> => <<"text/plain">> },
-				TokenThumbprint, Req#{ server => ?server_req_id } )
+            cowboy_req:reply( 200,
+                #{ <<"content-type">> => <<"text/plain">> },
+                TokenThumbprint, Req#{ server => ?server_req_id } )
 
-	end,
+    end,
 
-	{ ok, Reply, no_state }.
+    { ok, Reply, no_state }.
 
 
 
 -doc "Handles the specified request (not expected to be used).".
 handle( Req, HandlerState ) ->
-	trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
-	{ ok, Req, HandlerState }.
+    trace_bridge:debug_fmt( "Handle called for request ~p.", [ Req ] ),
+    { ok, Req, HandlerState }.
 
 
 
 -doc "Terminates this handler.".
 terminate( _Reason=normal, _Req, _HandlerState ) ->
-	ok;
+    ok;
 
 terminate( Reason, Req, _HandlerState ) ->
 
-	trace_bridge:error_fmt( "Terminate called for request ~p; reason: ~p.",
-							[ Req, Reason ] ),
+    trace_bridge:error_fmt( "Terminate called for request ~p; reason: ~p.",
+                            [ Req, Reason ] ),
 
-	ok.
+    ok.

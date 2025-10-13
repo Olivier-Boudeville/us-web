@@ -1,4 +1,3 @@
-
 ----------------------------------
 Standard Log Generation & Analysis
 ----------------------------------
@@ -158,8 +157,8 @@ Then, to debug the whole process, use, as root:
 .. code:: bash
 
   $ rm -f /usr/share/webapps/awstats/cgi-bin/awstats*.txt ; echo ;
-	 LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
-	   -config=my-test -showdropped
+     LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
+       -config=my-test -showdropped
 
 Most problems should become visible then.
 
@@ -168,8 +167,8 @@ To do the same for a series of web logs in the context of US-Web, one can have t
 .. code:: bash
 
  $ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
-	LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
-	  -config=$f -update ; done
+    LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
+      -config=$f -update ; done
 
 
 Then all web reports can be generated manually with:
@@ -177,8 +176,8 @@ Then all web reports can be generated manually with:
 .. code:: bash
 
  $ for f in /usr/local/etc/awstats/awstats-*conf; do echo ;
-	LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
-	  -config=$f -output ; done
+    LANG=C /usr/share/webapps/awstats/cgi-bin/awstats.pl
+      -config=$f -output ; done
 
 
 ..
@@ -190,9 +189,9 @@ Then all web reports can be generated manually with:
    A solution would be to have Awstats fixed (unlikely?) or to allow the US-Web server to write to one of the only awstats-enabled system directories, such as ``/usr/local/etc/awstats``.
 
  .. e.g.
-	- /var/XXX/www/Meta-XXX/awstats-for-XXX.org.html
-	- /var/local/us-web/data/awstats-vhost-configs/awstats-for-XXX.org.conf
-	- <a href="awstats./var/local/us-web/data/awstats-vhost-configs/awstats-for-XXX.conf.osdetail.html"
+    - /var/XXX/www/Meta-XXX/awstats-for-XXX.org.html
+    - /var/local/us-web/data/awstats-vhost-configs/awstats-for-XXX.org.conf
+    - <a href="awstats./var/local/us-web/data/awstats-vhost-configs/awstats-for-XXX.conf.osdetail.html"
 
 
 Geolocation with Awstats

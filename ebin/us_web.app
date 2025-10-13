@@ -60,7 +60,7 @@
   {licenses, ["US-Web is licensed by its author (Olivier Boudeville) under the GNU Affero General Public License (AGPL), version 3.0 or later"]},
 
   {links, [ {"Official website", "http://us-web.esperide.org" },
-			{"Github", "https://github.com/Olivier-Boudeville/us-web"} ]}
+            {"Github", "https://github.com/Olivier-Boudeville/us-web"} ]}
 
   %{exclude_files, []}
 

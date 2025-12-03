@@ -1196,18 +1196,18 @@ specified.
 -spec handle_certificate_manager_for( bin_domain_name(), [ bin_san() ],
     cert_support(), cert_mode(), challenge_type(), option( dns_provider() ),
     option( bin_directory_path() ), bin_directory_path(),
-    option( bin_file_path() ), scheduler_pid() ) ->
+    option( bin_file_path() ) ) ->
                                             option( cert_manager_pid() ).
 % localhost of course invisible from outside the LAN:
 handle_certificate_manager_for( _BinDomainName= <<"localhost">>, _BinSans,
         _CertSupport, _CertMode, _ChalType, _MaybeDNSProvider,
-        _MaybeBinCredDir, _BinCertDir, _MaybeBinAgentKeyPath, _SchedulerPid ) ->
+        _MaybeBinCredDir, _BinCertDir, _MaybeBinAgentKeyPath ) ->
     undefined;
 
 
 handle_certificate_manager_for( BinDomainName, BinSans,
         _CertSupport=renew_certificates, CertMode, ChalType, MaybeDNSProvider,
-        MaybeBinCredDir, BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ) ->
+        MaybeBinCredDir, BinCertDir, MaybeBinAgentKeyPath ) ->
 
     { MaybeBinAgentKPath, MaybeDNSProv, MaybeBinCredentialsDir } =
             case ChalType of
@@ -1246,7 +1246,7 @@ handle_certificate_manager_for( BinDomainName, BinSans,
     %
     class_USCertificateManager:synchronous_new_link( BinDomainName, BinSans,
         CertMode, ChalType, MaybeDNSProv, MaybeBinCredentialsDir, BinCertDir,
-        MaybeBinAgentKPath, SchedulerPid, _IsSingleton=false );
+        MaybeBinAgentKPath, _IsSingleton=false );
 
 
 % For CertSupport, either no_certificates or use_existing_certificates here, so
@@ -1254,7 +1254,7 @@ handle_certificate_manager_for( BinDomainName, BinSans,
 %
 handle_certificate_manager_for( _BinDomainName, _BinSans, _OtherCertSupport,
         _CertMode, _ChalType, _MaybeDNSProvider, _MaybeBinCredDir, _BinCertDir,
-        _MaybeBinAgentKeyPath, _SchedulerPid ) ->
+        _MaybeBinAgentKeyPath ) ->
     undefined.
 
 
@@ -1511,7 +1511,7 @@ process_domain_routes( _UserRoutes=[ { DomainName, VHostInfos } | T ],
     MaybeCertManagerPid = handle_certificate_manager_for( BinDomainName,
         BinSans, CertSupport, CertMode, ?getAttr(challenge_type),
         ?getAttr(dns_provider), ?getAttr(credentials_directory),
-        BinCertDir, MaybeBinAgentKeyPath, SchedulerPid ),
+        BinCertDir, MaybeBinAgentKeyPath ),
 
     { VHostTable, VHostRoutes, BuildState } = build_vhost_table( BinDomainName,
         VHostInfos, MaybeCertManagerPid, BinLogDir, MaybeBinDefaultWebRoot,

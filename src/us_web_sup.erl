@@ -235,7 +235,7 @@ init( _Args=[ AppRunContext ] ) ->
             trace_bridge:debug( RenewalMsg ),
             trace_utils:info( RenewalMsg ),
 
-            USWebCtrServerPid ! { renewCertificates, [], self() }
+            USWebCtrServerPid ! { renewCertificates, [], self() },
 
             % Previously we were waiting here for all certificates to be
             % renewed, however it could be quite long, and in the meantime no
@@ -246,20 +246,22 @@ init( _Args=[ AppRunContext ] ) ->
             % removed, resulting in dead symlinks found by US-Web, and the
             % PR_END_OF_FILE_ERROR being returned to the client.
             %
-            % Anyway now we still start the HTTPS server immediately, instead
-            % of:
+            % So we used to start the HTTPS server immediately - which now fails
+            % because now apparently Ranch checks that the specified
+            % (certificate-related) files exist (and then messes up its error
+            % report). Anyway now we wait again from that earlier point:
 
-            %% receive
+            receive
 
-            %%  % Note the plural; does not imply that all certificates could be
-            %%  % immediately obtained:
-            %%  %
-            %%  { wooper_result, certificate_renewals_over } ->
-            %%      RenewedMsg = "All certificates renewed.",
-            %%      trace_bridge:debug( RenewedMsg ),
-            %%      trace_utils:info( RenewedMsg )
+             % Note the plural; does not imply that all certificates could be
+             % immediately obtained:
+             %
+             { wooper_result, certificate_renewals_over } ->
+                 RenewedMsg = "All certificates renewed.",
+                 trace_bridge:debug( RenewedMsg ),
+                 trace_utils:info( RenewedMsg )
 
-            %% end
+            end
 
         end,
 
@@ -413,18 +415,18 @@ init( _Args=[ AppRunContext ] ) ->
     application:set_env( _Config=[ { us_web, Env } ] ),
 
     % Waits for any answer to the renewCertificates request:
-    CertSupport =:= renew_certificates andalso
-            receive
+    % CertSupport =:= renew_certificates andalso
+    %         receive
 
-                % Note the plural; does not imply that all certificates could be
-                % immediately obtained:
-                %
-                { wooper_result, certificate_renewals_over } ->
-                    RenewedMsg = "All certificates renewed.",
-                    trace_bridge:debug( RenewedMsg ),
-                    trace_utils:info( RenewedMsg )
+    %             % Note the plural; does not imply that all certificates could
+    %             be % immediately obtained:
+    %             %
+    %             { wooper_result, certificate_renewals_over } ->
+    %                 RenewedMsg = "All certificates renewed.",
+    %                 trace_bridge:debug( RenewedMsg ),
+    %                 trace_utils:info( RenewedMsg )
 
-            end,
+    %         end,
 
     { ok, { SupSettings, ChildSpecs } }.
 

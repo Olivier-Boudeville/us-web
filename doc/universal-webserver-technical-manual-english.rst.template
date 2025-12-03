@@ -412,7 +412,7 @@ Let's designate this directory from now on with the ``US_WEB_DATA_DIR`` pseudo-v
 
 This directory may notably gather following elements:
 
-- the ``log-analysis-state`` subdirectory (if log analysis is enabled), containing the working state of the tool for web access analysis, typically Awstat, thus containing ``awstats*.baz.foobar.org.txt`` files for the preprocessing of its reports
+- the ``log-analysis-state`` subdirectory (if log analysis is enabled), containing the working state of the tool for web access analysis, typically Awstats, thus containing ``awstats*.baz.foobar.org.txt`` files for the preprocessing of its reports
 
 - the ``certificates`` subdirectory (if certificate support is enabled), containing the related keys and certificates for the domains of interest:
 
@@ -1257,7 +1257,7 @@ The build of the US-Web server used to be optionally driven by `rebar3 <https://
 
 .. _getting-awstats:
 
-If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (ex for Arch Linux: ``pacman -S awstats`` [#]_) .
+If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (for example for Arch Linux: ``pacman -S awstats`` [#]_; in some cases installing the ``perl-json-xs`` package was needed as well) .
 
 .. [#] To avoid a future reading access error, execute after installation: ``chmod -R +r /usr/share/webapps/awstats/icon``.
 

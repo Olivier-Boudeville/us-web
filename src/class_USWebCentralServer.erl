@@ -3322,8 +3322,8 @@ get_us_app_version_string() ->
 -spec get_web_log_dir( any_directory_path() ) ->
                                         static_return( bin_directory_path() ).
 get_web_log_dir( LogDir ) ->
-    wooper:return_static( wooper:retur_static( text_utils:string_to_binary(
-        file_utils:join( LogDir, ?web_log_subdir ) ) ) ).
+    wooper:return_static( text_utils:string_to_binary(
+        file_utils:join( LogDir, ?web_log_subdir ) ) ).
 
 
 

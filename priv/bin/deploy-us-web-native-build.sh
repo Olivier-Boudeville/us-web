@@ -276,7 +276,7 @@ if [ ! -x "${make}" ]; then
 fi
 
 
-display_and_log "Securing sudoer rights for the upcoming operations that require it."
+display_and_log "Securing sudoer rights for the upcoming operations that require it (changing permissions, writing in directories like ${base_us_dir}, etc.)."
 if ! sudo echo; then
 
 	echo "  Error, sudo failed." 1>&2

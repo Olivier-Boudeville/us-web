@@ -1257,7 +1257,7 @@ The build of the US-Web server used to be optionally driven by `rebar3 <https://
 
 .. _getting-awstats:
 
-If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (for example for Arch Linux: ``pacman -S awstats`` [#]_; in some cases installing the ``perl-json-xs`` package was needed as well) .
+If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (for example for Arch Linux: ``pacman -S awstats`` [#]_; in some cases installing the ``perl-json-xs`` and ``perl-try-tiny`` packages was apparently needed as well) .
 
 .. [#] To avoid a future reading access error, execute after installation: ``chmod -R +r /usr/share/webapps/awstats/icon``.
 

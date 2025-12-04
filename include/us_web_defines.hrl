@@ -35,13 +35,14 @@
 -define( us_web_scheduler_registration_scope, local_only ).
 
 
-% Allows to spoof the webserver identity when sending back information (always
-% fun, yet not working currently):
+% Allows to spoof the webserver identity when sending back information (lying is
+% fun; shows indeed that value in the headers, as checked with 'wget -S -O -
+% http://xxx'):
 %
 % (typically instead of "Cowboy")
 %
-%-define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
--define( server_header_id, <<"Apache/2.4.1 (Unix)">> ).
+% Such a version does not exist at the time of this writing:
+-define( server_header_id, <<"Apache/2.5.6 (Unix)">> ).
 
 % To discriminate with headers:
 -define( server_req_id, <<"Apache/2.4.2 (Unix)">> ).

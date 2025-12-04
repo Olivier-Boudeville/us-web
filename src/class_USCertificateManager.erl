@@ -960,9 +960,9 @@ manage_renewal( MaybeRenewDelay, MaybeBinCertFilePath, State ) ->
 Requests this manager to return (indirectly, through the current LEEC FSM) the
 current thumbprint challenges to the specified target process.
 
-Typically called from a web handler (see us_web_leec_handler, specifying its PID
-as target one) whenever the ACME well-known URL is read by an ACME server, to
-check that the returned challenges match the expected ones.
+Typically called from a web handler (see `us_web_leec_handler`, specifying its
+PID as target one) whenever the ACME well-known URL is read by an ACME server,
+to check that the returned challenges match the expected ones.
 """.
 -spec getChallenge( wooper:state(), pid() ) -> const_oneway_return().
 getChallenge( State, TargetPid ) ->
@@ -975,19 +975,30 @@ getChallenge( State, TargetPid ) ->
     ?notice_fmt( "Requested to return the current thumbprint challenges "
         "with ~ts, on behalf of (and to) ~w.", [ LCSStr, TargetPid ] ),
 
-    try
+    case LCS of
 
-        leec:send_ongoing_challenges( LCS, TargetPid )
+        undefined ->
+            ?warning_fmt( "Thumbprint challenges requested to be sent "
+                "(to process ~w), yet LEEC FSM seems to exist currently "
+                "(no LEEC caller state). This should be investigated.",
+                [ TargetPid ] );
 
-    catch AnyClass:Exception:StackTrace ->
+        _ ->
+            try
 
-        % Then probably that the target process will never receive these
-        % challenges, so it should time-out:
+                leec:send_ongoing_challenges( LCS, TargetPid )
 
-        ?error_fmt( "Sending of challenges failed, with a thrown "
-            "exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
-            [ Exception, AnyClass,
-              code_utils:interpret_stacktrace( StackTrace ), LCSStr ] )
+            catch AnyClass:Exception:StackTrace ->
+
+                % Then probably that the target process will never receive these
+                % challenges, so it should time-out:
+
+                ?error_fmt( "Sending of challenges failed, with a thrown "
+                    "exception ~p (of class: ~p; stacktrace: ~ts; ~ts).",
+                    [ Exception, AnyClass,
+                      code_utils:interpret_stacktrace( StackTrace ), LCSStr ] )
+
+            end
 
     end,
 

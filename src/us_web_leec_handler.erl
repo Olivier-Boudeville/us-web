@@ -25,7 +25,7 @@
 **LEEC-compliant handler** for US-Web, whose role is to answer ACME challenges
 thanks to LEEC, in order to complete the verification procedure.
 
-See <https://leec.esperide.org/#usage-example> for more details.
+See [https://leec.esperide.org/#usage-example] for more details.
 """.
 
 
@@ -55,13 +55,16 @@ the thumbprints from the well-known ACME URL).
                                     us_web_handler:handler_return().
 init( Req, _HandlerState=CertManagerPid ) ->
 
-    cond_utils:if_defined( us_web_debug_handlers,
+    % Force-enabled to investigate why so many challenges are requested:
+
+    %cond_utils:if_defined( us_web_debug_handlers,
         class_TraceEmitter:register_as_bridge(
             _Name=text_utils:format( "LEEC handler corresponding to "
                 "certificate manager ~w", [ CertManagerPid ] ),
-                _Categ="LEEC handler" ) ),
+                _Categ="LEEC handler" ),
 
-    % Force-enabled to investigate why so many challenges are requested:
+    %),
+
     %cond_utils:if_defined( us_web_debug_handlers,
         trace_bridge:debug_fmt(
             "Request ~p to be handled on behalf of LEEC, while "

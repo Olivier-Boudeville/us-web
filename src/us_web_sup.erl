@@ -1,4 +1,4 @@
-% Copyright (C) 2019-2025 Olivier Boudeville
+% Copyright (C) 2019-2026 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -145,7 +145,7 @@ init( _Args=[ AppRunContext ] ) ->
             %       "Time-out while waiting for web settings." ),
             %   throw( us_web_sup_settings_time_out )
 
-    end,
+                                                   end,
 
     CertSupport =:= use_existing_certificates andalso
         case MaybeHttpsTranspOpts of
@@ -440,10 +440,10 @@ Note: unlike supervisor_bridge, no `supervisor:terminate/*` callback exists.
 -spec stop() -> void().
 stop() ->
 
-    { ok, USWebCfgSrvPid } =
+    { ok, USWebCtrlSrvPid } =
         application:get_env( _Param=us_web_central_server_pid ),
 
-    trace_bridge:warning_fmt( "Stopping US-Web, including its configuration "
-                              "server ~w.", [ USWebCfgSrvPid ] ),
+    trace_bridge:warning_fmt( "Stopping US-Web, including its central "
+                              "server ~w.", [ USWebCtrlSrvPid ] ),
 
-    USWebCfgSrvPid ! delete.
+    wooper:delete_synchronously_instance( USWebCtrlSrvPid ).

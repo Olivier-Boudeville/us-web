@@ -1,4 +1,4 @@
-% Copyright (C) 2021-2025 Olivier Boudeville
+% Copyright (C) 2021-2026 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.
@@ -38,6 +38,9 @@ for that).
 -include("us_web_defines.hrl").
 
 
+% All terminations of US-Web supervisors shall be synchronous:
+-define( termination_wait_duration, 0 ).
+
 
 -doc "Runs the actual test.".
 test_us_web_application( OrderedAppNames ) ->
@@ -76,9 +79,9 @@ test_us_web_application( OrderedAppNames ) ->
         us_common_otp_application_test:get_us_information(),
 
     % Now we can take care of the US-Web counterpart configuration file:
-    { USWebCfgTable, USWebCfgFilePath } = case
+    { USWebCtrlTable, USWebCtrlFilePath } = case
             class_USWebCentralServer:get_configuration_table( USCfgTable,
-                                                             BinCfgDir ) of
+                                                              BinCfgDir ) of
 
         { ok, P } ->
             P;
@@ -89,11 +92,11 @@ test_us_web_application( OrderedAppNames ) ->
     end,
 
     test_facilities:display( "Read US-Web configuration from '~ts'.",
-                             [ USWebCfgFilePath ] ),
+                             [ USWebCtrlFilePath ] ),
 
-    { USWebCfgRegName, USWebCfgRegScope, USWebSchedRegName, USWebSchedRegScope,
-      USWebRegMsg } = case
-            class_USWebCentralServer:get_registration_info( USWebCfgTable ) of
+    { USWebCtrlRegName, USWebCtrlRegScope, USWebSchedRegName,
+      USWebSchedRegScope, USWebRegMsg } = case
+            class_USWebCentralServer:get_registration_info( USWebCtrlTable ) of
 
         { ok, Q } ->
             Q;
@@ -122,7 +125,7 @@ test_us_web_application( OrderedAppNames ) ->
     % This is fully optional for this US-Web test, yet we prefer also linking to
     % US-related elements:
     %
-    USCfgSrvPid = naming_utils:wait_for_registration_of( USCfgRegName,
+    USCtrlSrvPid = naming_utils:wait_for_registration_of( USCfgRegName,
         naming_utils:registration_to_lookup_scope( USCfgRegScope ) ),
 
     % The top-level user process may not be aware that an OTP application fails
@@ -130,15 +133,15 @@ test_us_web_application( OrderedAppNames ) ->
     % here we link explicitly this test process to the US configuration server,
     % to have a chance of detecting issues:
     %
-    erlang:link( USCfgSrvPid ),
+    erlang:link( USCtrlSrvPid ),
 
     % Now linking to the actual US-Web of interest for this test:
 
     % First the US-Web configuration server:
-    USWebCfgSrvPid = naming_utils:wait_for_registration_of( USWebCfgRegName,
-        naming_utils:registration_to_lookup_scope( USWebCfgRegScope ) ),
+    USWebCtrlSrvPid = naming_utils:wait_for_registration_of( USWebCtrlRegName,
+        naming_utils:registration_to_lookup_scope( USWebCtrlRegScope ) ),
 
-    erlang:link( USWebCfgSrvPid ),
+    erlang:link( USWebCtrlSrvPid ),
 
     % Then the US-Web scheduler:
 
@@ -215,15 +218,15 @@ test_us_web_application( OrderedAppNames ) ->
 
 
     trace_utils:debug_fmt( "Waiting for the termination of the US-Web "
-                           "configuration server (~w).", [ USWebCfgSrvPid ] ),
+                           "central server (~w).", [ USWebCtrlSrvPid ] ),
 
     receive
 
-        { 'EXIT', USWebCfgSrvPid, normal } ->
+        { 'EXIT', USWebCtrlSrvPid, normal } ->
             ok
 
-        after 1000 ->
-            ok
+        after ?termination_wait_duration ->
+            trace_utils:error( "(termination waiting time-out)" )
 
     end,
 
@@ -236,22 +239,22 @@ test_us_web_application( OrderedAppNames ) ->
         { 'EXIT', USWebSchedPid, normal } ->
             ok
 
-        after 1000 ->
-            ok
+        after ?termination_wait_duration ->
+            trace_utils:error( "(termination waiting time-out)" )
 
     end,
 
 
     trace_utils:debug_fmt( "Waiting for the termination of the US-Common "
-                           "configuration server (~w).", [ USCfgSrvPid ] ),
+                           "central server (~w).", [ USCtrlSrvPid ] ),
 
     receive
 
-        { 'EXIT', USCfgSrvPid, normal } ->
+        { 'EXIT', USCtrlSrvPid, normal } ->
             ok
 
-        after 1000 ->
-            ok
+        after ?termination_wait_duration ->
+            trace_utils:error( "(termination waiting time-out)" )
 
     end,
 

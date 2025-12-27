@@ -1,4 +1,4 @@
-% Copyright (C) 2019-2025 Olivier Boudeville
+% Copyright (C) 2019-2026 Olivier Boudeville
 %
 % This file belongs to the US-Web project, a part of the Universal Server
 % framework.

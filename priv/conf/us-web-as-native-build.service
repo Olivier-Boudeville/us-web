@@ -4,9 +4,8 @@ Description=Universal Webserver service (US-Web), as a native build
 # Otherwise startup at boot may fail because of the encrypted filesystem of a
 # webroot not being already up:
 #
+After=network.target local-fs.target
 Requires=network.target local-fs.target
-
-After=network.target
 
 
 [Service]

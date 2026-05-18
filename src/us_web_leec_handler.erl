@@ -25,7 +25,7 @@
 **LEEC-compliant handler** for US-Web, whose role is to answer ACME challenges
 thanks to LEEC, in order to complete the verification procedure.
 
-See [https://leec.esperide.org/#usage-example] for more details.
+See <https://leec.esperide.org/#usage-example> for more details.
 """.
 
 
@@ -39,7 +39,8 @@ See [https://leec.esperide.org/#usage-example] for more details.
 -type handler_state() :: cert_manager_pid().
 
 
-% For server_header_id:
+
+% For the server_{header,req}_id defines:
 -include("us_web_defines.hrl").
 
 
@@ -140,7 +141,8 @@ init( Req, _HandlerState=CertManagerPid ) ->
         undefined ->
             trace_bridge:error_fmt( "For host '~ts', token '~p' not found "
                 "among thumbprints '~p'.", [ BinHost, Token, Thumbprints ] ),
-            cowboy_req:reply( 404, Req#{ server => ?server_req_id } );
+            cowboy_req:reply( _Status=404,
+                _Headers=#{ <<"server">> => ?server_header_id }, Req );
 
         TokenThumbprint ->
 
@@ -149,9 +151,10 @@ init( Req, _HandlerState=CertManagerPid ) ->
                     "associated to '~p', among thumbprints '~p'.",
                     [ BinHost, Token, TokenThumbprint, Thumbprints ] ) ),
 
-            cowboy_req:reply( 200,
-                #{ <<"content-type">> => <<"text/plain">> },
-                TokenThumbprint, Req#{ server => ?server_req_id } )
+            cowboy_req:reply( _Status=200,
+                _Headers=#{ <<"content-type">> => <<"text/plain">>,
+                            <<"server">> => ?server_header_id },
+                _Body=TokenThumbprint, Req )
 
     end,
 

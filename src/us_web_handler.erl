@@ -28,7 +28,7 @@ This handler:
 
 - provides static dispatches so that the (static) websites corresponding to
 the virtual hosts can be appropriately served; see the US-Web configuration
-file (e.g. priv/for-testing/us-web-for-tests.config), which holds the data
+file (e.g. `priv/for-testing/us-web-for-tests.config`), which holds the data
 relative to virtual hosts
 
 - handles HTTP errors (notably 404 ones, thanks to a specifically-generated
@@ -46,7 +46,7 @@ to act as a placeholder.
 
 
 -doc """
-Module to handle web content through dispatch rules (e.g. 'cowboy_rest').
+Module to handle web content through dispatch rules (e.g. `cowboy_rest`).
 """.
 -type handler_module() :: basic_utils:module_name().
 
@@ -58,14 +58,14 @@ Module to handle web content through dispatch rules (e.g. 'cowboy_rest').
 
 
 -doc """
-A US-Web specialised handler, a map which may notably contain entries with
-following keys:
+A US-Web specialised handler, a map that may notably contain entries with
+the following keys:
 
-- css_path: file_utils:bin_file_path(), a path relative to the content root of
+- `css_path: file_utils:bin_file_path()`, a path relative to the content root of
 the corresponding virtual host pointing to the default CSS file to be used
 (e.g. for the 404 page)
 
-- image_404 :: file_utils:bin_file_path(), a path relative to the content root
+- `image_404 :: file_utils:bin_file_path()`, a path relative to the content root
 of the corresponding virtual host pointing to an image (e.g. PNG) to be used
 when generating a 404 error page
 """.
@@ -87,14 +87,14 @@ when generating a 404 error page
                bin_content_path/0, handler_return/0 ]).
 
 
-% Shorthands:
+% Type shorthands:
 
 -type http_status_code() :: web_utils:http_status_code().
 
 -type log_line() :: class_USWebLogger:log_line().
 
 
-% For server_header_id:
+% For the server_{header,req}_id defines:
 -include("us_web_defines.hrl").
 
 
@@ -108,7 +108,7 @@ denial of service attack) and may be replaced with a static binary string (yet
 then copied to each per-request process), determined once for all.
 """.
 -spec return_404( cowboy_req:req(), bin_content_path(), handler_state() ) ->
-                        handler_return().
+                                            handler_return().
 % maps not fully supported in R22:
 %return_404(
 %  { host := VHost, port := TCPPort, path_info := NonExistingPath }=Req,
@@ -278,7 +278,7 @@ get_footer( VHost, Scheme, Port ) ->
 get_http_headers( _Body ) ->
     #{ <<"content-type">> => <<"text/html">>,
 
-       % No (computed by Cowboy):
+       % No (since computed by Cowboy):
        %<<"content-length">> => integer_to_list( iolist_size( Body ) ),
 
        % A bit of obfuscation (not taken into account, unfortunately):
@@ -319,7 +319,7 @@ init( Req, HandlerState ) ->
 Manages specified handler access log.
 
 Access log facility offered to web handlers, taking advantage of the
-request-specific process in order to further parallelize their processing.
+request-specific process in order to further parallelise their processing.
 """.
 -spec manage_access_log( handler_return(), http_status_code(),
                          handler_state() ) -> void().
@@ -436,7 +436,7 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 Manages specified handler error log.
 
 Error log facility offered to web handlers, taking advantage of the
-request-specific process in order to further parallelize their processing.
+request-specific process in order to further parallelise their processing.
 """.
 -spec manage_error_log( basic_utils:error_reason(), cowboy_req:req(),
                         bin_content_path(), handler_state() ) -> void().

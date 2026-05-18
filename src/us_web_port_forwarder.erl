@@ -24,7 +24,7 @@
 -moduledoc """
 **Cowboy-compliant port forwarder** for US-Web: automatically forwards a request
 aimed at a given TCP port (e.g. 80) to another port (e.g. 443, for an automatic
-promotion of http into https).
+promotion of `http` into `https`).
 """.
 
 -export([ init/2 ]).
@@ -47,7 +47,7 @@ promotion of http into https).
 -doc """
 Initialises this handler.
 
- This handler initialisation performs the requested TCP port redirection.
+This handler initialisation performs the requested TCP port redirection.
 """.
 -spec init( cowboy_req:req(), handler_state() ) ->
                                     us_web_handler:handler_return().

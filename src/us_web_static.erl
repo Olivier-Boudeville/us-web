@@ -1,6 +1,6 @@
 %% Copyright (c) 2011, Magnus Klaar <magnus.klaar@gmail.com>
 %% Copyright (c) 2013-2017, Loïc Hoguin <essen@ninenines.eu>
-%% Copyright (c) 2019-2025, Olivier Boudeville <olivier.boudeville@esperide.com>
+%% Copyright (c) 2019-2026, Olivier Boudeville <olivier.boudeville@esperide.com>
 %%
 %% Permission to use, copy, modify, and/or distribute this software for any
 %% purpose with or without fee is hereby granted, provided that the above
@@ -87,7 +87,7 @@ As done by Cowboy, exactly one process is spawned per request.
 -define( internal_server_error, 500 ).
 
 
-% For server_header_id:
+% For the server_{header,req}_id defines:
 -include("us_web_defines.hrl").
 
 
@@ -120,16 +120,15 @@ init( Req, HState ) ->
     CowboyOpts = maps:get( cowboy_opts, HState ),
 
     % To return such information (atom, not binary):
-    SpoofedReq = Req#{ server => ?server_req_id },
+    %SpoofedReq = Req#{ server => ?server_req_id },
 
     HReturn = case maps:get( _Key=type, HState ) of
 
         file ->
-            handle_file_request( SpoofedReq, _BinIndex=BinPath, CowboyOpts,
-                                 HState );
+            handle_file_request( Req, _BinIndex=BinPath, CowboyOpts, HState );
 
         directory ->
-            handle_dir_request( SpoofedReq, _BinContentRoot=BinPath, CowboyOpts,
+            handle_dir_request( Req, _BinContentRoot=BinPath, CowboyOpts, 
                                 HState )
 
     end,
@@ -186,7 +185,8 @@ handle_file_request( Req, BinFullFilePath, CowboyOpts, HState ) ->
             % be generated and returned instead.
             %
             % Possible return:
-            { ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
+            { ok, cowboy_req:reply( _Status=?internal_server_error,
+                     _Headers=#{ <<"server">> => ?server_header_id }, Req ),
               error }
 
             % Or:
@@ -225,7 +225,8 @@ handle_dir_request( Req, BinRelContentRoot, CowboyOpts, HState ) ->
         undefined ->
             us_web_handler:manage_error_log( _Error=no_path_info_for_dir, Req,
                                              BinRelContentRoot, HState ),
-            { ok, cowboy_req:reply( _Status=?internal_server_error, Req ),
+            { ok, cowboy_req:reply( _Status=?internal_server_error,
+                    _Headers=#{ <<"server">> => ?server_header_id }, Req ),
               error };
 
         PathInfo ->

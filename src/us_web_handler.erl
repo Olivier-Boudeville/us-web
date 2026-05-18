@@ -281,7 +281,7 @@ get_http_headers( _Body ) ->
        % No (since computed by Cowboy):
        %<<"content-length">> => integer_to_list( iolist_size( Body ) ),
 
-       % A bit of obfuscation (not taken into account, unfortunately):
+       % A bit of obfuscation (sorry to decrease Cowboy's stats):
        % (see also https://arjanvandergaag.nl/blog/cowboy-server-signature.html)
        <<"server">> => ?server_header_id }.
 

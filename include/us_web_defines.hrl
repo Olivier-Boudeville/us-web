@@ -39,13 +39,16 @@
 % fun; shows indeed that value in the headers, as checked with 'wget -S -O -
 % http://xxx'):
 %
-% (typically instead of "Cowboy")
+% (typically instead of "Cowboy"; note that "wget --server-response --spider"
+% will indeed report such an header for http, but "Cowboy" used to be displayed
+% for https; possibly calls to cowboy_req:reply/2 remained, instead of
+% cowboy_req:reply/3 - then with relevant server-specifying headers)
 %
-% Such a version does not exist at the time of this writing:
--define( server_header_id, <<"Apache/2.5.6 (Unix)">> ).
-
-% To discriminate with headers:
--define( server_req_id, <<"Apache/2.4.2 (Unix)">> ).
+% Such a version does not exist at the time of this writing (current being then
+% 2.4.67)
+%
+%-define( server_header_id, <<"Apache/2.5.6 (Unix)">> ).
+-define( server_header_id, <<"Apache">> ).
 
 
 % Same from the upper US-Common level:

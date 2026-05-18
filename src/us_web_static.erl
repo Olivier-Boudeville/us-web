@@ -119,9 +119,6 @@ init( Req, HState ) ->
 
     CowboyOpts = maps:get( cowboy_opts, HState ),
 
-    % To return such information (atom, not binary):
-    %SpoofedReq = Req#{ server => ?server_req_id },
-
     HReturn = case maps:get( _Key=type, HState ) of
 
         file ->

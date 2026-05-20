@@ -1,12 +1,12 @@
 [Unit]
 Description=Universal Webserver service (US-Web), as a native build
 
-# Otherwise startup at boot may fail because of the encrypted filesystem of a
-# webroot not being already up:
+# Otherwise startup at boot may fail because the network is not usable yet (for
+# ACME servers) or because the encrypted filesystem of a webroot is not already
+# up:
 #
-After=network.target local-fs.target
-Requires=network.target local-fs.target
-
+After=network-online.target cryptsetup.target local-fs.target remote-fs.target
+Requires=network-online.target cryptsetup.target local-fs.target remote-fs.target
 
 [Service]
 

@@ -1105,7 +1105,7 @@ A US-Web instance may host one [#]_ Nitrogen-based website.
 
 .. [#] Only a single instance of Nitrogen is supported per US-Web instance, as otherwise the various pages of the Nitrogen websites would clash through the code path (e.g. there would be multiple ``index.beam`` files there; there would also be problems with the relative paths currently expected by ``nitro_cache``, etc.).
 
-	   So, if wanting to have multiple Nitrogen websites available from a common domain name, one shall rely on a `reverse proxy`_. It is hardly a limitation, as web applications are better managed independently anyway, in order to be able to freely start / stop / update them, to isolate them with different users, to separate their resource uses, etc.
+	   So, if wanting to have multiple Nitrogen websites available from a common domain name, one shall rely on a `reverse proxy <https://en.wikipedia.org/wiki/Reverse_proxy>`_. It is hardly a limitation, as web applications are better managed independently anyway, in order to be able to freely start / stop / update them, to isolate them with different users, to separate their resource uses, etc.
 
 
 

@@ -492,7 +492,7 @@ if [ $do_clone -eq 0 ]; then
 	fi
 
 	# A lot safer than relying on the tip of the master branch:
-	cowboy_tag="2.13.0"
+	cowboy_tag="2.14.2"
 
 	if [ -n "${cowboy_tag}" ]; then
 
@@ -1236,11 +1236,11 @@ if [ $do_launch -eq 0 ]; then
 
 else
 
-	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file - and execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 150; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure (count at least 2 minutes per domain if relying on the dns-01 challenge; hence having 5 domains results in, at startup, 10 minutes of waiting until HTTP and HTTPS become ready) - and check, possibly with wget, that the expected virtual hosts are available indeed)."
+	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file, and in all cases execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 150; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure (count at least 2 minutes per domain if relying on the dns-01 challenge; hence having 5 domains results in, at startup, 10 minutes of waiting until HTTP and HTTPS become ready) - and check, possibly with wget, that the expected virtual hosts are available indeed)."
 
-	display_and_log "Any prior US-Web instance that would still linger could be removed thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
+	display_and_log "Any prior US-Web instance that would still linger could be removed first, thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 
-    display_and_log "Finally, if certificates were to be generated, consider also executing manually after launch any certbot deploy hook that would be needed, typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
+    display_and_log "Finally, if certificates were to be generated, consider also executing manually after launch any certbot deploy hook that would be needed (refer to any value set for the US_WEB_POST_DEPLOY_CMD environment variable), typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
 
 fi
 

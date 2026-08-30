@@ -1,11 +1,11 @@
 [Unit]
 Description=Universal Webserver service (US-Web), as a native build
 
-# Otherwise startup at boot may fail because of the encrypted filesystem of a
-# webroot not being already up:
+# Otherwise startup at boot may fail because DNS resolution is not ready yet, or
+# as the encrypted filesystem of a webroot may not be already available:
 #
-After=network.target local-fs.target
-Requires=network.target local-fs.target
+After=network.target network-online.target local-fs.target
+Requires=network.target network-online.target local-fs.target
 
 
 [Service]

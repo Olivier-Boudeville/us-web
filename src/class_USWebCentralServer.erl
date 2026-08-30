@@ -2441,7 +2441,9 @@ manageRegistrations( State, ConfigTable ) ->
 
     naming_utils:register_as( CfgRegName, CfgRegScope ),
 
-    % Relatively private to this node:
+    % Relatively private to this node; no relevant Daylight Saving Time
+    % convention to apply:
+    %
     SchedPid = class_USScheduler:new_link( "US-Web Scheduler", SchedRegName,
                                            SchedRegScope ),
 

@@ -1818,7 +1818,7 @@ Reverse Proxy
 Purpose
 -------
 
-The goal of a `reverse proxy <https://en.wikipedia.org/wiki/Reverse_proxy>`_ is to have a (proxy) server seamlessly (read: without doing a HTTP forward - thus with unchanged URLs from the point of view of the client) redirect incoming traffic to other "proxied" webservers (possibly other US-Web instances) running on other hosts and/or ports.
+The goal of a `reverse proxy <https://en.wikipedia.org/wiki/Reverse_proxy>`__ is to have a (proxy) server seamlessly (read: without doing a HTTP forward - thus with unchanged URLs from the point of view of the client) redirect incoming traffic to other "proxied" webservers (possibly other US-Web instances) running on other hosts and/or ports.
 
 A typical use case here [#]_ is having an US-Web instance serve a domain name of interest (e.g. ``foo.org``) whereas more than one of its virtual hosts are `Nitrogen-based`_, knowing that no two of such virtual hosts shall be executed by the same (Erlang) VM (as notably their Nitrogen page modules would clash).
 

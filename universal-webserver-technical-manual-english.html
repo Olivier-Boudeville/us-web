@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.21.2: https://docutils.sourceforge.io/" />
+<meta name="generator" content="Docutils 0.23: https://docutils.sourceforge.io/" />
 <meta content="Universal Webserver" name="keywords" />
 <title>Welcome to the Universal Webserver US-Web documentation</title>
 <link rel="stylesheet" href="pygments-default.css" type="text/css" />
@@ -23,7 +23,7 @@
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2025 Olivier Boudeville</p>
+<tr class="field"><th class="field-name">Organisation:</th><td class="field-body"><p class="first">Copyright (C) 2019-2026 Olivier Boudeville</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Contact:</th><td class="field-body"><p class="first">about (dash) universal-webserver (at) esperide (dot) com</p>
@@ -32,10 +32,10 @@
 <tr class="field"><th class="field-name">Creation date:</th><td class="field-body"><p class="first">Saturday, May 2, 2020</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Wednesday, April 30, 2025</p>
+<tr class="field"><th class="field-name">Lastly updated:</th><td class="field-body"><p class="first">Friday, October 2, 2026</p>
 </td>
 </tr>
-<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.1.6</p>
+<tr class="field"><th class="field-name">Version:</th><td class="field-body"><p class="first">1.1.7</p>
 </td>
 </tr>
 <tr class="field"><th class="field-name">Status:</th><td class="field-body"><p class="first">Stable</p>
@@ -128,100 +128,101 @@
 <li><a class="reference internal" href="#in-a-production-setting" id="toc-entry-48">In a Production Setting</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#nitrogen-support" id="toc-entry-49">Nitrogen Support</a><ul>
-<li><a class="reference internal" href="#deployment" id="toc-entry-50">Deployment</a><ul>
-<li><a class="reference internal" href="#deployment-of-a-nitrogen-enabled-us-web" id="toc-entry-51">Deployment of a Nitrogen-enabled US-Web</a></li>
-<li><a class="reference internal" href="#deployment-of-the-nitrogen-based-website-application" id="toc-entry-52">Deployment of the Nitrogen-based website / application</a></li>
+<li><a class="reference internal" href="#cowboy-information" id="toc-entry-49">Cowboy Information</a></li>
+<li><a class="reference internal" href="#nitrogen-support" id="toc-entry-50">Nitrogen Support</a><ul>
+<li><a class="reference internal" href="#deployment" id="toc-entry-51">Deployment</a><ul>
+<li><a class="reference internal" href="#deployment-of-a-nitrogen-enabled-us-web" id="toc-entry-52">Deployment of a Nitrogen-enabled US-Web</a></li>
+<li><a class="reference internal" href="#deployment-of-the-nitrogen-based-website-application" id="toc-entry-53">Deployment of the Nitrogen-based website / application</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#configuration" id="toc-entry-53">Configuration</a></li>
-<li><a class="reference internal" href="#nitrogen-related-information" id="toc-entry-54">Nitrogen-related Information</a></li>
+<li><a class="reference internal" href="#configuration" id="toc-entry-54">Configuration</a></li>
+<li><a class="reference internal" href="#nitrogen-related-information" id="toc-entry-55">Nitrogen-related Information</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#usage-recommendations" id="toc-entry-55">Usage Recommendations</a></li>
-<li><a class="reference internal" href="#licence" id="toc-entry-56">Licence</a></li>
-<li><a class="reference internal" href="#current-stable-version-download" id="toc-entry-57">Current Stable Version &amp; Download</a><ul>
-<li><a class="reference internal" href="#using-cutting-edge-git" id="toc-entry-58">Using Cutting-Edge Git</a></li>
-<li><a class="reference internal" href="#otp-considerations" id="toc-entry-59">OTP Considerations</a></li>
+<li><a class="reference internal" href="#usage-recommendations" id="toc-entry-56">Usage Recommendations</a></li>
+<li><a class="reference internal" href="#licence" id="toc-entry-57">Licence</a></li>
+<li><a class="reference internal" href="#current-stable-version-download" id="toc-entry-58">Current Stable Version &amp; Download</a><ul>
+<li><a class="reference internal" href="#using-cutting-edge-git" id="toc-entry-59">Using Cutting-Edge Git</a></li>
+<li><a class="reference internal" href="#otp-considerations" id="toc-entry-60">OTP Considerations</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#troubleshooting" id="toc-entry-60">Troubleshooting</a><ul>
-<li><a class="reference internal" href="#start-up-failure" id="toc-entry-61">Start-up Failure</a></li>
-<li><a class="reference internal" href="#certification-generation-issues" id="toc-entry-62">Certification Generation Issues</a></li>
+<li><a class="reference internal" href="#troubleshooting-us-web" id="toc-entry-61">Troubleshooting US-Web</a><ul>
+<li><a class="reference internal" href="#start-up-failure" id="toc-entry-62">Start-up Failure</a></li>
+<li><a class="reference internal" href="#certification-generation-issues" id="toc-entry-63">Certification Generation Issues</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#hints" id="toc-entry-63">Hints</a><ul>
-<li><a class="reference internal" href="#development-vs-production-mode" id="toc-entry-64">Development vs Production Mode</a></li>
-<li><a class="reference internal" href="#development-hints" id="toc-entry-65">Development Hints</a><ul>
-<li><a class="reference internal" href="#operating-directly-from-within-the-rebar-build-tree" id="toc-entry-66">Operating directly from within the rebar build tree</a></li>
-<li><a class="reference internal" href="#operating-from-checkouts-build-trees" id="toc-entry-67">Operating from <tt class="docutils literal">_checkouts</tt> build trees</a></li>
+<li><a class="reference internal" href="#hints" id="toc-entry-64">Hints</a><ul>
+<li><a class="reference internal" href="#development-vs-production-mode" id="toc-entry-65">Development vs Production Mode</a></li>
+<li><a class="reference internal" href="#development-hints" id="toc-entry-66">Development Hints</a><ul>
+<li><a class="reference internal" href="#operating-directly-from-within-the-rebar-build-tree" id="toc-entry-67">Operating directly from within the rebar build tree</a></li>
+<li><a class="reference internal" href="#operating-from-checkouts-build-trees" id="toc-entry-68">Operating from <tt class="docutils literal">_checkouts</tt> build trees</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#configuration-hints" id="toc-entry-68">Configuration Hints</a><ul>
-<li><a class="reference internal" href="#batch-mode" id="toc-entry-69">Batch Mode</a></li>
-<li><a class="reference internal" href="#location-of-applications" id="toc-entry-70">Location of Applications</a></li>
-<li><a class="reference internal" href="#system-related-hints" id="toc-entry-71">System-related Hints</a></li>
-<li><a class="reference internal" href="#web-related-hints" id="toc-entry-72">Web-related hints</a></li>
+<li><a class="reference internal" href="#configuration-hints" id="toc-entry-69">Configuration Hints</a><ul>
+<li><a class="reference internal" href="#batch-mode" id="toc-entry-70">Batch Mode</a></li>
+<li><a class="reference internal" href="#location-of-applications" id="toc-entry-71">Location of Applications</a></li>
+<li><a class="reference internal" href="#system-related-hints" id="toc-entry-72">System-related Hints</a></li>
+<li><a class="reference internal" href="#web-related-hints" id="toc-entry-73">Web-related hints</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#execution-hints" id="toc-entry-73">Execution Hints</a></li>
-<li><a class="reference internal" href="#monitoring-hints" id="toc-entry-74">Monitoring Hints</a><ul>
-<li><a class="reference internal" href="#in-terms-of-unix-processes" id="toc-entry-75">In terms of (UNIX) Processes</a></li>
-<li><a class="reference internal" href="#trace-monitoring" id="toc-entry-76">Trace Monitoring</a></li>
-<li><a class="reference internal" href="#node-test-connection" id="toc-entry-77">Node Test &amp; Connection</a></li>
+<li><a class="reference internal" href="#execution-hints" id="toc-entry-74">Execution Hints</a></li>
+<li><a class="reference internal" href="#monitoring-hints" id="toc-entry-75">Monitoring Hints</a><ul>
+<li><a class="reference internal" href="#in-terms-of-unix-processes" id="toc-entry-76">In terms of (UNIX) Processes</a></li>
+<li><a class="reference internal" href="#trace-monitoring" id="toc-entry-77">Trace Monitoring</a></li>
+<li><a class="reference internal" href="#node-test-connection" id="toc-entry-78">Node Test &amp; Connection</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#forcing-certificate-renewal-without-restarting-the-server" id="toc-entry-78">Forcing Certificate Renewal Without Restarting the Server</a></li>
-<li><a class="reference internal" href="#safer-us-web-updates-testing-a-new-instance-first-out-of-the-loop" id="toc-entry-79">Safer US-Web Updates: Testing a New Instance First Out of the Loop</a><ul>
-<li><a class="reference internal" href="#objective" id="toc-entry-80">Objective</a></li>
-<li><a class="reference internal" href="#test-installation" id="toc-entry-81">Test Installation</a></li>
-<li><a class="reference internal" href="#test-configuration" id="toc-entry-82">Test Configuration</a></li>
-<li><a class="reference internal" href="#firewall-configuration" id="toc-entry-83">Firewall Configuration</a></li>
-<li><a class="reference internal" href="#test-code-updates" id="toc-entry-84">Test Code Updates</a></li>
-<li><a class="reference internal" href="#launching-the-test-server" id="toc-entry-85">Launching the Test Server</a></li>
-<li><a class="reference internal" href="#testing-it" id="toc-entry-86">Testing it</a></li>
-<li><a class="reference internal" href="#test-teardown" id="toc-entry-87">Test Teardown</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#standard-log-generation-analysis" id="toc-entry-88">Standard Log Generation &amp; Analysis</a><ul>
-<li><a class="reference internal" href="#web-analytics-software-choice-of-tool" id="toc-entry-89">Web Analytics Software: Choice of Tool</a></li>
-<li><a class="reference internal" href="#log-format" id="toc-entry-90">Log Format</a></li>
-<li><a class="reference internal" href="#awstats-management" id="toc-entry-91">Awstats Management</a><ul>
-<li><a class="reference internal" href="#awstats-installation" id="toc-entry-92">Awstats Installation</a></li>
-<li><a class="reference internal" href="#awstats-configuration" id="toc-entry-93">Awstats Configuration</a></li>
-<li><a class="reference internal" href="#awstats-troubleshooting" id="toc-entry-94">Awstats Troubleshooting</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#geolocation-with-awstats" id="toc-entry-95">Geolocation with Awstats</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#managing-public-key-certificates" id="toc-entry-96">Managing Public-Key Certificates</a><ul>
-<li><a class="reference internal" href="#x-509-certificates" id="toc-entry-97">X.509 Certificates</a></li>
-<li><a class="reference internal" href="#let-s-encrypt" id="toc-entry-98">Let's Encrypt</a></li>
-<li><a class="reference internal" href="#us-web-mode-of-operation" id="toc-entry-99">US-Web Mode of Operation</a><ul>
-<li><a class="reference internal" href="#for-mono-domain-certificates" id="toc-entry-100">For mono-domain certificates</a></li>
-<li><a class="reference internal" href="#for-wildcard-certificates" id="toc-entry-101">For wildcard certificates</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#settings" id="toc-entry-102">Settings</a></li>
-<li><a class="reference internal" href="#https-troubleshooting" id="toc-entry-103">HTTPS Troubleshooting</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#planned-enhancements" id="toc-entry-104">Planned Enhancements</a><ul>
-<li><a class="reference internal" href="#reverse-proxy" id="toc-entry-105">Reverse Proxy</a><ul>
-<li><a class="reference internal" href="#purpose" id="toc-entry-106">Purpose</a></li>
-<li><a class="reference internal" href="#challenges" id="toc-entry-107">Challenges</a></li>
-<li><a class="reference internal" href="#implementations" id="toc-entry-108">Implementations</a></li>
-<li><a class="reference internal" href="#us-web-reverse-proxy" id="toc-entry-109">US-Web Reverse Proxy</a></li>
+<li><a class="reference internal" href="#forcing-certificate-renewal-without-restarting-the-server" id="toc-entry-79">Forcing Certificate Renewal Without Restarting the Server</a></li>
+<li><a class="reference internal" href="#safer-us-web-updates-testing-a-new-instance-first-out-of-the-loop" id="toc-entry-80">Safer US-Web Updates: Testing a New Instance First Out of the Loop</a><ul>
+<li><a class="reference internal" href="#objective" id="toc-entry-81">Objective</a></li>
+<li><a class="reference internal" href="#test-installation" id="toc-entry-82">Test Installation</a></li>
+<li><a class="reference internal" href="#test-configuration" id="toc-entry-83">Test Configuration</a></li>
+<li><a class="reference internal" href="#firewall-configuration" id="toc-entry-84">Firewall Configuration</a></li>
+<li><a class="reference internal" href="#test-code-updates" id="toc-entry-85">Test Code Updates</a></li>
+<li><a class="reference internal" href="#launching-the-test-server" id="toc-entry-86">Launching the Test Server</a></li>
+<li><a class="reference internal" href="#testing-it" id="toc-entry-87">Testing it</a></li>
+<li><a class="reference internal" href="#test-teardown" id="toc-entry-88">Test Teardown</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#support" id="toc-entry-110">Support</a></li>
-<li><a class="reference internal" href="#please-react" id="toc-entry-111">Please React!</a></li>
-<li><a class="reference internal" href="#ending-word" id="toc-entry-112">Ending Word</a></li>
+<li><a class="reference internal" href="#standard-log-generation-analysis" id="toc-entry-89">Standard Log Generation &amp; Analysis</a><ul>
+<li><a class="reference internal" href="#web-analytics-software-choice-of-tool" id="toc-entry-90">Web Analytics Software: Choice of Tool</a></li>
+<li><a class="reference internal" href="#log-format" id="toc-entry-91">Log Format</a></li>
+<li><a class="reference internal" href="#awstats-management" id="toc-entry-92">Awstats Management</a><ul>
+<li><a class="reference internal" href="#awstats-installation" id="toc-entry-93">Awstats Installation</a></li>
+<li><a class="reference internal" href="#awstats-configuration" id="toc-entry-94">Awstats Configuration</a></li>
+<li><a class="reference internal" href="#awstats-troubleshooting" id="toc-entry-95">Awstats Troubleshooting</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#geolocation-with-awstats" id="toc-entry-96">Geolocation with Awstats</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#managing-public-key-certificates" id="toc-entry-97">Managing Public-Key Certificates</a><ul>
+<li><a class="reference internal" href="#x-509-certificates" id="toc-entry-98">X.509 Certificates</a></li>
+<li><a class="reference internal" href="#let-s-encrypt" id="toc-entry-99">Let's Encrypt</a></li>
+<li><a class="reference internal" href="#us-web-mode-of-operation" id="toc-entry-100">US-Web Mode of Operation</a><ul>
+<li><a class="reference internal" href="#for-mono-domain-certificates" id="toc-entry-101">For mono-domain certificates</a></li>
+<li><a class="reference internal" href="#for-wildcard-certificates" id="toc-entry-102">For wildcard certificates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#settings" id="toc-entry-103">Settings</a></li>
+<li><a class="reference internal" href="#https-troubleshooting" id="toc-entry-104">HTTPS Troubleshooting</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#planned-enhancements" id="toc-entry-105">Planned Enhancements</a><ul>
+<li><a class="reference internal" href="#reverse-proxy-1" id="toc-entry-106">Reverse Proxy</a><ul>
+<li><a class="reference internal" href="#purpose" id="toc-entry-107">Purpose</a></li>
+<li><a class="reference internal" href="#challenges" id="toc-entry-108">Challenges</a></li>
+<li><a class="reference internal" href="#implementations" id="toc-entry-109">Implementations</a></li>
+<li><a class="reference internal" href="#us-web-reverse-proxy" id="toc-entry-110">US-Web Reverse Proxy</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#support" id="toc-entry-111">Support</a></li>
+<li><a class="reference internal" href="#please-react" id="toc-entry-112">Please React!</a></li>
+<li><a class="reference internal" href="#ending-word" id="toc-entry-113">Ending Word</a></li>
 </ul>
 </div>
 <p></p>
@@ -238,7 +239,7 @@
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p>This is a rather long document, which still in some places discusses configurations that are mostly obsolete, and thus that can be skipped.</p>
-<p class="last">Notably US-Web shall now be made available based on our conventions, i.e. thanks to our <strong>native deployment</strong> automated procedure (script), and thus built by our <strong>make system</strong> (rather than by rebar3) and as an (OTP) standalone <strong>application</strong> (rather than as an OTP release).</p>
+<p class="last">Notably US-Web shall now be made available based on our conventions, i.e. thanks to our <strong>native deployment</strong> automated procedure (script), and thus built by our <strong>make system</strong> (rather than by rebar3) and as an (OTP) standalone <strong>application</strong> (rather than as an OTP release). So prefer the <tt class="docutils literal"><span class="pre">native-build</span></tt> variations to the <tt class="docutils literal">release</tt> ones.</p>
 </div>
 </div>
 <div class="section" id="layer-stack">
@@ -483,7 +484,7 @@ $<span class="w"> </span>chown<span class="w"> </span>us-web-user:us-group<span 
 <p>Let's designate this directory from now on with the <tt class="docutils literal">US_WEB_DATA_DIR</tt> pseudo-variable.</p>
 <p>This directory may notably gather following elements:</p>
 <ul class="simple">
-<li>the <tt class="docutils literal"><span class="pre">log-analysis-state</span></tt> subdirectory (if log analysis is enabled), containing the working state of the tool for web access analysis, typically Awstat, thus containing <tt class="docutils literal"><span class="pre">awstats*.baz.foobar.org.txt</span></tt> files for the preprocessing of its reports</li>
+<li>the <tt class="docutils literal"><span class="pre">log-analysis-state</span></tt> subdirectory (if log analysis is enabled), containing the working state of the tool for web access analysis, typically Awstats, thus containing <tt class="docutils literal"><span class="pre">awstats*.baz.foobar.org.txt</span></tt> files for the preprocessing of its reports</li>
 <li>the <tt class="docutils literal">certificates</tt> subdirectory (if certificate support is enabled), containing the related keys and certificates for the domains of interest:<ul>
 <li>if managing domains D in <tt class="docutils literal">[&quot;foobar.org&quot;, &quot;example.com&quot;]</tt>, then <tt class="docutils literal">D.csr</tt>, <tt class="docutils literal">D.key</tt> and <tt class="docutils literal">D.crt</tt> will be stored or produced there (refer to <a class="reference external" href="https://leec.esperide.org/#getting-information-about-the-generated-certificates">this section</a> of the documentation of LEEC for further explanations)</li>
 <li>LEEC-related transverse security elements may be found there (if using it to renew certificates) as well, notably (see <a class="reference external" href="https://leec.esperide.org/#other-files-of-interest">this LEEC documentation section</a>):<ul>
@@ -536,6 +537,18 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/etc/
 </div>
 <div class="section" id="server-deployment">
 <h1><a class="toc-backref" href="#toc-entry-21">Server Deployment</a></h1>
+<p>As <a class="reference external" href="#layer-stack">mentioned</a>, <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">US-Web</a> has two first-level mandatory dependencies:
+- <a class="reference external" href="http://us-common.esperide.org/">US-Common</a>, which relies on <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Traces">Ceylan-Traces</a>, which implies in turn <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-WOOPER">Ceylan-WOOPER</a>, then <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Myriad">Ceylan-Myriad</a> and <a class="reference external" href="http://erlang.org">Erlang</a>
+- <a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a>, with its own dependencies</p>
+<p>Extra dependencies, such as <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-LEEC/">LEEC</a>, are generally involved as well.</p>
+<p>We prefer using GNU/Linux, sticking to the latest stable release of Erlang (refer to the corresponding <a class="reference external" href="http://myriad.esperide.org#prerequisites">Myriad prerequisite section</a>  for more precise guidelines <a class="footnote-reference" href="#footnote-7" id="footnote-reference-7">[7]</a>), and building the Universal Server from sources, thanks to GNU <tt class="docutils literal">make</tt>.</p>
+<table class="docutils footnote" frame="void" id="footnote-7" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-7">[7]</a></td><td>Note that servers like US-Web have a machinery meant to be executed as root before switching to an application-specific user. As a result, Erlang is best available system-wide (as opposed to only a regular, non-privileged user).</td></tr>
+</tbody>
+</table>
+<p>The US-Web <tt class="docutils literal">master</tt> branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Please ensure that no prior instance of US-Web is already running, otherwise the new one will not be able to auto-launch, with an error message like: <tt class="docutils literal">Protocol 'inet_tcp': the name us_web&#64;YOUR_SERVER seems to be in use by another Erlang node</tt>. Refer to the <a class="reference internal" href="#troubleshooting">Troubleshooting</a> section for further guidance.</p>
@@ -917,31 +930,36 @@ $<span class="w"> </span><span class="nv">LOG_DIR</span><span class="o">=</span>
 <p>For that, the relevant settings (notably which server hosts the US-Web instance to monitor - let's say <tt class="docutils literal">hurricane</tt>, and what cookie this instance requires) shall be stored on that client host, in a configuration file that could be named <tt class="docutils literal"><span class="pre">us-web-on-hurricane-remote-access.config</span></tt> file that is typically located in the <tt class="docutils literal"><span class="pre">~/.config/universal-server</span></tt> directory.</p>
 </div>
 </div>
+<div class="section" id="cowboy-information">
+<h1><a class="toc-backref" href="#toc-entry-49">Cowboy Information</a></h1>
+<p><a class="reference external" href="https://ninenines.eu/">Cowboy</a> is the HTTP server used internally by US-Web.</p>
+<p>We recommend the reading of the <a class="reference external" href="https://github.com/ninenines/cowboy/blob/master/examples/README.asciidoc">usage examples</a> of Cowboy.</p>
+</div>
 <div class="section" id="nitrogen-support">
-<span id="nitrogen-based"></span><h1><a class="toc-backref" href="#toc-entry-49">Nitrogen Support</a></h1>
-<p>A US-Web instance may host one <a class="footnote-reference" href="#footnote-7" id="footnote-reference-7">[7]</a> Nitrogen-based website.</p>
-<table class="docutils footnote" frame="void" id="footnote-7" rules="none">
+<span id="nitrogen-based"></span><h1><a class="toc-backref" href="#toc-entry-50">Nitrogen Support</a></h1>
+<p>A US-Web instance may host one <a class="footnote-reference" href="#footnote-8" id="footnote-reference-8">[8]</a> Nitrogen-based website.</p>
+<table class="docutils footnote" frame="void" id="footnote-8" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-7">[7]</a></td><td><p class="first">Only a single instance of Nitrogen is supported per US-Web instance, as otherwise the various pages of the Nitrogen websites would clash through the code path (e.g. there would be multiple <tt class="docutils literal">index.beam</tt> files there; there would also be problems with the relative paths currently expected by <tt class="docutils literal">nitro_cache</tt>, etc.).</p>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-8">[8]</a></td><td><p class="first">Only a single instance of Nitrogen is supported per US-Web instance, as otherwise the various pages of the Nitrogen websites would clash through the code path (e.g. there would be multiple <tt class="docutils literal">index.beam</tt> files there; there would also be problems with the relative paths currently expected by <tt class="docutils literal">nitro_cache</tt>, etc.).</p>
 <p class="last">So, if wanting to have multiple Nitrogen websites available from a common domain name, one shall rely on a <a class="reference external" href="https://en.wikipedia.org/wiki/Reverse_proxy">reverse proxy</a>. It is hardly a limitation, as web applications are better managed independently anyway, in order to be able to freely start / stop / update them, to isolate them with different users, to separate their resource uses, etc.</p>
 </td></tr>
 </tbody>
 </table>
 <div class="section" id="deployment">
-<h2><a class="toc-backref" href="#toc-entry-50">Deployment</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-51">Deployment</a></h2>
 <div class="section" id="deployment-of-a-nitrogen-enabled-us-web">
-<h3><a class="toc-backref" href="#toc-entry-51">Deployment of a Nitrogen-enabled US-Web</a></h3>
-<p>US-Web must be deployed accordingly, typically with the <tt class="docutils literal"><span class="pre">--support-nitrogen</span></tt> option of the <tt class="docutils literal"><span class="pre">deploy-us-web-native-build.sh</span></tt> script <a class="footnote-reference" href="#footnote-8" id="footnote-reference-8">[8]</a>.</p>
-<table class="docutils footnote" frame="void" id="footnote-8" rules="none">
+<h3><a class="toc-backref" href="#toc-entry-52">Deployment of a Nitrogen-enabled US-Web</a></h3>
+<p>US-Web must be deployed accordingly, typically with the <tt class="docutils literal"><span class="pre">--support-nitrogen</span></tt> option of the <tt class="docutils literal"><span class="pre">deploy-us-web-native-build.sh</span></tt> script <a class="footnote-reference" href="#footnote-9" id="footnote-reference-9">[9]</a>.</p>
+<table class="docutils footnote" frame="void" id="footnote-9" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-8">[8]</a></td><td>This script relies on a few forks that we made for better control, namely of <a class="reference external" href="https://github.com/Olivier-Boudeville/nitrogen_core">nitrogen_core</a> and <a class="reference external" href="https://github.com/Olivier-Boudeville/simple_bridge">simple_bridge</a> (the latter being installed by the former).</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-9">[9]</a></td><td>This script relies on a few forks that we made for better control, namely of <a class="reference external" href="https://github.com/Olivier-Boudeville/nitrogen_core">nitrogen_core</a> and <a class="reference external" href="https://github.com/Olivier-Boudeville/simple_bridge">simple_bridge</a> (the latter being installed by the former).</td></tr>
 </tbody>
 </table>
 </div>
 <div class="section" id="deployment-of-the-nitrogen-based-website-application">
-<h3><a class="toc-backref" href="#toc-entry-52">Deployment of the Nitrogen-based website / application</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-53">Deployment of the Nitrogen-based website / application</a></h3>
 <p>Then of course a Nitrogen-based website must have already been developed, an example of which being, in <a class="reference external" href="https://github.com/Olivier-Boudeville/us-main">US-Main</a>, the <tt class="docutils literal">us_main_nitrogen_app</tt> web application.</p>
 <p>Such a website is typically obtained by cloning the <a class="reference external" href="https://github.com/nitrogen/nitrogen">official Nitrogen repository</a> (or possibly <a class="reference external" href="https://github.com/Olivier-Boudeville/nitrogen">our fork thereof</a>) and running:</p>
 <pre class="code bash literal-block">
@@ -953,7 +971,7 @@ $<span class="w"> </span>make<span class="w"> </span>slim_cowboy<span class="w">
 </div>
 </div>
 <div class="section" id="configuration">
-<h2><a class="toc-backref" href="#toc-entry-53">Configuration</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-54">Configuration</a></h2>
 <p>Here we must declare to US-Web, through its <a class="reference internal" href="#configuration-file">configuration file</a> (say, <tt class="docutils literal"><span class="pre">my-us-web.config</span></tt>, as listed under the <tt class="docutils literal">us_web_config_filename</tt> key of one's <tt class="docutils literal">us.config</tt> file), that, for a given domain name (say, <tt class="docutils literal">foo.org</tt>), a given virtual host (say, <tt class="docutils literal">bar</tt>, thus designated as <tt class="docutils literal">bar.foo.org</tt>) is to be served by a Nitrogen instance whose content root is, relatively to the US-Web default web root, <tt class="docutils literal"><span class="pre">./my-nitrogen-website</span></tt>.</p>
 <p>This is done simply thanks to a user-defined route, like in:</p>
 <pre class="code erlang literal-block">
@@ -970,7 +988,7 @@ $<span class="w"> </span>make<span class="w"> </span>slim_cowboy<span class="w">
 </pre>
 </div>
 <div class="section" id="nitrogen-related-information">
-<h2><a class="toc-backref" href="#toc-entry-54">Nitrogen-related Information</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-55">Nitrogen-related Information</a></h2>
 <p>Official Nitrogen sources:</p>
 <ul class="simple">
 <li><a class="reference external" href="http://nitrogenproject.com/">website</a></li>
@@ -990,7 +1008,7 @@ $<span class="w"> </span>make<span class="w"> </span>slim_cowboy<span class="w">
 </div>
 </div>
 <div class="section" id="usage-recommendations">
-<h1><a class="toc-backref" href="#toc-entry-55">Usage Recommendations</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-56">Usage Recommendations</a></h1>
 <p>In terms of security, we would advise:</p>
 <ul class="simple">
 <li>to stick to the <strong>latest stable version</strong> of all software involved (including US-Web and all its stack including Cowboy and LEEC, Erlang, and the operating system itself)</li>
@@ -1014,13 +1032,13 @@ $<span class="w"> </span>make<span class="w"> </span>slim_cowboy<span class="w">
 </ul>
 </div>
 <div class="section" id="licence">
-<span id="free-software"></span><h1><a class="toc-backref" href="#toc-entry-56">Licence</a></h1>
+<span id="free-software"></span><h1><a class="toc-backref" href="#toc-entry-57">Licence</a></h1>
 <p>The <tt class="docutils literal">Universal Webserver</tt> is licensed by its author (Olivier Boudeville) under the <a class="reference external" href="https://www.gnu.org/licenses/agpl-3.0.en.html">GNU Affero General Public License</a> as published by the Free Software Foundation, either version 3 of this license, or (at your option) any later version.</p>
 <p>This allows the use of the Universal Webserver code in a wide a variety of software projects, while still maintaining copyleft on this code, ensuring improvements are shared.</p>
 <p>We hope indeed that enhancements will be back-contributed (e.g. thanks to merge requests), so that everyone will be able to benefit from them.</p>
 </div>
 <div class="section" id="current-stable-version-download">
-<h1><a class="toc-backref" href="#toc-entry-57">Current Stable Version &amp; Download</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-58">Current Stable Version &amp; Download</a></h1>
 <p>As mentioned, the single, direct prerequisites of the <a class="reference external" href="https://github.com/Olivier-Boudeville/UniversalWebserver">Universal Webserver</a> are:</p>
 <ul class="simple">
 <li><a class="reference external" href="https://github.com/ninenines/cowboy">Cowboy</a> (version 2.13 or above)</li>
@@ -1029,24 +1047,24 @@ $<span class="w"> </span>make<span class="w"> </span>slim_cowboy<span class="w">
 <li><a class="reference external" href="http://us-common.esperide.org/">US-Common</a></li>
 </ul>
 <p>The latter relies on <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Traces">Ceylan-Traces</a>, which implies in turn <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-WOOPER">Ceylan-WOOPER</a>, then <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-Myriad">Ceylan-Myriad</a> and <a class="reference external" href="http://erlang.org">Erlang</a>.</p>
-<p>We prefer using GNU/Linux, sticking to the latest stable release of Erlang (refer to the corresponding <a class="reference external" href="http://myriad.esperide.org#prerequisites">Myriad prerequisite section</a>  for more precise guidelines <a class="footnote-reference" href="#footnote-9" id="footnote-reference-9">[9]</a>), and building the Universal Server from sources, thanks to GNU <tt class="docutils literal">make</tt>.</p>
-<table class="docutils footnote" frame="void" id="footnote-9" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-9">[9]</a></td><td>Note that servers like US-Main have a machinery meant to be executed as root before switching to an application-specific user. As a result, Erlang is best available system-wide (as opposed to only a regular, non-privileged user).</td></tr>
-</tbody>
-</table>
-<p>The build of the US-Web server used to be optionally driven by <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, which can be obtained by following our <a class="reference external" href="http://myriad.esperide.org/#getting-rebar3">guidelines</a>, however now our native build is strongly preferred.</p>
-<p id="getting-awstats">If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (ex for Arch Linux: <tt class="docutils literal">pacman <span class="pre">-S</span> awstats</tt> <a class="footnote-reference" href="#footnote-10" id="footnote-reference-10">[10]</a>) .</p>
+<p>We prefer using GNU/Linux, sticking to the latest stable release of Erlang (refer to the corresponding <a class="reference external" href="http://myriad.esperide.org#prerequisites">Myriad prerequisite section</a>  for more precise guidelines <a class="footnote-reference" href="#footnote-10" id="footnote-reference-10">[10]</a>), and building the Universal Server from sources, thanks to GNU <tt class="docutils literal">make</tt>.</p>
 <table class="docutils footnote" frame="void" id="footnote-10" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-10">[10]</a></td><td>To avoid a future reading access error, execute after installation: <tt class="docutils literal">chmod <span class="pre">-R</span> +r /usr/share/webapps/awstats/icon</tt>.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-10">[10]</a></td><td>Note that servers like US-Main have a machinery meant to be executed as root before switching to an application-specific user. As a result, Erlang is best available system-wide (as opposed to only a regular, non-privileged user).</td></tr>
+</tbody>
+</table>
+<p>The build of the US-Web server used to be optionally driven by <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, which can be obtained by following our <a class="reference external" href="http://myriad.esperide.org/#getting-rebar3">guidelines</a>, however now our native build is strongly preferred.</p>
+<p id="getting-awstats">If a tool for web analysis is needed (typically if enabling a meta website), this tool must be installed beforehand. Currently US-Web supports Awstats, which can be obtained thanks to your distribution of choice (for example for Arch Linux: <tt class="docutils literal">pacman <span class="pre">-S</span> awstats</tt> <a class="footnote-reference" href="#footnote-11" id="footnote-reference-11">[11]</a>; in some cases installing the <tt class="docutils literal"><span class="pre">perl-json-xs</span></tt> and <tt class="docutils literal"><span class="pre">perl-try-tiny</span></tt> packages was apparently needed as well) .</p>
+<table class="docutils footnote" frame="void" id="footnote-11" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-11">[11]</a></td><td>To avoid a future reading access error, execute after installation: <tt class="docutils literal">chmod <span class="pre">-R</span> +r /usr/share/webapps/awstats/icon</tt>.</td></tr>
 </tbody>
 </table>
 <p>If relying on rebar3 and wanting to be able to operate on the source code of the <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan">Ceylan</a> and/or <a class="reference external" href="https://github.com/Olivier-Boudeville/Universal-Server">US</a> dependencies, you may define appropriate symbolic links in a <tt class="docutils literal">_checkouts</tt> directory created at the root one's <tt class="docutils literal"><span class="pre">US-Web</span></tt> clone, these links pointing to relevant Git repositories (see the <tt class="docutils literal"><span class="pre">create-us-web-checkout</span></tt> make target for that). As for our native build, its reliance on basic clones allows for direct, seamless updates.</p>
 <div class="section" id="using-cutting-edge-git">
-<h2><a class="toc-backref" href="#toc-entry-58">Using Cutting-Edge Git</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-59">Using Cutting-Edge Git</a></h2>
 <p>This is the installation method that we use and recommend; the Universal Webserver <tt class="docutils literal">master</tt> branch is meant to stick to the latest stable version: we try to ensure that this main line always stays functional (sorry for the pun). Evolutions are to take place in feature branches and to be merged only when ready.</p>
 <p>Once Erlang (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-erlang">here</a>), rebar3 (see <a class="reference external" href="http://myriad.esperide.org/index.html#getting-rebar3">here</a>) and possibly LEEC (see <a class="reference external" href="https://github.com/Olivier-Boudeville/Ceylan-LEEC#building">here</a>) or Awstats (see <a class="reference external" href="#getting-awstats">here</a>) are available, it should be just a matter of executing our <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/tree/master/priv/bin/get-us-web-from-sources.sh">get-us-web-from-sources.sh</a> script for downloading and building all dependencies at once, and run a test server (use its <tt class="docutils literal"><span class="pre">--help</span></tt> option for more information).</p>
 <p>For example:</p>
@@ -1079,7 +1097,7 @@ shows that the US-Web server is up and running.
 <p><span class="raw-html"><a name="otp"></a></span></p>
 </div>
 <div class="section" id="otp-considerations">
-<span id="otp-build"></span><h2><a class="toc-backref" href="#toc-entry-59">OTP Considerations</a></h2>
+<span id="otp-build"></span><h2><a class="toc-backref" href="#toc-entry-60">OTP Considerations</a></h2>
 <p>The default build system of US-Web is the native Ceylan one (triggered by <tt class="docutils literal">make all</tt>), yet a rebar3-based one is also available (triggered by <tt class="docutils literal">make <span class="pre">all-rebar3</span></tt>).</p>
 <p>In this last context, as discussed in these sections of <a class="reference external" href="http://myriad.esperide.org/myriad.html#otp">Myriad</a>, <a class="reference external" href="http://wooper.esperide.org/index.html#otp">WOOPER</a>, <a class="reference external" href="http://traces.esperide.org/index.html#otp">Traces</a> and <a class="reference external" href="http://us-common.esperide.org/index.html#otp">US-Common</a>, the Universal Webserver <em>OTP application</em> is generated out of the build tree, ready to result directly in an <em>(OTP) release</em>. For that we rely on <a class="reference external" href="https://www.rebar3.org/">rebar3</a>, <a class="reference external" href="https://github.com/erlware/relx">relx</a> and (possibly) <a class="reference external" href="https://hex.pm/">hex</a>.</p>
 <p>Then we benefit from a standalone, complete Universal Webserver able to host as many virtual hosts on as many number of domains as needed.</p>
@@ -1087,10 +1105,10 @@ shows that the US-Web server is up and running.
 <p>For more details, one may have a look at <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/conf/rebar.config.template">rebar.config.template</a>, the general rebar configuration file used when generating the Universal Webserver OTP application and release (implying the automatic management of all its dependencies).</p>
 </div>
 </div>
-<div class="section" id="troubleshooting">
-<h1><a class="toc-backref" href="#toc-entry-60">Troubleshooting</a></h1>
+<div class="section" id="troubleshooting-us-web">
+<span id="troubleshooting"></span><h1><a class="toc-backref" href="#toc-entry-61">Troubleshooting US-Web</a></h1>
 <div class="section" id="start-up-failure">
-<h2><a class="toc-backref" href="#toc-entry-61">Start-up Failure</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-62">Start-up Failure</a></h2>
 <p>Many operations take place when launching a US-Web instance - especially when requesting the generation of certificates; so most of the issues are expected to happen then.</p>
 <p>If having deployed a (here, native) release (typically by running <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/blob/master/priv/bin/deploy-us-web-native-build.sh">deploy-us-web-native-build.sh</a>) and if <tt class="docutils literal">systemctl restart <span class="pre">us-web-as-native-build.service</span></tt> failed, start by executing:</p>
 <pre class="literal-block">
@@ -1113,25 +1131,25 @@ $ systemctl status us-web-as-native-build.service
 <p>If the problem remains, time to perform some investigation, refer to our <a class="reference internal" href="#local-monitoring">Local Monitoring</a> section.</p>
 </div>
 <div class="section" id="certification-generation-issues">
-<h2><a class="toc-backref" href="#toc-entry-62">Certification Generation Issues</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-63">Certification Generation Issues</a></h2>
 <p>One may check first that a webserver can indeed be reached for the target domain or subdomain (e.g. do not forget to define a wildcard CNAME like <tt class="docutils literal">*.foobar.org</tt> to point on <tt class="docutils literal">foobar.org</tt>, so that virtual hosts can be reached by the ACME servers).</p>
 <p>Beware also not to trigger too many / too frequent certificate requests, as this could lead to reaching the rate limits implemented by the ACME servers: then even perfectly legit, correct operations would fail.</p>
 </div>
 </div>
 <div class="section" id="hints">
-<h1><a class="toc-backref" href="#toc-entry-63">Hints</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-64">Hints</a></h1>
 <p>Various keys (e.g. <tt class="docutils literal">us_app_base_dir</tt>) may be defined in the US configuration files (e.g. in a <tt class="docutils literal">{us_app_base_dir, &quot;/opt/some_dir&quot;}</tt> entry), from which other elements may derive (e.g. paths). To denote the value associated to a key, we surround in this documentation the key with <tt class="docutils literal">&#64;</tt> characters (this is just a reading convention).</p>
 <p>For example <tt class="docutils literal"><span class="pre">&#64;us_app_base_dir&#64;/hello.txt</span></tt> would correspond here to <tt class="docutils literal">/opt/some_dir/hello.txt</tt>.</p>
 <div class="section" id="development-vs-production-mode">
-<h2><a class="toc-backref" href="#toc-entry-64">Development vs Production Mode</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-65">Development vs Production Mode</a></h2>
 <p>Should a mismatch be detected between the compile-time execution target and the runtime, user-configured, execution context, a warning will be issued in the traces.</p>
 <p>When building a fresh release thanks to <tt class="docutils literal">make <span class="pre">release-dev</span></tt>, the corresponding action (<tt class="docutils literal">rebar3 release</tt>) will build that release with the base settings, hence in development mode (so not &quot;as prod&quot; - i.e. not with the <tt class="docutils literal">prod</tt> profile, hence not selecting our <tt class="docutils literal">production</tt> execution target).</p>
 <p>Note that all dependencies (thus of course including Myriad, WOOPER, Traces and LEEC) are built by rebar3 with their <tt class="docutils literal">prod</tt> settings. As a result, relying on <tt class="docutils literal">basic_utils:get_execution_target/0</tt> will only tell us about <tt class="docutils literal">Myriad</tt> settings (thus always built in production mode), not about any other layer (including <tt class="docutils literal"><span class="pre">US-Web</span></tt>). A US-Web trace allows to check all relevant modes, notably that, in production, the production settings apply indeed.</p>
 </div>
 <div class="section" id="development-hints">
-<h2><a class="toc-backref" href="#toc-entry-65">Development Hints</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-66">Development Hints</a></h2>
 <div class="section" id="operating-directly-from-within-the-rebar-build-tree">
-<h3><a class="toc-backref" href="#toc-entry-66">Operating directly from within the rebar build tree</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-67">Operating directly from within the rebar build tree</a></h3>
 <p>(not recommended in a development phase)</p>
 <p>If having modified and recompiled a Ceylan prerequisite (e.g. WOOPER), then, before generating the release, run from its root (e.g. <tt class="docutils literal">us_web/_build/default/lib/wooper</tt>):</p>
 <pre class="code bash literal-block">
@@ -1140,26 +1158,26 @@ $<span class="w"> </span>make<span class="w"> </span>rebar3-copy-beams<span clas
 <p>Or, simply run <tt class="docutils literal">make <span class="pre">rebar3-compile</span> <span class="pre">REBAR_BUILD_DIR=../../</span></tt> (and no need to run <tt class="docutils literal">make release</tt> afterwards).</p>
 </div>
 <div class="section" id="operating-from-checkouts-build-trees">
-<h3><a class="toc-backref" href="#toc-entry-67">Operating from <tt class="docutils literal">_checkouts</tt> build trees</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-68">Operating from <tt class="docutils literal">_checkouts</tt> build trees</a></h3>
 <p>(recommended in a development phase, as a lot more flexible/unified than the previous method)</p>
 <p>Create a <tt class="docutils literal">us_web/_ckeckouts</tt> directory containing symbolic links to repositories of dependencies (e.g. <tt class="docutils literal">myriad</tt>) that may be updated locally; or, preferably, execute the <tt class="docutils literal"><span class="pre">create-us-web-checkout</span></tt> make target to automate and streamline this step.</p>
 </div>
 </div>
 <div class="section" id="configuration-hints">
-<h2><a class="toc-backref" href="#toc-entry-68">Configuration Hints</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-69">Configuration Hints</a></h2>
 <div class="section" id="batch-mode">
-<h3><a class="toc-backref" href="#toc-entry-69">Batch Mode</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-70">Batch Mode</a></h3>
 <p>One can update <tt class="docutils literal">us_web/conf/sys.config</tt> in order to toggle batch mode (e.g. to enable/disable a graphical trace supervision) after build time.</p>
 <p>It deals with the configuration of the <tt class="docutils literal">Traces</tt> application, so it comes very early at start-up (at application boot, hence before US-Web specific settings can be read, so this option would be difficult to put in the US configuration files).</p>
 </div>
 <div class="section" id="location-of-applications">
-<h3><a class="toc-backref" href="#toc-entry-70">Location of Applications</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-71">Location of Applications</a></h3>
 <p>The location of the US-Web application is bound to differ depending on the context of use (development/production deployments, host-wise, etc.), whereas it is needed to be known at the very least by its start/stop scripts.</p>
 <p>So its path must be specified (most preferably as an absolute directory) in the US-Web configuration file. However, at least for test configuration files, relying on an absolute directory would not be satisfactory, as the user may install the US-Web framework at any place and testing should not require a manual configuration update.</p>
 <p>As a result, should an application location (e.g. US-Web) not be specified in the configuration, it will be looked-up in the shell environment (using the <tt class="docutils literal">US_WEB_APP_BASE_DIR</tt> variable) for that and, should this variable not be set, as a last-resort an attempt to guess that location will be done.</p>
 </div>
 <div class="section" id="system-related-hints">
-<h3><a class="toc-backref" href="#toc-entry-71">System-related Hints</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-72">System-related Hints</a></h3>
 <p>Besides the use of specific, unprivileged user/group thanks to the use of authbind (set with a minimal depth level), the system resources (notably the maximum number of file descriptors) are reported (among the traces; search for <tt class="docutils literal">System description</tt>) at the startup of the US-Web server.</p>
 <p>Moreover the launch scripts (namely <tt class="docutils literal"><span class="pre">start-us-web-native-build.sh</span></tt> and <tt class="docutils literal"><span class="pre">start-us-web-release.sh</span></tt>) raise the limit in terms of maximum number of file descriptors opened by the US-Web process, so that the connection acceptor does not have to reduce its accept rate (typically because of rogue bots performing pseudo-denials of service).</p>
 <p>Finally, any webserver shall rely preferably on:
@@ -1167,24 +1185,24 @@ $<span class="w"> </span>make<span class="w"> </span>rebar3-copy-beams<span clas
 - an uninterruptible power supply (UPS), protecting the server and the telecom appliances involved</p>
 </div>
 <div class="section" id="web-related-hints">
-<h3><a class="toc-backref" href="#toc-entry-72">Web-related hints</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-73">Web-related hints</a></h3>
 <ul class="simple">
 <li>most paths (e.g. <tt class="docutils literal">default_web_root</tt>, in the US-Web configuration) can be defined as <strong>relative</strong> ones (mostly useful for embedded tests; otherwise absolute paths shall be preferred); in this case they will be relative to the runtime current directory, typically <tt class="docutils literal"><span class="pre">[...]/us_web/_build/default/rel/us_web/</span></tt> in development mode</li>
 <li>the <tt class="docutils literal">default_domain_catch_all</tt> atom allows to designate any <strong>domain-level host</strong> (e.g. <tt class="docutils literal">foobar.org</tt>) that did not match previous host rules</li>
-<li>in the context of a given host (e.g. <tt class="docutils literal">foobar.org</tt>), the <tt class="docutils literal">default_vhost_catch_all</tt> atom allows to designate any of its <strong>virtual hosts</strong> (e.g. <tt class="docutils literal">bar</tt>, to be understood as <tt class="docutils literal">bar.foobar.org</tt>) that did not match previous path rules <a class="footnote-reference" href="#footnote-11" id="footnote-reference-11">[11]</a></li>
+<li>in the context of a given host (e.g. <tt class="docutils literal">foobar.org</tt>), the <tt class="docutils literal">default_vhost_catch_all</tt> atom allows to designate any of its <strong>virtual hosts</strong> (e.g. <tt class="docutils literal">bar</tt>, to be understood as <tt class="docutils literal">bar.foobar.org</tt>) that did not match previous path rules <a class="footnote-reference" href="#footnote-12" id="footnote-reference-12">[12]</a></li>
 <li>refer to <tt class="docutils literal"><span class="pre">us_web/priv/for-testing</span></tt> for an example setup and configuration files</li>
 <li>the web roots shall be owned by the user running US-Web (e.g. <tt class="docutils literal">chown <span class="pre">-R</span> <span class="pre">us-web-user:us-group</span> /opt/www</tt>)</li>
 </ul>
-<table class="docutils footnote" frame="void" id="footnote-11" rules="none">
+<table class="docutils footnote" frame="void" id="footnote-12" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-11">[11]</a></td><td>When using https, configuring a catch-all might be ill-advised, as whenever an unanticipated virtual host is requested, a certificate warning (e.g. <tt class="docutils literal">SSL_ERROR_BAD_CERT_DOMAIN</tt>) is triggered - as by design no certificate (direct or through SANs) will exist for this host (a &quot;connection failed&quot; error is then more desirable).</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-12">[12]</a></td><td>When using https, configuring a catch-all might be ill-advised, as whenever an unanticipated virtual host is requested, a certificate warning (e.g. <tt class="docutils literal">SSL_ERROR_BAD_CERT_DOMAIN</tt>) is triggered - as by design no certificate (direct or through SANs) will exist for this host (a &quot;connection failed&quot; error is then more desirable).</td></tr>
 </tbody>
 </table>
 </div>
 </div>
 <div class="section" id="execution-hints">
-<h2><a class="toc-backref" href="#toc-entry-73">Execution Hints</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-74">Execution Hints</a></h2>
 <ul>
 <li><p class="first">the current working directory of a US-Web instance deployed thanks to <tt class="docutils literal"><span class="pre">deploy-us-web-release.sh</span></tt> is <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-x.y.z</span></tt></p>
 </li>
@@ -1192,7 +1210,7 @@ $<span class="w"> </span>make<span class="w"> </span>rebar3-copy-beams<span clas
 </li>
 <li><p class="first">to debug (once batch mode has been enabled/disabled), one may use the <tt class="docutils literal">debug</tt> make target, from the tree root</p>
 </li>
-<li><p class="first">to test server-side errors, one may create, in a web root, a directory that cannot be traversed (e.g. <tt class="docutils literal">chmod 000 <span class="pre">my-dir</span></tt>) and direct one's browser to a content supposedly located in this directory <a class="footnote-reference" href="#footnote-12" id="footnote-reference-12">[12]</a>; note that, if requesting instead that faulty directory itself (not an element within), then (whether or not a trailing <tt class="docutils literal">/</tt> is specified), an error 403 (<tt class="docutils literal">ERROR 403: Forbidden</tt>) is returned instead (corresponds to the <tt class="docutils literal">case A</tt> in the corresponding sources)</p>
+<li><p class="first">to test server-side errors, one may create, in a web root, a directory that cannot be traversed (e.g. <tt class="docutils literal">chmod 000 <span class="pre">my-dir</span></tt>) and direct one's browser to a content supposedly located in this directory <a class="footnote-reference" href="#footnote-13" id="footnote-reference-13">[13]</a>; note that, if requesting instead that faulty directory itself (not an element within), then (whether or not a trailing <tt class="docutils literal">/</tt> is specified), an error 403 (<tt class="docutils literal">ERROR 403: Forbidden</tt>) is returned instead (corresponds to the <tt class="docutils literal">case A</tt> in the corresponding sources)</p>
 </li>
 <li><p class="first">to test host matching (e.g. for a <tt class="docutils literal">baz</tt> virtual host), including the default catch-all even on a computer having no specific public DNS entries, one may simply add in <tt class="docutils literal">/etc/hosts</tt> entries like:</p>
 <pre class="literal-block">
@@ -1200,10 +1218,10 @@ $<span class="w"> </span>make<span class="w"> </span>rebar3-copy-beams<span clas
 </pre>
 </li>
 </ul>
-<table class="docutils footnote" frame="void" id="footnote-12" rules="none">
+<table class="docutils footnote" frame="void" id="footnote-13" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-12">[12]</a></td><td>See <tt class="docutils literal"><span class="pre">priv/for-testing/test-static-website-A/to-test-for-errors</span></tt>, which was created precisely for that. Note that its permissions have been restored to sensible values, as otherwise that directory was blocking the OTP release generation.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-13">[13]</a></td><td>See <tt class="docutils literal"><span class="pre">priv/for-testing/test-static-website-A/to-test-for-errors</span></tt>, which was created precisely for that. Note that its permissions have been restored to sensible values, as otherwise that directory was blocking the OTP release generation.</td></tr>
 </tbody>
 </table>
 <ul class="simple">
@@ -1221,9 +1239,9 @@ erl_call:<span class="w"> </span>failed<span class="w"> </span>to<span class="w"
 </pre>
 </div>
 <div class="section" id="monitoring-hints">
-<h2><a class="toc-backref" href="#toc-entry-74">Monitoring Hints</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-75">Monitoring Hints</a></h2>
 <div class="section" id="in-terms-of-unix-processes">
-<h3><a class="toc-backref" href="#toc-entry-75">In terms of (UNIX) Processes</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-76">In terms of (UNIX) Processes</a></h3>
 <p>A running US-Web server will not be found by looking up <tt class="docutils literal">beam</tt> or <tt class="docutils literal">beam.smp</tt> through <tt class="docutils literal">ps</tt>; as an OTP release, it relies first on the <tt class="docutils literal">run_erl</tt> launcher, like shown, based on <tt class="docutils literal">ps <span class="pre">-edf</span></tt>, in:</p>
 <pre class="code bash literal-block">
 UID<span class="w">         </span>PID<span class="w">    </span>PPID<span class="w">  </span>C<span class="w"> </span>STIME<span class="w"> </span>TTY<span class="w"> </span>TIME<span class="w">     </span>CMD<span class="w">
@@ -1287,13 +1305,13 @@ $<span class="w"> </span>list-processes-by-size.sh<span class="w">
 <p>A more recent server instance is using, after more than 70 days, 60 MB of RSS memory, whereas after 30 days another ones was 108 MB. Anyway quite low.</p>
 </div>
 <div class="section" id="trace-monitoring">
-<h3><a class="toc-backref" href="#toc-entry-76">Trace Monitoring</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-77">Trace Monitoring</a></h3>
 <p>Use the <tt class="docutils literal"><span class="pre">us_web/priv/bin/monitor-us-web.sh</span></tt> script in order to monitor the traces of an already running, possibly remote, US-Web instance.</p>
 <p>Note that the monitored US-Web instance will be by default the one specified in any <tt class="docutils literal"><span class="pre">us-monitor.config</span></tt> file located in the US configuration directory.</p>
 <p>One may specify on the command-line another configuration file if needed, such as <tt class="docutils literal"><span class="pre">us-monitor-for-development.config</span></tt>.</p>
 </div>
 <div class="section" id="node-test-connection">
-<h3><a class="toc-backref" href="#toc-entry-77">Node Test &amp; Connection</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-78">Node Test &amp; Connection</a></h3>
 <p>If desperate enough, one may also run, possibly from another host, and based on the settings to be found in the configuration files:</p>
 <pre class="code bash literal-block">
 $<span class="w"> </span><span class="nv">ERL_EPMD_PORT</span><span class="o">=</span>XXXX<span class="w"> </span>erl<span class="w"> </span>-name<span class="w"> </span>tester<span class="w"> </span>-setcookie<span class="w"> </span>CCCC<span class="w"> </span>-kernel<span class="w"> </span>inet_dist_listen_min<span class="w"> </span>MIN<span class="w"> </span>inet_dist_listen_max<span class="w"> </span>MAX<span class="w">
@@ -1305,13 +1323,13 @@ $<span class="w"> </span><span class="nv">ERL_EPMD_PORT</span><span class="o">=<
 </div>
 </div>
 <div class="section" id="forcing-certificate-renewal-without-restarting-the-server">
-<h2><a class="toc-backref" href="#toc-entry-78">Forcing Certificate Renewal Without Restarting the Server</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-79">Forcing Certificate Renewal Without Restarting the Server</a></h2>
 <p>The renewal of certificates is a rather error-prone operation, as it involves third-party (ACME) servers, which additionally enforce various rate limits.</p>
-<p>Moreover this operation will be triggered automatically a long time <a class="footnote-reference" href="#footnote-13" id="footnote-reference-13">[13]</a> after the server has been launched, in the background, so its silent failure shall be considered (even though the traces should duly keep track of it).</p>
-<table class="docutils footnote" frame="void" id="footnote-13" rules="none">
+<p>Moreover this operation will be triggered automatically a long time <a class="footnote-reference" href="#footnote-14" id="footnote-reference-14">[14]</a> after the server has been launched, in the background, so its silent failure shall be considered (even though the traces should duly keep track of it).</p>
+<table class="docutils footnote" frame="void" id="footnote-14" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-13">[13]</a></td><td>Refer to the <tt class="docutils literal">dhms_cert_renewal_period_{development,production}</tt> defines in <tt class="docutils literal">class_USCertificateManager</tt>; typically, in production mode, 70 days are to elapse between two renewals.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-14">[14]</a></td><td>Refer to the <tt class="docutils literal">dhms_cert_renewal_period_{development,production}</tt> defines in <tt class="docutils literal">class_USCertificateManager</tt>; typically, in production mode, 70 days are to elapse between two renewals.</td></tr>
 </tbody>
 </table>
 <p>So the goal is to trigger the <tt class="docutils literal">renewCertificate/1</tt> oneway of the certificate manager of each website. This can be done simply by triggering the <tt class="docutils literal">renewCertificates/1</tt> request of the US-Web configuration server - which happens to be a registered process.</p>
@@ -1332,9 +1350,9 @@ $<span class="w"> </span><span class="nv">ERL_EPMD_PORT</span><span class="o">=<
 </pre>
 </div>
 <div class="section" id="safer-us-web-updates-testing-a-new-instance-first-out-of-the-loop">
-<h2><a class="toc-backref" href="#toc-entry-79">Safer US-Web Updates: Testing a New Instance First Out of the Loop</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-80">Safer US-Web Updates: Testing a New Instance First Out of the Loop</a></h2>
 <div class="section" id="objective">
-<h3><a class="toc-backref" href="#toc-entry-80">Objective</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-81">Objective</a></h3>
 <p>When running a reference server for a set of given domains, one should avoid stopping US-Web, updating its code and attempting to relaunch it: not only because this may imply a non-negligible downtime, but also, more importantly, because, should a failure happen, it would have to be fixed live, in the hurry, whereas no one can access anymore any of the hosted sites. Not a convenient situation.</p>
 <p>A better, safer (but not simpler) approach is instead to install one's newer server instance as a test one on the target host, build it and test it on a temporary setting (on an auxiliary TCP port) and, if and only if the operation is fully satisfactory, to switch the same setting on the actual port (once the prior reference instance has been shut down); if on the contrary something goes wrong with the test, it can be safely fixed out of the critical path, not implying a specific downtime.</p>
 <div class="admonition note">
@@ -1343,13 +1361,13 @@ $<span class="w"> </span><span class="nv">ERL_EPMD_PORT</span><span class="o">=<
 </div>
 </div>
 <div class="section" id="test-installation">
-<h3><a class="toc-backref" href="#toc-entry-81">Test Installation</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-82">Test Installation</a></h3>
 <p>For such a test bed to exist, the usual <a class="reference external" href="#server-deployment">installation step</a> shall be followed by a specific, separate configuration step.</p>
 <p>Installing is merely a matter of transferring the <tt class="docutils literal"><span class="pre">deploy-us-web-native-build.sh</span></tt> script to one's server and to run it (as a normal user), as <tt class="docutils literal"><span class="pre">deploy-us-web-native-build.sh</span> <span class="pre">--no-launch</span></tt> so that it cannot interfere with any reference version running.</p>
 <p>A <tt class="docutils literal"><span class="pre">check-foobar-website-availability.sh</span></tt> script may be useful to efficiently check the state of that reference version.</p>
 </div>
 <div class="section" id="test-configuration">
-<h3><a class="toc-backref" href="#toc-entry-82">Test Configuration</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-83">Test Configuration</a></h3>
 <p>A first action is to devise a corresponding configuration file and to launch a corresponding instance on dedicated TCP ports.</p>
 <p>It will require a dedicated US-Web configuration file, let's name it <tt class="docutils literal"><span class="pre">foobar-us-web-for-testing.config</span></tt>. It will have to be referenced by a corresponding US configuration file (namely <tt class="docutils literal"><span class="pre">us-config</span></tt>), both of them expected to be in a <tt class="docutils literal"><span class="pre">universal-server</span></tt> directory in a test-specific root directory, e.g. in <tt class="docutils literal"><span class="pre">TEST_DIR=/opt/universal-server/us_web-data/configuration-for-testing/universal-server</span></tt> - thus as <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-data/configuration-for-testing/universal-server/{foobar-us-web-for-testing,us}.config</span></tt> - rather than in a standard root directory such as <tt class="docutils literal">/etc/xdg</tt>.</p>
 <p>The most direct/reliable approach is to copy the reference versions of these two files and modify them as little as possible.</p>
@@ -1373,7 +1391,7 @@ $<span class="w"> </span><span class="nv">ERL_EPMD_PORT</span><span class="o">=<
 <p>Finally, if relying on a <tt class="docutils literal"><span class="pre">dns-01</span></tt> challenge, the credentials for the DNS provider will have to be available. Creating a symlink in the test-specific root directory to, say, <tt class="docutils literal"><span class="pre">/etc/xdg/universal-server/leec-ovh-credentials-for-foobar.org.txt</span></tt> should be sufficient for that.</p>
 </div>
 <div class="section" id="firewall-configuration">
-<h3><a class="toc-backref" href="#toc-entry-83">Firewall Configuration</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-84">Firewall Configuration</a></h3>
 <p>A second step is, firewall-wise, to enable (temporarily) the access to the test instance.</p>
 <p>The target EPMD port must already fall in a LAN-supported range, yet we also want to be able to properly test as if we were a random Internet user, thus connecting from the WAN.</p>
 <p>So:</p>
@@ -1383,14 +1401,14 @@ $<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </sp
 </pre>
 </div>
 <div class="section" id="test-code-updates">
-<h3><a class="toc-backref" href="#toc-entry-84">Test Code Updates</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-85">Test Code Updates</a></h3>
 <p>Tests may show that some modules have to be fixed, and thus that the server installation has to be updated accordingly (rather than be deployed again from scratch). The <tt class="docutils literal"><span class="pre">sync-all-to-server</span></tt> make target is useful to synchronise the code base of a given layer on the server from a development computer; for that the <tt class="docutils literal">CEYLAN_SYNC_TARGET_ROOT</tt> must be set to the root path on the server; for example:</p>
 <pre class="code bash literal-block">
 $<span class="w"> </span>make<span class="w"> </span>sync-all-to-server<span class="w"> </span><span class="nv">CEYLAN_SYNC_TARGET_ROOT</span><span class="o">=</span>/opt/universal-server/us_web-native
 </pre>
 </div>
 <div class="section" id="launching-the-test-server">
-<h3><a class="toc-backref" href="#toc-entry-85">Launching the Test Server</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-86">Launching the Test Server</a></h3>
 <p>For this use, <tt class="docutils literal">systemctl</tt> would not be convenient. A better approach is to start one's test server explicitly, based on the configuration files that were just devised.</p>
 <p>First of all, no prior test instance should exist, otherwise they would clash EPMD-wise. <tt class="docutils literal">ps <span class="pre">-edf|grep</span> <span class="pre">-i</span> epmd</tt> may help.</p>
 <p>Then the target test instance can be launched, as root:</p>
@@ -1400,14 +1418,14 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/opt/
 </pre>
 </div>
 <div class="section" id="testing-it">
-<h3><a class="toc-backref" href="#toc-entry-86">Testing it</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-87">Testing it</a></h3>
 <p>Either the launch was reported as succeeded or not.</p>
 <p>In the latter case, a launch time-out was reported. The log of the Erlang VM (typically <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-native/us_web/log/erlang.log.1</span></tt>) will probably give relevant information. May a prior test instance is on the way, clashing in the same EPMD instance, or regarding the target TCP ports?</p>
 <p>In the former case, a success is assumed. The best way to confirm this is to check the overall result by ourself, with <tt class="docutils literal">wget <span class="pre">http://foobar.org:8000</span> <span class="pre">-O</span> -</tt>.</p>
 <p>Further insight to be obtained based on <tt class="docutils literal"><span class="pre">/opt/universal-server/us_web-data/configuration-for-testing/us_web.traces</span></tt>.</p>
 </div>
 <div class="section" id="test-teardown">
-<h3><a class="toc-backref" href="#toc-entry-87">Test Teardown</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-88">Test Teardown</a></h3>
 <p>Finally, now that the test is over, we can close up the mountain with:</p>
 <pre class="code bash literal-block">
 <span class="c1"># The -n option is used to have port numbers rather than aliases:
@@ -1422,7 +1440,7 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/opt/
 </div>
 </div>
 <div class="section" id="standard-log-generation-analysis">
-<h1><a class="toc-backref" href="#toc-entry-88">Standard Log Generation &amp; Analysis</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-89">Standard Log Generation &amp; Analysis</a></h1>
 <p>The objective in this section is to have US-Web generate access logs like the standard webservers do, so that standard tools able to produce log analyses can be used afterwards. They may generate HTML pages, which can in turn be appropriately hosted directly by the US-Web framework itself.</p>
 <p>US-Web (rather than a <tt class="docutils literal">crontab</tt>) takes control of log writing, for full control onto the start, stop and rotation behaviours.</p>
 <p>For write efficiency, It is done by an (Erlang) process specific to a given virtual host (see <tt class="docutils literal">class_USWebLogger</tt>), and a task ring is used for synchronicity and load balancing with regard to log report generation.</p>
@@ -1435,7 +1453,7 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/opt/
 <p>At the Cowboy level, logging could be done as a <a class="reference external" href="https://ninenines.eu/docs/en/cowboy/2.7/guide/middlewares/">middleware</a>, yet we preferred to perform it directly in the handler (typically the static one, <tt class="docutils literal">us_web_static</tt>), presumably for a better control.</p>
 <p>Once access logs are produced, a specific tool is to generate reports out of them, as discussed in the next section.</p>
 <div class="section" id="web-analytics-software-choice-of-tool">
-<h2><a class="toc-backref" href="#toc-entry-89">Web Analytics Software: Choice of Tool</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-90">Web Analytics Software: Choice of Tool</a></h2>
 <p>The desired properties for such a tool are mainly: available as free software, trustable, standard, actively and well-maintained, running locally (as opposed to remote services such as Google Analytics), standalone, not resource-demanding, controllable, generating a local analysis (static) website, based only on basic webserver logs (not on a dedicated database, not on markers to be added to all webpages such as 1-pixel images), virtual-host compliant.</p>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/List_of_web_analytics_software">Various tools</a> can be considered, including (best spotted candidates, by increasing level of interest):</p>
 <ul class="simple">
@@ -1448,7 +1466,7 @@ $<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>/opt/
 <p>So we finally retained <a class="reference external" href="https://awstats.sourceforge.io/">AWStats</a>.</p>
 </div>
 <div class="section" id="log-format">
-<h2><a class="toc-backref" href="#toc-entry-90">Log Format</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-91">Log Format</a></h2>
 <p>The most suitable log format that we spotted (see <a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_faq.html#PERSONALIZEDLOG">[1]</a> and <a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_config.html#LogFormat">[2]</a> for more information) is named &quot;<em>NCSA combined with several virtualhostname sharing same log file</em>&quot;.</p>
 <p>Its correct definition is exactly:</p>
 <pre class="literal-block">
@@ -1473,9 +1491,9 @@ LogFormat=&quot;%host %other %logname %time1 %methodurl %code %bytesd %refererqu
 <p>In all these cases, the log separator is a single space (hence <tt class="docutils literal">LogSeparator=&quot; &quot;</tt>).</p>
 </div>
 <div class="section" id="awstats-management">
-<h2><a class="toc-backref" href="#toc-entry-91">Awstats Management</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-92">Awstats Management</a></h2>
 <div class="section" id="awstats-installation">
-<h3><a class="toc-backref" href="#toc-entry-92">Awstats Installation</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-93">Awstats Installation</a></h3>
 <p>On Arch Linux, one should follow <a class="reference external" href="https://wiki.archlinux.org/index.php/AWStats">these guidelines</a> (example for version 7.8):</p>
 <pre class="code bash literal-block">
 $<span class="w"> </span>pacman<span class="w"> </span>-Sy<span class="w"> </span>--needed<span class="w"> </span>awstats
@@ -1487,7 +1505,7 @@ $<span class="w"> </span>chmod<span class="w"> </span>+r<span class="w"> </span>
 </pre>
 </div>
 <div class="section" id="awstats-configuration">
-<h3><a class="toc-backref" href="#toc-entry-93">Awstats Configuration</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-94">Awstats Configuration</a></h3>
 <p>Log analysis will be triggered periodically by the US-Web server rather than on-demand via CGI Perl scripts, and its result, i.e. the web pages generated from the access logs, will be available in the meta website (e.g. <tt class="docutils literal">mymeta.foobar.org</tt>; refer to <a class="reference internal" href="#auto-generated-meta-website">Auto-generated Meta Website</a> for more information).</p>
 <p>More precisely, and as already mentioned, in the US-Web log directory (see <tt class="docutils literal">us_web_log_dir</tt>), dedicated access and error log files will be generated for each known virtual host. For example the accesses to a <tt class="docutils literal">baz.foobar.org</tt> virtual host will be written by the US-Web server in a corresponding <tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log</span></tt> file.</p>
 <p>At server start-up, the US-Web meta module (<tt class="docutils literal">us_web_meta</tt>) will have generated a suitable Awstats configuration file (namely <tt class="docutils literal">awstats.baz.foobar.org.conf</tt>) that will trigger the generation of the corresponding static web pages (<tt class="docutils literal">awstats.baz.foobar.org.*</tt>, notably <tt class="docutils literal">awstats.baz.foobar.org.html</tt>) in the web root of the meta website.</p>
@@ -1509,7 +1527,7 @@ $<span class="w"> </span>chmod<span class="w"> </span>+r<span class="w"> </span>
 <p>The Awstats database, typically located in <tt class="docutils literal"><span class="pre">/var/local/us-web/data</span></tt>, will be updated once an access log file will be rotated; just after, this log file will be compressed and archived under a relevant filename, such as <tt class="docutils literal"><span class="pre">access-for-baz.foobar.org.log.2020-2-1-at-19h-48m-12s.xz</span></tt>.</p>
 </div>
 <div class="section" id="awstats-troubleshooting">
-<h3><a class="toc-backref" href="#toc-entry-94">Awstats Troubleshooting</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-95">Awstats Troubleshooting</a></h3>
 <p>Various issues may prevent log reports to be available.</p>
 <p>Let's try with a real US-Web uncompressed log file first (e.g. <tt class="docutils literal">xz <span class="pre">-d</span> <span class="pre">access-vhost-catchall.log.test.xz</span></tt>), supposing that it corresponds to a <tt class="docutils literal"><span class="pre">my-test</span></tt> virtual host).</p>
 <p>Then configure Awstats (e.g. through a <tt class="docutils literal"><span class="pre">/usr/local/etc/awstats/awstats.my-test.conf</span></tt> file) to process that log file; for that, run on that host:</p>
@@ -1538,39 +1556,39 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 </div>
 </div>
 <div class="section" id="geolocation-with-awstats">
-<h2><a class="toc-backref" href="#toc-entry-95">Geolocation with Awstats</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-96">Geolocation with Awstats</a></h2>
 <p><a class="reference external" href="https://awstats.sourceforge.io/docs/awstats_contrib.html">Multiple plugins</a> exist for that.</p>
 <p><a class="reference external" href="https://github.com/eldy/awstats/issues/86">Apparently</a>, none is able to load the new GeoIP2 format (see also <a class="reference external" href="https://github.com/eldy/awstats/issues/114">this</a>).</p>
 <p>As a consequence: topic dropped for the moment.</p>
 </div>
 </div>
 <div class="section" id="managing-public-key-certificates">
-<h1><a class="toc-backref" href="#toc-entry-96">Managing Public-Key Certificates</a></h1>
-<p>The goal here is to benefit from suitable certificates, notably (but not only) for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. <a class="reference external" href="ServerNameIndication">Server Name Indication</a> <a class="footnote-reference" href="#footnote-14" id="footnote-reference-14">[14]</a>), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.</p>
-<table class="docutils footnote" frame="void" id="footnote-14" rules="none">
-<colgroup><col class="label" /><col /></colgroup>
-<tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-14">[14]</a></td><td>As a consequence, the specific visited virtual hostname (e.g. <tt class="docutils literal">baz</tt>, in  <tt class="docutils literal">baz.foobar.org</tt>) is <em>not</em> encrypted, and thus might be known of an eavesdropper.</td></tr>
-</tbody>
-</table>
-<div class="section" id="x-509-certificates">
-<h2><a class="toc-backref" href="#toc-entry-97">X.509 Certificates</a></h2>
-<p>The certificates managed here are <a class="reference external" href="https://en.wikipedia.org/wiki/X.509">X.509</a> TLS certificates, which can be seen as standard containers of a public key together with an identity and a hierarchical, potentially trusted <em>Certificate Authority</em> (CA) that signed them <a class="footnote-reference" href="#footnote-15" id="footnote-reference-15">[15]</a>.</p>
+<h1><a class="toc-backref" href="#toc-entry-97">Managing Public-Key Certificates</a></h1>
+<p>The goal here is to benefit from suitable certificates, notably (but not only) for https (typically running on TCP port 443, multiplexed thanks to SNI, i.e. <a class="reference external" href="ServerNameIndication">Server Name Indication</a> <a class="footnote-reference" href="#footnote-15" id="footnote-reference-15">[15]</a>), by automatically (and freely) generating, using and renewing them appropriately, for each of the virtual hosts managed by the US-Web server.</p>
 <table class="docutils footnote" frame="void" id="footnote-15" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-15">[15]</a></td><td>The X.509 standard also includes certificate revocation lists and the algorithm to sign recursively certificates from a trust anchor.</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-15">[15]</a></td><td>As a consequence, the specific visited virtual hostname (e.g. <tt class="docutils literal">baz</tt>, in  <tt class="docutils literal">baz.foobar.org</tt>) is <em>not</em> encrypted, and thus might be known of an eavesdropper.</td></tr>
+</tbody>
+</table>
+<div class="section" id="x-509-certificates">
+<h2><a class="toc-backref" href="#toc-entry-98">X.509 Certificates</a></h2>
+<p>The certificates managed here are <a class="reference external" href="https://en.wikipedia.org/wiki/X.509">X.509</a> TLS certificates, which can be seen as standard containers of a public key together with an identity and a hierarchical, potentially trusted <em>Certificate Authority</em> (CA) that signed them <a class="footnote-reference" href="#footnote-16" id="footnote-reference-16">[16]</a>.</p>
+<table class="docutils footnote" frame="void" id="footnote-16" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-16">[16]</a></td><td>The X.509 standard also includes certificate revocation lists and the algorithm to sign recursively certificates from a trust anchor.</td></tr>
 </tbody>
 </table>
 <p>Such certificates can be used for any protocol or standard, and <a class="reference external" href="https://en.wikipedia.org/wiki/X.509#Major_protocols_and_standards_using_X.509_certificates">many</a> do so - including of course TLS and, to some extent, SSH. Being necessary to the https scheme, they are used here.</p>
 </div>
 <div class="section" id="let-s-encrypt">
-<h2><a class="toc-backref" href="#toc-entry-98">Let's Encrypt</a></h2>
-<p>US-Web relies on <a class="reference external" href="https://letsencrypt.org">Let's Encrypt</a>, a non-profit certificate authority from which one can obtain mono-domain (possibly with SANs - <em>Subject Alternative Names</em>; and now wildcard domains) X.509 certificates <a class="footnote-reference" href="#footnote-16" id="footnote-reference-16">[16]</a> for free, valid for 90 days and that can be renewed as long as needed.</p>
-<table class="docutils footnote" frame="void" id="footnote-16" rules="none">
+<h2><a class="toc-backref" href="#toc-entry-99">Let's Encrypt</a></h2>
+<p>US-Web relies on <a class="reference external" href="https://letsencrypt.org">Let's Encrypt</a>, a non-profit certificate authority from which one can obtain mono-domain (possibly with SANs - <em>Subject Alternative Names</em>; and now wildcard domains) X.509 certificates <a class="footnote-reference" href="#footnote-17" id="footnote-reference-17">[17]</a> for free, valid for 90 days and that can be renewed as long as needed.</p>
+<table class="docutils footnote" frame="void" id="footnote-17" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-16">[16]</a></td><td><tt class="docutils literal">Let's Encrypt</tt> provides <em>Domain Validation</em> (DV) certificates, but neither more general <em>Organization Validation</em> (OV) nor <em>Extended Validation</em> (EV).</td></tr>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-17">[17]</a></td><td><tt class="docutils literal">Let's Encrypt</tt> provides <em>Domain Validation</em> (DV) certificates, but neither more general <em>Organization Validation</em> (OV) nor <em>Extended Validation</em> (EV).</td></tr>
 </tbody>
 </table>
 <p>Let's Encrypt follows the ACME (<em>Automatic Certificate Management Environment</em>) protocol. For mono-domain validation, it relies on an <tt class="docutils literal"><span class="pre">http-01</span></tt> challenge, with an agent running on the server bound to the domain for which a certificate is requested.</p>
@@ -1580,9 +1598,9 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 <p>As for wildcard certificates, the ACME protocol relies on <tt class="docutils literal"><span class="pre">dns-01</span></tt> challenges, which require the certificate requester to prove that it controls the DNS of the target domain, by updating its zone entries according to information chosen by the ACME server of the certificate issuer.</p>
 </div>
 <div class="section" id="us-web-mode-of-operation">
-<h2><a class="toc-backref" href="#toc-entry-99">US-Web Mode of Operation</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-100">US-Web Mode of Operation</a></h2>
 <div class="section" id="for-mono-domain-certificates">
-<h3><a class="toc-backref" href="#toc-entry-100">For mono-domain certificates</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-101">For mono-domain certificates</a></h3>
 <p>Rather than using a standalone ACME agent such as the standard one, <tt class="docutils literal">certbot</tt>, we prefer driving everything from Erlang, for a better control and periodical renewal (see the scheduler provided by <a class="reference external" href="https://github.com/Olivier-Boudeville/us-common/blob/master/src/class_USScheduler.erl">US-Common</a>).</p>
 <p>Various libraries exist for that in Erlang, the most popular one being probably <a class="reference external" href="https://github.com/gbour/letsencrypt-erlang">letsencrypt-erlang</a>; we <a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang">forked</a> it (and named it LEEC, for <em>Let's Encrypt Erlang with Ceylan</em>, to tell them apart), in order notably to support newer Erlang versions and to allow for <em>concurrent</em> certificate renewals (knowing that one certificate per virtual host will be needed).</p>
 <p>Three <a class="reference external" href="https://github.com/Olivier-Boudeville/letsencrypt-erlang#action-modes">action modes</a> can be considered to interact with the Let's Encrypt infrastructure and to solve its challenges. As the US-Web server is itself a webserver, the <tt class="docutils literal">slave</tt> mode is the most relevant here.</p>
@@ -1590,12 +1608,12 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 <p>By default, thanks to the US-Web scheduler, certificates (which last for up to 90 days and cannot be renewed before 60 days are elapsed) will be renewed every 75 days, with some random jitter added to avoid synchronising too many certificate requests when having multiple virtual hosts - as they are done concurrently, if not SANs are used.</p>
 </div>
 <div class="section" id="for-wildcard-certificates">
-<h3><a class="toc-backref" href="#toc-entry-101">For wildcard certificates</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-102">For wildcard certificates</a></h3>
 <p>US-Web relies here also as much as possible on LEEC (see <a class="reference external" href="https://leec.esperide.org/#wildcard-domain-certificates-with-the-dns-01-challenge">this section</a>), even if, at least currently, the standard <tt class="docutils literal">certbot</tt> is used internally; here US-Web, thanks to its US-Common Scheduler, acts mostly like an integrated crontab on steroids.</p>
 </div>
 </div>
 <div class="section" id="settings">
-<h2><a class="toc-backref" href="#toc-entry-102">Settings</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-103">Settings</a></h2>
 <p>Various <a class="reference external" href="https://crypto.stackexchange.com/questions/43697/what-is-the-difference-between-pem-csr-key-and-crt-and-other-such-file-ext">types of files</a> are involved in the process:</p>
 <ul class="simple">
 <li>a <tt class="docutils literal">.key</tt> file contains any type of key, here this is a RSA private key; typically <tt class="docutils literal"><span class="pre">letsencrypt-agent.key-I</span></tt>, where <tt class="docutils literal">I</tt> is an increasing integer, will contain the PEM RSA private key generated by the certificate agent <tt class="docutils literal">I</tt> on behalf of the US-Webserver (so that it can sign the nonces provided by Let's Encrypt, and thus prove that it controls the corresponding key pair); for a <tt class="docutils literal">baz.foobar.org</tt> virtual host, the <tt class="docutils literal">baz.foobar.org.key</tt> file will be generated and used (another PEM RSA private key)</li>
@@ -1620,22 +1638,22 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 <p>The US-Web server must be able to write in the web content tree, precisely to write files in the <tt class="docutils literal"><span class="pre">well-known/acme-challenge/</span></tt> subdirectory of the web root.</p>
 </div>
 <div class="section" id="https-troubleshooting">
-<h2><a class="toc-backref" href="#toc-entry-103">HTTPS Troubleshooting</a></h2>
+<h2><a class="toc-backref" href="#toc-entry-104">HTTPS Troubleshooting</a></h2>
 <p>If trying to connect with the https scheme whereas it has not been enabled, <tt class="docutils literal">wget <span class="pre">https://baz.foobar.org/</span> <span class="pre">-O</span> -</tt> is to report <tt class="docutils literal">Connection refused</tt>.</p>
 </div>
 </div>
 <div class="section" id="planned-enhancements">
-<h1><a class="toc-backref" href="#toc-entry-104">Planned Enhancements</a></h1>
-<div class="section" id="reverse-proxy">
-<h2><a class="toc-backref" href="#toc-entry-105">Reverse Proxy</a></h2>
+<h1><a class="toc-backref" href="#toc-entry-105">Planned Enhancements</a></h1>
+<div class="section" id="reverse-proxy-1">
+<h2><a class="toc-backref" href="#toc-entry-106">Reverse Proxy</a></h2>
 <div class="section" id="purpose">
-<h3><a class="toc-backref" href="#toc-entry-106">Purpose</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-107">Purpose</a></h3>
 <p>The goal of a <a class="reference external" href="https://en.wikipedia.org/wiki/Reverse_proxy">reverse proxy</a> is to have a (proxy) server seamlessly (read: without doing a HTTP forward - thus with unchanged URLs from the point of view of the client) redirect incoming traffic to other &quot;proxied&quot; webservers (possibly other US-Web instances) running on other hosts and/or ports.</p>
-<p>A typical use case here <a class="footnote-reference" href="#footnote-17" id="footnote-reference-17">[17]</a> is having an US-Web instance serve a domain name of interest (e.g. <tt class="docutils literal">foo.org</tt>) whereas more than one of its virtual hosts are <a class="reference internal" href="#nitrogen-based">Nitrogen-based</a>, knowing that no two of such virtual hosts shall be executed by the same (Erlang) VM (as notably their Nitrogen page modules would clash).</p>
-<table class="docutils footnote" frame="void" id="footnote-17" rules="none">
+<p>A typical use case here <a class="footnote-reference" href="#footnote-18" id="footnote-reference-18">[18]</a> is having an US-Web instance serve a domain name of interest (e.g. <tt class="docutils literal">foo.org</tt>) whereas more than one of its virtual hosts are <a class="reference internal" href="#nitrogen-based">Nitrogen-based</a>, knowing that no two of such virtual hosts shall be executed by the same (Erlang) VM (as notably their Nitrogen page modules would clash).</p>
+<table class="docutils footnote" frame="void" id="footnote-18" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#footnote-reference-17">[17]</a></td><td><p class="first">The main other uses cases happen when wanting to:</p>
+<tr><td class="label"><a class="fn-backref" href="#footnote-reference-18">[18]</a></td><td><p class="first">The main other uses cases happen when wanting to:</p>
 <ul class="last simple">
 <li>run a webserver on a non-privileged port</li>
 <li>balance the load between multiple actual servers</li>
@@ -1647,11 +1665,11 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 <p>So this latter, autonomous webserver <tt class="docutils literal"><span class="pre">my-server</span></tt> instance would run thanks to its own VM on TCP port 8150, yet would only by reachable by connecting to the former, centralising webserver, which would act as a reverse proxy. As many other virtual hosts as wanted could be declared (e.g. as <tt class="docutils literal"><span class="pre">https://my-other-server.foo.org</span></tt>) to the reverse proxy, each pointing then to its own actual webserver instance (e.g. <tt class="docutils literal"><span class="pre">http://foo.org:8151</span></tt>).</p>
 </div>
 <div class="section" id="challenges">
-<h3><a class="toc-backref" href="#toc-entry-107">Challenges</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-108">Challenges</a></h3>
 <p>The HTTP/HTTPS routing shall be fully transparent, notably not breaking any connectivity (e.g. regarding Comet, AJAX, Websockets) and complying with the proper use of the underlying protocols (e.g. so that browsers do not interpret a proxying as the spoofing of TLS certificates).</p>
 </div>
 <div class="section" id="implementations">
-<h3><a class="toc-backref" href="#toc-entry-108">Implementations</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-109">Implementations</a></h3>
 <p>There are many solutions in order to obtain a reverse proxy; it may be done:</p>
 <ul class="simple">
 <li>directly at the firewall level, typically by <a class="reference external" href="https://www.jenkins.io/doc/book/system-administration/reverse-proxy-configuration-with-jenkins/reverse-proxy-configuration-iptables/">configuring iptables accordingly</a></li>
@@ -1660,7 +1678,7 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 </ul>
 </div>
 <div class="section" id="us-web-reverse-proxy">
-<h3><a class="toc-backref" href="#toc-entry-109">US-Web Reverse Proxy</a></h3>
+<h3><a class="toc-backref" href="#toc-entry-110">US-Web Reverse Proxy</a></h3>
 <p>For better control US-Web will implement its own reverse proxy.</p>
 <p>For that it will automatically modify header fields (e.g. <tt class="docutils literal">Host</tt>, <tt class="docutils literal">Connection</tt>, <tt class="docutils literal"><span class="pre">X-Real-IP</span></tt>; the source IP could also by set) in the proxied requests.</p>
 <p>The responses from proxied servers could be buffered until they are fully received - to better manage slower clients - yet, as here the proxied servers may offer rather interactive uses, buffering may not be desirable.</p>
@@ -1668,15 +1686,15 @@ $<span class="w"> </span><span class="k">for</span><span class="w"> </span>f<spa
 </div>
 </div>
 <div class="section" id="support">
-<h1><a class="toc-backref" href="#toc-entry-110">Support</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-111">Support</a></h1>
 <p>Bugs, questions, remarks, patches, requests for enhancements, etc. are to be reported to the <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web">project interface</a> (typically <a class="reference external" href="https://github.com/Olivier-Boudeville/us-web/issues">issues</a>) or directly at the email address mentioned at the beginning of this document.</p>
 </div>
 <div class="section" id="please-react">
-<h1><a class="toc-backref" href="#toc-entry-111">Please React!</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-112">Please React!</a></h1>
 <p>If you have information more detailed or more recent than those presented in this document, if you noticed errors, neglects or points insufficiently discussed, drop us a line! (for that, follow the <a class="reference internal" href="#support">Support</a> guidelines).</p>
 </div>
 <div class="section" id="ending-word">
-<h1><a class="toc-backref" href="#toc-entry-112">Ending Word</a></h1>
+<h1><a class="toc-backref" href="#toc-entry-113">Ending Word</a></h1>
 <p>Have fun with the Universal Webserver!</p>
 <p><span class="raw-html"><center><img src="us-web-title.png" id="responsive-image-medium"></img></center></span>
 </p>

@@ -2,14 +2,14 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Module class_USCertificateManager</title>
+<title>Module class_USWebCentralServer</title>
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
 </head>
 <body bgcolor="white">
 <div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
 <hr>
 
-<h1>Module class_USCertificateManager</h1>
+<h1>Module class_USWebCentralServer</h1>
 <ul class="index"><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
 
 
@@ -27,20 +27,88 @@
 <p><code>attribute_value() = <a href="wooper.html#type-attribute_value" docgen-rel="seetype" docgen-href="wooper#attribute_value/0">wooper:attribute_value()</a></code></p>
 
 
+<h3 class="typedecl"><a name="type-bin_directory_path">bin_directory_path()</a></h3>
+<p><code>bin_directory_path() = <a href="file_utils.html#type-bin_directory_path" docgen-rel="seetype" docgen-href="file_utils#bin_directory_path/0">file_utils:bin_directory_path()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-bin_domain_name">bin_domain_name()</a></h3>
+<p><code>bin_domain_name() = <a href="net_utils.html#type-bin_domain_name" docgen-rel="seetype" docgen-href="net_utils#bin_domain_name/0">net_utils:bin_domain_name()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-bin_host_name">bin_host_name()</a></h3>
+<p><code>bin_host_name() = <a href="net_utils.html#type-bin_host_name" docgen-rel="seetype" docgen-href="net_utils#bin_host_name/0">net_utils:bin_host_name()</a></code></p>
+
+
 <h3 class="typedecl"><a name="type-cert_manager_pid">cert_manager_pid()</a></h3>
-<p><code>cert_manager_pid() = <a href="class_USServer.html#type-server_pid" docgen-rel="seetype" docgen-href="class_USServer#server_pid/0">class_USServer:server_pid()</a></code></p>
+<p><code>cert_manager_pid() = <a href="class_USCertificateManager.html#type-manager_pid" docgen-rel="seetype" docgen-href="class_USCertificateManager#manager_pid/0">class_USCertificateManager:manager_pid()</a></code></p>
 
 
-<h3 class="typedecl"><a name="type-cipher_name">cipher_name()</a></h3>
-<p><code>cipher_name() = atom()</code></p>
+<h3 class="typedecl"><a name="type-cert_mode">cert_mode()</a></h3>
+<p><code>cert_mode() = development | production</code></p>
+
+
+<h3 class="typedecl"><a name="type-cert_support">cert_support()</a></h3>
+<p><code>cert_support() = no_certificates | use_existing_certificates | renew_certificates</code></p>
 
 
 <h3 class="typedecl"><a name="type-classname">classname()</a></h3>
 <p><code>classname() = <a href="wooper.html#type-classname" docgen-rel="seetype" docgen-href="wooper#classname/0">wooper:classname()</a></code></p>
 
 
+<h3 class="typedecl"><a name="type-dispatch_routes">dispatch_routes()</a></h3>
+<p><code>dispatch_routes() = <a href="cowboy_router.html#type-dispatch_routes" docgen-rel="seetype" docgen-href="cowboy_router#dispatch_routes/0">cowboy_router:dispatch_routes()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-dispatch_rules">dispatch_rules()</a></h3>
+<p><code>dispatch_rules() = <a href="cowboy_router.html#type-dispatch_rules" docgen-rel="seetype" docgen-href="cowboy_router#dispatch_rules/0">cowboy_router:dispatch_rules()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-domain_config_table">domain_config_table()</a></h3>
+<p><code>domain_config_table() = <a href="#type-table" docgen-rel="seetype" docgen-href="#table/0">table</a>(<a href="#type-domain_id" docgen-rel="seetype" docgen-href="#domain_id/0">domain_id()</a>, <a href="#type-domain_info" docgen-rel="seetype" docgen-href="#domain_info/0">domain_info()</a>)</code></p>
+
+
+<h3 class="typedecl"><a name="type-domain_id">domain_id()</a></h3>
+<p><code>domain_id() = <a href="#type-bin_domain_name" docgen-rel="seetype" docgen-href="#bin_domain_name/0">bin_domain_name()</a> | default_domain_catch_all</code></p>
+
+
+<h3 class="typedecl"><a name="type-domain_info">domain_info()</a></h3>
+<p><code>domain_info() = {<a href="#type-domain_id" docgen-rel="seetype" docgen-href="#domain_id/0">domain_id()</a>, <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="#type-cert_manager_pid" docgen-rel="seetype" docgen-href="#cert_manager_pid/0">cert_manager_pid()</a>), <a href="#type-vhost_config_table" docgen-rel="seetype" docgen-href="#vhost_config_table/0">vhost_config_table()</a>}</code></p>
+
+
+<h3 class="typedecl"><a name="type-error_reason">error_reason()</a></h3>
+<p><code>error_reason() = <a href="basic_utils.html#type-error_reason" docgen-rel="seetype" docgen-href="basic_utils#error_reason/0">basic_utils:error_reason()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-general_web_settings">general_web_settings()</a></h3>
+<p><code>general_web_settings() = #general_web_settings{http_dispatch_rules = <a href="class_USWebCentralServer.html#type-dispatch_rules" docgen-rel="seetype" docgen-href="class_USWebCentralServer#dispatch_rules/0">class_USWebCentralServer:dispatch_rules()</a>, http_tcp_port = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="net_utils.html#type-tcp_port" docgen-rel="seetype" docgen-href="net_utils#tcp_port/0">net_utils:tcp_port()</a>), https_dispatch_rules = <a href="class_USWebCentralServer.html#type-dispatch_rules" docgen-rel="seetype" docgen-href="class_USWebCentralServer#dispatch_rules/0">class_USWebCentralServer:dispatch_rules()</a>, https_tcp_port = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="net_utils.html#type-tcp_port" docgen-rel="seetype" docgen-href="net_utils#tcp_port/0">net_utils:tcp_port()</a>), certificate_support = <a href="class_USWebCentralServer.html#type-cert_support" docgen-rel="seetype" docgen-href="class_USWebCentralServer#cert_support/0">class_USWebCentralServer:cert_support()</a>, https_transport_info = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="class_USWebCentralServer.html#type-https_transport_info" docgen-rel="seetype" docgen-href="class_USWebCentralServer#https_transport_info/0">class_USWebCentralServer:https_transport_info()</a>), dh_key_path = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="file_utils.html#type-bin_file_path" docgen-rel="seetype" docgen-href="file_utils#bin_file_path/0">file_utils:bin_file_path()</a>), ca_cert_key_path = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="file_utils.html#type-bin_file_path" docgen-rel="seetype" docgen-href="file_utils#bin_file_path/0">file_utils:bin_file_path()</a>)}</code></p>
+
+
+<h3 class="typedecl"><a name="type-host_match">host_match()</a></h3>
+<p><code>host_match() = <a href="#type-route_match" docgen-rel="seetype" docgen-href="#route_match/0">route_match()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-https_transport_info">https_transport_info()</a></h3>
+<p><code>https_transport_info() = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>({<a href="#type-https_transport_options" docgen-rel="seetype" docgen-href="#https_transport_options/0">https_transport_options()</a>, <a href="#type-sni_info" docgen-rel="seetype" docgen-href="#sni_info/0">sni_info()</a>})</code></p>
+
+
+<h3 class="typedecl"><a name="type-https_transport_options">https_transport_options()</a></h3>
+<p><code>https_transport_options() = <a href="ranch_ssl.html#type-opts" docgen-rel="seetype" docgen-href="ranch_ssl#opts/0">ranch_ssl:opts()</a></code></p>
+
+
 <h3 class="typedecl"><a name="type-instance_pid">instance_pid()</a></h3>
 <p><code>instance_pid() = <a href="wooper.html#type-instance_pid" docgen-rel="seetype" docgen-href="wooper#instance_pid/0">wooper:instance_pid()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-log_analysis_settings">log_analysis_settings()</a></h3>
+<p><code>log_analysis_settings() = {<a href="#type-log_analysis_tool_name" docgen-rel="seetype" docgen-href="#log_analysis_tool_name/0">log_analysis_tool_name()</a>, <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="#type-bin_directory_path" docgen-rel="seetype" docgen-href="#bin_directory_path/0">bin_directory_path()</a>), <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="#type-bin_directory_path" docgen-rel="seetype" docgen-href="#bin_directory_path/0">bin_directory_path()</a>)}</code></p>
+
+
+<h3 class="typedecl"><a name="type-log_analysis_tool_name">log_analysis_tool_name()</a></h3>
+<p><code>log_analysis_tool_name() = atom()</code></p>
+
+
+<h3 class="typedecl"><a name="type-meta_web_settings">meta_web_settings()</a></h3>
+<p><code>meta_web_settings() = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>({<a href="#type-domain_id" docgen-rel="seetype" docgen-href="#domain_id/0">domain_id()</a>, <a href="#type-vhost_id" docgen-rel="seetype" docgen-href="#vhost_id/0">vhost_id()</a>, <a href="#type-bin_directory_path" docgen-rel="seetype" docgen-href="#bin_directory_path/0">bin_directory_path()</a>})</code></p>
 
 
 <h3 class="typedecl"><a name="type-method_argument">method_argument()</a></h3>
@@ -59,12 +127,28 @@
 <p><code>method_name() = <a href="wooper.html#type-method_name" docgen-rel="seetype" docgen-href="wooper#method_name/0">wooper:method_name()</a></code></p>
 
 
+<h3 class="typedecl"><a name="type-module_name">module_name()</a></h3>
+<p><code>module_name() = <a href="basic_utils.html#type-module_name" docgen-rel="seetype" docgen-href="basic_utils#module_name/0">basic_utils:module_name()</a></code></p>
+
+
 <h3 class="typedecl"><a name="type-oneway_name">oneway_name()</a></h3>
 <p><code>oneway_name() = <a href="wooper.html#type-oneway_name" docgen-rel="seetype" docgen-href="wooper#oneway_name/0">wooper:oneway_name()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-oneway_return">oneway_return()</a></h3>
 <p><code>oneway_return() = <a href="wooper.html#type-oneway_return" docgen-rel="seetype" docgen-href="wooper#oneway_return/0">wooper:oneway_return()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-option">option()</a></h3>
+<p><code>option(T) = <a href="basic_utils.html#type-option" docgen-rel="seetype" docgen-href="basic_utils#option/0">basic_utils:option</a>(T)</code></p>
+
+
+<h3 class="typedecl"><a name="type-path_match">path_match()</a></h3>
+<p><code>path_match() = {Path::<a href="#type-route_match" docgen-rel="seetype" docgen-href="#route_match/0">route_match()</a>, HandlerMod::<a href="#type-module_name" docgen-rel="seetype" docgen-href="#module_name/0">module_name()</a>, HandlerOpts::term()}</code></p>
+
+
+<h3 class="typedecl"><a name="type-report_generation_outcome">report_generation_outcome()</a></h3>
+<p><code>report_generation_outcome() = report_generation_success | {report_generation_failed, <a href="#type-error_reason" docgen-rel="seetype" docgen-href="#error_reason/0">error_reason()</a>}</code></p>
 
 
 <h3 class="typedecl"><a name="type-request_name">request_name()</a></h3>
@@ -87,16 +171,52 @@
 <p><code>requests_outcome() = <a href="wooper.html#type-requests_outcome" docgen-rel="seetype" docgen-href="wooper#requests_outcome/0">wooper:requests_outcome()</a></code></p>
 
 
-<h3 class="typedecl"><a name="type-sni_host_info">sni_host_info()</a></h3>
-<p><code>sni_host_info() = {<a href="net_utils.html#type-string_host_name" docgen-rel="seetype" docgen-href="net_utils#string_host_name/0">net_utils:string_host_name()</a>, [<a href="#type-ssl_option" docgen-rel="seetype" docgen-href="#ssl_option/0">ssl_option()</a>]}</code></p>
+<h3 class="typedecl"><a name="type-route_match">route_match()</a></h3>
+<p><code>route_match() = <a href="cowboy.html#type-route_match" docgen-rel="seetype" docgen-href="cowboy#route_match/0">cowboy:route_match()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-route_rule">route_rule()</a></h3>
+<p><code>route_rule() = {<a href="#type-host_match" docgen-rel="seetype" docgen-href="#host_match/0">host_match()</a>, [<a href="#type-path_match" docgen-rel="seetype" docgen-href="#path_match/0">path_match()</a>]}</code></p>
+
+
+<h3 class="typedecl"><a name="type-server_pid">server_pid()</a></h3>
+<p><code>server_pid() = <a href="class_USServer.html#type-server_pid" docgen-rel="seetype" docgen-href="class_USServer#server_pid/0">class_USServer:server_pid()</a></code></p>
 
 
 <h3 class="typedecl"><a name="type-sni_info">sni_info()</a></h3>
-<p><code>sni_info() = {[<a href="#type-ssl_option" docgen-rel="seetype" docgen-href="#ssl_option/0">ssl_option()</a>], [<a href="#type-sni_host_info" docgen-rel="seetype" docgen-href="#sni_host_info/0">sni_host_info()</a>]}</code></p>
+<p><code>sni_info() = <a href="class_USCertificateManager.html#type-sni_info" docgen-rel="seetype" docgen-href="class_USCertificateManager#sni_info/0">class_USCertificateManager:sni_info()</a></code></p>
 
 
-<h3 class="typedecl"><a name="type-ssl_option">ssl_option()</a></h3>
-<p><code>ssl_option() = <a href="http://www.erlang.org/edoc/doc/ssl/doc/ssl.html#type-server_option" docgen-rel="seetype" docgen-href="ssl:ssl#server_option/0">ssl:server_option()</a> | <a href="http://www.erlang.org/edoc/doc/ssl/doc/ssl.html#type-common_option" docgen-rel="seetype" docgen-href="ssl:ssl#common_option/0">ssl:common_option()</a></code></p>
+<h3 class="typedecl"><a name="type-table">table()</a></h3>
+<p><code>table(K, V) = <a href="map_hashtable.html#type-map_hashtable" docgen-rel="seetype" docgen-href="map_hashtable#map_hashtable/0">map_hashtable:map_hashtable</a>(K, V)</code></p>
+
+
+<h3 class="typedecl"><a name="type-vhost_config_entry">vhost_config_entry()</a></h3>
+<p><code>vhost_config_entry() = #vhost_config_entry{virtual_host = <a href="class_USWebCentralServer.html#type-vhost_id" docgen-rel="seetype" docgen-href="class_USWebCentralServer#vhost_id/0">class_USWebCentralServer:vhost_id()</a>, parent_host = <a href="class_USWebCentralServer.html#type-domain_id" docgen-rel="seetype" docgen-href="class_USWebCentralServer#domain_id/0">class_USWebCentralServer:domain_id()</a>, kind = <a href="class_USWebCentralServer.html#type-web_kind" docgen-rel="seetype" docgen-href="class_USWebCentralServer#web_kind/0">class_USWebCentralServer:web_kind()</a>, content_root = <a href="file_utils.html#type-bin_directory_path" docgen-rel="seetype" docgen-href="file_utils#bin_directory_path/0">file_utils:bin_directory_path()</a>, logger_pid = <a href="class_USWebLogger.html#type-logger_pid" docgen-rel="seetype" docgen-href="class_USWebLogger#logger_pid/0">class_USWebLogger:logger_pid()</a>, cert_manager_pid = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="class_USCertificateManager.html#type-manager_pid" docgen-rel="seetype" docgen-href="class_USCertificateManager#manager_pid/0">class_USCertificateManager:manager_pid()</a>)}</code></p>
+
+
+<h3 class="typedecl"><a name="type-vhost_config_table">vhost_config_table()</a></h3>
+<p><code>vhost_config_table() = <a href="#type-table" docgen-rel="seetype" docgen-href="#table/0">table</a>(<a href="#type-vhost_id" docgen-rel="seetype" docgen-href="#vhost_id/0">vhost_id()</a>, <a href="#type-vhost_config_entry" docgen-rel="seetype" docgen-href="#vhost_config_entry/0">vhost_config_entry()</a>)</code></p>
+
+
+<h3 class="typedecl"><a name="type-vhost_id">vhost_id()</a></h3>
+<p><code>vhost_id() = <a href="#type-bin_host_name" docgen-rel="seetype" docgen-href="#bin_host_name/0">bin_host_name()</a> | without_vhost | default_vhost_catch_all</code></p>
+
+
+<h3 class="typedecl"><a name="type-void">void()</a></h3>
+<p><code>void() = <a href="basic_utils.html#type-void" docgen-rel="seetype" docgen-href="basic_utils#void/0">basic_utils:void()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-web_analysis_info">web_analysis_info()</a></h3>
+<p><code>web_analysis_info() = #web_analysis_info{tool = <a href="class_USWebCentralServer.html#type-log_analysis_tool_name" docgen-rel="seetype" docgen-href="class_USWebCentralServer#log_analysis_tool_name/0">class_USWebCentralServer:log_analysis_tool_name()</a>, update_tool_path = <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="file_utils.html#type-bin_executable_path" docgen-rel="seetype" docgen-href="file_utils#bin_executable_path/0">file_utils:bin_executable_path()</a>), report_tool_path = <a href="file_utils.html#type-bin_executable_path" docgen-rel="seetype" docgen-href="file_utils#bin_executable_path/0">file_utils:bin_executable_path()</a>, template_content = <a href="text_utils.html#type-bin_string" docgen-rel="seetype" docgen-href="text_utils#bin_string/0">text_utils:bin_string()</a>, conf_dir = <a href="file_utils.html#type-bin_directory_path" docgen-rel="seetype" docgen-href="file_utils#bin_directory_path/0">file_utils:bin_directory_path()</a>, state_dir = <a href="file_utils.html#type-bin_directory_path" docgen-rel="seetype" docgen-href="file_utils#bin_directory_path/0">file_utils:bin_directory_path()</a>, web_content_dir = <a href="file_utils.html#type-bin_directory_path" docgen-rel="seetype" docgen-href="file_utils#bin_directory_path/0">file_utils:bin_directory_path()</a>}</code></p>
+
+
+<h3 class="typedecl"><a name="type-web_central_server_pid">web_central_server_pid()</a></h3>
+<p><code>web_central_server_pid() = <a href="#type-server_pid" docgen-rel="seetype" docgen-href="#server_pid/0">server_pid()</a></code></p>
+
+
+<h3 class="typedecl"><a name="type-web_kind">web_kind()</a></h3>
+<p><code>web_kind() = static | meta | nitrogen</code></p>
 
 
 <h2><a name="index">Function Index</a></h2>
@@ -126,6 +246,7 @@
 <tr><td valign="top"><a href="#getAttribute-2">getAttribute/2</a></td><td></td></tr>
 <tr><td valign="top"><a href="#getAttributes-2">getAttributes/2</a></td><td></td></tr>
 <tr><td valign="top"><a href="#getMaybeAttribute-2">getMaybeAttribute/2</a></td><td></td></tr>
+<tr><td valign="top"><a href="#get_execution_target-0">get_execution_target/0</a></td><td></td></tr>
 <tr><td valign="top"><a href="#hasAttribute-2">hasAttribute/2</a></td><td></td></tr>
 <tr><td valign="top"><a href="#incrementAttribute-2">incrementAttribute/2</a></td><td></td></tr>
 <tr><td valign="top"><a href="#is_wooper_debug-0">is_wooper_debug/0</a></td><td></td></tr>
@@ -303,6 +424,12 @@
 <h3 class="function"><a name="getMaybeAttribute-2">getMaybeAttribute/2</a></h3>
 <div class="spec">
 <p><code>getMaybeAttribute(State::<a href="wooper.html#type-state" docgen-rel="seetype" docgen-href="wooper#state/0">wooper:state()</a>, AttributeName::<a href="#type-attribute_name" docgen-rel="seetype" docgen-href="#attribute_name/0">attribute_name()</a>) -&gt; <a href="#type-option" docgen-rel="seetype" docgen-href="#option/0">option</a>(<a href="#type-attribute_value" docgen-rel="seetype" docgen-href="#attribute_value/0">attribute_value()</a>)</code><br></p>
+<p> </p>
+</div>
+
+<h3 class="function"><a name="get_execution_target-0">get_execution_target/0</a></h3>
+<div class="spec">
+<p><code>get_execution_target() -&gt; development</code><br></p>
 <p> </p>
 </div>
 

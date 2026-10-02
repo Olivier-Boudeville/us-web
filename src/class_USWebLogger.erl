@@ -534,6 +534,25 @@ reportAccess( State, BinLogLine ) ->
 
 
 -doc """
+Reports a partially muted web error while accessing to a web content; typically
+sent by a web handler dealing with a very common issue (typically a forged
+incorrect web path) related to a browser having emitted a request.
+""".
+-spec reportMutedError( wooper:state(), log_line() ) -> const_oneway_return().
+reportMutedError( State, BinLogLine ) ->
+
+    % Downgraded to warning in our traces, as way too many web errors, and this
+    % could hide internal errors:
+    %
+    ?warning( text_utils:binary_to_string( BinLogLine ) ),
+
+    file_utils:write( ?getAttr(error_log_file), BinLogLine ),
+
+    wooper:const_return().
+
+
+
+-doc """
 Reports a web error while accessing to a web content; typically sent by a web
 handler dealing with an issue related to a browser having emitted a request.
 """.

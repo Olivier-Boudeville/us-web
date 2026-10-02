@@ -433,13 +433,40 @@ generate_access_log( _HandlerReturn={ _Atom, Req, _HState }, HttpStatusCode ) ->
 
 
 -doc """
-Manages specified handler error log.
+Manages the specified handler error log.
 
 Error log facility offered to web handlers, taking advantage of the
 request-specific process in order to further parallelise their processing.
 """.
 -spec manage_error_log( basic_utils:error_reason(), cowboy_req:req(),
                         bin_content_path(), handler_state() ) -> void().
+% For example attack like '{invalid_path_info, [<<"settings/.env">>]}':
+manage_error_log( PathError={ invalid_path_info, _BinPathElems }, Req,
+                  BinFullFilePath, HState ) ->
+
+    Host = maps:get( host, Req, no_host ),
+
+    BinErrorMsg = text_utils:bin_format(
+        "[~ts][~ts] Path error '~p' while requested to serve '~ts'; full ~ts~n",
+        [ time_utils:get_textual_timestamp(), Host, PathError, BinFullFilePath,
+          request_to_string( Req ) ] ),
+
+    case maps:get( logger_pid, HState ) of
+
+        undefined ->
+            trace_bridge:warning_fmt( "[~w] No logger to record ~ts",
+                                      [ self(), BinErrorMsg ] );
+
+        LoggerPid ->
+
+            % Oneway call:
+            LoggerPid ! { reportMutedError, [ BinErrorMsg ] }
+
+            %trace_bridge:debug_fmt( "[~w] reported ~ts.",
+            %                        [ self(), BinErrorMsg ] )
+
+    end;
+
 manage_error_log( Error, Req, BinFullFilePath, HState ) ->
 
     %trace_bridge:debug_fmt( "Logging error for full path '~ts' and "

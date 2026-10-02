@@ -1240,7 +1240,7 @@ else
 
 	display_and_log "Any prior US-Web instance that would still linger could be removed first, thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
 
-    display_and_log "Finally, if certificates were to be generated, consider also executing manually after launch any certbot deploy hook that would be needed (refer to any value set for the US_WEB_POST_DEPLOY_CMD environment variable), typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
+    display_and_log "Finally, if certificates were to be generated, consider also executing manually after launch, and once the relevant certificates have been generated, any certbot deploy hook that would be needed (refer to any value set for the US_WEB_POST_DEPLOY_CMD environment variable), typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
 
 fi
 

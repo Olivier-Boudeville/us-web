@@ -99,34 +99,6 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 -export([ generate_other_report_pages/3 ]).
 
 
-% Type shorthands:
-
--type count() :: basic_utils:count().
-
--type ustring() :: text_utils:ustring().
-
--type file_name() :: file_utils:file_name().
--type bin_directory_path() :: file_utils:bin_directory_path().
--type bin_file_name() :: file_utils:bin_file_name().
-
--type file_path() :: file_utils:file_path().
--type bin_file_path() :: file_utils:bin_file_path().
-
--type file() :: file_utils:file().
-
--type domain_id() :: class_USWebCentralServer:domain_id().
--type vhost_id() :: class_USWebCentralServer:vhost_id().
-
--type scheduler_pid() :: class_USScheduler:scheduler_pid().
--type user_periodicity() :: class_USScheduler:user_periodicity().
-
--type log_analysis_tool_name() ::
-        class_USWebCentralServer:log_analysis_tool_name().
-
--include("class_USWebCentralServer.hrl").
-
--type web_analysis_info() :: class_USWebCentralServer:web_analysis_info().
-
 
 
 % The class-specific attributes:
@@ -216,6 +188,36 @@ Class providing **web logging** (accesses and errors) for the US-Web framework.
 % Allows to use macros for trace sending:
 -include_lib("traces/include/class_TraceEmitter.hrl").
 
+% For the web_analysis_info record:
+-include("class_USWebCentralServer.hrl").
+
+
+% Type shorthands:
+
+-type count() :: basic_utils:count().
+
+-type ustring() :: text_utils:ustring().
+
+-type file_name() :: file_utils:file_name().
+-type bin_directory_path() :: file_utils:bin_directory_path().
+-type bin_file_name() :: file_utils:bin_file_name().
+
+-type file_path() :: file_utils:file_path().
+-type bin_file_path() :: file_utils:bin_file_path().
+
+-type file() :: file_utils:file().
+
+-type domain_id() :: class_USWebCentralServer:domain_id().
+-type vhost_id() :: class_USWebCentralServer:vhost_id().
+
+-type scheduler_pid() :: class_USScheduler:scheduler_pid().
+-type user_periodicity() :: class_USScheduler:user_periodicity().
+
+-type log_analysis_tool_name() ::
+        class_USWebCentralServer:log_analysis_tool_name().
+
+-type web_analysis_info() :: class_USWebCentralServer:web_analysis_info().
+
 
 
 -doc """
@@ -276,8 +278,8 @@ construct( State, BinHostId, DomainId, BinLogDir, MaybeSchedulerPid,
 
         SchedPid ->
             SchedPid ! { registerTask, [ _TaskCmd=rotateLogs,
-                _StartTime=flexible, UserPeriod, _Count=unlimited,
-                _ActPid=self() ], self() }
+                _StartTime=flexible, UserPeriod, _DSTBound=false,
+                _Count=unlimited, _ActPid=self() ], self() }
 
     end,
 

@@ -978,9 +978,13 @@ getChallenge( State, TargetPid ) ->
     case LCS of
 
         undefined ->
+            % As directories like .well-known/acme-challenge are supposedly more
+            % permissive (often trying to find there "index.php", "xmrlpc.php",
+            % etc.):
+            %
             ?warning_fmt( "Thumbprint challenges requested to be sent "
                 "(to process ~w), yet LEEC FSM seems to exist currently "
-                "(no LEEC caller state). This should be investigated.",
+                "(no LEEC caller state); supposedly an attack probe.",
                 [ TargetPid ] );
 
         _ ->

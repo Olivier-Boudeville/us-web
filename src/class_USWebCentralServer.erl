@@ -1409,7 +1409,7 @@ prepare_web_analysis(
         _AnyClass:Exception ->
             ?error_fmt( "The attempt to create the '~ts' directory (and "
                 "possibly its parents) as user '~ts' failed: ~p.",
-                [ GenAwCfgDir, system_utils:get_user_name_safe(), Exception ] )
+                [ GenAwCfgDir, system_utils:describe_user_name(), Exception ] )
 
     end,
 

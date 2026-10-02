@@ -102,8 +102,8 @@ help-us-web:
 
 register-version-in-header:
 	@if [ -z "$(VERSION_FILE)" ]; then \
-	echo "Error, no version file defined." 1>&2 ; exit 52 ; else \
-	$(MAKE) -s register-us-web ; fi
+	echo "Error, no version file defined." 1>&2; exit 52; else \
+	$(MAKE) -s register-us-web; fi
 
 
 register-us-web:
@@ -112,7 +112,7 @@ register-us-web:
 
 # Useful to extract internal layout for re-use in upper layers:
 list-beam-dirs:
-	@for d in $(US_WEB_BEAM_DIRS) ; do echo $$(readlink -f $$d) ; done
+	@for d in $(US_WEB_BEAM_DIRS); do echo $$(readlink -f $$d); done
 
 
 add-prerequisite-plts: link-plt
@@ -120,7 +120,7 @@ add-prerequisite-plts: link-plt
 
 # As upper layers may rely on the 'us_web' naming:
 link-plt:
-	@if [ ! "$(PLT_FILE)" = "$(US_WEB_PLT_FILE)" ]; then ln -s --force $(PLT_FILE) $(US_WEB_PLT_FILE) ; fi
+	@if [ ! "$(PLT_FILE)" = "$(US_WEB_PLT_FILE)" ]; then ln -s --force $(PLT_FILE) $(US_WEB_PLT_FILE); fi
 
 
 stats:
@@ -141,13 +141,13 @@ compile: create-app-file
 # Ensures a relevant development release is available.
 ensure-dev-release:
 	@if [ ! -f "$(US_DEFAULT_REL_EXEC)" ]; then \
-	echo "No $(US_DEFAULT_REL_EXEC) found, building a development release."; $(MAKE) -s release-dev ; fi
+	echo "No $(US_DEFAULT_REL_EXEC) found, building a development release."; $(MAKE) -s release-dev; fi
 
 
 # Ensures a relevant production release is available.
 ensure-prod-release:
 	@if [ ! -f "$(US_DEFAULT_REL_EXEC)" ]; then \
-	echo "No $(US_DEFAULT_REL_EXEC) found, building a production release."; $(MAKE) -s release-prod ; fi
+	echo "No $(US_DEFAULT_REL_EXEC) found, building a production release."; $(MAKE) -s release-prod; fi
 
 
 
@@ -409,7 +409,7 @@ test-ci:
 # (now in _checkouts/)
 #
 #links:
-#	@cd ../ ; for p in myriad wooper traces us_common; do ln -s $$p ; done
+#	@cd ../; for p in myriad wooper traces us_common; do ln -s $$p; done
 
 
 clean-local: clean-log

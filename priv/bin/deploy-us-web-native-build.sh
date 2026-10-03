@@ -1135,6 +1135,8 @@ fi
 
 display_and_log
 
+systemd_hint="If using systemd, it is also recommended to run (as root) 'systemctl daemon-reload', to update their US-Web counterparts."
+
 
 if [ $do_launch -eq 0 ]; then
 
@@ -1199,7 +1201,7 @@ if [ $do_launch -eq 0 ]; then
 	# ~/.config/universal-server directory of the launching user):
 
 	# Needing to specify the US configuration *directory* (not file):
-	sudo ${start_script} "${us_config_dir}"
+	sudo "${start_script}" "${us_config_dir}"
 	res=$?
 
 	if [ $res -eq 0 ]; then
@@ -1217,7 +1219,7 @@ if [ $do_launch -eq 0 ]; then
 
 	# Maybe use get-us-web-native-build-status.sh in the future.
 
-	display_and_log "Deployment done; consider running our 'us_web/priv/bin/monitor-us-web.sh' script if wanting more detailed information regarding this launched instance."
+	display_and_log "Deployment done; consider running our 'us_web/priv/bin/monitor-us-web.sh' script if wanting more detailed information regarding this launched instance. ${systemd_hint}"
 
 	if [ -n "${US_WEB_POST_DEPLOY_CMD}" ]; then
 
@@ -1243,7 +1245,7 @@ else
 
 	display_and_log "(no auto-launch enabled; one may decide to enable or disable certificate generation - see the 'certificate_support' key in US-Web configuration file, and in all cases execute, as root, 'systemctl daemon-reload && systemctl restart us-web-as-native-build.service; sleep 150; systemctl status us-web-as-native-build.service' - the sleep allowing hopefully to wait for the end of any certificate renewal procedure (count at least 2 minutes per domain if relying on the dns-01 challenge; hence having 5 domains results in, at startup, 10 minutes of waiting until HTTP and HTTPS become ready) - and check, possibly with wget, that the expected virtual hosts are available indeed)."
 
-	display_and_log "Any prior US-Web instance that would still linger could be removed first, thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult the corresponding systemd-level logs."
+	display_and_log "Any prior US-Web instance that would still linger could be removed first, thanks to our 'kill-us-web.sh' script. Use 'journalctl -eu us-web-as-native-build.service' to consult any corresponding systemd-level logs. ${systemd_hint}"
 
     display_and_log "Finally, if certificates were to be generated, consider also executing manually after launch, and once the relevant certificates have been generated, any certbot deploy hook that would be needed (refer to any value set for the US_WEB_POST_DEPLOY_CMD environment variable), typically if using some TLS certificate(s) for other servers (like CalDAV/CardDAV ones)."
 

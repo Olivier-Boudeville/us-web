@@ -1,5 +1,12 @@
 #!/bin/sh
 
+# Copyright (C) 2020-2026 Olivier Boudeville
+#
+# Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
+#
+# This file is part of the US-Web project (see http://us-web.esperide.org).
+
+
 # A script to kill for sure a local Web instance (and, hopefully, only such
 # an instance).
 #

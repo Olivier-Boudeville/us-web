@@ -1,6 +1,11 @@
 #!/bin/sh
 
-# Copyright (C) 2020-2025 Olivier Boudeville
+# Copyright (C) 2020-2026 Olivier Boudeville
+#
+# Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
+#
+# This file is part of the US-Web project (see http://us-web.esperide.org).
+
 
 # A script to automatically deploy a US-Web native build from scratch (provided
 # that Erlang is already available).

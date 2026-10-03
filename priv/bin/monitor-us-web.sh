@@ -1,5 +1,13 @@
 #!/bin/sh
 
+# Copyright (C) 2020-2026 Olivier Boudeville
+#
+# Author: Olivier Boudeville [olivier (dot) boudeville (at) esperide (dot) com]
+#
+# This file is part of the US-Web project (see http://us-web.esperide.org).
+
+
+
 # The default US-Web configuration file *for remote access*:
 uw_cfg_filename="us-web-remote-access.config"
 
@@ -218,4 +226,4 @@ cd "${app_dir}"
 #
 #echo make -s us_web_monitor_exec CMD_LINE_OPT="$* --config-file ${uw_cfg_file} --target-cookie ${remote_vm_cookie}" ${epmd_opt}
 
-make -s us_web_monitor_exec CMD_LINE_OPT="$* --config-file ${uw_cfg_file} --target-cookie ${remote_vm_cookie}" ${epmd_opt}
+make -s us_web_monitor_exec CMD_LINE_OPT="$* --config-file ${uw_cfg_file} --target-cookie ${remote_vm_cookie}" ${epmd_opt} &
